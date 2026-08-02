@@ -158,7 +158,7 @@ export default function DashboardClient({
   setView(nextView);
 
   if (window.matchMedia("(max-width: 900px)").matches) {
-    setCollapsed(true);
+    setCollapsed(false);
   }
   };
 
