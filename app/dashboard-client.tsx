@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, supabase } from "./supabase-client";
-  import MobileSidebarAutoClose from "./mobile-sidebar-autoclose";
+  
 
 type View =
   | "Visão Geral"
