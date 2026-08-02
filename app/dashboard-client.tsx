@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiFetch, supabase } from "./supabase-client";
+import { apiFetch, supabase } from "./supabase-client;
+  import MobileSidebarAutoClose from "./mobile-sidebar-autoclose";
 
 type View =
   | "Visão Geral"
@@ -151,10 +152,14 @@ export default function DashboardClient({
     window.dispatchEvent(new CustomEvent("voto-forte:close-map-popup"));
   };
 
-  const navigateTo = (nextView: View) => {
-    closeMapPopup();
-    if (nextView === "Gestão") setContactFilter("Todos");
-    setView(nextView);
+ const navigateTo = (nextView: View) => {
+  closeMapPopup();
+  if (nextView === "Gestão") setContactFilter("Todos");
+  setView(nextView);
+
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    setCollapsed(true);
+  }
   };
 
   const visibleMenu = isAdmin
