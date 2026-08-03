@@ -3,9 +3,13 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import UserHierarchyPanel from "./user-hierarchy-panel";
+import AccountSettingsEnhancer from "./account-settings-enhancer";
+import ReportsSimplifier from "./reports-simplifier";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./user-hierarchy.css";
+import "./account-settings.css";
+import "./reports-simplifier.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +47,8 @@ export default function RootLayout({
         <MunicipalityFieldEnhancer />
         <MobileMapLayersToggle />
         <UserHierarchyPanel />
+        <AccountSettingsEnhancer />
+        <ReportsSimplifier />
         {children}
       </body>
     </html>
