@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
+import UserHierarchyPanel from "./user-hierarchy-panel";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
+import "./user-hierarchy.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +42,7 @@ export default function RootLayout({
       >
         <MunicipalityFieldEnhancer />
         <MobileMapLayersToggle />
+        <UserHierarchyPanel />
         {children}
       </body>
     </html>
