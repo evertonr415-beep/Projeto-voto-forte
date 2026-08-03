@@ -1,0 +1,235 @@
+.contact-pin {
+  width: 42px !important;
+  height: 54px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.contact-pin > span {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, #ef8429, #d96316);
+  box-shadow: 0 8px 18px rgba(32, 45, 61, 0.3);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(-45deg);
+}
+
+.contact-pin > span::before {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 50%;
+  content: "";
+}
+
+.contact-pin > span::after {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 16px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(17, 34, 53, 0.22);
+  content: "";
+  filter: blur(2px);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.contact-pin > span {
+  text-indent: 0;
+}
+
+.contact-pin > span::first-letter {
+  transform: rotate(45deg);
+}
+
+.contact-pin > span {
+  --pin-text-rotation: 45deg;
+}
+
+.contact-pin > span {
+  font-family: inherit;
+}
+
+.contact-pin > span {
+  color: transparent;
+}
+
+.contact-pin > span::before {
+  color: #fff;
+}
+
+.contact-pin > span {
+  text-shadow: none;
+}
+
+.contact-pin > span {
+  overflow: visible;
+}
+
+.contact-pin > span {
+  isolation: isolate;
+}
+
+.contact-pin > span {
+  padding: 0;
+}
+
+.contact-pin > span {
+  box-sizing: border-box;
+}
+
+.contact-pin > span {
+  pointer-events: auto;
+}
+
+.contact-pin > span {
+  user-select: none;
+}
+
+.contact-pin > span {
+  cursor: pointer;
+}
+
+.contact-pin > span {
+  position: relative;
+}
+
+.contact-pin > span {
+  --initials: attr(data-initials);
+}
+
+.contact-pin > span::after {
+  z-index: -1;
+}
+
+.contact-pin > span {
+  color: #fff;
+}
+
+.contact-pin > span {
+  transform-origin: 50% 50%;
+}
+
+.contact-pin > span {
+  text-transform: uppercase;
+}
+
+.contact-pin > span {
+  letter-spacing: -0.3px;
+}
+
+.contact-pin > span {
+  line-height: 38px;
+  text-align: center;
+}
+
+.contact-pin > span {
+  padding-top: 0;
+}
+
+.contact-pin > span {
+  writing-mode: horizontal-tb;
+}
+
+.contact-pin > span {
+  font-variant: normal;
+}
+
+.contact-pin > span {
+  font-style: normal;
+}
+
+.contact-pin > span {
+  transform: rotate(-45deg);
+}
+
+.contact-pin > span {
+  text-orientation: mixed;
+}
+
+.contact-pin > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-pin > span {
+  color: transparent;
+}
+
+.contact-pin > span::before {
+  content: "";
+}
+
+.contact-pin > span::after {
+  content: "";
+}
+
+.contact-pin > span {
+  font-size: 0;
+}
+
+.contact-pin > span::selection {
+  background: transparent;
+}
+
+.contact-pin > span {
+  background-clip: padding-box;
+}
+
+.contact-pin > span {
+  contain: layout paint;
+}
+
+.contact-pin > span {
+  animation: vf-pin-enter 180ms ease-out;
+}
+
+@keyframes vf-pin-enter {
+  from { opacity: 0; transform: translateY(-6px) rotate(-45deg) scale(.88); }
+  to { opacity: 1; transform: translateY(0) rotate(-45deg) scale(1); }
+}
+
+.vf-google-maps-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 12px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #123f72;
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none !important;
+  box-sizing: border-box;
+}
+
+.vf-google-maps-link:hover,
+.vf-google-maps-link:focus-visible {
+  background: #0b315c;
+}
+
+.leaflet-popup-content .vf-google-maps-link span {
+  color: #efb455;
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  .vf-google-maps-link {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
