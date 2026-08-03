@@ -27,12 +27,13 @@ function normalizePhone(value: unknown) {
 function sanitizeContact(input: ContactPayload) {
   const name = String(input.name ?? "").trim();
   const phone = String(input.phone ?? "").trim();
-  const normalizedPhone = normalizePhone(phone);
-  if (!name || normalizedPhone.length < 8) return null;
+  const phoneNormalized = normalizePhone(phone);
+  if (!name || phoneNormalized.length < 8) return null;
 
   return {
     name,
     phone,
+    phoneNormalized,
     district: String(input.district ?? "").trim(),
     leader: String(input.leader ?? "").trim(),
     kind: input.kind === "Liderança" ? "Liderança" : "Eleitor",
@@ -97,8 +98,11 @@ async function loadExistingPhones(
 
     if (error) throw new Error(error.message);
     for (const row of data ?? []) {
-      const payload = row.payload as { phone?: string } | null;
-      const phone = normalizePhone(payload?.phone);
+      const payload = row.payload as
+        | { phone?: string; phoneNormalized?: string }
+        | null;
+      const phone =
+        normalizePhone(payload?.phoneNormalized) || normalizePhone(payload?.phone);
       if (phone) phones.add(phone);
     }
     if (!data || data.length < PAGE_SIZE) break;
@@ -107,16 +111,63 @@ async function loadExistingPhones(
   return phones;
 }
 
+async function countBatch(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  ownerEmail: string,
+  batchId: string,
+) {
+  const { count, error } = await account.supabase
+    .from("vf_owned_records")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_email", ownerEmail)
+    .eq("kind", "contact")
+    .eq("payload->>importBatchId", batchId);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function findExistingNormalizedPhones(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  ownerEmail: string,
+  phones: string[],
+) {
+  if (!phones.length) return new Set<string>();
+  const { data, error } = await account.supabase
+    .from("vf_owned_records")
+    .select("payload")
+    .eq("owner_email", ownerEmail)
+    .eq("kind", "contact")
+    .in("payload->>phoneNormalized", phones);
+
+  if (error) throw new Error(error.message);
+  return new Set(
+    (data ?? [])
+      .map((row) => {
+        const payload = row.payload as { phoneNormalized?: string } | null;
+        return normalizePhone(payload?.phoneNormalized);
+      })
+      .filter(Boolean),
+  );
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const requestedOwner = new URL(request.url).searchParams.get("owner") ?? undefined;
+  const url = new URL(request.url);
+  const requestedOwner = url.searchParams.get("owner") ?? undefined;
+  const batchId = url.searchParams.get("batchId")?.trim();
   const resolved = await resolveOwner(account, requestedOwner);
   if ("error" in resolved) return resolved.error;
 
   try {
+    if (batchId) {
+      const count = await countBatch(account, resolved.targetEmail, batchId);
+      return Response.json({ batchId, count, completed: count > 0 });
+    }
+
     const phones = await loadExistingPhones(account, resolved.targetEmail);
     return Response.json({
       ownerEmail: resolved.targetEmail,
@@ -145,6 +196,8 @@ export async function POST(request: Request) {
     contacts?: ContactPayload[];
     ownerEmail?: string;
     existingPhonesChecked?: boolean;
+    importSessionId?: string;
+    importBatchId?: string;
   };
 
   if (!Array.isArray(body.contacts) || !body.contacts.length)
@@ -158,6 +211,27 @@ export async function POST(request: Request) {
   const resolved = await resolveOwner(account, body.ownerEmail);
   if ("error" in resolved) return resolved.error;
   const { owner, targetEmail } = resolved;
+  const importSessionId = String(body.importSessionId ?? "").trim();
+  const importBatchId = String(body.importBatchId ?? "").trim();
+
+  if (importBatchId) {
+    try {
+      const alreadyInserted = await countBatch(account, targetEmail, importBatchId);
+      if (alreadyInserted > 0)
+        return Response.json({
+          inserted: alreadyInserted,
+          duplicates: 0,
+          invalid: 0,
+          failed: 0,
+          recovered: true,
+        });
+    } catch (error) {
+      return Response.json(
+        { error: error instanceof Error ? error.message : "Falha ao conferir o lote" },
+        { status: 400 },
+      );
+    }
+  }
 
   const valid = body.contacts
     .map(sanitizeContact)
@@ -170,40 +244,42 @@ export async function POST(request: Request) {
   const uniqueInBatch = new Map<string, (typeof valid)[number]>();
   let duplicatesInFile = 0;
   for (const contact of valid) {
-    const phone = normalizePhone(contact.phone);
-    if (uniqueInBatch.has(phone)) duplicatesInFile++;
-    else uniqueInBatch.set(phone, contact);
+    if (uniqueInBatch.has(contact.phoneNormalized)) duplicatesInFile++;
+    else uniqueInBatch.set(contact.phoneNormalized, contact);
   }
 
   const incoming = [...uniqueInBatch.values()];
   let existingPhones = new Set<string>();
 
-  // O importador de grande volume faz uma conferência completa uma única vez
-  // antes de iniciar. O fluxo antigo continua protegido pela conferência no servidor.
-  if (!body.existingPhonesChecked) {
-    try {
+  try {
+    const normalizedExisting = await findExistingNormalizedPhones(
+      account,
+      targetEmail,
+      incoming.map((contact) => contact.phoneNormalized),
+    );
+    normalizedExisting.forEach((phone) => existingPhones.add(phone));
+
+    if (!body.existingPhonesChecked) {
       const allExistingPhones = await loadExistingPhones(account, targetEmail);
-      const incomingPhones = new Set(
-        incoming.map((contact) => normalizePhone(contact.phone)),
-      );
-      existingPhones = new Set(
-        [...allExistingPhones].filter((phone) => incomingPhones.has(phone)),
-      );
-    } catch (error) {
-      return Response.json(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Não foi possível conferir duplicidades",
-        },
-        { status: 400 },
-      );
+      for (const contact of incoming) {
+        if (allExistingPhones.has(contact.phoneNormalized))
+          existingPhones.add(contact.phoneNormalized);
+      }
     }
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível conferir duplicidades",
+      },
+      { status: 400 },
+    );
   }
 
-  const toInsert = incoming.filter(
-    (contact) => !existingPhones.has(normalizePhone(contact.phone)),
+  let toInsert = incoming.filter(
+    (contact) => !existingPhones.has(contact.phoneNormalized),
   );
 
   if (!toInsert.length) {
@@ -216,42 +292,77 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const rows = toInsert.map((contact) => ({
-    owner_id: owner.auth_user_id,
-    owner_email: owner.email,
-    kind: "contact",
-    payload: contact,
-    updated_at: now,
-  }));
+  let inserted = 0;
 
-  const { data, error } = await account.supabase
-    .from("vf_owned_records")
-    .insert(rows)
-    .select("id");
-
-  if (error)
-    return Response.json(
-      {
-        error: error.message,
-        inserted: 0,
-        duplicates: existingPhones.size + duplicatesInFile,
-        invalid,
-        failed: toInsert.length,
+  for (let attempt = 0; attempt < 2 && toInsert.length; attempt++) {
+    const rows = toInsert.map((contact) => ({
+      owner_id: owner.auth_user_id,
+      owner_email: owner.email,
+      kind: "contact",
+      payload: {
+        ...contact,
+        importSessionId: importSessionId || undefined,
+        importBatchId: importBatchId || undefined,
       },
-      { status: 400 },
+      updated_at: now,
+    }));
+
+    const { data, error } = await account.supabase
+      .from("vf_owned_records")
+      .insert(rows)
+      .select("id");
+
+    if (!error) {
+      inserted += data?.length ?? 0;
+      toInsert = [];
+      break;
+    }
+
+    if (importBatchId) {
+      const recovered = await countBatch(account, targetEmail, importBatchId).catch(
+        () => 0,
+      );
+      if (recovered > 0) {
+        inserted += recovered;
+        toInsert = [];
+        break;
+      }
+    }
+
+    if (error.code !== "23505" || attempt === 1)
+      return Response.json(
+        {
+          error: error.message,
+          inserted,
+          duplicates: existingPhones.size + duplicatesInFile,
+          invalid,
+          failed: toInsert.length,
+        },
+        { status: 400 },
+      );
+
+    const concurrentlyInserted = await findExistingNormalizedPhones(
+      account,
+      targetEmail,
+      toInsert.map((contact) => contact.phoneNormalized),
     );
+    concurrentlyInserted.forEach((phone) => existingPhones.add(phone));
+    toInsert = toInsert.filter(
+      (contact) => !concurrentlyInserted.has(contact.phoneNormalized),
+    );
+  }
 
   await account.supabase.from("vf_audit_logs").insert({
     actor_id: account.auth_user_id,
     actor_email: account.email,
     action: "Importação de contatos em lote",
-    detail: `${owner.email} · ${data?.length ?? 0} inseridos · ${existingPhones.size + duplicatesInFile} duplicados · ${invalid} inválidos`,
+    detail: `${owner.email} · ${inserted} inseridos · ${existingPhones.size + duplicatesInFile} duplicados · ${invalid} inválidos`,
   });
 
   return Response.json({
-    inserted: data?.length ?? 0,
+    inserted,
     duplicates: existingPhones.size + duplicatesInFile,
     invalid,
-    failed: Math.max(0, toInsert.length - (data?.length ?? 0)),
+    failed: toInsert.length,
   });
 }
