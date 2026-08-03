@@ -4,11 +4,13 @@ import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import LegacyContactGeocoder from "./legacy-contact-geocoder";
+import SafeMapContactTools from "./safe-map-contact-tools";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
+import "./safe-map-contact-tools.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -50,6 +52,7 @@ export default function RootLayout({
         <CepFallbackEnhancer />
         <MobileMapLayersToggle />
         <LegacyContactGeocoder />
+        <SafeMapContactTools />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
