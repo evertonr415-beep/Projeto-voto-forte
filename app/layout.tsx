@@ -3,11 +3,13 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
+import MapPinEnhancer from "./map-pin-enhancer";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
+import "./map-pin-enhancer.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -48,6 +50,7 @@ export default function RootLayout({
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MobileMapLayersToggle />
+        <MapPinEnhancer />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
