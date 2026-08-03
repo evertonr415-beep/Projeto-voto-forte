@@ -16,7 +16,10 @@ const defaultPreferences: Preferences = {
 export default function AccountSettingsEnhancer() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [preferences, setPreferences] = useState(defaultPreferences);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,15 +32,16 @@ export default function AccountSettingsEnhancer() {
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
-      const userEmail = data.user?.email || "";
+      const user = data.user;
+      const userEmail = user?.email || "";
+      const serverAvatar = String(user?.user_metadata?.avatar_url || "");
       setEmail(userEmail);
-      const savedAvatar = localStorage.getItem(
-        `voto-forte:${userEmail || "usuario"}:avatar`,
-      );
+      setUserId(user?.id || "");
+      if (serverAvatar) setAvatar(serverAvatar);
+
       const savedPreferences = localStorage.getItem(
         `voto-forte:${userEmail || "usuario"}:agenda-preferences`,
       );
-      if (savedAvatar) setAvatar(savedAvatar);
       if (savedPreferences) {
         try {
           setPreferences(JSON.parse(savedPreferences) as Preferences);
@@ -50,14 +54,20 @@ export default function AccountSettingsEnhancer() {
 
   useEffect(() => {
     const applyAvatar = () => {
-      if (!avatar) return;
       document
         .querySelectorAll<HTMLElement>(".profile > span, .profile-box > span")
         .forEach((element) => {
-          element.style.backgroundImage = `url(${avatar})`;
-          element.style.backgroundSize = "cover";
-          element.style.backgroundPosition = "center";
-          element.style.color = "transparent";
+          if (avatar) {
+            element.style.backgroundImage = `url(${avatar})`;
+            element.style.backgroundSize = "cover";
+            element.style.backgroundPosition = "center";
+            element.style.color = "transparent";
+          } else {
+            element.style.removeProperty("background-image");
+            element.style.removeProperty("background-size");
+            element.style.removeProperty("background-position");
+            element.style.removeProperty("color");
+          }
         });
     };
 
@@ -96,28 +106,83 @@ export default function AccountSettingsEnhancer() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      setAvatar(result);
-      setMessage("Foto selecionada. Clique em Salvar preferências.");
-    };
-    reader.readAsDataURL(file);
+    setAvatarFile(file);
+    setRemoveAvatar(false);
+    setAvatar(URL.createObjectURL(file));
+    setMessage("Foto selecionada. Clique em Salvar preferências.");
   };
 
-  const savePreferences = () => {
-    if (avatar) localStorage.setItem(storageKey("avatar"), avatar);
-    else localStorage.removeItem(storageKey("avatar"));
-    localStorage.setItem(
-      storageKey("agenda-preferences"),
-      JSON.stringify(preferences),
-    );
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:agenda-preferences", {
-        detail: preferences,
-      }),
-    );
-    setMessage("Foto e preferências de notificações foram salvas.");
+  const savePreferences = async () => {
+    setSaving(true);
+    setMessage("");
+
+    try {
+      if (!userId) throw new Error("Sessão do usuário não encontrada.");
+
+      let avatarUrl = avatar;
+      const objectPath = `${userId}/avatar`;
+
+      if (removeAvatar) {
+        await supabase.storage.from("profile-avatars").remove([
+          `${objectPath}.jpg`,
+          `${objectPath}.png`,
+          `${objectPath}.webp`,
+        ]);
+        avatarUrl = "";
+      } else if (avatarFile) {
+        const extension = avatarFile.type === "image/png"
+          ? "png"
+          : avatarFile.type === "image/webp"
+            ? "webp"
+            : "jpg";
+        const path = `${objectPath}.${extension}`;
+        const { error: uploadError } = await supabase.storage
+          .from("profile-avatars")
+          .upload(path, avatarFile, {
+            upsert: true,
+            contentType: avatarFile.type,
+            cacheControl: "3600",
+          });
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from("profile-avatars")
+          .getPublicUrl(path);
+        avatarUrl = `${data.publicUrl}?v=${Date.now()}`;
+      }
+
+      const { error: profileError } = await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl },
+      });
+      if (profileError) throw profileError;
+
+      setAvatar(avatarUrl);
+      setAvatarFile(null);
+      setRemoveAvatar(false);
+      localStorage.setItem(
+        storageKey("agenda-preferences"),
+        JSON.stringify(preferences),
+      );
+      window.dispatchEvent(
+        new CustomEvent("voto-forte:agenda-preferences", {
+          detail: preferences,
+        }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("voto-forte:avatar-updated", {
+          detail: { avatarUrl },
+        }),
+      );
+      setMessage("Foto e preferências foram salvas na sua conta.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar as configurações.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const changePassword = async (event: FormEvent) => {
@@ -182,7 +247,16 @@ export default function AccountSettingsEnhancer() {
                   Escolher foto
                 </button>
                 {avatar && (
-                  <button type="button" className="secondary" onClick={() => setAvatar("")}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      setAvatar("");
+                      setAvatarFile(null);
+                      setRemoveAvatar(true);
+                      setMessage("Clique em Salvar preferências para remover a foto.");
+                    }}
+                  >
                     Remover foto
                   </button>
                 )}
@@ -233,8 +307,13 @@ export default function AccountSettingsEnhancer() {
                 }
               />
             </label>
-            <button className="account-save-preferences" type="button" onClick={savePreferences}>
-              Salvar preferências
+            <button
+              className="account-save-preferences"
+              type="button"
+              onClick={() => void savePreferences()}
+              disabled={saving}
+            >
+              {saving ? "Salvando..." : "Salvar preferências"}
             </button>
           </section>
 
