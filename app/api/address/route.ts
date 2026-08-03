@@ -18,6 +18,21 @@ type ViaCepResult = {
   uf?: string;
 };
 
+type BrasilApiCepV2 = {
+  cep?: string;
+  state?: string;
+  city?: string;
+  neighborhood?: string;
+  street?: string;
+  location?: {
+    type?: string;
+    coordinates?: {
+      longitude?: string;
+      latitude?: string;
+    };
+  };
+};
+
 const headers = { "cache-control": "private, max-age=300" };
 const clean = (value = "") =>
   value
@@ -35,6 +50,21 @@ async function lookupCep(cep: string): Promise<ViaCepResult | null> {
     if (!response.ok) return null;
     const data = (await response.json()) as ViaCepResult;
     return data.erro ? null : data;
+  } catch {
+    return null;
+  }
+}
+
+async function lookupCepCoordinates(cep: string): Promise<BrasilApiCepV2 | null> {
+  if (cep.length !== 8) return null;
+  try {
+    const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep}`, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as BrasilApiCepV2;
+    return data.state === "PR" ? data : null;
   } catch {
     return null;
   }
@@ -84,7 +114,11 @@ export async function GET(request: Request) {
     return Response.json(data, { headers });
   }
 
-  const cepData = await lookupCep(cep);
+  const [cepData, cepCoordinates] = await Promise.all([
+    lookupCep(cep),
+    lookupCepCoordinates(cep),
+  ]);
+
   if (cepData?.uf && cepData.uf !== "PR")
     return Response.json(
       { error: "O endereço informado não pertence ao Paraná" },
@@ -92,12 +126,21 @@ export async function GET(request: Request) {
     );
 
   const street =
-    params.get("street")?.trim() || cepData?.logradouro?.trim() || "";
+    params.get("street")?.trim() ||
+    cepData?.logradouro?.trim() ||
+    cepCoordinates?.street?.trim() ||
+    "";
   const number = params.get("number")?.trim() || "";
   const district =
-    params.get("district")?.trim() || cepData?.bairro?.trim() || "";
+    params.get("district")?.trim() ||
+    cepData?.bairro?.trim() ||
+    cepCoordinates?.neighborhood?.trim() ||
+    "";
   const city =
-    cepData?.localidade?.trim() || params.get("city")?.trim() || "";
+    cepData?.localidade?.trim() ||
+    cepCoordinates?.city?.trim() ||
+    params.get("city")?.trim() ||
+    "";
   const state = "PR";
 
   if (!street || !number)
@@ -135,7 +178,7 @@ export async function GET(request: Request) {
         headers: {
           "accept-language": "pt-BR",
           "user-agent":
-            "VotoForteParana/1.2 (sistemavotoforte.com.br; geocodificacao eleitoral)",
+            "VotoForteParana/1.3 (sistemavotoforte.com.br; geocodificacao eleitoral)",
         },
         signal: AbortSignal.timeout(9000),
       });
@@ -188,6 +231,7 @@ export async function GET(request: Request) {
             confirmedCep: best.exactCep,
             city,
             state,
+            source: "nominatim",
           },
           { headers },
         );
@@ -216,6 +260,31 @@ export async function GET(request: Request) {
             clean(street).includes(clean(returnedRoad))),
         city,
         state,
+        source: "nominatim",
+      },
+      { headers },
+    );
+  }
+
+  const latitude = Number(
+    cepCoordinates?.location?.coordinates?.latitude,
+  );
+  const longitude = Number(
+    cepCoordinates?.location?.coordinates?.longitude,
+  );
+
+  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    return Response.json(
+      {
+        latitude,
+        longitude,
+        locationLabel: `${street}, ${district}, ${city} - PR, ${cep}`,
+        precision: "approximate",
+        confirmedNumber: false,
+        confirmedStreet: true,
+        city,
+        state,
+        source: "brasilapi-cep-v2",
       },
       { headers },
     );
