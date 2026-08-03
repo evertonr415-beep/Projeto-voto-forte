@@ -1,16 +1,17 @@
 .contact-pin {
   width: 42px !important;
-  height: 54px !important;
+  height: 52px !important;
   background: transparent !important;
   border: 0 !important;
 }
 
 .contact-pin > span {
   position: relative;
-  display: grid;
+  display: flex;
   width: 38px;
   height: 38px;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   border: 3px solid #fff;
   border-radius: 50% 50% 50% 0;
   background: linear-gradient(135deg, #ef8429, #d96316);
@@ -18,22 +19,17 @@
   color: #fff;
   font-size: 11px;
   font-weight: 900;
+  letter-spacing: -0.2px;
   line-height: 1;
+  text-transform: uppercase;
   transform: rotate(-45deg);
-}
-
-.contact-pin > span::before {
-  position: absolute;
-  inset: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.36);
-  border-radius: 50%;
-  content: "";
+  animation: vf-pin-enter 180ms ease-out;
 }
 
 .contact-pin > span::after {
   position: absolute;
   left: 50%;
-  bottom: -10px;
+  bottom: -9px;
   width: 16px;
   height: 6px;
   border-radius: 50%;
@@ -41,58 +37,19 @@
   content: "";
   filter: blur(2px);
   transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
 }
 
 .contact-pin > span {
-  text-indent: 0;
-}
-
-.contact-pin > span::first-letter {
-  transform: rotate(45deg);
-}
-
-.contact-pin > span {
-  --pin-text-rotation: 45deg;
-}
-
-.contact-pin > span {
-  font-family: inherit;
-}
-
-.contact-pin > span {
-  color: transparent;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
 .contact-pin > span::before {
-  color: #fff;
-}
-
-.contact-pin > span {
-  text-shadow: none;
-}
-
-.contact-pin > span {
-  overflow: visible;
-}
-
-.contact-pin > span {
-  isolation: isolate;
-}
-
-.contact-pin > span {
-  padding: 0;
-}
-
-.contact-pin > span {
-  box-sizing: border-box;
-}
-
-.contact-pin > span {
-  pointer-events: auto;
-}
-
-.contact-pin > span {
-  user-select: none;
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  content: "";
 }
 
 .contact-pin > span {
@@ -100,66 +57,27 @@
 }
 
 .contact-pin > span {
-  position: relative;
+  transform-origin: center;
 }
 
 .contact-pin > span {
-  --initials: attr(data-initials);
-}
-
-.contact-pin > span::after {
-  z-index: -1;
+  font-family: inherit;
 }
 
 .contact-pin > span {
-  color: #fff;
+  box-sizing: border-box;
 }
 
 .contact-pin > span {
-  transform-origin: 50% 50%;
+  isolation: isolate;
 }
 
 .contact-pin > span {
-  text-transform: uppercase;
+  overflow: visible;
 }
 
 .contact-pin > span {
-  letter-spacing: -0.3px;
-}
-
-.contact-pin > span {
-  line-height: 38px;
-  text-align: center;
-}
-
-.contact-pin > span {
-  padding-top: 0;
-}
-
-.contact-pin > span {
-  writing-mode: horizontal-tb;
-}
-
-.contact-pin > span {
-  font-variant: normal;
-}
-
-.contact-pin > span {
-  font-style: normal;
-}
-
-.contact-pin > span {
-  transform: rotate(-45deg);
-}
-
-.contact-pin > span {
-  text-orientation: mixed;
-}
-
-.contact-pin > span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  user-select: none;
 }
 
 .contact-pin > span {
@@ -167,11 +85,11 @@
 }
 
 .contact-pin > span::before {
-  content: "";
+  z-index: 0;
 }
 
 .contact-pin > span::after {
-  content: "";
+  z-index: -1;
 }
 
 .contact-pin > span {
@@ -191,7 +109,49 @@
 }
 
 .contact-pin > span {
-  animation: vf-pin-enter 180ms ease-out;
+  pointer-events: auto;
+}
+
+.contact-pin > span {
+  text-align: center;
+}
+
+.contact-pin > span {
+  padding: 0;
+}
+
+.contact-pin > span {
+  writing-mode: horizontal-tb;
+}
+
+.contact-pin > span {
+  font-style: normal;
+}
+
+.contact-pin > span {
+  text-orientation: mixed;
+}
+
+.contact-pin > span {
+  color: #fff;
+  font-size: 11px;
+}
+
+.contact-pin > span {
+  transform: rotate(-45deg);
+}
+
+.contact-pin > span {
+  line-height: 1;
+}
+
+.contact-pin > span {
+  display: flex;
+}
+
+.contact-pin > span {
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes vf-pin-enter {
