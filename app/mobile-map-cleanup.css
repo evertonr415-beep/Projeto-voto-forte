@@ -6,10 +6,10 @@
   .full-map .map-legend {
     display: block !important;
     position: absolute;
-    top: 62px !important;
+    top: 166px !important;
     left: 10px;
     width: min(210px, calc(100vw - 32px));
-    max-height: calc(100% - 86px);
+    max-height: calc(100% - 190px);
     overflow: auto;
     opacity: 0;
     visibility: hidden;
@@ -33,7 +33,7 @@
   .vf-map-layers-toggle {
     display: inline-flex;
     position: absolute;
-    top: 12px;
+    top: 116px;
     left: 10px;
     z-index: 1201;
     align-items: center;
