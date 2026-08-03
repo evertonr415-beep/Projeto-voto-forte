@@ -46,6 +46,14 @@ function normalizePhone(value: string) {
   return value.replace(/\D/g, "");
 }
 
+async function sha256(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 function parseDelimitedLine(line: string, delimiter: string) {
   const cells: string[] = [];
   let current = "";
@@ -151,12 +159,22 @@ function parseCsv(text: string): ParsedCsv {
   };
 }
 
-async function sendBatch(contacts: Contact[], attempt = 1): Promise<Result> {
+async function sendBatch(
+  contacts: Contact[],
+  importSessionId: string,
+  importBatchId: string,
+  attempt = 1,
+): Promise<Result> {
   try {
     const response = await apiFetch("/api/records/import-contacts", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contacts, existingPhonesChecked: true }),
+      body: JSON.stringify({
+        contacts,
+        existingPhonesChecked: true,
+        importSessionId,
+        importBatchId,
+      }),
     });
     const data = await response.json();
     if (!response.ok)
@@ -167,13 +185,19 @@ async function sendBatch(contacts: Contact[], attempt = 1): Promise<Result> {
     await new Promise((resolve) =>
       window.setTimeout(resolve, attempt * 2000),
     );
-    return sendBatch(contacts, attempt + 1);
+    return sendBatch(
+      contacts,
+      importSessionId,
+      importBatchId,
+      attempt + 1,
+    );
   }
 }
 
 export default function BulkContactImportPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [fileName, setFileName] = useState("");
+  const [fileFingerprint, setFileFingerprint] = useState("");
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
@@ -207,11 +231,16 @@ export default function BulkContactImportPage() {
     setProcessed(0);
 
     try {
-      const parsed = parseCsv(await file.text());
+      const text = await file.text();
+      const [parsed, fingerprint] = await Promise.all([
+        Promise.resolve(parseCsv(text)),
+        sha256(text),
+      ]);
       setContacts(parsed.contacts);
       setTotalRows(parsed.totalRows);
       setInvalidInFile(parsed.invalid);
       setDuplicatesInFile(parsed.duplicates);
+      setFileFingerprint(fingerprint);
       setFileName(file.name);
       setMessage(
         parsed.contacts.length
@@ -221,6 +250,7 @@ export default function BulkContactImportPage() {
     } catch (error) {
       setContacts([]);
       setTotalRows(0);
+      setFileFingerprint("");
       setFileName(file.name);
       setMessage(
         error instanceof Error
@@ -231,7 +261,7 @@ export default function BulkContactImportPage() {
   }
 
   async function startImport() {
-    if (!contacts.length || running) return;
+    if (!contacts.length || !fileFingerprint || running) return;
     cancelled.current = false;
     setRunning(true);
     setProcessed(0);
@@ -288,8 +318,15 @@ export default function BulkContactImportPage() {
       for (let start = 0; start < pending.length; start += BATCH_SIZE) {
         if (cancelled.current) break;
         const batch = pending.slice(start, start + BATCH_SIZE);
+        const batchNumber = Math.floor(start / BATCH_SIZE);
+        const importBatchId = `${fileFingerprint}:${batchNumber}`;
+
         try {
-          const current = await sendBatch(batch);
+          const current = await sendBatch(
+            batch,
+            fileFingerprint,
+            importBatchId,
+          );
           summary = {
             inserted: summary.inserted + current.inserted,
             duplicates: summary.duplicates + current.duplicates,
@@ -299,7 +336,7 @@ export default function BulkContactImportPage() {
         } catch (error) {
           summary.failed += batch.length;
           setMessage(
-            `O lote ${Math.floor(start / BATCH_SIZE) + 1} falhou após 3 tentativas. A importação foi interrompida com segurança: ${error instanceof Error ? error.message : "erro desconhecido"}.`,
+            `O lote ${batchNumber + 1} falhou após 3 tentativas. A importação foi interrompida com segurança: ${error instanceof Error ? error.message : "erro desconhecido"}.`,
           );
           setResult(summary);
           setProcessed(baseProcessed + start);
