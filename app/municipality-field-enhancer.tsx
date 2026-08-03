@@ -8,50 +8,73 @@ type Municipality = {
   state: "PR";
 };
 
+type CepResult = {
+  cep?: string;
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
+  error?: string;
+};
+
 function digits(value: string) {
   return value.replace(/\D/g, "");
 }
 
+function setReactInputValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "value",
+  )?.set;
+  setter?.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 export default function MunicipalityFieldEnhancer() {
   const municipalities = useRef<Municipality[]>([]);
-  const currentCep = useRef("");
 
   useEffect(() => {
     let active = true;
+    let observer: MutationObserver | null = null;
 
-    fetch("/api/municipalities")
-      .then((response) => response.json())
-      .then((data) => {
-        if (active && Array.isArray(data.municipalities)) {
-          municipalities.current = data.municipalities;
-        }
+    const loadMunicipalities = fetch("/api/municipalities")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.municipalities)) return [];
+        return data.municipalities as Municipality[];
       })
-      .catch(() => undefined);
+      .catch(() => [] as Municipality[]);
 
-    const ensureMunicipalityField = () => {
+    const enhanceForm = async () => {
       const cepInput = document.querySelector<HTMLInputElement>(
         '.modal-form input[placeholder="00000-000"]',
       );
       if (!cepInput) return;
 
-      const form = cepInput.closest(".modal-form");
-      if (!form || form.querySelector("[data-vf-municipality-field]")) return;
+      const form = cepInput.closest<HTMLElement>(".modal-form");
+      const addressGrid = cepInput.closest<HTMLElement>(".address-grid");
+      if (!form || !addressGrid) return;
+      if (form.querySelector("[data-vf-municipality-field]")) return;
 
-      const addressGrid = cepInput.closest(".address-grid");
-      if (!addressGrid) return;
+      if (!municipalities.current.length) {
+        municipalities.current = await loadMunicipalities;
+      }
+      if (!active || !document.body.contains(form)) return;
 
       const label = document.createElement("label");
       label.dataset.vfMunicipalityField = "true";
-      label.textContent = "Município do Paraná (definido pelo CEP)";
+      label.textContent = "Município do Paraná";
 
       const select = document.createElement("select");
       select.disabled = true;
+      select.required = true;
       select.setAttribute("aria-label", "Município identificado pelo CEP");
 
-      const empty = document.createElement("option");
-      empty.value = "";
-      empty.textContent = "Informe um CEP do Paraná";
-      select.appendChild(empty);
+      const initial = document.createElement("option");
+      initial.value = "";
+      initial.textContent = "Informe um CEP do Paraná";
+      select.appendChild(initial);
 
       for (const municipality of municipalities.current) {
         const option = document.createElement("option");
@@ -60,59 +83,115 @@ export default function MunicipalityFieldEnhancer() {
         select.appendChild(option);
       }
 
-      label.appendChild(select);
+      const help = document.createElement("small");
+      help.textContent =
+        "O município é definido automaticamente pelo CEP e não pode ser alterado manualmente.";
+
+      label.append(select, help);
       addressGrid.insertAdjacentElement("afterend", label);
 
-      let timer: number | undefined;
-      const identifyMunicipality = () => {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(async () => {
-          const cep = digits(cepInput.value);
-          if (cep.length !== 8 || cep === currentCep.current) return;
-          currentCep.current = cep;
-          empty.textContent = "Identificando município...";
+      let requestId = 0;
+      let lastCep = "";
+
+      const identifyMunicipality = async () => {
+        const cep = digits(cepInput.value);
+        if (cep.length !== 8) {
+          lastCep = "";
           select.value = "";
+          initial.textContent = "Informe um CEP válido com 8 números";
+          select.dataset.valid = "false";
+          return;
+        }
+        if (cep === lastCep && select.dataset.valid === "true") return;
 
-          try {
-            const response = await fetch(`/api/address?action=cep&cep=${cep}`);
-            const data = await response.json();
-            if (!response.ok || data.uf !== "PR" || !data.localidade) {
-              empty.textContent = data.error || "CEP não pertence ao Paraná";
-              return;
-            }
+        lastCep = cep;
+        const currentRequest = ++requestId;
+        select.value = "";
+        select.dataset.valid = "false";
+        initial.textContent = "Consultando CEP e município...";
 
-            if (
-              !Array.from(select.options).some(
-                (option) => option.value === data.localidade,
-              )
-            ) {
-              const option = document.createElement("option");
-              option.value = data.localidade;
-              option.textContent = `${data.localidade} - PR`;
-              select.appendChild(option);
-            }
+        try {
+          const response = await fetch(`/api/address?action=cep&cep=${cep}`);
+          const data = (await response.json()) as CepResult;
+          if (currentRequest !== requestId) return;
 
-            select.value = data.localidade;
-            select.dataset.city = data.localidade;
-            empty.textContent = "Município identificado pelo CEP";
-          } catch {
-            empty.textContent = "Não foi possível identificar o município";
+          if (!response.ok || data.uf !== "PR" || !data.localidade) {
+            initial.textContent =
+              data.error || "O CEP informado não pertence ao Paraná";
+            return;
           }
-        }, 250);
+
+          if (
+            !Array.from(select.options).some(
+              (option) => option.value === data.localidade,
+            )
+          ) {
+            initial.textContent =
+              "Município não localizado na lista oficial do Paraná";
+            return;
+          }
+
+          select.value = data.localidade;
+          select.dataset.city = data.localidade;
+          select.dataset.valid = "true";
+          help.textContent = `Município confirmado pela base oficial: ${data.localidade} - PR.`;
+
+          const labels = Array.from(form.querySelectorAll("label"));
+          const streetInput = labels
+            .find((item) => item.textContent?.trim().startsWith("Rua"))
+            ?.querySelector<HTMLInputElement>("input");
+          const districtInput = labels
+            .find((item) => item.textContent?.trim().startsWith("Bairro"))
+            ?.querySelector<HTMLInputElement>("input");
+
+          if (streetInput && data.logradouro && !streetInput.value.trim()) {
+            setReactInputValue(streetInput, data.logradouro);
+          }
+          if (districtInput && data.bairro && !districtInput.value.trim()) {
+            setReactInputValue(districtInput, data.bairro);
+          }
+
+          cepInput.dispatchEvent(new Event("blur", { bubbles: true }));
+        } catch {
+          if (currentRequest !== requestId) return;
+          initial.textContent = "Não foi possível consultar o CEP agora";
+        }
       };
 
-      cepInput.addEventListener("input", identifyMunicipality);
-      cepInput.addEventListener("blur", identifyMunicipality);
-      identifyMunicipality();
+      let timer: number | undefined;
+      const scheduleLookup = () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => void identifyMunicipality(), 350);
+      };
+
+      cepInput.addEventListener("input", scheduleLookup);
+      cepInput.addEventListener("blur", () => void identifyMunicipality());
+
+      const locateButton = Array.from(form.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("Localizar e conferir no mapa"),
+      );
+      locateButton?.addEventListener(
+        "click",
+        (event) => {
+          if (select.dataset.valid !== "true") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            void identifyMunicipality();
+          }
+        },
+        true,
+      );
+
+      void identifyMunicipality();
     };
 
-    const observer = new MutationObserver(ensureMunicipalityField);
+    observer = new MutationObserver(() => void enhanceForm());
     observer.observe(document.body, { childList: true, subtree: true });
-    ensureMunicipalityField();
+    void enhanceForm();
 
     return () => {
       active = false;
-      observer.disconnect();
+      observer?.disconnect();
     };
   }, []);
 
