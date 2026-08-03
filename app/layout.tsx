@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
+import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MunicipalityFieldEnhancer />
+        <CepFallbackEnhancer />
         <MobileMapLayersToggle />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
