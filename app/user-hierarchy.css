@@ -1,8 +1,9 @@
-.users-admin-grid[data-vf-hierarchy-replaced="true"] > * {
+.users-admin-grid[data-vf-hierarchy-replaced="true"] > :not(.vf-hierarchy-panel) {
   display: none !important;
 }
 
 .vf-hierarchy-panel {
+  display: block !important;
   grid-column: 1 / -1;
   padding: 24px;
   border: 1px solid #dbe4ee;
