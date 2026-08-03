@@ -55,21 +55,32 @@ export async function GET(request: Request) {
       { status: 403 },
     );
 
-  let query = account.supabase
-    .from("vf_owned_records")
-    .select("*")
-    .order("updated_at", { ascending: false });
+  const pageSize = 1000;
+  const allRecords: OwnedRecord[] = [];
 
-  if (scope === "all") query = query.in("owner_email", emails);
-  else query = query.eq("owner_email", scope);
+  for (let from = 0; ; from += pageSize) {
+    let query = account.supabase
+      .from("vf_owned_records")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .range(from, from + pageSize - 1);
 
-  const { data, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 400 });
+    if (scope === "all") query = query.in("owner_email", emails);
+    else query = query.eq("owner_email", scope);
+
+    const { data, error } = await query;
+    if (error) return Response.json({ error: error.message }, { status: 400 });
+
+    const page = (data ?? []) as OwnedRecord[];
+    allRecords.push(...page);
+    if (page.length < pageSize) break;
+  }
 
   return Response.json({
     scope,
     visibleOwners: emails,
-    records: ((data ?? []) as OwnedRecord[]).map(mapRecord),
+    records: allRecords.map(mapRecord),
+    total: allRecords.length,
   });
 }
 
