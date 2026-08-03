@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
+import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import "./globals.css";
+import "./mobile-map-cleanup.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MunicipalityFieldEnhancer />
+        <MobileMapLayersToggle />
         {children}
       </body>
     </html>
