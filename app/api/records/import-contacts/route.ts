@@ -18,6 +18,7 @@ type ContactPayload = {
 };
 
 const MAX_BATCH_SIZE = 500;
+const PAGE_SIZE = 1000;
 
 function normalizePhone(value: unknown) {
   return String(value ?? "").replace(/\D/g, "");
@@ -43,6 +44,98 @@ function sanitizeContact(input: ContactPayload) {
   };
 }
 
+async function resolveOwner(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  requestedOwner?: string,
+) {
+  const users = await getVisibleUsers(account);
+  const emails = users
+    .filter((user) => user.status === "active")
+    .map((user) => String(user.email).trim().toLowerCase());
+  if (!emails.includes(account.email)) emails.push(account.email);
+
+  const requested = requestedOwner?.trim().toLowerCase();
+  const targetEmail = requested && requested !== "all" ? requested : account.email;
+
+  if (targetEmail !== account.email && !isAdministrator(account.role))
+    return { error: Response.json({ error: "Acesso negado" }, { status: 403 }) };
+  if (!emails.includes(targetEmail))
+    return {
+      error: Response.json(
+        { error: "O usuário selecionado não pertence à sua equipe" },
+        { status: 403 },
+      ),
+    };
+
+  const owner = users.find(
+    (user) => String(user.email).toLowerCase() === targetEmail,
+  );
+  if (!owner)
+    return {
+      error: Response.json(
+        { error: "Ambiente selecionado inválido" },
+        { status: 400 },
+      ),
+    };
+
+  return { owner, targetEmail };
+}
+
+async function loadExistingPhones(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  ownerEmail: string,
+) {
+  const phones = new Set<string>();
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await account.supabase
+      .from("vf_owned_records")
+      .select("payload")
+      .eq("owner_email", ownerEmail)
+      .eq("kind", "contact")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw new Error(error.message);
+    for (const row of data ?? []) {
+      const payload = row.payload as { phone?: string } | null;
+      const phone = normalizePhone(payload?.phone);
+      if (phone) phones.add(phone);
+    }
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+
+  return phones;
+}
+
+export async function GET(request: Request) {
+  const account = await getAccount();
+  if (!account)
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+
+  const requestedOwner = new URL(request.url).searchParams.get("owner") ?? undefined;
+  const resolved = await resolveOwner(account, requestedOwner);
+  if ("error" in resolved) return resolved.error;
+
+  try {
+    const phones = await loadExistingPhones(account, resolved.targetEmail);
+    return Response.json({
+      ownerEmail: resolved.targetEmail,
+      phones: [...phones],
+      total: phones.size,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível conferir os contatos existentes",
+      },
+      { status: 400 },
+    );
+  }
+}
+
 export async function POST(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -51,6 +144,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     contacts?: ContactPayload[];
     ownerEmail?: string;
+    existingPhonesChecked?: boolean;
   };
 
   if (!Array.isArray(body.contacts) || !body.contacts.length)
@@ -61,32 +155,16 @@ export async function POST(request: Request) {
       { status: 400 },
     );
 
-  const users = await getVisibleUsers(account);
-  const emails = users
-    .filter((user) => user.status === "active")
-    .map((user) => String(user.email).trim().toLowerCase());
-  if (!emails.includes(account.email)) emails.push(account.email);
-
-  const requested = body.ownerEmail?.trim().toLowerCase();
-  const targetEmail = requested && requested !== "all" ? requested : account.email;
-
-  if (targetEmail !== account.email && !isAdministrator(account.role))
-    return Response.json({ error: "Acesso negado" }, { status: 403 });
-  if (!emails.includes(targetEmail))
-    return Response.json(
-      { error: "O usuário selecionado não pertence à sua equipe" },
-      { status: 403 },
-    );
-
-  const owner = users.find(
-    (user) => String(user.email).toLowerCase() === targetEmail,
-  );
-  if (!owner)
-    return Response.json({ error: "Ambiente selecionado inválido" }, { status: 400 });
+  const resolved = await resolveOwner(account, body.ownerEmail);
+  if ("error" in resolved) return resolved.error;
+  const { owner, targetEmail } = resolved;
 
   const valid = body.contacts
     .map(sanitizeContact)
-    .filter((contact): contact is NonNullable<ReturnType<typeof sanitizeContact>> => Boolean(contact));
+    .filter(
+      (contact): contact is NonNullable<ReturnType<typeof sanitizeContact>> =>
+        Boolean(contact),
+    );
 
   const invalid = body.contacts.length - valid.length;
   const uniqueInBatch = new Map<string, (typeof valid)[number]>();
@@ -98,25 +176,30 @@ export async function POST(request: Request) {
   }
 
   const incoming = [...uniqueInBatch.values()];
-  const incomingPhones = new Set(incoming.map((contact) => normalizePhone(contact.phone)));
-  const existingPhones = new Set<string>();
-  const pageSize = 1000;
+  let existingPhones = new Set<string>();
 
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await account.supabase
-      .from("vf_owned_records")
-      .select("payload")
-      .eq("owner_email", targetEmail)
-      .eq("kind", "contact")
-      .range(from, from + pageSize - 1);
-
-    if (error) return Response.json({ error: error.message }, { status: 400 });
-    for (const row of data ?? []) {
-      const payload = row.payload as { phone?: string } | null;
-      const phone = normalizePhone(payload?.phone);
-      if (phone && incomingPhones.has(phone)) existingPhones.add(phone);
+  // O importador de grande volume faz uma conferência completa uma única vez
+  // antes de iniciar. O fluxo antigo continua protegido pela conferência no servidor.
+  if (!body.existingPhonesChecked) {
+    try {
+      const allExistingPhones = await loadExistingPhones(account, targetEmail);
+      const incomingPhones = new Set(
+        incoming.map((contact) => normalizePhone(contact.phone)),
+      );
+      existingPhones = new Set(
+        [...allExistingPhones].filter((phone) => incomingPhones.has(phone)),
+      );
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Não foi possível conferir duplicidades",
+        },
+        { status: 400 },
+      );
     }
-    if (!data || data.length < pageSize) break;
   }
 
   const toInsert = incoming.filter(
