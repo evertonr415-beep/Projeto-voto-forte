@@ -17,6 +17,13 @@ type ContactPayload = {
   state?: string;
 };
 
+type PayloadRow = {
+  payload: {
+    phone?: string;
+    phoneNormalized?: string;
+  } | null;
+};
+
 const MAX_BATCH_SIZE = 500;
 const PAGE_SIZE = 1000;
 
@@ -97,12 +104,10 @@ async function loadExistingPhones(
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) throw new Error(error.message);
-    for (const row of data ?? []) {
-      const payload = row.payload as
-        | { phone?: string; phoneNormalized?: string }
-        | null;
+    for (const row of (data ?? []) as PayloadRow[]) {
       const phone =
-        normalizePhone(payload?.phoneNormalized) || normalizePhone(payload?.phone);
+        normalizePhone(row.payload?.phoneNormalized) ||
+        normalizePhone(row.payload?.phone);
       if (phone) phones.add(phone);
     }
     if (!data || data.length < PAGE_SIZE) break;
@@ -142,11 +147,8 @@ async function findExistingNormalizedPhones(
 
   if (error) throw new Error(error.message);
   return new Set(
-    (data ?? [])
-      .map((row) => {
-        const payload = row.payload as { phoneNormalized?: string } | null;
-        return normalizePhone(payload?.phoneNormalized);
-      })
+    ((data ?? []) as PayloadRow[])
+      .map((row) => normalizePhone(row.payload?.phoneNormalized))
       .filter(Boolean),
   );
 }
