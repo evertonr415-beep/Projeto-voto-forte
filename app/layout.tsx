@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "VOTO FORTE PARANÁ",
-  description: "Gestão inteligente de campanha em Arapongas, Paraná.",
+  description: "Gestão inteligente de campanha em todo o Paraná.",
   other: {
     "codex-preview": "development",
   },
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <MunicipalityFieldEnhancer />
         {children}
       </body>
     </html>
