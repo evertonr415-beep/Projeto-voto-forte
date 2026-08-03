@@ -3,6 +3,18 @@ import { getServerSupabase } from "./supabase-server";
 export const OWNER_EMAIL = "evertonr415@gmail.com";
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
 
+export type HierarchyUser = {
+  id: number;
+  auth_user_id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  status: "active" | "blocked";
+  parent_user_id: number | null;
+  last_seen_at?: string | null;
+  created_at?: string;
+};
+
 export async function getAccount() {
   const supabase = await getServerSupabase();
   if (!supabase) return null;
@@ -67,14 +79,16 @@ export function canCreateRole(actorRole: UserRole, targetRole: UserRole) {
   return false;
 }
 
-export async function getVisibleUsers(account: Awaited<ReturnType<typeof getAccount>>) {
+export async function getVisibleUsers(
+  account: Awaited<ReturnType<typeof getAccount>>,
+): Promise<HierarchyUser[]> {
   if (!account) return [];
 
   const { data } = await account.supabase
     .from("vf_users")
     .select("*")
     .order("name");
-  const users = data ?? [];
+  const users = (data ?? []) as HierarchyUser[];
 
   if (account.role === "master") return users;
 
