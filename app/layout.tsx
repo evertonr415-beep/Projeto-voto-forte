@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
+import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -48,6 +49,7 @@ export default function RootLayout({
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MobileMapLayersToggle />
+        <LegacyContactGeocoder />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
