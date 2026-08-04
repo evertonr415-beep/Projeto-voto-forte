@@ -97,7 +97,10 @@ export default function MapTerritoryEnhancer() {
 
         const L = (window as any).L;
         if (!L) return;
-        const maximum = Math.max(1, ...Array.from(stats.values()).map((item) => item.total));
+        const maximum = Math.max(
+          1,
+          ...Array.from(stats.values()).map((item) => item.total),
+        );
         territoryLayer = L.layerGroup().addTo(map);
 
         for (const element of territoryData.elements || []) {
@@ -145,7 +148,13 @@ export default function MapTerritoryEnhancer() {
               maxWidth: 280,
             });
             polygon.on("mouseover", () =>
-              polygon.setStyle({ weight: 4, fillOpacity: Math.min(0.58, densityOpacity(districtStats.total, maximum) + 0.12) }),
+              polygon.setStyle({
+                weight: 4,
+                fillOpacity: Math.min(
+                  0.58,
+                  densityOpacity(districtStats.total, maximum) + 0.12,
+                ),
+              }),
             );
             polygon.on("mouseout", () =>
               polygon.setStyle({
@@ -174,7 +183,9 @@ export default function MapTerritoryEnhancer() {
 
         map.on("popupopen", (event: any) => {
           const node = event.popup?.getElement?.();
-          const button = node?.querySelector?.("[data-vf-district]") as HTMLButtonElement | null;
+          const button = node?.querySelector?.(
+            "[data-vf-district]",
+          ) as HTMLButtonElement | null;
           if (!button || button.dataset.vfBound === "true") return;
           button.dataset.vfBound = "true";
           button.addEventListener("click", () => {
@@ -185,13 +196,16 @@ export default function MapTerritoryEnhancer() {
               }),
             );
             const message = document.querySelector(".real-map-toolbar strong");
-            if (message) message.textContent = `${district} · camada territorial selecionada`;
+            if (message)
+              message.textContent = `${district} · camada territorial selecionada`;
             map.closePopup();
           });
         });
       } catch {
         const message = document.querySelector(".real-map-toolbar strong");
-        if (message) message.textContent = "Mapa ativo · limites territoriais temporariamente indisponíveis";
+        if (message)
+          message.textContent =
+            "Mapa ativo · limites territoriais temporariamente indisponíveis";
       }
     };
 
@@ -199,7 +213,7 @@ export default function MapTerritoryEnhancer() {
       const L = (window as any).L;
       if (!L?.map || L.map.__vfTerritoryPatched) return false;
       originalMapFactory = L.map;
-      const wrappedMap = function (...args: any[]) {
+      const wrappedMap = function (this: unknown, ...args: any[]) {
         const map = originalMapFactory.apply(this, args);
         window.setTimeout(() => void installTerritoryLayer(map), 0);
         return map;
@@ -224,7 +238,8 @@ export default function MapTerritoryEnhancer() {
       if (patchTimer) window.clearInterval(patchTimer);
       if (territoryLayer && activeMap) activeMap.removeLayer(territoryLayer);
       const L = (window as any).L;
-      if (L?.map?.__vfTerritoryPatched && originalMapFactory) L.map = originalMapFactory;
+      if (L?.map?.__vfTerritoryPatched && originalMapFactory)
+        L.map = originalMapFactory;
     };
   }, []);
 
