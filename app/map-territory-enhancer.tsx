@@ -82,6 +82,51 @@ export default function MapTerritoryEnhancer() {
     let territoryLayer: any = null;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
+    let maximumDensity = 1;
+    const polygons = new Map<string, any[]>();
+
+    const applyDistrictFilter = (district: string) => {
+      const selected = normalize(district);
+      let selectedBounds: any = null;
+
+      for (const [key, layers] of polygons.entries()) {
+        const active = !selected || key === selected;
+        for (const polygon of layers) {
+          const total = Number(polygon.options?.vfTotal || 0);
+          polygon.setStyle({
+            color: active && selected ? "#9f3f00" : "#c9661c",
+            weight: active && selected ? 5 : total ? 3 : 1.5,
+            opacity: active ? 0.98 : 0.25,
+            fillOpacity: active
+              ? selected
+                ? 0.58
+                : densityOpacity(total, maximumDensity)
+              : 0.025,
+          });
+          if (active && selected) {
+            selectedBounds = selectedBounds
+              ? selectedBounds.extend(polygon.getBounds())
+              : polygon.getBounds();
+            polygon.bringToFront();
+          }
+        }
+      }
+
+      if (selected && selectedBounds?.isValid?.() && activeMap) {
+        activeMap.fitBounds(selectedBounds, { padding: [36, 36], maxZoom: 15 });
+      }
+    };
+
+    const handleDistrictFilter = (event: Event) => {
+      const district =
+        (event as CustomEvent<{ district?: string }>).detail?.district || "";
+      applyDistrictFilter(district);
+    };
+
+    window.addEventListener(
+      "voto-forte:district-filter-change",
+      handleDistrictFilter,
+    );
 
     const installTerritoryLayer = async (map: any) => {
       if (cancelled || !map || map._vfTerritoryInstalled) return;
@@ -97,7 +142,7 @@ export default function MapTerritoryEnhancer() {
 
         const L = (window as any).L;
         if (!L) return;
-        const maximum = Math.max(
+        maximumDensity = Math.max(
           1,
           ...Array.from(stats.values()).map((item) => item.total),
         );
@@ -106,7 +151,8 @@ export default function MapTerritoryEnhancer() {
         for (const element of territoryData.elements || []) {
           const name = String(element.tags?.name || "").trim();
           if (!name) continue;
-          const districtStats = stats.get(normalize(name)) || {
+          const key = normalize(name);
+          const districtStats = stats.get(key) || {
             total: 0,
             voters: 0,
             leaders: 0,
@@ -138,8 +184,10 @@ export default function MapTerritoryEnhancer() {
               weight: districtStats.total ? 3 : 1.5,
               opacity: 0.95,
               fillColor: "#ef8429",
-              fillOpacity: densityOpacity(districtStats.total, maximum),
+              fillOpacity: densityOpacity(districtStats.total, maximumDensity),
               className: "vf-territory-polygon",
+              vfTotal: districtStats.total,
+              vfDistrict: key,
             });
             polygon.bindPopup(popup, {
               autoClose: true,
@@ -147,22 +195,40 @@ export default function MapTerritoryEnhancer() {
               closeButton: true,
               maxWidth: 280,
             });
-            polygon.on("mouseover", () =>
+            polygon.on("mouseover", () => {
+              const selected = normalize(
+                (document.querySelector(
+                  ".vf-district-list button.active span",
+                ) as HTMLElement | null)?.textContent,
+              );
+              if (selected && selected !== key) return;
               polygon.setStyle({
                 weight: 4,
                 fillOpacity: Math.min(
                   0.58,
-                  densityOpacity(districtStats.total, maximum) + 0.12,
+                  densityOpacity(districtStats.total, maximumDensity) + 0.12,
                 ),
-              }),
-            );
-            polygon.on("mouseout", () =>
+              });
+            });
+            polygon.on("mouseout", () => {
+              const selected = normalize(
+                (document.querySelector(
+                  ".vf-district-list button.active span",
+                ) as HTMLElement | null)?.textContent,
+              );
+              if (selected) {
+                applyDistrictFilter(selected);
+                return;
+              }
               polygon.setStyle({
                 weight: districtStats.total ? 3 : 1.5,
-                fillOpacity: densityOpacity(districtStats.total, maximum),
-              }),
-            );
+                fillOpacity: densityOpacity(districtStats.total, maximumDensity),
+              });
+            });
             polygon.addTo(territoryLayer);
+            const registered = polygons.get(key) || [];
+            registered.push(polygon);
+            polygons.set(key, registered);
           }
 
           const center = element.center;
@@ -192,6 +258,11 @@ export default function MapTerritoryEnhancer() {
             const district = button.dataset.vfDistrict || "";
             window.dispatchEvent(
               new CustomEvent("voto-forte:district-selected", {
+                detail: { district },
+              }),
+            );
+            window.dispatchEvent(
+              new CustomEvent("voto-forte:district-filter-change", {
                 detail: { district },
               }),
             );
@@ -235,6 +306,10 @@ export default function MapTerritoryEnhancer() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener(
+        "voto-forte:district-filter-change",
+        handleDistrictFilter,
+      );
       if (patchTimer) window.clearInterval(patchTimer);
       if (territoryLayer && activeMap) activeMap.removeLayer(territoryLayer);
       const L = (window as any).L;
