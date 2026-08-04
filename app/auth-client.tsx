@@ -31,6 +31,10 @@ export default function AuthClient() {
       setMode("login");
       setMessage("Não foi possível confirmar o e-mail. Solicite um novo cadastro ou tente novamente.");
       window.history.replaceState({}, "", window.location.pathname);
+    } else if (params.get("password_reset") === "1") {
+      setMode("login");
+      setMessage("Senha alterada com sucesso. Entre com sua nova senha.");
+      window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
@@ -93,7 +97,7 @@ export default function AuthClient() {
         );
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${OFFICIAL_SITE_URL}/`,
+          redirectTo: `${OFFICIAL_SITE_URL}/auth/reset-password`,
         });
         if (error) throw error;
         setMessage(
