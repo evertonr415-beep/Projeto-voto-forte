@@ -9,6 +9,7 @@ type Panel =
   | "mapping"
   | "priority"
   | "strategy"
+  | "dashboard"
   | null;
 
 type Host = {
@@ -23,6 +24,7 @@ const panelSelectors: Record<Exclude<Panel, null>, string> = {
   mapping: ".vf-map-progress",
   priority: ".vf-priority-panel",
   strategy: ".vf-strategy-insights",
+  dashboard: ".vf-executive-dashboard",
 };
 
 const panelLabels: Record<Exclude<Panel, null>, string> = {
@@ -31,6 +33,7 @@ const panelLabels: Record<Exclude<Panel, null>, string> = {
   mapping: "Mapeamento",
   priority: "Prioridades",
   strategy: "Insights estratégicos",
+  dashboard: "Dashboard Executivo",
 };
 
 function findVisibleMap() {
@@ -120,11 +123,11 @@ export default function MobileAnalyticsControls() {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (menuOpen) setMenuOpen(false);
-      else setOpenPanel(null);
+      else closePanel();
     };
     window.addEventListener("keydown", onEscape);
     return () => window.removeEventListener("keydown", onEscape);
-  }, [menuOpen]);
+  });
 
   useEffect(() => {
     if (!host || !openPanel) return;
@@ -172,19 +175,16 @@ export default function MobileAnalyticsControls() {
   }, [host, openPanel]);
 
   useEffect(() => {
-    const handlePriorityClose = (event: Event) => {
+    const syncClose = (panel: Panel) => (event: Event) => {
       const open = Boolean(
         (event as CustomEvent<{ open?: boolean }>).detail?.open,
       );
-      if (!open && openPanel === "priority") setOpenPanel(null);
+      if (!open && openPanel === panel) setOpenPanel(null);
     };
 
-    const handleStrategyClose = (event: Event) => {
-      const open = Boolean(
-        (event as CustomEvent<{ open?: boolean }>).detail?.open,
-      );
-      if (!open && openPanel === "strategy") setOpenPanel(null);
-    };
+    const handlePriorityClose = syncClose("priority");
+    const handleStrategyClose = syncClose("strategy");
+    const handleDashboardClose = syncClose("dashboard");
 
     window.addEventListener(
       "voto-forte:priority-panel-toggle",
@@ -193,6 +193,10 @@ export default function MobileAnalyticsControls() {
     window.addEventListener(
       "voto-forte:strategy-insights-toggle",
       handleStrategyClose,
+    );
+    window.addEventListener(
+      "voto-forte:executive-dashboard-toggle",
+      handleDashboardClose,
     );
 
     return () => {
@@ -204,15 +208,16 @@ export default function MobileAnalyticsControls() {
         "voto-forte:strategy-insights-toggle",
         handleStrategyClose,
       );
+      window.removeEventListener(
+        "voto-forte:executive-dashboard-toggle",
+        handleDashboardClose,
+      );
     };
   }, [openPanel]);
 
   if (!host) return null;
 
-  const selectPanel = (panel: Exclude<Panel, null>) => {
-    setOpenPanel(panel);
-    setMenuOpen(false);
-
+  const dispatchPanelState = (panel: Panel) => {
     window.dispatchEvent(
       new CustomEvent("voto-forte:priority-panel-toggle", {
         detail: { open: panel === "priority" },
@@ -223,21 +228,23 @@ export default function MobileAnalyticsControls() {
         detail: { open: panel === "strategy" },
       }),
     );
+    window.dispatchEvent(
+      new CustomEvent("voto-forte:executive-dashboard-toggle", {
+        detail: { open: panel === "dashboard" },
+      }),
+    );
   };
 
-  const closePanel = () => {
-    setOpenPanel(null);
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:priority-panel-toggle", {
-        detail: { open: false },
-      }),
-    );
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:strategy-insights-toggle", {
-        detail: { open: false },
-      }),
-    );
+  const selectPanel = (panel: Exclude<Panel, null>) => {
+    setOpenPanel(panel);
+    setMenuOpen(false);
+    dispatchPanelState(panel);
   };
+
+  function closePanel() {
+    setOpenPanel(null);
+    dispatchPanelState(null);
+  }
 
   return createPortal(
     <div className="vf-mobile-analytics-controls">
@@ -255,56 +262,43 @@ export default function MobileAnalyticsControls() {
 
       {menuOpen && (
         <div className="vf-map-tools-menu" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectPanel("district")}
-          >
+          <button type="button" role="menuitem" onClick={() => selectPanel("dashboard")}>
+            <span aria-hidden="true">📊</span>
+            <div>
+              <strong>Dashboard Executivo</strong>
+              <small>Indicadores e rankings consolidados</small>
+            </div>
+          </button>
+          <button type="button" role="menuitem" onClick={() => selectPanel("district")}>
             <span aria-hidden="true">⌖</span>
             <div>
               <strong>Análise territorial</strong>
               <small>Filtrar e analisar bairros</small>
             </div>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectPanel("heatmap")}
-          >
+          <button type="button" role="menuitem" onClick={() => selectPanel("heatmap")}>
             <span aria-hidden="true">🔥</span>
             <div>
               <strong>Mapa de calor</strong>
               <small>Visualizar concentrações</small>
             </div>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectPanel("mapping")}
-          >
+          <button type="button" role="menuitem" onClick={() => selectPanel("mapping")}>
             <span aria-hidden="true">📍</span>
             <div>
               <strong>Mapeamento</strong>
               <small>Acompanhar geocodificação</small>
             </div>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectPanel("priority")}
-          >
+          <button type="button" role="menuitem" onClick={() => selectPanel("priority")}>
             <span aria-hidden="true">🎯</span>
             <div>
               <strong>Prioridades</strong>
               <small>Identificar bairros que exigem ação</small>
             </div>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectPanel("strategy")}
-          >
-            <span aria-hidden="true">📊</span>
+          <button type="button" role="menuitem" onClick={() => selectPanel("strategy")}>
+            <span aria-hidden="true">💡</span>
             <div>
               <strong>Insights estratégicos</strong>
               <small>Equilibrar eleitores, lideranças e mapeamento</small>
