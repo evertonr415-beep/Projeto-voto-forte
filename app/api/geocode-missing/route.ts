@@ -21,31 +21,60 @@ type OwnedRecord = {
   payload: ContactPayload;
 };
 
+type GeocodeResult = {
+  latitude: number;
+  longitude: number;
+  locationLabel: string;
+};
+
 function hasCoordinates(payload: ContactPayload) {
-  return Number.isFinite(Number(payload.latitude)) && Number.isFinite(Number(payload.longitude));
+  return (
+    Number.isFinite(Number(payload.latitude)) &&
+    Number.isFinite(Number(payload.longitude))
+  );
 }
 
-function buildQueries(payload: ContactPayload) {
-  const city = String(payload.municipality || payload.municipio || payload.city || "").trim();
-  const state = String(payload.uf || payload.state || "PR").trim() || "PR";
-  const street = String(payload.street || "").trim();
-  const number = String(payload.number || "").trim();
-  const district = String(payload.district || "").trim();
-  const cep = String(payload.cep || "").trim();
+function clean(value: unknown) {
+  return String(value || "").trim();
+}
 
-  const queries = [
+function normalizedDistrict(payload: ContactPayload) {
+  return clean(payload.district).toLocaleUpperCase("pt-BR");
+}
+
+function buildExactQueries(payload: ContactPayload) {
+  const city = clean(
+    payload.municipality || payload.municipio || payload.city || "Arapongas",
+  );
+  const state = clean(payload.uf || payload.state || "PR") || "PR";
+  const street = clean(payload.street);
+  const number = clean(payload.number);
+  const district = clean(payload.district);
+  const cep = clean(payload.cep);
+
+  return [
     [street, number, district, city, state, cep, "Brasil"],
     [street, district, city, state, "Brasil"],
     [cep, city, state, "Brasil"],
-    [district, city, state, "Brasil"],
   ]
     .map((parts) => parts.filter(Boolean).join(", "))
     .filter((query, index, all) => query && all.indexOf(query) === index);
-
-  return queries;
 }
 
-async function geocode(query: string) {
+function buildDistrictQueries(payload: ContactPayload) {
+  const district = clean(payload.district);
+  const city = clean(payload.city || "Arapongas") || "Arapongas";
+  const state = clean(payload.state || "PR") || "PR";
+
+  return [
+    [district, city, state, "Brasil"],
+    [district, "Arapongas", "Paraná", "Brasil"],
+  ]
+    .map((parts) => parts.filter(Boolean).join(", "))
+    .filter((query, index, all) => query && all.indexOf(query) === index);
+}
+
+async function geocode(query: string): Promise<GeocodeResult | null> {
   const response = await fetch(
     `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${encodeURIComponent(query)}`,
     {
@@ -57,12 +86,19 @@ async function geocode(query: string) {
     },
   );
   if (!response.ok) return null;
-  const data = (await response.json()) as Array<{ lat?: string; lon?: string; display_name?: string }>;
+
+  const data = (await response.json()) as Array<{
+    lat?: string;
+    lon?: string;
+    display_name?: string;
+  }>;
   const first = data[0];
   if (!first) return null;
+
   const latitude = Number(first.lat);
   const longitude = Number(first.lon);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
   return {
     latitude,
     longitude,
@@ -70,9 +106,35 @@ async function geocode(query: string) {
   };
 }
 
+async function firstGeocode(queries: string[]) {
+  for (const query of queries) {
+    const result = await geocode(query);
+    if (result) return result;
+    await new Promise((resolve) => setTimeout(resolve, 1050));
+  }
+  return null;
+}
+
+function spreadAround(latitude: number, longitude: number, id: number) {
+  // Distribuição determinística em até aproximadamente 90 metros do centro do bairro.
+  const goldenAngle = 2.399963229728653;
+  const ring = (id % 17) + 1;
+  const radius = 0.00008 + ring * 0.000045;
+  const angle = id * goldenAngle;
+  const latOffset = Math.sin(angle) * radius;
+  const lonScale = Math.max(0.35, Math.cos((latitude * Math.PI) / 180));
+  const lonOffset = (Math.cos(angle) * radius) / lonScale;
+
+  return {
+    latitude: latitude + latOffset,
+    longitude: longitude + lonOffset,
+  };
+}
+
 export async function POST() {
   const account = await getAccount();
-  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account)
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const visibleUsers = await getVisibleUsers(account);
   const visibleEmails = visibleUsers.map((user) => user.email.toLowerCase());
@@ -84,25 +146,31 @@ export async function POST() {
     .eq("kind", "contact")
     .in("owner_email", visibleEmails)
     .order("updated_at", { ascending: true })
-    .limit(100);
+    .limit(600);
 
   if (error) return Response.json({ error: error.message }, { status: 400 });
 
-  const missing = ((data ?? []) as OwnedRecord[])
-    .filter((record) => record.payload && !hasCoordinates(record.payload))
-    .filter((record) => buildQueries(record.payload).length > 0)
-    .slice(0, 4);
+  const missing = ((data ?? []) as OwnedRecord[]).filter(
+    (record) => record.payload && !hasCoordinates(record.payload),
+  );
+
+  if (!missing.length) {
+    return Response.json({ updated: 0, failed: [], processed: 0, remaining: 0 });
+  }
 
   let updated = 0;
   const failed: number[] = [];
 
-  for (const record of missing) {
-    let result: Awaited<ReturnType<typeof geocode>> = null;
-    for (const query of buildQueries(record.payload)) {
-      result = await geocode(query);
-      if (result) break;
-    }
+  // Primeiro, resolve até dois contatos que realmente possuem endereço ou CEP.
+  const exactRecords = missing
+    .filter(
+      (record) =>
+        clean(record.payload.street) || clean(record.payload.cep),
+    )
+    .slice(0, 2);
 
+  for (const record of exactRecords) {
+    const result = await firstGeocode(buildExactQueries(record.payload));
     if (!result) {
       failed.push(record.id);
       continue;
@@ -110,9 +178,12 @@ export async function POST() {
 
     const nextPayload = {
       ...record.payload,
+      city: clean(record.payload.city) || "Arapongas",
+      state: clean(record.payload.state) || "PR",
       latitude: result.latitude,
       longitude: result.longitude,
       locationLabel: result.locationLabel,
+      locationPrecision: "endereco_exato",
       geocodedAt: new Date().toISOString(),
       geocodingSource: "OpenStreetMap Nominatim",
     };
@@ -125,13 +196,59 @@ export async function POST() {
     if (updateError) failed.push(record.id);
     else updated += 1;
 
-    await new Promise((resolve) => setTimeout(resolve, 1050));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+  }
+
+  // Depois, resolve um bairro por execução e atualiza até 500 contatos desse bairro.
+  const districtRecord = missing.find(
+    (record) =>
+      !exactRecords.some((exact) => exact.id === record.id) &&
+      normalizedDistrict(record.payload),
+  );
+
+  if (districtRecord) {
+    const districtKey = normalizedDistrict(districtRecord.payload);
+    const districtContacts = missing
+      .filter(
+        (record) => normalizedDistrict(record.payload) === districtKey,
+      )
+      .slice(0, 500);
+
+    const result = await firstGeocode(buildDistrictQueries(districtRecord.payload));
+
+    if (!result) {
+      failed.push(...districtContacts.map((record) => record.id));
+    } else {
+      for (const record of districtContacts) {
+        const spread = spreadAround(result.latitude, result.longitude, record.id);
+        const nextPayload = {
+          ...record.payload,
+          city: clean(record.payload.city) || "Arapongas",
+          state: clean(record.payload.state) || "PR",
+          latitude: spread.latitude,
+          longitude: spread.longitude,
+          locationLabel: `${clean(record.payload.district)} — Arapongas/PR`,
+          locationPrecision: "bairro_aproximado",
+          geocodedAt: new Date().toISOString(),
+          geocodingSource: "OpenStreetMap Nominatim — centro aproximado do bairro",
+        };
+
+        const { error: updateError } = await account.supabase
+          .from("vf_owned_records")
+          .update({ payload: nextPayload, updated_at: new Date().toISOString() })
+          .eq("id", record.id);
+
+        if (updateError) failed.push(record.id);
+        else updated += 1;
+      }
+    }
   }
 
   return Response.json({
     updated,
     failed,
+    processed: exactRecords.length + (districtRecord ? 1 : 0),
     remaining: Math.max(0, missing.length - updated),
-    processed: missing.length,
+    district: districtRecord ? clean(districtRecord.payload.district) : null,
   });
 }
