@@ -5,6 +5,7 @@ import {
 } from "../../server-identity";
 
 const allowedKinds = ["contact", "meeting", "draft"] as const;
+type AllowedKind = (typeof allowedKinds)[number];
 
 type OwnedRecord = {
   id: number;
@@ -40,10 +41,17 @@ export async function GET(request: Request) {
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const requested = new URL(request.url).searchParams
-    .get("owner")
-    ?.trim()
-    .toLowerCase();
+  const url = new URL(request.url);
+  const requested = url.searchParams.get("owner")?.trim().toLowerCase();
+  const requestedKind = url.searchParams.get("kind")?.trim().toLowerCase();
+  const kind = allowedKinds.includes(requestedKind as AllowedKind)
+    ? (requestedKind as AllowedKind)
+    : null;
+
+  if (requestedKind && !kind) {
+    return Response.json({ error: "Tipo de registro inválido" }, { status: 400 });
+  }
+
   const { emails } = await visibleOwners(account);
 
   let scope = account.email;
@@ -56,17 +64,20 @@ export async function GET(request: Request) {
     );
 
   const pageSize = 1000;
+  const maxRecords = 20000;
   const allRecords: OwnedRecord[] = [];
 
-  for (let from = 0; ; from += pageSize) {
+  for (let from = 0; from < maxRecords; from += pageSize) {
     let query = account.supabase
       .from("vf_owned_records")
-      .select("*")
+      .select("id,owner_email,kind,payload,created_at,updated_at")
       .order("updated_at", { ascending: false })
       .range(from, from + pageSize - 1);
 
     if (scope === "all") query = query.in("owner_email", emails);
     else query = query.eq("owner_email", scope);
+
+    if (kind) query = query.eq("kind", kind);
 
     const { data, error } = await query;
     if (error) return Response.json({ error: error.message }, { status: 400 });
@@ -76,12 +87,21 @@ export async function GET(request: Request) {
     if (page.length < pageSize) break;
   }
 
-  return Response.json({
-    scope,
-    visibleOwners: emails,
-    records: allRecords.map(mapRecord),
-    total: allRecords.length,
-  });
+  return Response.json(
+    {
+      scope,
+      kind,
+      visibleOwners: emails,
+      records: allRecords.map(mapRecord),
+      total: allRecords.length,
+      truncated: allRecords.length >= maxRecords,
+    },
+    {
+      headers: {
+        "Cache-Control": "private, no-store, max-age=0",
+      },
+    },
+  );
 }
 
 export async function POST(request: Request) {
@@ -96,7 +116,7 @@ export async function POST(request: Request) {
   };
 
   if (
-    !allowedKinds.includes(body.kind as (typeof allowedKinds)[number]) ||
+    !allowedKinds.includes(body.kind as AllowedKind) ||
     !body.payload ||
     typeof body.payload !== "object"
   )
