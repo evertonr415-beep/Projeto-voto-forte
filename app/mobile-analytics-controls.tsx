@@ -10,6 +10,7 @@ type Panel =
   | "priority"
   | "strategy"
   | "dashboard"
+  | "quality"
   | null;
 
 type Host = {
@@ -25,6 +26,7 @@ const panelSelectors: Record<Exclude<Panel, null>, string> = {
   priority: ".vf-priority-panel",
   strategy: ".vf-strategy-insights",
   dashboard: ".vf-executive-dashboard",
+  quality: ".vf-data-quality-panel",
 };
 
 const panelLabels: Record<Exclude<Panel, null>, string> = {
@@ -34,7 +36,15 @@ const panelLabels: Record<Exclude<Panel, null>, string> = {
   priority: "Prioridades",
   strategy: "Insights estratégicos",
   dashboard: "Dashboard Executivo",
+  quality: "Qualidade dos Dados",
 };
+
+const panelEvents = {
+  priority: "voto-forte:priority-panel-toggle",
+  strategy: "voto-forte:strategy-insights-toggle",
+  dashboard: "voto-forte:executive-dashboard-toggle",
+  quality: "voto-forte:data-quality-toggle",
+} as const;
 
 function findVisibleMap() {
   return (
@@ -51,6 +61,18 @@ function findVisibleMap() {
       },
     ) || null
   );
+}
+
+function dispatchPanelState(panel: Panel) {
+  (Object.entries(panelEvents) as Array<
+    [keyof typeof panelEvents, (typeof panelEvents)[keyof typeof panelEvents]]
+  >).forEach(([key, eventName]) => {
+    window.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: { open: panel === key },
+      }),
+    );
+  });
 }
 
 export default function MobileAnalyticsControls() {
@@ -72,6 +94,7 @@ export default function MobileAnalyticsControls() {
       if (!map) {
         setOpenPanel(null);
         setMenuOpen(false);
+        dispatchPanelState(null);
         removeHost();
         return;
       }
@@ -108,6 +131,7 @@ export default function MobileAnalyticsControls() {
       observer.disconnect();
       window.removeEventListener("resize", refresh);
       window.removeEventListener("popstate", refresh);
+      dispatchPanelState(null);
       removeHost();
     };
   }, []);
@@ -122,12 +146,17 @@ export default function MobileAnalyticsControls() {
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (menuOpen) setMenuOpen(false);
-      else closePanel();
+      if (menuOpen) {
+        setMenuOpen(false);
+        return;
+      }
+      setOpenPanel(null);
+      dispatchPanelState(null);
     };
+
     window.addEventListener("keydown", onEscape);
     return () => window.removeEventListener("keydown", onEscape);
-  });
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!host || !openPanel) return;
@@ -175,65 +204,27 @@ export default function MobileAnalyticsControls() {
   }, [host, openPanel]);
 
   useEffect(() => {
-    const syncClose = (panel: Panel) => (event: Event) => {
-      const open = Boolean(
-        (event as CustomEvent<{ open?: boolean }>).detail?.open,
-      );
-      if (!open && openPanel === panel) setOpenPanel(null);
-    };
-
-    const handlePriorityClose = syncClose("priority");
-    const handleStrategyClose = syncClose("strategy");
-    const handleDashboardClose = syncClose("dashboard");
-
-    window.addEventListener(
-      "voto-forte:priority-panel-toggle",
-      handlePriorityClose,
-    );
-    window.addEventListener(
-      "voto-forte:strategy-insights-toggle",
-      handleStrategyClose,
-    );
-    window.addEventListener(
-      "voto-forte:executive-dashboard-toggle",
-      handleDashboardClose,
-    );
+    const handlers = (Object.entries(panelEvents) as Array<
+      [keyof typeof panelEvents, (typeof panelEvents)[keyof typeof panelEvents]]
+    >).map(([panel, eventName]) => {
+      const handler = (event: Event) => {
+        const open = Boolean(
+          (event as CustomEvent<{ open?: boolean }>).detail?.open,
+        );
+        if (!open && openPanel === panel) setOpenPanel(null);
+      };
+      window.addEventListener(eventName, handler);
+      return { eventName, handler };
+    });
 
     return () => {
-      window.removeEventListener(
-        "voto-forte:priority-panel-toggle",
-        handlePriorityClose,
-      );
-      window.removeEventListener(
-        "voto-forte:strategy-insights-toggle",
-        handleStrategyClose,
-      );
-      window.removeEventListener(
-        "voto-forte:executive-dashboard-toggle",
-        handleDashboardClose,
-      );
+      handlers.forEach(({ eventName, handler }) => {
+        window.removeEventListener(eventName, handler);
+      });
     };
   }, [openPanel]);
 
   if (!host) return null;
-
-  const dispatchPanelState = (panel: Panel) => {
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:priority-panel-toggle", {
-        detail: { open: panel === "priority" },
-      }),
-    );
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:strategy-insights-toggle", {
-        detail: { open: panel === "strategy" },
-      }),
-    );
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:executive-dashboard-toggle", {
-        detail: { open: panel === "dashboard" },
-      }),
-    );
-  };
 
   const selectPanel = (panel: Exclude<Panel, null>) => {
     setOpenPanel(panel);
@@ -241,10 +232,10 @@ export default function MobileAnalyticsControls() {
     dispatchPanelState(panel);
   };
 
-  function closePanel() {
+  const closePanel = () => {
     setOpenPanel(null);
     dispatchPanelState(null);
-  }
+  };
 
   return createPortal(
     <div className="vf-mobile-analytics-controls">
@@ -267,6 +258,13 @@ export default function MobileAnalyticsControls() {
             <div>
               <strong>Dashboard Executivo</strong>
               <small>Indicadores e rankings consolidados</small>
+            </div>
+          </button>
+          <button type="button" role="menuitem" onClick={() => selectPanel("quality")}>
+            <span aria-hidden="true">✅</span>
+            <div>
+              <strong>Qualidade dos Dados</strong>
+              <small>Localizar pendências e inconsistências</small>
             </div>
           </button>
           <button type="button" role="menuitem" onClick={() => selectPanel("district")}>
