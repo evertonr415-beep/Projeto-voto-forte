@@ -10,6 +10,7 @@ import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MapGeocodingPanel from "./map-geocoding-panel";
 import MapDistrictFilter from "./map-district-filter";
 import MapHeatmapEnhancer from "./map-heatmap-enhancer";
+import MapDistrictSummary from "./map-district-summary";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -22,6 +23,7 @@ import "./map-territory-enhancer.css";
 import "./map-geocoding-panel.css";
 import "./map-district-filter.css";
 import "./map-heatmap-enhancer.css";
+import "./map-district-summary.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -69,6 +71,7 @@ export default function RootLayout({
         <MapGeocodingPanel />
         <MapDistrictFilter />
         <MapHeatmapEnhancer />
+        <MapDistrictSummary />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
