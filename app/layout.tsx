@@ -6,6 +6,7 @@ import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import SafeMapContactTools from "./safe-map-contact-tools";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
+import MapGeocodingPanel from "./map-geocoding-panel";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -13,6 +14,7 @@ import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./safe-map-contact-tools.css";
 import "./map-territory-enhancer.css";
+import "./map-geocoding-panel.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -56,6 +58,7 @@ export default function RootLayout({
         <LegacyContactGeocoder />
         <SafeMapContactTools />
         <MapTerritoryEnhancer />
+        <MapGeocodingPanel />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
