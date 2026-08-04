@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
+import MobileAnalyticsControls from "./mobile-analytics-controls";
 import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import SafeMapContactTools from "./safe-map-contact-tools";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
@@ -14,6 +15,7 @@ import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
+import "./mobile-analytics-controls.css";
 import "./safe-map-contact-tools.css";
 import "./map-territory-enhancer.css";
 import "./map-geocoding-panel.css";
@@ -59,6 +61,7 @@ export default function RootLayout({
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MobileMapLayersToggle />
+        <MobileAnalyticsControls />
         <LegacyContactGeocoder />
         <SafeMapContactTools />
         <MapTerritoryEnhancer />
