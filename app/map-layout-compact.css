@@ -1,0 +1,131 @@
+@media (min-width: 901px) {
+  .workspace {
+    max-width: 1680px;
+    padding: 20px 24px 42px;
+  }
+
+  .welcome-pro {
+    min-height: auto;
+    padding: 18px 22px;
+    border-radius: 12px;
+  }
+
+  .welcome-pro h2 {
+    margin: 5px 0 3px;
+    font-size: 21px;
+  }
+
+  .welcome-pro p {
+    font-size: 9px;
+  }
+
+  .welcome-pro button {
+    padding: 10px 14px;
+  }
+
+  .kpis {
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .kpi {
+    min-height: 76px;
+    padding: 12px 14px;
+    gap: 10px;
+    box-shadow: 0 7px 20px rgba(7, 29, 47, 0.055);
+  }
+
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+
+  .kpi strong {
+    font-size: 19px;
+  }
+
+  .kpi b {
+    margin: 1px 0 3px;
+    font-size: 8px;
+  }
+
+  .kpi small {
+    font-size: 7px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 12px;
+  }
+
+  .territorial {
+    grid-row: span 2;
+    border-radius: 14px;
+    box-shadow: 0 9px 26px rgba(7, 29, 47, 0.075);
+  }
+
+  .territorial .panel-title {
+    min-height: 54px;
+    padding: 11px 15px;
+  }
+
+  .territorial .panel-title h3 {
+    font-size: 11px;
+  }
+
+  .territorial .panel-title p {
+    margin-top: 2px;
+    font-size: 7px;
+  }
+
+  .territorial .city-map,
+  .territorial .leaflet-container {
+    height: clamp(560px, 66vh, 780px) !important;
+    min-height: 560px !important;
+  }
+
+  .territorial .coverage {
+    padding: 10px 15px;
+  }
+
+  .dashboard-grid > .panel:not(.territorial) {
+    box-shadow: 0 7px 20px rgba(7, 29, 47, 0.055);
+  }
+
+  .dashboard-grid > .panel:not(.territorial) .panel-title {
+    min-height: 54px;
+    padding: 11px 14px;
+  }
+
+  .event {
+    padding: 9px 12px;
+  }
+
+  .activity-line {
+    padding: 9px 12px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    padding-top: 18px;
+  }
+
+  .kpis {
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .territorial .city-map,
+  .territorial .leaflet-container {
+    min-height: 430px !important;
+  }
+}
