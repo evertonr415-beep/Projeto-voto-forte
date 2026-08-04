@@ -2,8 +2,45 @@
 
 import { useEffect } from "react";
 
+function isVisible(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  const style = window.getComputedStyle(element);
+  return (
+    rect.width > 0 &&
+    rect.height > 0 &&
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.opacity !== "0"
+  );
+}
+
+function isMapFilterOpen() {
+  const dialogs = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      '[role="dialog"], [aria-modal="true"], .modal, .dialog, .fixed.inset-0',
+    ),
+  );
+
+  return dialogs.some((dialog) => {
+    if (!isVisible(dialog)) return false;
+    const text = dialog.textContent?.toLowerCase() || "";
+    return text.includes("filtros do mapa") || text.includes("limites oficiais de bairros");
+  });
+}
+
 export default function MobileMapLayersToggle() {
   useEffect(() => {
+    const syncButtonsWithModal = () => {
+      const modalOpen = isMapFilterOpen();
+      document
+        .querySelectorAll<HTMLButtonElement>("[data-vf-map-layers-toggle]")
+        .forEach((button) => {
+          button.hidden = modalOpen;
+          button.setAttribute("aria-hidden", String(modalOpen));
+          button.tabIndex = modalOpen ? -1 : 0;
+        });
+    };
+
     const enhanceMaps = () => {
       const maps = document.querySelectorAll<HTMLElement>(".full-map");
 
@@ -37,11 +74,23 @@ export default function MobileMapLayersToggle() {
 
         map.appendChild(button);
       });
+
+      syncButtonsWithModal();
     };
 
-    const observer = new MutationObserver(enhanceMaps);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver(() => {
+      enhanceMaps();
+      syncButtonsWithModal();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
+    });
+
     enhanceMaps();
+    syncButtonsWithModal();
 
     return () => observer.disconnect();
   }, []);
