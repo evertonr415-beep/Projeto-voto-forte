@@ -61,6 +61,7 @@ export default function MobileAnalyticsControls() {
 
         const panel = document.createElement("div");
         panel.className = "vf-mobile-analytics-panel-slot";
+        panel.id = "vf-mobile-analytics-panel";
 
         root.append(controls, panel);
         map.insertAdjacentElement("afterend", root);
@@ -72,11 +73,13 @@ export default function MobileAnalyticsControls() {
     const observer = new MutationObserver(refresh);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
     window.addEventListener("resize", refresh);
+    window.addEventListener("popstate", refresh);
     refresh();
 
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", refresh);
+      window.removeEventListener("popstate", refresh);
       removeHost();
     };
   }, []);
@@ -87,6 +90,14 @@ export default function MobileAnalyticsControls() {
       delete document.body.dataset.vfMobileAnalytics;
     };
   }, [openPanel]);
+
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenPanel(null);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, []);
 
   useEffect(() => {
     if (!host || !openPanel) return;
@@ -104,6 +115,9 @@ export default function MobileAnalyticsControls() {
       originalParent = element.parentNode;
       originalNextSibling = element.nextSibling;
       host.panel.appendChild(element);
+      window.setTimeout(() => {
+        host.panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
       return true;
     };
 
@@ -135,6 +149,8 @@ export default function MobileAnalyticsControls() {
     <nav className="vf-mobile-analytics-controls" aria-label="Ferramentas do mapa">
       <button
         type="button"
+        aria-expanded={openPanel === "district"}
+        aria-controls="vf-mobile-analytics-panel"
         className={openPanel === "district" ? "active" : ""}
         onClick={() => toggle("district")}
       >
@@ -142,6 +158,8 @@ export default function MobileAnalyticsControls() {
       </button>
       <button
         type="button"
+        aria-expanded={openPanel === "heatmap"}
+        aria-controls="vf-mobile-analytics-panel"
         className={openPanel === "heatmap" ? "active" : ""}
         onClick={() => toggle("heatmap")}
       >
@@ -149,6 +167,8 @@ export default function MobileAnalyticsControls() {
       </button>
       <button
         type="button"
+        aria-expanded={openPanel === "mapping"}
+        aria-controls="vf-mobile-analytics-panel"
         className={openPanel === "mapping" ? "active" : ""}
         onClick={() => toggle("mapping")}
       >
