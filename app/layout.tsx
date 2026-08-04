@@ -7,6 +7,7 @@ import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import SafeMapContactTools from "./safe-map-contact-tools";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MapGeocodingPanel from "./map-geocoding-panel";
+import MapDistrictFilter from "./map-district-filter";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -15,6 +16,7 @@ import "./mobile-map-cleanup.css";
 import "./safe-map-contact-tools.css";
 import "./map-territory-enhancer.css";
 import "./map-geocoding-panel.css";
+import "./map-district-filter.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -59,6 +61,7 @@ export default function RootLayout({
         <SafeMapContactTools />
         <MapTerritoryEnhancer />
         <MapGeocodingPanel />
+        <MapDistrictFilter />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
