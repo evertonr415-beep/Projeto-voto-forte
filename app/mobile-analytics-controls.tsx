@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-type Panel = "district" | "heatmap" | "mapping" | null;
+type Panel = "district" | "heatmap" | "mapping" | "priority" | null;
 type Host = {
   root: HTMLElement;
   controls: HTMLElement;
@@ -14,6 +14,14 @@ const panelSelectors: Record<Exclude<Panel, null>, string> = {
   district: ".vf-district-filter",
   heatmap: ".vf-heatmap-control",
   mapping: ".vf-map-progress",
+  priority: ".vf-priority-panel",
+};
+
+const panelLabels: Record<Exclude<Panel, null>, string> = {
+  district: "Análise territorial",
+  heatmap: "Mapa de calor",
+  mapping: "Mapeamento",
+  priority: "Prioridades",
 };
 
 function findVisibleMap() {
@@ -34,6 +42,7 @@ function findVisibleMap() {
 export default function MobileAnalyticsControls() {
   const [host, setHost] = useState<Host | null>(null);
   const [openPanel, setOpenPanel] = useState<Panel>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let currentHost: Host | null = null;
@@ -48,6 +57,7 @@ export default function MobileAnalyticsControls() {
       const map = findVisibleMap();
       if (!map) {
         setOpenPanel(null);
+        setMenuOpen(false);
         removeHost();
         return;
       }
@@ -93,11 +103,13 @@ export default function MobileAnalyticsControls() {
 
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenPanel(null);
+      if (event.key !== "Escape") return;
+      if (menuOpen) setMenuOpen(false);
+      else setOpenPanel(null);
     };
     window.addEventListener("keydown", onEscape);
     return () => window.removeEventListener("keydown", onEscape);
-  }, []);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!host || !openPanel) return;
@@ -110,7 +122,6 @@ export default function MobileAnalyticsControls() {
       if (movedElement?.isConnected) return true;
       const element = document.querySelector<HTMLElement>(panelSelectors[openPanel]);
       if (!element) return false;
-
       movedElement = element;
       originalParent = element.parentNode;
       originalNextSibling = element.nextSibling;
@@ -139,51 +150,76 @@ export default function MobileAnalyticsControls() {
     };
   }, [host, openPanel]);
 
+  useEffect(() => {
+    const handlePriorityClose = (event: Event) => {
+      const open = Boolean(
+        (event as CustomEvent<{ open?: boolean }>).detail?.open,
+      );
+      if (!open && openPanel === "priority") setOpenPanel(null);
+    };
+    window.addEventListener("voto-forte:priority-panel-toggle", handlePriorityClose);
+    return () =>
+      window.removeEventListener("voto-forte:priority-panel-toggle", handlePriorityClose);
+  }, [openPanel]);
+
   if (!host) return null;
 
-  const toggle = (panel: Exclude<Panel, null>) => {
-    setOpenPanel((current) => (current === panel ? null : panel));
+  const selectPanel = (panel: Exclude<Panel, null>) => {
+    setOpenPanel(panel);
+    setMenuOpen(false);
+    if (panel === "priority") {
+      window.dispatchEvent(
+        new CustomEvent("voto-forte:priority-panel-toggle", {
+          detail: { open: true },
+        }),
+      );
+    }
   };
 
   return createPortal(
-    <nav className="vf-mobile-analytics-controls" aria-label="Ferramentas do mapa">
+    <div className="vf-mobile-analytics-controls">
       <button
         type="button"
-        aria-expanded={openPanel === "district"}
-        aria-controls="vf-mobile-analytics-panel"
-        className={openPanel === "district" ? "active" : ""}
-        onClick={() => toggle("district")}
+        className={`vf-map-tools-trigger ${menuOpen ? "active" : ""}`}
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+        onClick={() => setMenuOpen((current) => !current)}
       >
-        Análise territorial
+        <span aria-hidden="true">☰</span>
+        Ferramentas do mapa
+        <b aria-hidden="true">{menuOpen ? "▲" : "▼"}</b>
       </button>
-      <button
-        type="button"
-        aria-expanded={openPanel === "heatmap"}
-        aria-controls="vf-mobile-analytics-panel"
-        className={openPanel === "heatmap" ? "active" : ""}
-        onClick={() => toggle("heatmap")}
-      >
-        Mapa de calor
-      </button>
-      <button
-        type="button"
-        aria-expanded={openPanel === "mapping"}
-        aria-controls="vf-mobile-analytics-panel"
-        className={openPanel === "mapping" ? "active" : ""}
-        onClick={() => toggle("mapping")}
-      >
-        Mapeamento
-      </button>
-      {openPanel && (
-        <button
-          type="button"
-          className="vf-mobile-analytics-close"
-          onClick={() => setOpenPanel(null)}
-        >
-          Minimizar
-        </button>
+
+      {menuOpen && (
+        <div className="vf-map-tools-menu" role="menu">
+          <button type="button" role="menuitem" onClick={() => selectPanel("district")}>
+            <span aria-hidden="true">⌖</span>
+            <div><strong>Análise territorial</strong><small>Filtrar e analisar bairros</small></div>
+          </button>
+          <button type="button" role="menuitem" onClick={() => selectPanel("heatmap")}>
+            <span aria-hidden="true">🔥</span>
+            <div><strong>Mapa de calor</strong><small>Visualizar concentrações</small></div>
+          </button>
+          <button type="button" role="menuitem" onClick={() => selectPanel("mapping")}>
+            <span aria-hidden="true">📍</span>
+            <div><strong>Mapeamento</strong><small>Acompanhar geocodificação</small></div>
+          </button>
+          <button type="button" role="menuitem" onClick={() => selectPanel("priority")}>
+            <span aria-hidden="true">🎯</span>
+            <div><strong>Prioridades</strong><small>Identificar bairros que exigem ação</small></div>
+          </button>
+        </div>
       )}
-    </nav>,
+
+      {openPanel && (
+        <div className="vf-map-tools-active">
+          <span>{panelLabels[openPanel]}</span>
+          <button type="button" onClick={() => setOpenPanel(null)}>
+            Fechar painel
+          </button>
+        </div>
+      )}
+    </div>,
     host.controls,
   );
 }
