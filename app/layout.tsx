@@ -16,6 +16,7 @@ import ReportsSimplifier from "./reports-simplifier";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
+import "./map-layout-compact.css";
 import "./safe-map-contact-tools.css";
 import "./map-territory-enhancer.css";
 import "./map-geocoding-panel.css";
