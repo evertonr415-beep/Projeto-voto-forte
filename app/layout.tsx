@@ -13,6 +13,8 @@ import MapHeatmapEnhancer from "./map-heatmap-enhancer";
 import MapDistrictSummary from "./map-district-summary";
 import MapPriorityPanel from "./map-priority-panel";
 import MapStrategyInsights from "./map-strategy-insights";
+import ExecutiveDashboard from "./executive-dashboard";
+import DataQualityPanel from "./data-quality-panel";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -28,6 +30,8 @@ import "./map-heatmap-enhancer.css";
 import "./map-district-summary.css";
 import "./map-priority-panel.css";
 import "./map-strategy-insights.css";
+import "./executive-dashboard.css";
+import "./data-quality-panel.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
@@ -78,6 +82,8 @@ export default function RootLayout({
         <MapDistrictSummary />
         <MapPriorityPanel />
         <MapStrategyInsights />
+        <ExecutiveDashboard />
+        <DataQualityPanel />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
