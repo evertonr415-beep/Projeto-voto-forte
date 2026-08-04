@@ -20,6 +20,12 @@ type Summary = {
   mapped: number;
 };
 
+type CoverageLevel = {
+  key: "critical" | "low" | "medium" | "high";
+  label: string;
+  priority: string;
+};
+
 function normalize(value: unknown) {
   return String(value || "")
     .normalize("NFD")
@@ -27,6 +33,35 @@ function normalize(value: unknown) {
     .replace(/[^a-zA-Z0-9]+/g, " ")
     .trim()
     .toUpperCase();
+}
+
+function getCoverageLevel(total: number, mappedPercent: number): CoverageLevel {
+  if (total === 0 || mappedPercent < 35) {
+    return {
+      key: "critical",
+      label: "Cobertura crítica",
+      priority: "Prioridade imediata",
+    };
+  }
+  if (mappedPercent < 60) {
+    return {
+      key: "low",
+      label: "Cobertura baixa",
+      priority: "Requer reforço",
+    };
+  }
+  if (mappedPercent < 85) {
+    return {
+      key: "medium",
+      label: "Cobertura média",
+      priority: "Acompanhar evolução",
+    };
+  }
+  return {
+    key: "high",
+    label: "Cobertura alta",
+    priority: "Manter presença",
+  };
 }
 
 export default function MapDistrictSummary() {
@@ -109,18 +144,29 @@ export default function MapDistrictSummary() {
   const mappedPercent = summary.total
     ? Math.round((summary.mapped / summary.total) * 100)
     : 0;
+  const coverage = getCoverageLevel(summary.total, mappedPercent);
 
   return (
-    <aside className="vf-district-summary-card" aria-live="polite">
+    <aside
+      className={`vf-district-summary-card vf-coverage-${coverage.key}`}
+      aria-live="polite"
+    >
       <div className="vf-district-summary-main">
         <small>BAIRRO SELECIONADO</small>
         <strong>{summary.name}</strong>
+        <div className="vf-district-coverage-status">
+          <span>{coverage.label}</span>
+          <b>{coverage.priority}</b>
+        </div>
       </div>
       <div className="vf-district-summary-stats">
         <span><b>{summary.total}</b> cadastros</span>
         <span><b>{summary.voters}</b> eleitores</span>
         <span><b>{summary.leaders}</b> lideranças</span>
         <span><b>{mappedPercent}%</b> mapeado</span>
+      </div>
+      <div className="vf-district-coverage-bar" aria-label={`${mappedPercent}% mapeado`}>
+        <i style={{ width: `${mappedPercent}%` }} />
       </div>
       <button
         type="button"
