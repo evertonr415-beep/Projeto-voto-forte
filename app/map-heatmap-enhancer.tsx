@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type HeatPoint = {
@@ -40,9 +40,12 @@ function aggregatePoints(records: Array<any>) {
 
 function heatStyle(count: number, maximum: number) {
   const ratio = maximum > 0 ? count / maximum : 0;
-  if (ratio >= 0.75) return { fillColor: "#c62828", color: "#8e0000", fillOpacity: 0.5 };
-  if (ratio >= 0.45) return { fillColor: "#ef6c00", color: "#b53d00", fillOpacity: 0.42 };
-  if (ratio >= 0.2) return { fillColor: "#f9a825", color: "#c17900", fillOpacity: 0.36 };
+  if (ratio >= 0.75)
+    return { fillColor: "#c62828", color: "#8e0000", fillOpacity: 0.5 };
+  if (ratio >= 0.45)
+    return { fillColor: "#ef6c00", color: "#b53d00", fillOpacity: 0.42 };
+  if (ratio >= 0.2)
+    return { fillColor: "#f9a825", color: "#c17900", fillOpacity: 0.36 };
   return { fillColor: "#2e7d32", color: "#145a18", fillOpacity: 0.28 };
 }
 
@@ -50,22 +53,33 @@ export default function MapHeatmapEnhancer() {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [mappedPoints, setMappedPoints] = useState(0);
+  const mapRef = useRef<any>(null);
+  const layerRef = useRef<any>(null);
+  const pointsRef = useRef<HeatPoint[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    let activeMap: any = null;
-    let heatLayer: any = null;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
-    let heatPoints: HeatPoint[] = [];
 
-    const drawHeatmap = () => {
+    const renderLayer = () => {
       const L = (window as any).L;
-      if (!L || !activeMap || !heatPoints.length) return;
-      if (heatLayer) activeMap.removeLayer(heatLayer);
-      heatLayer = L.layerGroup();
+      const map = mapRef.current;
+      if (!L || !map) return;
 
+      if (layerRef.current && map.hasLayer(layerRef.current)) {
+        map.removeLayer(layerRef.current);
+      }
+
+      const heatPoints = pointsRef.current;
+      if (!heatPoints.length) {
+        layerRef.current = null;
+        return;
+      }
+
+      const layer = L.layerGroup();
       const maximum = Math.max(1, ...heatPoints.map((point) => point.count));
+
       for (const point of heatPoints) {
         const style = heatStyle(point.count, maximum);
         const radius = Math.max(120, Math.min(650, 120 + point.count * 18));
@@ -82,10 +96,10 @@ export default function MapHeatmapEnhancer() {
           .bindTooltip(`${point.count} cadastro(s) nesta concentração`, {
             direction: "top",
           })
-          .addTo(heatLayer);
+          .addTo(layer);
       }
 
-      if (enabled) heatLayer.addTo(activeMap);
+      layerRef.current = layer;
     };
 
     const loadPoints = async () => {
@@ -96,22 +110,21 @@ export default function MapHeatmapEnhancer() {
         });
         if (!response.ok) return;
         const data = (await response.json()) as { records?: Array<any> };
-        heatPoints = aggregatePoints(data.records || []);
+        const points = aggregatePoints(data.records || []);
+        pointsRef.current = points;
         if (!cancelled) {
-          setMappedPoints(
-            heatPoints.reduce((total, point) => total + point.count, 0),
-          );
-          drawHeatmap();
+          setMappedPoints(points.reduce((total, point) => total + point.count, 0));
+          renderLayer();
         }
       } catch {
-        // Mantém o mapa funcional caso os dados do calor não carreguem.
+        // O mapa principal continua funcionando mesmo sem a camada de calor.
       }
     };
 
     const installHeatmap = async (map: any) => {
       if (cancelled || !map || map._vfHeatmapInstalled) return;
       map._vfHeatmapInstalled = true;
-      activeMap = map;
+      mapRef.current = map;
       await loadPoints();
     };
 
@@ -155,19 +168,21 @@ export default function MapHeatmapEnhancer() {
         handleGeocodingComplete,
       );
       if (patchTimer) window.clearInterval(patchTimer);
-      if (heatLayer && activeMap) activeMap.removeLayer(heatLayer);
+      const map = mapRef.current;
+      const layer = layerRef.current;
+      if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
       const L = (window as any).L;
       if (L?.map?.__vfHeatmapPatched && originalMapFactory) L.map = originalMapFactory;
     };
-  }, [enabled]);
+  }, []);
 
   useEffect(() => {
-    const map = (window as any).__vfActiveMap;
-    const layer = (window as any).__vfHeatLayer;
+    const map = mapRef.current;
+    const layer = layerRef.current;
     if (!map || !layer) return;
-    if (enabled) layer.addTo(map);
-    else map.removeLayer(layer);
-  }, [enabled]);
+    if (enabled && !map.hasLayer(layer)) layer.addTo(map);
+    if (!enabled && map.hasLayer(layer)) map.removeLayer(layer);
+  }, [enabled, mappedPoints]);
 
   if (!visible) return null;
 
@@ -181,14 +196,7 @@ export default function MapHeatmapEnhancer() {
       <button
         type="button"
         className={enabled ? "active" : ""}
-        onClick={() => {
-          setEnabled((current) => !current);
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:heatmap-toggle", {
-              detail: { enabled: !enabled },
-            }),
-          );
-        }}
+        onClick={() => setEnabled((current) => !current)}
       >
         {enabled ? "Desligar mapa de calor" : "Ligar mapa de calor"}
       </button>
