@@ -1,6 +1,13 @@
 import { getAccount, getVisibleUsers, isAdministrator } from "../../server-identity";
 
 const PAGE_SIZE = 50;
+const ISSUE_CATEGORIES = [
+  "rural_localidade",
+  "revisao_manual",
+  "sem_valor_util",
+  "cidade_ou_nao_encontrado",
+  "provavel_alias",
+] as const;
 
 async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
@@ -28,6 +35,16 @@ async function resolveScope(
   return { scope, emails };
 }
 
+function applyIssueScope<T>(query: T, scope: string, emails: string[]) {
+  const scoped = query as T & {
+    eq: (column: string, value: string) => T;
+    in: (column: string, values: string[]) => T;
+  };
+  return scope === "all"
+    ? scoped.in("owner_email", emails)
+    : scoped.eq("owner_email", scope);
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -52,21 +69,39 @@ export async function GET(request: Request) {
       .order("updated_at", { ascending: false })
       .range(from, to);
 
-    query = scope === "all"
-      ? query.in("owner_email", emails)
-      : query.eq("owner_email", scope);
-
+    query = applyIssueScope(query, scope, emails);
     if (category) query = query.eq("category", category);
+
+    const countResults = await Promise.all(
+      ISSUE_CATEGORIES.map(async (item) => {
+        let countQuery = account.supabase
+          .from("vf_contact_location_issues")
+          .select("record_id", { count: "exact", head: true })
+          .eq("category", item);
+        countQuery = applyIssueScope(countQuery, scope, emails);
+        const { count, error } = await countQuery;
+        if (error) throw new Error(error.message);
+        return [item, count ?? 0] as const;
+      }),
+    );
 
     const { data, count, error } = await query;
     if (error) throw new Error(error.message);
 
+    const categoryCounts = Object.fromEntries(countResults);
+    const totalIssues = Object.values(categoryCounts).reduce(
+      (sum, value) => sum + Number(value),
+      0,
+    );
     const total = count ?? 0;
+
     return Response.json({
       scope,
       page,
       pageSize: PAGE_SIZE,
       total,
+      totalIssues,
+      categoryCounts,
       totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
       issues: data ?? [],
     });
