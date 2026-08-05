@@ -197,7 +197,7 @@ export default function OptimizedDashboardClient({
     }
     setEditing(null);
     setMessage("Contato atualizado.");
-    await loadContacts();
+    await Promise.all([loadContacts(), loadSummary()]);
   }
 
   const firstItem = pageData.total ? (pageData.page - 1) * pageData.pageSize + 1 : 0;
@@ -324,11 +324,14 @@ export default function OptimizedDashboardClient({
         </article>
 
         <aside className="optimized-panel district-panel">
-          <h2>Bairros com mais contatos</h2>
-          <p>Resumo calculado sobre toda a base.</p>
+          <h2>Todos os bairros</h2>
+          <p>{summary.districts.length.toLocaleString("pt-BR")} bairros do catálogo · contatos por bairro.</p>
           <ol>
-            {summary.districts.slice(0, 15).map((item) => (
-              <li key={item.district}><span>{item.district}</span><b>{item.total.toLocaleString("pt-BR")}</b></li>
+            {summary.districts.map((item) => (
+              <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
+                <span>{item.district}</span>
+                <b>{item.total.toLocaleString("pt-BR")}</b>
+              </li>
             ))}
           </ol>
         </aside>
