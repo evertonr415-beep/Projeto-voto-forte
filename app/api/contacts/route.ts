@@ -126,7 +126,9 @@ export async function GET(request: Request) {
     );
     const queryText = safeSearch(url.searchParams.get("q") ?? "");
     const profile = url.searchParams.get("profile");
-    const hasFilters = Boolean(queryText || profile === "Eleitor" || profile === "Liderança");
+    const hasFilters = Boolean(
+      queryText || profile === "Eleitor" || profile === "Liderança",
+    );
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
@@ -162,16 +164,18 @@ export async function GET(request: Request) {
     }
 
     const pagePromise = query;
-    const totalPromise = hasFilters
-      ? Promise.resolve<number | null>(null)
-      : account.supabase
-          .rpc("vf_contact_dashboard_summary", {
-            p_owner_emails: scope === "all" ? emails : [scope],
-          })
-          .then(({ data, error }) => {
-            if (error) throw new Error(error.message);
-            return Number((data as { total?: number } | null)?.total ?? 0);
-          });
+    const totalPromise: Promise<number | null> = hasFilters
+      ? Promise.resolve(null)
+      : (async () => {
+          const result = await account.supabase.rpc(
+            "vf_contact_dashboard_summary",
+            { p_owner_emails: scope === "all" ? emails : [scope] },
+          );
+          if (result.error) throw new Error(result.error.message);
+          return Number(
+            (result.data as { total?: number } | null)?.total ?? 0,
+          );
+        })();
 
     const [{ data, count, error }, cachedTotal] = await Promise.all([
       pagePromise,
