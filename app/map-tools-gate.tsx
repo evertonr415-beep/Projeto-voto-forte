@@ -23,16 +23,28 @@ export default function MapToolsGate() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    const refresh = () => setEnabled(hasMap());
-    const observer = new MutationObserver(refresh);
+    if (hasMap()) {
+      setEnabled(true);
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (!hasMap()) return;
+      observer.disconnect();
+      setEnabled(true);
+    });
 
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
 
-    refresh();
-    return () => observer.disconnect();
+    const timeout = window.setTimeout(() => observer.disconnect(), 15_000);
+
+    return () => {
+      window.clearTimeout(timeout);
+      observer.disconnect();
+    };
   }, []);
 
   if (!enabled) return null;
