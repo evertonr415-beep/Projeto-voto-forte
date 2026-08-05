@@ -2,19 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
-import MobileMapLayersToggle from "./mobile-map-layers-toggle";
-import MobileAnalyticsControls from "./mobile-analytics-controls";
-import LegacyContactGeocoder from "./legacy-contact-geocoder";
-import SafeMapContactTools from "./safe-map-contact-tools";
-import MapTerritoryEnhancer from "./map-territory-enhancer";
-import MapGeocodingPanel from "./map-geocoding-panel";
-import MapDistrictFilter from "./map-district-filter";
-import MapHeatmapEnhancer from "./map-heatmap-enhancer";
-import MapDistrictSummary from "./map-district-summary";
-import MapPriorityPanel from "./map-priority-panel";
-import MapStrategyInsights from "./map-strategy-insights";
-import ExecutiveDashboard from "./executive-dashboard";
-import DataQualityPanel from "./data-quality-panel";
+import MapToolsGate from "./map-tools-gate";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
@@ -71,19 +59,7 @@ export default function RootLayout({
       >
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
-        <MobileMapLayersToggle />
-        <MobileAnalyticsControls />
-        <LegacyContactGeocoder />
-        <SafeMapContactTools />
-        <MapTerritoryEnhancer />
-        <MapGeocodingPanel />
-        <MapDistrictFilter />
-        <MapHeatmapEnhancer />
-        <MapDistrictSummary />
-        <MapPriorityPanel />
-        <MapStrategyInsights />
-        <ExecutiveDashboard />
-        <DataQualityPanel />
+        <MapToolsGate />
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
