@@ -49,7 +49,7 @@ export default function ExecutiveDashboard() {
     const load = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/records?owner=all", {
+        const response = await fetch("/api/records?owner=all&kind=contact", {
           headers: { accept: "application/json" },
           cache: "no-store",
         });
