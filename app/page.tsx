@@ -1,5 +1,5 @@
-import AuthClient from "./auth-client";
+import FullSystemEntry from "./full-system-entry";
 
 export default function Home() {
-  return <AuthClient />;
+  return <FullSystemEntry />;
 }
