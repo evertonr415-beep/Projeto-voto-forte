@@ -15,22 +15,33 @@ type Issue = {
   category: string;
   suggested_district?: string | null;
 };
+type CategoryCounts = Record<string, number>;
 type PageData = {
   page: number;
   pageSize: number;
   total: number;
+  totalIssues: number;
+  categoryCounts: CategoryCounts;
   totalPages: number;
   issues: Issue[];
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  sem_valor_util: "Sem informação útil",
   rural_localidade: "Zona rural / localidade",
+  revisao_manual: "Revisão manual",
+  sem_valor_util: "Sem informação útil",
   cidade_ou_nao_encontrado: "Cidade ou não encontrado",
   provavel_alias: "Correção sugerida",
-  revisao_manual: "Revisão manual",
 };
-const EMPTY_PAGE: PageData = { page: 1, pageSize: 50, total: 0, totalPages: 1, issues: [] };
+const EMPTY_PAGE: PageData = {
+  page: 1,
+  pageSize: 50,
+  total: 0,
+  totalIssues: 0,
+  categoryCounts: {},
+  totalPages: 1,
+  issues: [],
+};
 
 export default function LocationIssuesClient({ currentUser }: { currentUser: CurrentUser }) {
   const isAdmin = ["master", "gestor", "lider"].includes(currentUser.role);
@@ -41,7 +52,6 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   const [data, setData] = useState<PageData>(EMPTY_PAGE);
   const [districts, setDistricts] = useState<string[]>([]);
   const [totalContacts, setTotalContacts] = useState(0);
-  const [totalIssues, setTotalIssues] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Issue | null>(null);
@@ -85,7 +95,6 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Falha ao carregar pendências");
       setData(payload);
-      if (!category) setTotalIssues(Number(payload.total) || 0);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao carregar pendências");
     } finally {
@@ -97,9 +106,14 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
 
   const coverage = useMemo(() => {
     if (!totalContacts) return "0,00";
-    return (((totalContacts - totalIssues) / totalContacts) * 100)
+    return (((totalContacts - data.totalIssues) / totalContacts) * 100)
       .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }, [totalContacts, totalIssues]);
+  }, [data.totalIssues, totalContacts]);
+
+  function selectCategory(value: string) {
+    setCategory(value);
+    setPage(1);
+  }
 
   function startEdit(issue: Issue) {
     setEditing(issue);
@@ -144,15 +158,28 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       </header>
 
       <section className="issues-kpis">
-        <article><b>{totalIssues.toLocaleString("pt-BR")}</b><span>Pendências totais</span></article>
+        <article><b>{data.totalIssues.toLocaleString("pt-BR")}</b><span>Pendências totais</span></article>
         <article><b>{coverage}%</b><span>Cobertura de localização</span></article>
         <article><b>{districts.length.toLocaleString("pt-BR")}</b><span>Bairros disponíveis</span></article>
+      </section>
+
+      <section className="issues-category-cards" aria-label="Resumo por categoria">
+        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+          <button
+            key={value}
+            className={category === value ? "active" : ""}
+            onClick={() => selectCategory(category === value ? "" : value)}
+          >
+            <b>{Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
+            <span>{label}</span>
+          </button>
+        ))}
       </section>
 
       <section className="issues-panel">
         <div className="issues-toolbar">
           <div><h2>Contatos para revisar</h2><p>Nenhuma alteração é feita sem confirmação.</p></div>
-          <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }}>
+          <select value={category} onChange={(event) => selectCategory(event.target.value)}>
             <option value="">Todas as categorias</option>
             {Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
