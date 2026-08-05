@@ -95,16 +95,23 @@ export async function GET(request: Request) {
     );
     const total = count ?? 0;
 
-    return Response.json({
-      scope,
-      page,
-      pageSize: PAGE_SIZE,
-      total,
-      totalIssues,
-      categoryCounts,
-      totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-      issues: data ?? [],
-    });
+    return Response.json(
+      {
+        scope,
+        page,
+        pageSize: PAGE_SIZE,
+        total,
+        totalIssues,
+        categoryCounts,
+        totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+        issues: data ?? [],
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+        },
+      },
+    );
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "Falha ao carregar pendências" },
