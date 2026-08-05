@@ -106,15 +106,13 @@ export default function DataQualityPanel() {
     const load = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/records?owner=all", {
+        const response = await fetch("/api/records?owner=all&kind=contact", {
           headers: { accept: "application/json" },
           cache: "no-store",
         });
         if (!response.ok) return;
         const data = (await response.json()) as { records?: ContactRecord[] };
-        if (!cancelled) {
-          setRecords((data.records || []).filter((record) => record.kind === "contact"));
-        }
+        if (!cancelled) setRecords(data.records || []);
       } catch {
         // O restante do sistema permanece disponível.
       } finally {
