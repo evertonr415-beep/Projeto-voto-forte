@@ -6,7 +6,6 @@ import {
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
-const SUMMARY_PAGE_SIZE = 1000;
 
 type ContactPayload = {
   name?: string;
@@ -86,69 +85,6 @@ function applyScope<T>(query: T, scope: string, emails: string[]) {
     : scoped.eq("owner_email", scope);
 }
 
-async function exactCount(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  scope: string,
-  emails: string[],
-  profile?: "Eleitor" | "Liderança",
-) {
-  let query = account.supabase
-    .from("vf_owned_records")
-    .select("id", { count: "exact", head: true })
-    .eq("kind", "contact");
-  query = applyScope(query, scope, emails);
-  if (profile) query = query.eq("payload->>kind", profile);
-  const { count, error } = await query;
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
-async function meetingCount(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  scope: string,
-  emails: string[],
-) {
-  let query = account.supabase
-    .from("vf_owned_records")
-    .select("id", { count: "exact", head: true })
-    .eq("kind", "meeting");
-  query = applyScope(query, scope, emails);
-  const { count, error } = await query;
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
-async function districtSummary(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  scope: string,
-  emails: string[],
-) {
-  const counts = new Map<string, number>();
-
-  for (let from = 0; ; from += SUMMARY_PAGE_SIZE) {
-    let query = account.supabase
-      .from("vf_owned_records")
-      .select("payload")
-      .eq("kind", "contact")
-      .range(from, from + SUMMARY_PAGE_SIZE - 1);
-    query = applyScope(query, scope, emails);
-
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    const page = (data ?? []) as { payload: ContactPayload | null }[];
-    for (const row of page) {
-      const district = String(row.payload?.district ?? "").trim();
-      if (!district) continue;
-      counts.set(district, (counts.get(district) ?? 0) + 1);
-    }
-    if (page.length < SUMMARY_PAGE_SIZE) break;
-  }
-
-  return [...counts.entries()]
-    .map(([district, total]) => ({ district, total }))
-    .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district));
-}
-
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -166,24 +102,15 @@ export async function GET(request: Request) {
 
   try {
     if (mode === "summary") {
-      const [total, voters, leaders, meetings, districts] = await Promise.all([
-        exactCount(account, scope, emails),
-        exactCount(account, scope, emails, "Eleitor"),
-        exactCount(account, scope, emails, "Liderança"),
-        meetingCount(account, scope, emails),
-        districtSummary(account, scope, emails),
-      ]);
+      const ownerEmails = scope === "all" ? emails : [scope];
+      const { data, error } = await account.supabase.rpc(
+        "vf_contact_dashboard_summary",
+        { p_owner_emails: ownerEmails },
+      );
+      if (error) throw new Error(error.message);
 
       return Response.json(
-        {
-          scope,
-          total,
-          voters,
-          leaders,
-          meetings,
-          districtsReached: districts.length,
-          districts,
-        },
+        { scope, ...(data as Record<string, unknown>) },
         {
           headers: {
             "Cache-Control": "private, max-age=30, stale-while-revalidate=120",
