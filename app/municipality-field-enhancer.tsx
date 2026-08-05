@@ -33,18 +33,33 @@ function setReactInputValue(input: HTMLInputElement, value: string) {
 
 export default function MunicipalityFieldEnhancer() {
   const municipalities = useRef<Municipality[]>([]);
+  const municipalitiesRequest = useRef<Promise<Municipality[]> | null>(null);
 
   useEffect(() => {
     let active = true;
     let observer: MutationObserver | null = null;
+    let animationFrame = 0;
 
-    const loadMunicipalities = fetch("/api/municipalities")
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok || !Array.isArray(data.municipalities)) return [];
-        return data.municipalities as Municipality[];
-      })
-      .catch(() => [] as Municipality[]);
+    const loadMunicipalities = () => {
+      if (municipalities.current.length) {
+        return Promise.resolve(municipalities.current);
+      }
+      if (municipalitiesRequest.current) return municipalitiesRequest.current;
+
+      municipalitiesRequest.current = fetch("/api/municipalities")
+        .then(async (response) => {
+          const data = await response.json();
+          if (!response.ok || !Array.isArray(data.municipalities)) return [];
+          municipalities.current = data.municipalities as Municipality[];
+          return municipalities.current;
+        })
+        .catch(() => [] as Municipality[])
+        .finally(() => {
+          municipalitiesRequest.current = null;
+        });
+
+      return municipalitiesRequest.current;
+    };
 
     const enhanceForm = async () => {
       const cepInput = document.querySelector<HTMLInputElement>(
@@ -57,9 +72,7 @@ export default function MunicipalityFieldEnhancer() {
       if (!form || !addressGrid) return;
       if (form.querySelector("[data-vf-municipality-field]")) return;
 
-      if (!municipalities.current.length) {
-        municipalities.current = await loadMunicipalities;
-      }
+      const municipalityList = await loadMunicipalities();
       if (!active || !document.body.contains(form)) return;
 
       const label = document.createElement("label");
@@ -76,7 +89,7 @@ export default function MunicipalityFieldEnhancer() {
       initial.textContent = "Informe um CEP do Paraná";
       select.appendChild(initial);
 
-      for (const municipality of municipalities.current) {
+      for (const municipality of municipalityList) {
         const option = document.createElement("option");
         option.value = municipality.name;
         option.textContent = `${municipality.name} - PR`;
@@ -182,16 +195,37 @@ export default function MunicipalityFieldEnhancer() {
         true,
       );
 
-      void identifyMunicipality();
+      if (cepInput.value.trim()) void identifyMunicipality();
     };
 
-    observer = new MutationObserver(() => void enhanceForm());
+    const scheduleEnhance = () => {
+      if (animationFrame) return;
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = 0;
+        void enhanceForm();
+      });
+    };
+
+    observer = new MutationObserver((mutations) => {
+      if (
+        mutations.some((mutation) =>
+          Array.from(mutation.addedNodes).some(
+            (node) =>
+              node instanceof HTMLElement &&
+              (node.matches(".modal-form") || node.querySelector(".modal-form")),
+          ),
+        )
+      ) {
+        scheduleEnhance();
+      }
+    });
     observer.observe(document.body, { childList: true, subtree: true });
-    void enhanceForm();
+    scheduleEnhance();
 
     return () => {
       active = false;
       observer?.disconnect();
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
     };
   }, []);
 
