@@ -126,16 +126,19 @@ export async function GET(request: Request) {
     );
     const queryText = safeSearch(url.searchParams.get("q") ?? "");
     const profile = url.searchParams.get("profile");
+    const hasFilters = Boolean(queryText || profile === "Eleitor" || profile === "Liderança");
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     let query = account.supabase
       .from("vf_owned_records")
-      .select("id,owner_email,payload,created_at,updated_at", {
-        count: "exact",
-      })
+      .select(
+        "id,owner_email,payload,created_at,updated_at",
+        hasFilters ? { count: "exact" } : undefined,
+      )
       .eq("kind", "contact")
       .order("updated_at", { ascending: false })
+      .order("id", { ascending: false })
       .range(from, to);
 
     query = applyScope(query, scope, emails);
@@ -158,9 +161,25 @@ export async function GET(request: Request) {
       query = query.or(terms.join(","));
     }
 
-    const { data, count, error } = await query;
+    const pagePromise = query;
+    const totalPromise = hasFilters
+      ? Promise.resolve<number | null>(null)
+      : account.supabase
+          .rpc("vf_contact_dashboard_summary", {
+            p_owner_emails: scope === "all" ? emails : [scope],
+          })
+          .then(({ data, error }) => {
+            if (error) throw new Error(error.message);
+            return Number((data as { total?: number } | null)?.total ?? 0);
+          });
+
+    const [{ data, count, error }, cachedTotal] = await Promise.all([
+      pagePromise,
+      totalPromise,
+    ]);
+
     if (error) throw new Error(error.message);
-    const total = count ?? 0;
+    const total = hasFilters ? count ?? 0 : cachedTotal ?? 0;
 
     return Response.json(
       {
