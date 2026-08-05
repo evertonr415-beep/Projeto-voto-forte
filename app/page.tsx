@@ -1,5 +1,5 @@
-import OptimizedAuthClient from "./optimized-auth-client";
+import FullSystemEntry from "./full-system-entry";
 
 export default function Home() {
-  return <OptimizedAuthClient />;
+  return <FullSystemEntry />;
 }

@@ -6,6 +6,7 @@ import MapToolsGate from "./map-tools-gate";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
+import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -63,6 +64,7 @@ export default function RootLayout({
         <UserHierarchyPanel />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
+        <ContactNavigationInterceptor />
         {children}
       </body>
     </html>
