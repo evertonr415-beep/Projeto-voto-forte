@@ -1,3 +1,5 @@
-import AuthClient from "./auth-client";
+import OptimizedAuthClient from "./optimized-auth-client";
 
-export default function Home() { return <AuthClient />; }
+export default function Home() {
+  return <OptimizedAuthClient />;
+}
