@@ -2,16 +2,22 @@ import { getAccount, getVisibleUsers, isAdministrator } from "../../server-ident
 
 const PAGE_SIZE = 50;
 
-async function resolveScope(
+async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  requestedOwner?: string,
 ) {
   const users = await getVisibleUsers(account);
   const emails = users
     .filter((user) => user.status === "active")
     .map((user) => String(user.email).trim().toLowerCase());
   if (!emails.includes(account.email)) emails.push(account.email);
+  return emails;
+}
 
+async function resolveScope(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  requestedOwner?: string,
+) {
+  const emails = await visibleEmails(account);
   const requested = requestedOwner?.trim().toLowerCase();
   let scope = account.email;
   if (requested === "all" && isAdministrator(account.role)) scope = "all";
@@ -70,4 +76,52 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
+}
+
+export async function PATCH(request: Request) {
+  const account = await getAccount();
+  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+
+  const body = (await request.json()) as { recordId?: number; district?: string };
+  const recordId = Number(body.recordId);
+  const district = String(body.district ?? "").trim();
+  if (!Number.isInteger(recordId) || recordId <= 0 || !district)
+    return Response.json({ error: "Correção inválida" }, { status: 400 });
+
+  const emails = await visibleEmails(account);
+  const { data: record, error: recordError } = await account.supabase
+    .from("vf_owned_records")
+    .select("id,owner_email,payload")
+    .eq("id", recordId)
+    .eq("kind", "contact")
+    .single();
+
+  if (recordError || !record)
+    return Response.json({ error: "Contato não encontrado" }, { status: 404 });
+  if (!emails.includes(String(record.owner_email).toLowerCase()))
+    return Response.json({ error: "Acesso negado" }, { status: 403 });
+
+  const currentPayload =
+    record.payload && typeof record.payload === "object"
+      ? (record.payload as Record<string, unknown>)
+      : {};
+
+  const { error } = await account.supabase
+    .from("vf_owned_records")
+    .update({
+      payload: { ...currentPayload, district },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", recordId);
+
+  if (error) return Response.json({ error: error.message }, { status: 400 });
+
+  await account.supabase.from("vf_audit_logs").insert({
+    actor_id: account.auth_user_id,
+    actor_email: account.email,
+    action: "Localização corrigida",
+    detail: `${record.owner_email} · registro ${recordId} · ${district}`,
+  });
+
+  return Response.json({ ok: true });
 }
