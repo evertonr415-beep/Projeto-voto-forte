@@ -57,15 +57,13 @@ export default function MapPriorityPanel() {
 
     const load = async () => {
       try {
-        const response = await fetch("/api/records?owner=all", {
+        const response = await fetch("/api/records?owner=all&kind=contact", {
           headers: { accept: "application/json" },
           cache: "no-store",
         });
         if (!response.ok) return;
         const data = (await response.json()) as { records?: Contact[] };
-        if (!cancelled) {
-          setContacts((data.records || []).filter((record) => record.kind === "contact"));
-        }
+        if (!cancelled) setContacts(data.records || []);
       } catch {
         // Mantém a navegação principal disponível.
       }
@@ -76,9 +74,9 @@ export default function MapPriorityPanel() {
         (event as CustomEvent<{ open?: boolean }>).detail?.open,
       );
       setVisible(open);
+      if (open) void load();
     };
 
-    void load();
     window.addEventListener("voto-forte:priority-panel-toggle", handleToggle);
     return () => {
       cancelled = true;
