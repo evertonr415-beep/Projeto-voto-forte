@@ -62,7 +62,7 @@ export default function OptimizedDashboardClient({
 }: {
   currentUser: CurrentUser;
 }) {
-  const isAdmin = currentUser.role === "master" || currentUser.role === "admin";
+  const isAdmin = ["master", "gestor", "lider", "admin"].includes(currentUser.role);
   const [scope, setScope] = useState(isAdmin ? "all" : currentUser.email);
   const [users, setUsers] = useState<{ email: string; name: string }[]>([]);
   const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY);
@@ -136,15 +136,11 @@ export default function OptimizedDashboardClient({
     }
   }, [page, profile, query, scope]);
 
-  useEffect(() => {
-    void loadSummary();
-  }, [loadSummary]);
-
+  useEffect(() => { void loadSummary(); }, [loadSummary]);
   useEffect(() => {
     const timer = window.setTimeout(() => void loadContacts(), query ? 250 : 0);
     return () => window.clearTimeout(timer);
   }, [loadContacts, query]);
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPage(1);
@@ -155,9 +151,7 @@ export default function OptimizedDashboardClient({
 
   async function deleteContact(contact: Contact) {
     if (!window.confirm(`Excluir o contato ${contact.name}?`)) return;
-    const response = await apiFetch(`/api/records?id=${contact.id}`, {
-      method: "DELETE",
-    });
+    const response = await apiFetch(`/api/records?id=${contact.id}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok) {
       setMessage(data.error || "Não foi possível excluir o contato.");
@@ -220,25 +214,14 @@ export default function OptimizedDashboardClient({
         </div>
         <div className="optimized-top-actions">
           {isAdmin && (
-            <select
-              value={scope}
-              onChange={(event) => {
-                setPage(1);
-                setScope(event.target.value);
-              }}
-            >
+            <select value={scope} onChange={(event) => { setPage(1); setScope(event.target.value); }}>
               <option value="all">Todos os usuários</option>
-              {users.map((user) => (
-                <option key={user.email} value={user.email}>
-                  {user.name}
-                </option>
-              ))}
+              {users.map((user) => <option key={user.email} value={user.email}>{user.name}</option>)}
             </select>
           )}
           <a href="/importar-contatos">Importar contatos</a>
-          <a className="secondary" href="/sistema-completo">
-            Sistema completo
-          </a>
+          <a href="/pendencias-localizacao">Pendências de localização</a>
+          <a className="secondary" href="/sistema-completo">Sistema completo</a>
           <button onClick={() => void supabase.auth.signOut()}>Sair</button>
         </div>
       </header>
@@ -254,91 +237,41 @@ export default function OptimizedDashboardClient({
       <section className="optimized-content">
         <article className="optimized-panel contacts-panel">
           <div className="optimized-panel-head">
-            <div>
-              <h2>Contatos cadastrados</h2>
-              <p>
-                Exibindo {firstItem.toLocaleString("pt-BR")}–{lastItem.toLocaleString("pt-BR")} de {pageData.total.toLocaleString("pt-BR")}
-              </p>
-            </div>
+            <div><h2>Contatos cadastrados</h2><p>Exibindo {firstItem.toLocaleString("pt-BR")}–{lastItem.toLocaleString("pt-BR")} de {pageData.total.toLocaleString("pt-BR")}</p></div>
             <div className="optimized-filters">
-              <input
-                value={queryInput}
-                onChange={(event) => setQueryInput(event.target.value)}
-                placeholder="Buscar nome, telefone, bairro ou responsável"
-              />
-              <select
-                value={profile}
-                onChange={(event) => {
-                  setPage(1);
-                  setProfile(event.target.value);
-                }}
-              >
-                <option value="">Todos os perfis</option>
-                <option value="Eleitor">Eleitores</option>
-                <option value="Liderança">Lideranças</option>
+              <input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Buscar nome, telefone, bairro ou responsável" />
+              <select value={profile} onChange={(event) => { setPage(1); setProfile(event.target.value); }}>
+                <option value="">Todos os perfis</option><option value="Eleitor">Eleitores</option><option value="Liderança">Lideranças</option>
               </select>
             </div>
           </div>
 
-          {loadingContacts ? (
-            <div className="optimized-loading">Carregando página…</div>
-          ) : (
+          {loadingContacts ? <div className="optimized-loading">Carregando página…</div> : (
             <div className="optimized-table-wrap">
               <table>
-                <thead>
-                  <tr>
-                    <th>Contato</th>
-                    <th>Telefone</th>
-                    <th>Perfil</th>
-                    <th>Bairro</th>
-                    {isAdmin && <th>Responsável</th>}
-                    <th>Ações</th>
+                <thead><tr><th>Contato</th><th>Telefone</th><th>Perfil</th><th>Bairro</th>{isAdmin && <th>Responsável</th>}<th>Ações</th></tr></thead>
+                <tbody>{pageData.contacts.map((contact) => (
+                  <tr key={contact.id}>
+                    <td><span className="optimized-avatar">{initials(contact.name)}</span><b>{contact.name}</b></td>
+                    <td>{contact.phone}</td><td>{contact.kind || "Eleitor"}</td><td>{contact.district || "—"}</td>{isAdmin && <td>{contact.ownerEmail}</td>}
+                    <td className="optimized-row-actions"><a target="_blank" rel="noreferrer" href={`https://wa.me/${contact.phone.replace(/\D/g, "")}`}>WhatsApp</a><button onClick={() => setEditing(contact)}>Editar</button><button className="danger" onClick={() => void deleteContact(contact)}>Excluir</button></td>
                   </tr>
-                </thead>
-                <tbody>
-                  {pageData.contacts.map((contact) => (
-                    <tr key={contact.id}>
-                      <td><span className="optimized-avatar">{initials(contact.name)}</span><b>{contact.name}</b></td>
-                      <td>{contact.phone}</td>
-                      <td>{contact.kind || "Eleitor"}</td>
-                      <td>{contact.district || "—"}</td>
-                      {isAdmin && <td>{contact.ownerEmail}</td>}
-                      <td className="optimized-row-actions">
-                        <a target="_blank" rel="noreferrer" href={`https://wa.me/${contact.phone.replace(/\D/g, "")}`}>WhatsApp</a>
-                        <button onClick={() => setEditing(contact)}>Editar</button>
-                        <button className="danger" onClick={() => void deleteContact(contact)}>Excluir</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                ))}</tbody>
               </table>
               {!pageData.contacts.length && <p className="optimized-empty">Nenhum contato encontrado.</p>}
             </div>
           )}
 
-          <footer className="optimized-pagination">
-            <button disabled={page <= 1 || loadingContacts} onClick={() => setPage((value) => value - 1)}>Anterior</button>
-            <span>Página {pageData.page.toLocaleString("pt-BR")} de {pageData.totalPages.toLocaleString("pt-BR")}</span>
-            <button disabled={page >= pageData.totalPages || loadingContacts} onClick={() => setPage((value) => value + 1)}>Próxima</button>
-          </footer>
+          <footer className="optimized-pagination"><button disabled={page <= 1 || loadingContacts} onClick={() => setPage((value) => value - 1)}>Anterior</button><span>Página {pageData.page.toLocaleString("pt-BR")} de {pageData.totalPages.toLocaleString("pt-BR")}</span><button disabled={page >= pageData.totalPages || loadingContacts} onClick={() => setPage((value) => value + 1)}>Próxima</button></footer>
         </article>
 
         <aside className="optimized-panel district-panel">
-          <h2>Todos os bairros</h2>
-          <p>{summary.districts.length.toLocaleString("pt-BR")} bairros do catálogo · contatos por bairro.</p>
-          <ol>
-            {summary.districts.map((item) => (
-              <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
-                <span>{item.district}</span>
-                <b>{item.total.toLocaleString("pt-BR")}</b>
-              </li>
-            ))}
-          </ol>
+          <h2>Todos os bairros</h2><p>{summary.districts.length.toLocaleString("pt-BR")} bairros do catálogo · contatos por bairro.</p>
+          <ol>{summary.districts.map((item) => <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}><span>{item.district}</span><b>{item.total.toLocaleString("pt-BR")}</b></li>)}</ol>
         </aside>
       </section>
 
       {message && <div className="optimized-toast" onClick={() => setMessage("")}>{message}</div>}
-
       {editing && (
         <div className="optimized-modal-backdrop" onMouseDown={() => setEditing(null)}>
           <form className="optimized-modal" onSubmit={saveContact} onMouseDown={(event) => event.stopPropagation()}>
