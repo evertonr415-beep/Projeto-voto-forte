@@ -37,7 +37,7 @@ grant select on public.vf_contact_location_issues to authenticated, service_role
 create or replace function public.vf_location_issue_category(value text)
 returns text
 language sql
-immutable
+stable
 set search_path = public
 as $$
   select case
@@ -62,7 +62,7 @@ $$;
 create or replace function public.vf_location_issue_suggestion(value text)
 returns text
 language sql
-immutable
+stable
 set search_path = public
 as $$
   select case upper(unaccent(coalesce(value, '')))
@@ -93,7 +93,6 @@ set search_path = public
 as $$
 declare
   r public.vf_owned_records%rowtype;
-  canonical text;
   original_value text;
 begin
   delete from public.vf_contact_location_issues where record_id = p_record_id;
@@ -107,9 +106,7 @@ begin
   end if;
 
   original_value := coalesce(r.payload->>'district', '');
-  canonical := public.vf_canonical_arapongas_district(original_value);
-
-  if canonical is not null then
+  if public.vf_canonical_arapongas_district(original_value) is not null then
     return;
   end if;
 
@@ -156,8 +153,7 @@ revoke execute on function public.vf_sync_contact_location_issue_trigger()
 drop trigger if exists vf_sync_contact_location_issue_trigger
   on public.vf_owned_records;
 create trigger vf_sync_contact_location_issue_trigger
-after insert or update of payload, kind, owner_email or delete
-on public.vf_owned_records
+after insert or update or delete on public.vf_owned_records
 for each row execute function public.vf_sync_contact_location_issue_trigger();
 
 create or replace function public.vf_refresh_contact_location_issues()
@@ -166,17 +162,27 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  item record;
 begin
   perform set_config('statement_timeout', '0', true);
   truncate table public.vf_contact_location_issues;
 
-  for item in
-    select id from public.vf_owned_records where kind = 'contact'
-  loop
-    perform public.vf_sync_contact_location_issue_row(item.id);
-  end loop;
+  insert into public.vf_contact_location_issues(
+    record_id, owner_email, contact_name, phone, district_original,
+    district_key, category, suggested_district, updated_at
+  )
+  select
+    r.id,
+    r.owner_email,
+    coalesce(r.payload->>'name', ''),
+    coalesce(r.payload->>'phone', ''),
+    coalesce(r.payload->>'district', ''),
+    public.vf_normalize_arapongas_district(r.payload->>'district'),
+    public.vf_location_issue_category(r.payload->>'district'),
+    public.vf_location_issue_suggestion(r.payload->>'district'),
+    now()
+  from public.vf_owned_records r
+  where r.kind = 'contact'
+    and public.vf_canonical_arapongas_district(r.payload->>'district') is null;
 
   return query select count(*)::bigint from public.vf_contact_location_issues;
 end;
