@@ -1,5 +1,7 @@
 begin;
 
+grant usage on schema private to authenticated, service_role;
+
 create or replace function private.vf_can_view_owner_email(p_owner_email text)
 returns boolean
 language sql
