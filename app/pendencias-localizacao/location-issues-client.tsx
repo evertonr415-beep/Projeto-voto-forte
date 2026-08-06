@@ -46,22 +46,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   rural_location: "Zona rural / localidade",
 };
 
-const CATEGORY_HELP: Record<string, string> = {
-  duplicate_phone: "O telefone já está associado a outro contato da base.",
-  invalid_phone: "O número não possui um formato de telefone válido.",
-  missing_name: "Nenhum nome foi informado para o contato.",
-  incomplete_name: "O nome precisa ter pelo menos nome e sobrenome.",
-  missing_district: "O bairro ou a localidade não foi informado.",
-  missing_street: "A rua onde o contato mora não foi informada.",
-  location_divergence: "O bairro informado não corresponde ao catálogo reconhecido.",
-  rural_location: "Contato identificado em zona rural, estrada, sítio ou localidade.",
-};
-
-const HIGHLIGHT_CATEGORY_KEYS = [
+const FILTER_CATEGORY_KEYS = [
   "invalid_phone",
   "missing_name",
   "incomplete_name",
   "missing_district",
+  "missing_street",
   "location_divergence",
   "rural_location",
 ] as const;
@@ -83,6 +73,82 @@ function severityLabel(value: Issue["severity"]) {
   if (value === "critical") return "Crítica";
   if (value === "warning") return "Atenção";
   return "Informativa";
+}
+
+function numberValue(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function normalizeCounts(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).map(([key, count]) => [key, numberValue(count)]),
+  );
+}
+
+function normalizeIssue(value: unknown): Issue | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  const recordId = numberValue(row.record_id);
+  if (!Number.isInteger(recordId) || recordId <= 0) return null;
+
+  const rawSeverity = stringValue(row.severity);
+  const severity: Issue["severity"] = rawSeverity === "critical" || rawSeverity === "warning"
+    ? rawSeverity
+    : "info";
+
+  return {
+    record_id: recordId,
+    owner_email: stringValue(row.owner_email),
+    contact_name: stringValue(row.contact_name),
+    phone: stringValue(row.phone),
+    phone_normalized: stringValue(row.phone_normalized),
+    district_original: stringValue(row.district_original),
+    city: stringValue(row.city),
+    state: stringValue(row.state),
+    street: stringValue(row.street),
+    street_number: stringValue(row.street_number),
+    cep: stringValue(row.cep),
+    is_rural: Boolean(row.is_rural),
+    issue_codes: Array.isArray(row.issue_codes)
+      ? row.issue_codes.filter((code): code is string => typeof code === "string")
+      : [],
+    severity,
+  };
+}
+
+function normalizePageData(value: unknown): PageData {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return EMPTY_PAGE;
+  const payload = value as Record<string, unknown>;
+  const issues = Array.isArray(payload.issues)
+    ? payload.issues.map(normalizeIssue).filter((issue): issue is Issue => Boolean(issue))
+    : [];
+
+  return {
+    page: Math.max(1, numberValue(payload.page, 1)),
+    pageSize: Math.max(1, numberValue(payload.pageSize, 50)),
+    total: Math.max(0, numberValue(payload.total)),
+    totalContacts: Math.max(0, numberValue(payload.totalContacts)),
+    totalIssues: Math.max(0, numberValue(payload.totalIssues)),
+    requiredIncomplete: Math.max(0, numberValue(payload.requiredIncomplete)),
+    categoryCounts: normalizeCounts(payload.categoryCounts),
+    severityCounts: normalizeCounts(payload.severityCounts),
+    totalPages: Math.max(1, numberValue(payload.totalPages, 1)),
+    issues,
+  };
+}
+
+function payloadError(value: unknown, fallback: string) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const error = (value as Record<string, unknown>).error;
+    if (typeof error === "string" && error.trim()) return error;
+  }
+  return fallback;
 }
 
 export default function LocationIssuesClient({ currentUser }: { currentUser: CurrentUser }) {
@@ -113,10 +179,24 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       .then((response) => response.json())
       .then((payload) => {
         if (controller.signal.aborted) return;
+        const rawUsers = payload && typeof payload === "object" && !Array.isArray(payload)
+          ? (payload as { users?: unknown }).users
+          : [];
         setUsers(
-          (payload.users ?? [])
-            .filter((user: { status: string }) => user.status === "active")
-            .map((user: { email: string; name: string }) => ({ email: user.email, name: user.name })),
+          (Array.isArray(rawUsers) ? rawUsers : [])
+            .filter(
+              (user): user is { email: string; name: string; status: string } =>
+                Boolean(
+                  user
+                  && typeof user === "object"
+                  && !Array.isArray(user)
+                  && typeof (user as { email?: unknown }).email === "string"
+                  && typeof (user as { name?: unknown }).name === "string"
+                  && typeof (user as { status?: unknown }).status === "string",
+                ),
+            )
+            .filter((user) => user.status === "active")
+            .map((user) => ({ email: user.email, name: user.name })),
         );
       })
       .catch((error) => {
@@ -134,11 +214,18 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       .then((response) => response.json())
       .then((payload) => {
         if (controller.signal.aborted) return;
+        const rawDistricts = payload && typeof payload === "object" && !Array.isArray(payload)
+          ? (payload as { districts?: unknown }).districts
+          : [];
         setDistricts(
-          (payload.districts ?? [])
-            .map((item: { district: string }) => item.district)
-            .filter((district: string) => district && district !== "Zona rural")
-            .sort((a: string, b: string) => a.localeCompare(b, "pt-BR")),
+          (Array.isArray(rawDistricts) ? rawDistricts : [])
+            .map((item) =>
+              item && typeof item === "object" && !Array.isArray(item)
+                ? stringValue((item as { district?: unknown }).district)
+                : "",
+            )
+            .filter((district) => district && district !== "Zona rural")
+            .sort((a, b) => a.localeCompare(b, "pt-BR")),
         );
       })
       .catch((error) => {
@@ -164,10 +251,11 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       if (severity) params.set("severity", severity);
       if (query) params.set("q", query);
       const response = await apiFetch(`/api/location-issues?${params.toString()}`, { signal });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Falha ao carregar pendências");
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(payloadError(payload, "Falha ao carregar pendências"));
       if (signal?.aborted) return;
-      setData(payload);
+      setData(normalizePageData(payload));
       setSelectedIds(new Set());
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
@@ -184,6 +272,25 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     return () => controller.abort();
   }, [load]);
 
+  useEffect(() => {
+    if (!editing) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || saving) return;
+      setEditing(null);
+      setEditName("");
+      setEditDistrict("");
+      setEditStreet("");
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [editing, saving]);
+
   const allPageSelected = data.issues.length > 0
     && data.issues.every((issue) => selectedIds.has(issue.record_id));
   const canSaveRequiredFields = editName.trim().split(/\s+/).filter(Boolean).length >= 2
@@ -191,6 +298,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     && Boolean(editStreet.trim());
   const nameReviewCount = Number(data.categoryCounts.missing_name ?? 0)
     + Number(data.categoryCounts.incomplete_name ?? 0);
+  const hasActiveFilters = Boolean(category || severity || query);
 
   function selectCategory(value: string) {
     setCategory(value);
@@ -221,6 +329,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   }
 
   function startEdit(issue: Issue) {
+    setMessage("");
     setEditing(issue);
     setEditName(issue.contact_name ?? "");
     setEditDistrict(issue.district_original ?? "");
@@ -249,10 +358,14 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
           street: editStreet,
         }),
       });
-      const payload = await response.json();
+      const payload: unknown = await response.json().catch(() => null);
       if (!response.ok)
-        throw new Error(payload.error || "Não foi possível corrigir o cadastro.");
-      closeEdit();
+        throw new Error(payloadError(payload, "Não foi possível corrigir o cadastro."));
+
+      setEditing(null);
+      setEditName("");
+      setEditDistrict("");
+      setEditStreet("");
       setMessage("Nome, bairro e rua atualizados. O contato foi reanalisado automaticamente.");
       await load();
     } catch (error) {
@@ -280,9 +393,13 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ recordIds: ids, confirmation }),
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Não foi possível excluir os contatos.");
-      setMessage(`${Number(payload.deleted || 0).toLocaleString("pt-BR")} contato(s) excluído(s).`);
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(payloadError(payload, "Não foi possível excluir os contatos."));
+      const deleted = payload && typeof payload === "object" && !Array.isArray(payload)
+        ? numberValue((payload as { deleted?: unknown }).deleted)
+        : 0;
+      setMessage(`${deleted.toLocaleString("pt-BR")} contato(s) excluído(s).`);
       setSelectedIds(new Set());
       await load();
     } catch (error) {
@@ -303,140 +420,267 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   return (
     <main className="issues-shell">
       <header className="issues-header">
-        <div>
-          <small>CADASTRO ESSENCIAL PARA O TRABALHO DE CAMPO</small>
-          <h1>Central de qualidade dos contatos</h1>
-          <p>Prioriza nome completo e bairro/localidade. Rua, telefone e duplicidades ficam disponíveis na análise detalhada.</p>
+        <div className="issues-header-copy">
+          <span className="issues-eyebrow">QUALIDADE DOS CONTATOS</span>
+          <h1>Central de qualidade</h1>
+          <p>
+            Priorize nome completo e bairro/localidade para manter a equipe pronta para o trabalho de campo.
+            Rua e telefone continuam disponíveis na análise detalhada.
+          </p>
         </div>
         <div className="issues-actions">
           <a href="/contatos">Voltar ao painel</a>
           {isAdmin && (
-            <select
-              aria-label="Selecionar responsável"
-              value={scope}
-              onChange={(event) => {
-                setScope(event.target.value);
-                clearFilters();
-              }}
-            >
-              <option value="all">Todos os usuários</option>
-              {users.map((user) => (
-                <option key={user.email} value={user.email}>{user.name}</option>
-              ))}
-            </select>
+            <label className="issues-scope-control">
+              <span>Responsável</span>
+              <select
+                aria-label="Selecionar responsável"
+                value={scope}
+                onChange={(event) => {
+                  setScope(event.target.value);
+                  clearFilters();
+                }}
+              >
+                <option value="all">Todos os usuários</option>
+                {users.map((user) => (
+                  <option key={user.email} value={user.email}>{user.name}</option>
+                ))}
+              </select>
+            </label>
           )}
         </div>
       </header>
 
-      <section className="issues-kpis">
-        <article className="critical"><b>{nameReviewCount.toLocaleString("pt-BR")}</b><span>Nomes para revisar</span></article>
-        <article className="warning"><b>{Number(data.categoryCounts.missing_district ?? 0).toLocaleString("pt-BR")}</b><span>Sem bairro/localidade</span></article>
-        <article className="warning"><b>{Number(data.categoryCounts.location_divergence ?? 0).toLocaleString("pt-BR")}</b><span>Bairros divergentes</span></article>
-        <article><b>{Number(data.categoryCounts.rural_location ?? 0).toLocaleString("pt-BR")}</b><span>Zona rural/localidade</span></article>
+      <section className="issues-kpis" aria-label="Indicadores prioritários">
+        <article className="critical">
+          <span className="issues-kpi-label">Nomes para revisar</span>
+          <b>{nameReviewCount.toLocaleString("pt-BR")}</b>
+          <small>Sem nome ou com nome incompleto</small>
+        </article>
+        <article className="warning">
+          <span className="issues-kpi-label">Sem bairro/localidade</span>
+          <b>{Number(data.categoryCounts.missing_district ?? 0).toLocaleString("pt-BR")}</b>
+          <small>Prioridade para organização territorial</small>
+        </article>
+        <article className="warning">
+          <span className="issues-kpi-label">Bairros divergentes</span>
+          <b>{Number(data.categoryCounts.location_divergence ?? 0).toLocaleString("pt-BR")}</b>
+          <small>Cadastros fora do catálogo reconhecido</small>
+        </article>
+        <article className="info">
+          <span className="issues-kpi-label">Zona rural/localidade</span>
+          <b>{Number(data.categoryCounts.rural_location ?? 0).toLocaleString("pt-BR")}</b>
+          <small>Contatos em áreas rurais ou localidades</small>
+        </article>
       </section>
 
-      <section className="issues-category-cards" aria-label="Resumo por categoria">
-        {HIGHLIGHT_CATEGORY_KEYS.map((value) => (
-          <button
-            key={value}
-            className={category === value ? "active" : ""}
-            onClick={() => selectCategory(category === value ? "" : value)}
-          >
-            <b>{Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
-            <span>{CATEGORY_LABELS[value]}</span>
-            <small>{CATEGORY_HELP[value]}</small>
-          </button>
-        ))}
-      </section>
-
-      <section className="issues-panel">
+      <section className="issues-panel" aria-busy={loading}>
         <div className="issues-toolbar">
-          <div>
-            <h2>Contatos para analisar</h2>
-            <p>{data.total.toLocaleString("pt-BR")} registro(s) no filtro atual. Nenhuma exclusão ocorre sem confirmação.</p>
+          <div className="issues-toolbar-heading">
+            <span className="issues-section-label">ANÁLISE OPERACIONAL</span>
+            <h2>Contatos para revisar</h2>
+            <p>
+              {data.total.toLocaleString("pt-BR")} registro(s) no filtro atual.
+              Nenhuma exclusão ocorre sem confirmação.
+            </p>
           </div>
           <div className="issues-toolbar-controls">
-            <input
-              aria-label="Buscar contato"
-              value={queryInput}
-              onChange={(event) => setQueryInput(event.target.value)}
-              placeholder="Buscar nome, telefone, bairro ou rua"
-            />
-            <select aria-label="Filtrar por gravidade" value={severity} onChange={(event) => selectSeverity(event.target.value)}>
-              <option value="">Todas as gravidades</option>
-              <option value="critical">Críticas</option>
-              <option value="warning">Atenção</option>
-              <option value="info">Informativas</option>
-            </select>
-            <select aria-label="Filtrar por categoria" value={category} onChange={(event) => selectCategory(event.target.value)}>
-              <option value="">Todas as categorias</option>
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <button type="button" className="secondary" onClick={clearFilters}>Limpar</button>
+            <label className="issues-control issues-control-search">
+              <span>Buscar</span>
+              <input
+                type="search"
+                autoComplete="off"
+                value={queryInput}
+                onChange={(event) => setQueryInput(event.target.value)}
+                placeholder="Nome, telefone, bairro ou rua"
+              />
+            </label>
+            <label className="issues-control">
+              <span>Prioridade</span>
+              <select value={severity} onChange={(event) => selectSeverity(event.target.value)}>
+                <option value="">Todas</option>
+                <option value="critical">Críticas</option>
+                <option value="warning">Atenção</option>
+                <option value="info">Informativas</option>
+              </select>
+            </label>
+            <label className="issues-control">
+              <span>Categoria</span>
+              <select value={category} onChange={(event) => selectCategory(event.target.value)}>
+                <option value="">Todas</option>
+                {FILTER_CATEGORY_KEYS.map((value) => (
+                  <option key={value} value={value}>{CATEGORY_LABELS[value]}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="secondary issues-clear-button"
+              disabled={!hasActiveFilters}
+              onClick={clearFilters}
+            >
+              Limpar filtros
+            </button>
           </div>
         </div>
 
-        <div className="issues-bulkbar">
-          <label><input type="checkbox" checked={allPageSelected} onChange={togglePage} /> Selecionar página</label>
+        <div className={`issues-bulkbar${selectedIds.size ? " active" : ""}`}>
+          <label>
+            <input
+              type="checkbox"
+              checked={allPageSelected}
+              onChange={togglePage}
+              aria-label="Selecionar todos os contatos desta página"
+            />
+            Selecionar página
+          </label>
           <span>{selectedIds.size.toLocaleString("pt-BR")} selecionado(s)</span>
-          <button className="danger" disabled={!selectedIds.size || deleting} onClick={() => void deleteSelected()}>
+          <button
+            type="button"
+            className="danger"
+            disabled={!selectedIds.size || deleting}
+            onClick={() => void deleteSelected()}
+          >
             {deleting ? "Excluindo…" : "Excluir selecionados"}
           </button>
         </div>
 
-        {loading ? <div className="issues-loading">Analisando a qualidade da base…</div> : (
+        {loading ? (
+          <div className="issues-loading" role="status" aria-live="polite">
+            <span className="issues-spinner" aria-hidden="true" />
+            <div>
+              <b>Analisando a qualidade da base</b>
+              <small>Organizando os contatos por prioridade…</small>
+            </div>
+          </div>
+        ) : data.issues.length ? (
           <div className="issues-table-wrap">
             <table>
-              <thead><tr><th></th><th>Contato</th><th>Telefone</th><th>Bairro e rua</th><th>Problemas encontrados</th><th>Gravidade</th>{isAdmin && <th>Responsável</th>}<th>Ação</th></tr></thead>
+              <thead>
+                <tr>
+                  <th aria-label="Seleção" />
+                  <th>Contato</th>
+                  <th>Telefone</th>
+                  <th>Bairro e rua</th>
+                  <th>Problemas encontrados</th>
+                  <th>Prioridade</th>
+                  {isAdmin && <th>Responsável</th>}
+                  <th>Ação</th>
+                </tr>
+              </thead>
               <tbody>
                 {data.issues.map((issue) => (
                   <tr key={issue.record_id}>
-                    <td><input type="checkbox" checked={selectedIds.has(issue.record_id)} onChange={() => toggleIssue(issue.record_id)} aria-label={`Selecionar ${issue.contact_name || `registro ${issue.record_id}`}`} /></td>
-                    <td data-label="Contato"><b>{issue.contact_name || "Sem nome"}</b><small>Registro {issue.record_id}</small></td>
-                    <td data-label="Telefone">{issue.phone || "—"}</td>
-                    <td data-label="Bairro e rua"><b>{issue.district_original || "Sem bairro/localidade"}</b><small>{[issue.street || "Sem rua", issue.street_number, issue.city, issue.state, issue.cep].filter(Boolean).join(" · ")}</small></td>
-                    <td data-label="Problemas"><div className="issue-tags">{issue.issue_codes.map((code) => <span key={code} className={`issue-tag ${code}`}>{CATEGORY_LABELS[code] || code}</span>)}</div></td>
-                    <td data-label="Gravidade"><span className={`severity-badge ${issue.severity}`}>{severityLabel(issue.severity)}</span></td>
+                    <td className="issues-select-cell">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(issue.record_id)}
+                        onChange={() => toggleIssue(issue.record_id)}
+                        aria-label={`Selecionar ${issue.contact_name || `registro ${issue.record_id}`}`}
+                      />
+                    </td>
+                    <td data-label="Contato">
+                      <b>{issue.contact_name || "Sem nome"}</b>
+                      <small>Registro {issue.record_id}</small>
+                    </td>
+                    <td data-label="Telefone">{issue.phone || "Não informado"}</td>
+                    <td data-label="Bairro e rua">
+                      <b>{issue.district_original || "Sem bairro/localidade"}</b>
+                      <small>
+                        {[issue.street || "Sem rua", issue.street_number, issue.city, issue.state, issue.cep]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </small>
+                    </td>
+                    <td data-label="Problemas">
+                      <div className="issue-tags">
+                        {issue.issue_codes.map((code) => (
+                          <span key={code} className={`issue-tag ${code}`}>
+                            {CATEGORY_LABELS[code] || code}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td data-label="Prioridade">
+                      <span className={`severity-badge ${issue.severity}`}>
+                        {severityLabel(issue.severity)}
+                      </span>
+                    </td>
                     {isAdmin && <td data-label="Responsável">{issue.owner_email}</td>}
-                    <td data-label="Ação"><button onClick={() => startEdit(issue)}>Analisar</button></td>
+                    <td data-label="Ação">
+                      <button type="button" onClick={() => startEdit(issue)}>Analisar contato</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!data.issues.length && <p className="issues-empty">Nenhuma pendência neste filtro.</p>}
+          </div>
+        ) : (
+          <div className="issues-empty" role="status">
+            <b>Nenhuma pendência neste filtro</b>
+            <p>Altere os filtros ou volte mais tarde para conferir novos registros.</p>
+            {hasActiveFilters && (
+              <button type="button" onClick={clearFilters}>Limpar filtros</button>
+            )}
           </div>
         )}
 
-        <footer className="issues-pagination">
-          <button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>Anterior</button>
-          <span>Página {data.page} de {data.totalPages}</span>
-          <button disabled={page >= data.totalPages || loading} onClick={() => setPage((value) => value + 1)}>Próxima</button>
-        </footer>
+        {data.total > 0 && (
+          <nav className="issues-pagination" aria-label="Paginação dos contatos">
+            <button
+              type="button"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage((value) => value - 1)}
+            >
+              Anterior
+            </button>
+            <span>Página {data.page} de {data.totalPages}</span>
+            <button
+              type="button"
+              disabled={page >= data.totalPages || loading}
+              onClick={() => setPage((value) => value + 1)}
+            >
+              Próxima
+            </button>
+          </nav>
+        )}
       </section>
 
       {message && (
-        <div className="issues-toast" role="status">
+        <div className="issues-toast" role="status" aria-live="polite">
           <span>{message}</span>
           <button type="button" aria-label="Fechar aviso" onClick={() => setMessage("")}>×</button>
         </div>
       )}
+
       {editing && (
         <div className="issues-modal-backdrop" onMouseDown={closeEdit}>
-          <section className="issues-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <section
+            className="issues-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quality-dialog-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <header>
-              <div><small>CADASTRO ESSENCIAL</small><h2>{editing.contact_name || "Contato sem nome"}</h2></div>
-              <button aria-label="Fechar análise" disabled={saving} onClick={closeEdit}>×</button>
+              <div>
+                <span className="issues-section-label">CADASTRO ESSENCIAL</span>
+                <h2 id="quality-dialog-title">{editing.contact_name || "Contato sem nome"}</h2>
+              </div>
+              <button type="button" aria-label="Fechar análise" disabled={saving} onClick={closeEdit}>×</button>
             </header>
             <div className="issues-review-summary">
               <p><span>Telefone</span><strong>{editing.phone || "Não informado"}</strong></p>
-              <p><span>Problemas</span><strong>{editing.issue_codes.map((code) => CATEGORY_LABELS[code] || code).join(", ")}</strong></p>
+              <p>
+                <span>Problemas</span>
+                <strong>{editing.issue_codes.map((code) => CATEGORY_LABELS[code] || code).join(", ")}</strong>
+              </p>
             </div>
             <div className="issues-required-grid">
               <label>
                 Nome completo
                 <input
+                  autoFocus
                   autoComplete="name"
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
@@ -467,8 +711,9 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
               </label>
             </div>
             <footer>
-              <button disabled={saving} onClick={closeEdit}>Fechar</button>
+              <button type="button" disabled={saving} onClick={closeEdit}>Cancelar</button>
               <button
+                type="button"
                 className="primary"
                 disabled={!canSaveRequiredFields || saving}
                 onClick={() => void saveRequiredFields()}
