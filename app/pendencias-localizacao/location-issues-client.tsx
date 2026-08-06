@@ -46,6 +46,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   rural_location: "Zona rural / localidade",
 };
 
+const FILTER_CATEGORY_LABELS = Object.entries(CATEGORY_LABELS).filter(
+  ([value]) => value !== "duplicate_phone",
+);
+
 const EMPTY_PAGE: PageData = {
   page: 1,
   pageSize: 50,
@@ -336,7 +340,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
             </select>
             <select aria-label="Filtrar por categoria" value={category} onChange={(event) => selectCategory(event.target.value)}>
               <option value="">Todas as categorias</option>
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+              {FILTER_CATEGORY_LABELS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
