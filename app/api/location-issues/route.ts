@@ -4,8 +4,10 @@ const PAGE_SIZE = 50;
 const ISSUE_CATEGORIES = [
   "duplicate_phone",
   "invalid_phone",
-  "missing_location",
-  "incomplete_location",
+  "missing_name",
+  "incomplete_name",
+  "missing_district",
+  "missing_street",
   "location_divergence",
   "rural_location",
 ] as const;
@@ -17,6 +19,12 @@ function sanitizeSearch(value: string) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 100);
+}
+
+function normalizeRequiredText(value: unknown) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function visibleEmails(
@@ -98,7 +106,7 @@ export async function GET(request: Request) {
     if (severity) query = query.eq("severity", severity);
     if (queryText)
       query = query.or(
-        `contact_name.ilike.*${queryText}*,phone.ilike.*${queryText}*,phone_normalized.ilike.*${queryText}*,district_original.ilike.*${queryText}*`,
+        `contact_name.ilike.*${queryText}*,phone.ilike.*${queryText}*,phone_normalized.ilike.*${queryText}*,district_original.ilike.*${queryText}*,street.ilike.*${queryText}*`,
       );
 
     const countResults = await Promise.all(
@@ -171,11 +179,29 @@ export async function PATCH(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const body = (await request.json()) as { recordId?: number; district?: string };
+  const body = (await request.json()) as {
+    recordId?: number;
+    name?: string;
+    district?: string;
+    street?: string;
+  };
   const recordId = Number(body.recordId);
-  const district = String(body.district ?? "").trim();
-  if (!Number.isInteger(recordId) || recordId <= 0 || !district)
-    return Response.json({ error: "Correção inválida" }, { status: 400 });
+  const name = normalizeRequiredText(body.name);
+  const district = normalizeRequiredText(body.district);
+  const street = normalizeRequiredText(body.street);
+  const hasCompleteName = name.split(/\s+/).filter(Boolean).length >= 2;
+
+  if (!Number.isInteger(recordId) || recordId <= 0)
+    return Response.json({ error: "Contato inválido" }, { status: 400 });
+  if (!hasCompleteName)
+    return Response.json(
+      { error: "Informe o nome completo, com pelo menos nome e sobrenome." },
+      { status: 400 },
+    );
+  if (!district)
+    return Response.json({ error: "Informe o bairro ou a localidade." }, { status: 400 });
+  if (!street)
+    return Response.json({ error: "Informe a rua onde o contato mora." }, { status: 400 });
 
   const emails = await visibleEmails(account);
   const { data: record, error: recordError } = await account.supabase
@@ -199,7 +225,7 @@ export async function PATCH(request: Request) {
   const { data: updated, error } = await account.supabase
     .from("vf_owned_records")
     .update({
-      payload: { ...currentPayload, district },
+      payload: { ...currentPayload, name, district, street },
       updated_at: new Date().toISOString(),
     })
     .eq("id", recordId)
@@ -221,8 +247,8 @@ export async function PATCH(request: Request) {
   const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
     actor_id: account.auth_user_id,
     actor_email: account.email,
-    action: "Qualidade do contato corrigida",
-    detail: `${record.owner_email} · registro ${recordId} · bairro ${district}`,
+    action: "Cadastro essencial do contato corrigido",
+    detail: `${record.owner_email} · registro ${recordId} · nome ${name} · bairro ${district} · rua ${street}`,
   });
   if (auditError) console.error("Failed to audit contact quality update", auditError);
 
