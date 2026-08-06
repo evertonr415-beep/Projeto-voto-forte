@@ -244,7 +244,6 @@ export default function OptimizedDashboardClient({
       body: JSON.stringify({
         id: editing.id,
         payload: {
-          ...editing,
           name: editing.name.trim(),
           phone: formatPhone(normalized),
           phoneNormalized: normalized,
