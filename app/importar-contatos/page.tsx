@@ -43,7 +43,14 @@ function normalize(value: string) {
 }
 
 function normalizePhone(value: string) {
-  return value.replace(/\D/g, "");
+  let normalized = value.replace(/\D/g, "");
+  if ((normalized.length === 12 || normalized.length === 13) && normalized.startsWith("55"))
+    normalized = normalized.slice(2);
+  return normalized;
+}
+
+function isValidPhone(value: string) {
+  return /^[1-9]\d{9,10}$/.test(value) && !/^(\d)\1+$/.test(value);
 }
 
 async function sha256(value: string) {
@@ -124,7 +131,7 @@ function parseCsv(text: string): ParsedCsv {
     const phone = get(indexes.phone);
     const normalizedPhone = normalizePhone(phone);
 
-    if (!name || normalizedPhone.length < 8) {
+    if (!name || !isValidPhone(normalizedPhone)) {
       invalid++;
       continue;
     }
@@ -169,12 +176,7 @@ async function sendBatch(
     const response = await apiFetch("/api/records/import-contacts", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contacts,
-        existingPhonesChecked: true,
-        importSessionId,
-        importBatchId,
-      }),
+      body: JSON.stringify({ contacts, importSessionId, importBatchId }),
     });
     const data = await response.json();
     if (!response.ok)
@@ -264,107 +266,63 @@ export default function BulkContactImportPage() {
     if (!contacts.length || !fileFingerprint || running) return;
     cancelled.current = false;
     setRunning(true);
-    setProcessed(0);
-    setResult({
+    setProcessed(invalidInFile + duplicatesInFile);
+    let summary: Result = {
       inserted: 0,
       duplicates: duplicatesInFile,
       invalid: invalidInFile,
       failed: 0,
-    });
+    };
+    setResult(summary);
     setMessage(
-      "Conferindo os telefones que já existem no sistema. Não feche esta página.",
+      `Importando ${contacts.length.toLocaleString("pt-BR")} contatos em lotes de ${BATCH_SIZE}. Duplicados já existentes serão descartados automaticamente.`,
     );
 
-    try {
-      const existingResponse = await apiFetch(
-        "/api/records/import-contacts",
-      );
-      const existingData = await existingResponse.json();
-      if (!existingResponse.ok)
-        throw new Error(
-          existingData.error || "Não foi possível conferir duplicidades",
+    for (let start = 0; start < contacts.length; start += BATCH_SIZE) {
+      if (cancelled.current) break;
+      const batch = contacts.slice(start, start + BATCH_SIZE);
+      const batchNumber = Math.floor(start / BATCH_SIZE);
+      const importBatchId = `${fileFingerprint}:${batchNumber}`;
+
+      try {
+        const current = await sendBatch(
+          batch,
+          fileFingerprint,
+          importBatchId,
         );
-
-      const existingPhones = new Set<string>(existingData.phones || []);
-      const pending = contacts.filter(
-        (contact) => !existingPhones.has(normalizePhone(contact.phone)),
-      );
-      const duplicatesAlreadySaved = contacts.length - pending.length;
-      let summary: Result = {
-        inserted: 0,
-        duplicates: duplicatesInFile + duplicatesAlreadySaved,
-        invalid: invalidInFile,
-        failed: 0,
-      };
-      const baseProcessed =
-        invalidInFile + duplicatesInFile + duplicatesAlreadySaved;
-
-      setResult(summary);
-      setProcessed(baseProcessed);
-
-      if (!pending.length) {
-        setRunning(false);
-        setProcessed(totalRows);
+        summary = {
+          inserted: summary.inserted + current.inserted,
+          duplicates: summary.duplicates + current.duplicates,
+          invalid: summary.invalid + current.invalid,
+          failed: summary.failed + current.failed,
+        };
+      } catch (error) {
+        summary.failed += batch.length;
         setMessage(
-          "Nenhum contato novo para inserir. Os registros do arquivo já existem ou são inválidos.",
+          `O lote ${batchNumber + 1} falhou após 3 tentativas. A importação foi interrompida com segurança: ${error instanceof Error ? error.message : "erro desconhecido"}.`,
         );
+        setResult(summary);
+        setProcessed(
+          Math.min(invalidInFile + duplicatesInFile + start, totalRows),
+        );
+        setRunning(false);
         return;
       }
 
-      setMessage(
-        `${pending.length.toLocaleString("pt-BR")} contatos novos serão importados em lotes de ${BATCH_SIZE}.`,
+      setResult(summary);
+      setProcessed(
+        Math.min(invalidInFile + duplicatesInFile + start + batch.length, totalRows),
       );
+    }
 
-      for (let start = 0; start < pending.length; start += BATCH_SIZE) {
-        if (cancelled.current) break;
-        const batch = pending.slice(start, start + BATCH_SIZE);
-        const batchNumber = Math.floor(start / BATCH_SIZE);
-        const importBatchId = `${fileFingerprint}:${batchNumber}`;
-
-        try {
-          const current = await sendBatch(
-            batch,
-            fileFingerprint,
-            importBatchId,
-          );
-          summary = {
-            inserted: summary.inserted + current.inserted,
-            duplicates: summary.duplicates + current.duplicates,
-            invalid: summary.invalid + current.invalid,
-            failed: summary.failed + current.failed,
-          };
-        } catch (error) {
-          summary.failed += batch.length;
-          setMessage(
-            `O lote ${batchNumber + 1} falhou após 3 tentativas. A importação foi interrompida com segurança: ${error instanceof Error ? error.message : "erro desconhecido"}.`,
-          );
-          setResult(summary);
-          setProcessed(baseProcessed + start);
-          setRunning(false);
-          return;
-        }
-        setResult(summary);
-        setProcessed(
-          Math.min(baseProcessed + start + batch.length, totalRows),
-        );
-      }
-
-      setRunning(false);
-      if (cancelled.current) {
-        setMessage(
-          "Importação pausada. Os lotes concluídos permanecem salvos. Selecione o mesmo arquivo novamente para continuar; os números já gravados serão ignorados.",
-        );
-      } else {
-        setProcessed(totalRows);
-        setMessage("Importação concluída. Confira o relatório abaixo.");
-      }
-    } catch (error) {
-      setRunning(false);
+    setRunning(false);
+    if (cancelled.current) {
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível iniciar a importação.",
+        "Importação pausada. Os lotes concluídos permanecem salvos. Selecione o mesmo arquivo novamente para continuar; os números já gravados serão reconhecidos automaticamente.",
       );
+    } else {
+      setProcessed(totalRows);
+      setMessage("Importação concluída. Confira o relatório abaixo.");
     }
   }
 
@@ -378,8 +336,8 @@ export default function BulkContactImportPage() {
         <h1>Importar até 150.000 contatos</h1>
         <p>
           O arquivo é validado antes do envio e processado em lotes de{" "}
-          {BATCH_SIZE}. Telefones repetidos no arquivo e no sistema são
-          ignorados automaticamente.
+          {BATCH_SIZE}. Telefones repetidos no arquivo ou já existentes no
+          sistema são ignorados automaticamente.
         </p>
 
         <label className="bulk-file-picker">
