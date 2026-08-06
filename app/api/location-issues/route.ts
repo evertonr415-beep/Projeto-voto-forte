@@ -11,6 +11,12 @@ const ISSUE_CATEGORIES = [
   "location_divergence",
   "rural_location",
 ] as const;
+const REQUIRED_FIELD_ISSUES = [
+  "missing_name",
+  "incomplete_name",
+  "missing_district",
+  "missing_street",
+] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
 function sanitizeSearch(value: string) {
@@ -140,10 +146,20 @@ export async function GET(request: Request) {
       .select("record_id", { count: "exact", head: true });
     totalContactsQuery = applyScope(totalContactsQuery, scope, emails);
 
-    const [{ data, count, error }, { count: totalContacts, error: totalError }] =
-      await Promise.all([query, totalContactsQuery]);
+    let requiredIncompleteQuery = account.supabase
+      .from("vf_contact_quality")
+      .select("record_id", { count: "exact", head: true })
+      .overlaps("issue_codes", [...REQUIRED_FIELD_ISSUES]);
+    requiredIncompleteQuery = applyScope(requiredIncompleteQuery, scope, emails);
+
+    const [
+      { data, count, error },
+      { count: totalContacts, error: totalError },
+      { count: requiredIncomplete, error: requiredIncompleteError },
+    ] = await Promise.all([query, totalContactsQuery, requiredIncompleteQuery]);
     if (error) throw new Error(error.message);
     if (totalError) throw new Error(totalError.message);
+    if (requiredIncompleteError) throw new Error(requiredIncompleteError.message);
 
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
@@ -159,6 +175,7 @@ export async function GET(request: Request) {
         totalIssues:
           Number(severityCounts.critical ?? 0) +
           Number(severityCounts.warning ?? 0),
+        requiredIncomplete: requiredIncomplete ?? 0,
         categoryCounts,
         severityCounts,
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
