@@ -17,15 +17,7 @@ type ContactPayload = {
   state?: string;
 };
 
-type PayloadRow = {
-  payload: {
-    phone?: string;
-    phoneNormalized?: string;
-  } | null;
-};
-
 const MAX_BATCH_SIZE = 500;
-const PAGE_SIZE = 1000;
 
 function normalizePhone(value: unknown) {
   let normalized = String(value ?? "").replace(/\D/g, "");
@@ -93,83 +85,41 @@ async function resolveOwner(
   return { owner, targetEmail };
 }
 
-async function loadExistingPhones(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  ownerEmail: string,
-) {
-  const phones = new Set<string>();
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await account.supabase
-      .from("vf_owned_records")
-      .select("payload")
-      .eq("owner_email", ownerEmail)
-      .eq("kind", "contact")
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw new Error(error.message);
-    for (const row of (data ?? []) as PayloadRow[]) {
-      const phone =
-        normalizePhone(row.payload?.phoneNormalized) ||
-        normalizePhone(row.payload?.phone);
-      if (phone) phones.add(phone);
-    }
-    if (!data || data.length < PAGE_SIZE) break;
-  }
-
-  return phones;
-}
-
-async function countBatch(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  ownerEmail: string,
-  batchId: string,
-) {
-  const { count, error } = await account.supabase
-    .from("vf_owned_records")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_email", ownerEmail)
-    .eq("kind", "contact")
-    .eq("payload->>importBatchId", batchId);
-
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const url = new URL(request.url);
-  const requestedOwner = url.searchParams.get("owner") ?? undefined;
   const batchId = url.searchParams.get("batchId")?.trim();
-  const resolved = await resolveOwner(account, requestedOwner);
+  const resolved = await resolveOwner(
+    account,
+    url.searchParams.get("owner") ?? undefined,
+  );
   if ("error" in resolved) return resolved.error;
 
-  try {
-    if (batchId) {
-      const count = await countBatch(account, resolved.targetEmail, batchId);
-      return Response.json({ batchId, count, completed: count > 0 });
-    }
-
-    const phones = await loadExistingPhones(account, resolved.targetEmail);
-    return Response.json({
-      ownerEmail: resolved.targetEmail,
-      phones: [...phones],
-      total: phones.size,
-    });
-  } catch (error) {
+  if (!batchId)
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível conferir os contatos existentes",
-      },
+      { error: "Informe o identificador do lote" },
+      { status: 400 },
+    );
+
+  const { count, error } = await account.supabase
+    .from("vf_owned_records")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_email", resolved.targetEmail)
+    .eq("kind", "contact")
+    .eq("payload->>importBatchId", batchId);
+
+  if (error) {
+    console.error("Failed to check import batch", error);
+    return Response.json(
+      { error: "Não foi possível conferir o lote." },
       { status: 400 },
     );
   }
+
+  return Response.json({ batchId, count: count ?? 0 });
 }
 
 export async function POST(request: Request) {
@@ -210,54 +160,64 @@ export async function POST(request: Request) {
     else uniqueInBatch.set(contact.phoneNormalized, contact);
   }
 
-  try {
-    const { data, error } = await account.supabase.rpc(
-      "vf_import_contacts_deduplicated",
-      {
-        p_owner_email: resolved.targetEmail,
-        p_contacts: [...uniqueInBatch.values()],
-        p_import_session_id: String(body.importSessionId ?? "").trim() || null,
-        p_import_batch_id: String(body.importBatchId ?? "").trim() || null,
-      },
-    );
+  const { data, error } = await account.supabase.rpc(
+    "vf_import_contacts_deduplicated",
+    {
+      p_owner_email: resolved.targetEmail,
+      p_contacts: [...uniqueInBatch.values()],
+      p_import_session_id: String(body.importSessionId ?? "").trim() || null,
+      p_import_batch_id: String(body.importBatchId ?? "").trim() || null,
+    },
+  );
 
-    if (error) throw new Error(error.message);
-
-    const result = (data ?? {}) as {
-      inserted?: number;
-      duplicates?: number;
-      recovered?: boolean;
-    };
-    const inserted = Number(result.inserted) || 0;
-    const duplicates = (Number(result.duplicates) || 0) + duplicatesInFile;
-
-    await account.supabase.from("vf_audit_logs").insert({
-      actor_id: account.auth_user_id,
-      actor_email: account.email,
-      action: "Importação inteligente de contatos",
-      detail: `${resolved.targetEmail} · ${inserted} inseridos · ${duplicates} duplicados descartados · ${invalid} inválidos`,
-    });
-
-    return Response.json({
-      inserted,
-      duplicates,
-      invalid,
-      failed: 0,
-      recovered: Boolean(result.recovered),
-    });
-  } catch (error) {
+  if (error) {
+    console.error("Contact import RPC failed", error);
+    const status = error.code === "42501" ? 403 : 400;
+    const message =
+      error.code === "42501"
+        ? "Acesso negado"
+        : error.code === "22023"
+          ? "O lote de contatos contém dados inválidos."
+          : "Não foi possível importar este lote agora.";
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível importar os contatos",
+        error: message,
         inserted: 0,
         duplicates: duplicatesInFile,
         invalid,
         failed: uniqueInBatch.size,
       },
-      { status: 400 },
+      { status },
     );
   }
+
+  const result = (data ?? {}) as {
+    inserted?: number;
+    duplicates?: number;
+    invalid?: number;
+    recovered?: boolean;
+  };
+  const inserted = Number(result.inserted) || 0;
+  const duplicates = (Number(result.duplicates) || 0) + duplicatesInFile;
+  const totalInvalid = invalid + (Number(result.invalid) || 0);
+
+  try {
+    const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
+      actor_id: account.auth_user_id,
+      actor_email: account.email,
+      action: "Importação inteligente de contatos",
+      detail: `${resolved.targetEmail} · ${inserted} inseridos · ${duplicates} duplicados descartados · ${totalInvalid} inválidos`,
+    });
+    if (auditError) console.error("Failed to audit contact import", auditError);
+  } catch (auditError) {
+    console.error("Unexpected contact import audit failure", auditError);
+  }
+
+  return Response.json({
+    inserted,
+    duplicates,
+    invalid: totalInvalid,
+    failed: 0,
+    recovered: Boolean(result.recovered),
+  });
 }
