@@ -1,7 +1,6 @@
 import { getAccount, getVisibleUsers, isAdministrator } from "../../server-identity";
 
 const PAGE_SIZE = 50;
-const MAX_BULK_DELETE = 500;
 const ISSUE_CATEGORIES = [
   "duplicate_phone",
   "invalid_phone",
@@ -10,8 +9,15 @@ const ISSUE_CATEGORIES = [
   "location_divergence",
   "rural_location",
 ] as const;
+const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
-type OwnedRecordOwner = { id: number; owner_email: string };
+function sanitizeSearch(value: string) {
+  return value
+    .replace(/[,.()*\\%]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100);
+}
 
 async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
@@ -59,9 +65,19 @@ export async function GET(request: Request) {
 
   const { scope, emails } = resolved;
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-  const category = url.searchParams.get("category") ?? "";
-  const severity = url.searchParams.get("severity") ?? "";
-  const queryText = url.searchParams.get("q")?.trim() ?? "";
+  const requestedCategory = url.searchParams.get("category") ?? "";
+  const category = ISSUE_CATEGORIES.includes(
+    requestedCategory as (typeof ISSUE_CATEGORIES)[number],
+  )
+    ? requestedCategory
+    : "";
+  const requestedSeverity = url.searchParams.get("severity") ?? "";
+  const severity = ISSUE_SEVERITIES.includes(
+    requestedSeverity as (typeof ISSUE_SEVERITIES)[number],
+  )
+    ? requestedSeverity
+    : "";
+  const queryText = sanitizeSearch(url.searchParams.get("q") ?? "");
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
@@ -73,7 +89,7 @@ export async function GET(request: Request) {
         { count: "exact" },
       )
       .neq("severity", "ok")
-      .order("severity", { ascending: true })
+      .order("severity_rank", { ascending: true })
       .order("updated_at", { ascending: false })
       .range(from, to);
 
@@ -82,7 +98,7 @@ export async function GET(request: Request) {
     if (severity) query = query.eq("severity", severity);
     if (queryText)
       query = query.or(
-        `contact_name.ilike.%${queryText}%,phone.ilike.%${queryText}%,district_original.ilike.%${queryText}%`,
+        `contact_name.ilike.*${queryText}*,phone.ilike.*${queryText}*,phone_normalized.ilike.*${queryText}*,district_original.ilike.*${queryText}*`,
       );
 
     const countResults = await Promise.all(
@@ -99,7 +115,7 @@ export async function GET(request: Request) {
     );
 
     const severityResults = await Promise.all(
-      ["critical", "warning", "info"].map(async (item) => {
+      ISSUE_SEVERITIES.map(async (item) => {
         let countQuery = account.supabase
           .from("vf_contact_quality")
           .select("record_id", { count: "exact", head: true })
@@ -132,7 +148,9 @@ export async function GET(request: Request) {
         pageSize: PAGE_SIZE,
         total,
         totalContacts: totalContacts ?? 0,
-        totalIssues: Number(severityCounts.critical ?? 0) + Number(severityCounts.warning ?? 0) + Number(severityCounts.info ?? 0),
+        totalIssues:
+          Number(severityCounts.critical ?? 0) +
+          Number(severityCounts.warning ?? 0),
         categoryCounts,
         severityCounts,
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -141,8 +159,9 @@ export async function GET(request: Request) {
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   } catch (error) {
+    console.error("Failed to load contact quality issues", error);
     return Response.json(
-      { error: error instanceof Error ? error.message : "Falha ao carregar pendências" },
+      { error: "Não foi possível carregar as pendências agora." },
       { status: 400 },
     );
   }
@@ -168,7 +187,8 @@ export async function PATCH(request: Request) {
 
   if (recordError || !record)
     return Response.json({ error: "Contato não encontrado" }, { status: 404 });
-  if (!emails.includes(String(record.owner_email).toLowerCase()))
+  const ownerEmail = String(record.owner_email).trim().toLowerCase();
+  if (!emails.includes(ownerEmail))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const currentPayload =
@@ -176,22 +196,35 @@ export async function PATCH(request: Request) {
       ? (record.payload as Record<string, unknown>)
       : {};
 
-  const { error } = await account.supabase
+  const { data: updated, error } = await account.supabase
     .from("vf_owned_records")
     .update({
       payload: { ...currentPayload, district },
       updated_at: new Date().toISOString(),
     })
-    .eq("id", recordId);
+    .eq("id", recordId)
+    .eq("kind", "contact")
+    .eq("owner_email", record.owner_email)
+    .select("id")
+    .maybeSingle();
 
-  if (error) return Response.json({ error: error.message }, { status: 400 });
+  if (error) {
+    console.error("Failed to update contact quality issue", error);
+    return Response.json({ error: "Não foi possível corrigir o contato." }, { status: 400 });
+  }
+  if (!updated)
+    return Response.json(
+      { error: "O contato foi alterado por outra operação. Recarregue e tente novamente." },
+      { status: 409 },
+    );
 
-  await account.supabase.from("vf_audit_logs").insert({
+  const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
     actor_id: account.auth_user_id,
     actor_email: account.email,
     action: "Qualidade do contato corrigida",
     detail: `${record.owner_email} · registro ${recordId} · bairro ${district}`,
   });
+  if (auditError) console.error("Failed to audit contact quality update", auditError);
 
   return Response.json({ ok: true });
 }
@@ -210,42 +243,35 @@ export async function DELETE(request: Request) {
 
   if (!recordIds.length)
     return Response.json({ error: "Nenhum contato selecionado" }, { status: 400 });
-  if (recordIds.length > MAX_BULK_DELETE)
+
+  try {
+    const { data, error } = await account.supabase.rpc(
+      "vf_delete_contact_quality_batch",
+      {
+        p_record_ids: recordIds,
+        p_confirmation: String(body.confirmation ?? ""),
+      },
+    );
+
+    if (error) {
+      console.error("Failed to delete contact quality batch", error);
+      const status = error.code === "42501" ? 403 : error.code === "22023" ? 400 : 409;
+      const message =
+        error.code === "42501"
+          ? "Acesso negado"
+          : error.code === "22023"
+            ? "A seleção ou a confirmação é inválida."
+            : "A seleção mudou durante a exclusão. Recarregue e tente novamente.";
+      return Response.json({ error: message }, { status });
+    }
+
+    const result = (data ?? {}) as { deleted?: number };
+    return Response.json({ ok: true, deleted: Number(result.deleted) || 0 });
+  } catch (error) {
+    console.error("Unexpected bulk contact deletion failure", error);
     return Response.json(
-      { error: `Selecione no máximo ${MAX_BULK_DELETE} contatos por exclusão` },
+      { error: "Não foi possível excluir os contatos agora." },
       { status: 400 },
     );
-  if (body.confirmation !== "EXCLUIR CONTATOS")
-    return Response.json({ error: "Confirmação inválida" }, { status: 400 });
-
-  const emails = await visibleEmails(account);
-  const { data: records, error: readError } = await account.supabase
-    .from("vf_owned_records")
-    .select("id,owner_email")
-    .eq("kind", "contact")
-    .in("id", recordIds);
-
-  if (readError) return Response.json({ error: readError.message }, { status: 400 });
-  const ownedRecords = (records ?? []) as OwnedRecordOwner[];
-  if (ownedRecords.length !== recordIds.length)
-    return Response.json({ error: "Um ou mais contatos não foram encontrados" }, { status: 404 });
-  if (ownedRecords.some((record) => !emails.includes(String(record.owner_email).toLowerCase())))
-    return Response.json({ error: "Acesso negado" }, { status: 403 });
-
-  const { error: deleteError, count } = await account.supabase
-    .from("vf_owned_records")
-    .delete({ count: "exact" })
-    .in("id", recordIds);
-
-  if (deleteError)
-    return Response.json({ error: deleteError.message }, { status: 400 });
-
-  await account.supabase.from("vf_audit_logs").insert({
-    actor_id: account.auth_user_id,
-    actor_email: account.email,
-    action: "Exclusão em massa de contatos",
-    detail: `${count ?? recordIds.length} contatos excluídos após confirmação explícita`,
-  });
-
-  return Response.json({ ok: true, deleted: count ?? recordIds.length });
+  }
 }
