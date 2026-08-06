@@ -1,7 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://dtcvudwmosxhbgpwphsx.supabase.co";
-const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_tXsklaQ9alfe6IfcYd-RhA_NBxIWA15";
+function requiredEnv(name: string) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Variável de ambiente ausente: ${name}`);
+  return value;
+}
+
+const url = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+const key = requiredEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
 export const supabase = createClient(url, key, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
