@@ -59,19 +59,33 @@ export default function UserHierarchyPanel() {
   }, []);
 
   useEffect(() => {
+    let observer: MutationObserver | null = null;
+    let loaded = false;
+
     const detect = () => {
       const node = document.querySelector<HTMLElement>(".users-admin-grid");
-      if (node && node !== target) {
-        node.dataset.vfHierarchyReplaced = "true";
-        setTarget(node);
+      if (!node) return false;
+
+      node.dataset.vfHierarchyReplaced = "true";
+      setTarget(node);
+      observer?.disconnect();
+
+      if (!loaded) {
+        loaded = true;
         void load();
       }
+      return true;
     };
-    const observer = new MutationObserver(detect);
-    observer.observe(document.body, { childList: true, subtree: true });
-    detect();
-    return () => observer.disconnect();
-  }, [load, target]);
+
+    if (!detect()) {
+      observer = new MutationObserver(() => {
+        detect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => observer?.disconnect();
+  }, [load]);
 
   const childrenByParent = useMemo(() => {
     const map = new Map<number | null, User[]>();
