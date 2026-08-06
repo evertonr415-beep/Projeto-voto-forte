@@ -11,6 +11,8 @@ const ISSUE_CATEGORIES = [
   "rural_location",
 ] as const;
 
+type OwnedRecordOwner = { id: number; owner_email: string };
+
 async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
 ) {
@@ -224,9 +226,10 @@ export async function DELETE(request: Request) {
     .in("id", recordIds);
 
   if (readError) return Response.json({ error: readError.message }, { status: 400 });
-  if ((records ?? []).length !== recordIds.length)
+  const ownedRecords = (records ?? []) as OwnedRecordOwner[];
+  if (ownedRecords.length !== recordIds.length)
     return Response.json({ error: "Um ou mais contatos não foram encontrados" }, { status: 404 });
-  if ((records ?? []).some((record) => !emails.includes(String(record.owner_email).toLowerCase())))
+  if (ownedRecords.some((record) => !emails.includes(String(record.owner_email).toLowerCase())))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const { error: deleteError, count } = await account.supabase
