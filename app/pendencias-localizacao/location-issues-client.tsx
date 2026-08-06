@@ -46,26 +46,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   rural_location: "Zona rural / localidade",
 };
 
-const CATEGORY_HELP: Record<string, string> = {
-  duplicate_phone: "O telefone já está associado a outro contato da base.",
-  invalid_phone: "O número não possui um formato de telefone válido.",
-  missing_name: "Nenhum nome foi informado para o contato.",
-  incomplete_name: "O nome precisa ter pelo menos nome e sobrenome.",
-  missing_district: "O bairro ou a localidade não foi informado.",
-  missing_street: "A rua onde o contato mora não foi informada.",
-  location_divergence: "O bairro informado não corresponde ao catálogo reconhecido.",
-  rural_location: "Contato identificado em zona rural, estrada, sítio ou localidade.",
-};
-
-const HIGHLIGHT_CATEGORY_KEYS = [
-  "invalid_phone",
-  "missing_name",
-  "incomplete_name",
-  "missing_district",
-  "location_divergence",
-  "rural_location",
-] as const;
-
 const EMPTY_PAGE: PageData = {
   page: 1,
   pageSize: 50,
@@ -333,20 +313,6 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
         <article className="warning"><b>{Number(data.categoryCounts.missing_district ?? 0).toLocaleString("pt-BR")}</b><span>Sem bairro/localidade</span></article>
         <article className="warning"><b>{Number(data.categoryCounts.location_divergence ?? 0).toLocaleString("pt-BR")}</b><span>Bairros divergentes</span></article>
         <article><b>{Number(data.categoryCounts.rural_location ?? 0).toLocaleString("pt-BR")}</b><span>Zona rural/localidade</span></article>
-      </section>
-
-      <section className="issues-category-cards" aria-label="Resumo por categoria">
-        {HIGHLIGHT_CATEGORY_KEYS.map((value) => (
-          <button
-            key={value}
-            className={category === value ? "active" : ""}
-            onClick={() => selectCategory(category === value ? "" : value)}
-          >
-            <b>{Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
-            <span>{CATEGORY_LABELS[value]}</span>
-            <small>{CATEGORY_HELP[value]}</small>
-          </button>
-        ))}
       </section>
 
       <section className="issues-panel">
