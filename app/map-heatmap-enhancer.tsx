@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { loadSharedTerritoryContacts } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type HeatPoint = {
@@ -9,17 +10,9 @@ type HeatPoint = {
   count: number;
 };
 
-function isMapView() {
-  const heading = Array.from(document.querySelectorAll("h1, h2, h3"))
-    .map((element) => element.textContent?.trim().toLowerCase() || "")
-    .some((text) => text.includes("mapa eleitoral") || text.includes("mapa real"));
-  return heading || Boolean(document.querySelector(".leaflet-container"));
-}
-
 function aggregatePoints(records: Array<any>) {
   const grouped = new Map<string, HeatPoint>();
   for (const record of records) {
-    if (record.kind !== "contact") continue;
     const latitude = Number(record.payload?.latitude);
     const longitude = Number(record.payload?.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
@@ -52,30 +45,39 @@ function heatStyle(count: number, maximum: number) {
 export default function MapHeatmapEnhancer() {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [mappedPoints, setMappedPoints] = useState(0);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const pointsRef = useRef<HeatPoint[]>([]);
+  const enabledRef = useRef(false);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     let cancelled = false;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
+    let patchTimeout: number | null = null;
+
+    const clearLayer = () => {
+      const map = mapRef.current;
+      const layer = layerRef.current;
+      if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
+      layerRef.current = null;
+    };
 
     const renderLayer = () => {
       const L = (window as any).L;
       const map = mapRef.current;
-      if (!L || !map) return;
+      if (!L || !map || !enabledRef.current) return;
 
-      if (layerRef.current && map.hasLayer(layerRef.current)) {
-        map.removeLayer(layerRef.current);
-      }
+      clearLayer();
 
       const heatPoints = pointsRef.current;
-      if (!heatPoints.length) {
-        layerRef.current = null;
-        return;
-      }
+      if (!heatPoints.length) return;
 
       const layer = L.layerGroup();
       const maximum = Math.max(1, ...heatPoints.map((point) => point.count));
@@ -100,32 +102,31 @@ export default function MapHeatmapEnhancer() {
       }
 
       layerRef.current = layer;
+      layer.addTo(map);
     };
 
-    const loadPoints = async () => {
+    const loadPoints = async (force = false) => {
+      if (!enabledRef.current || cancelled) return;
+      setLoading(true);
       try {
-        const response = await fetch("/api/records?owner=all", {
-          headers: { accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!response.ok) return;
-        const data = (await response.json()) as { records?: Array<any> };
-        const points = aggregatePoints(data.records || []);
+        const records = await loadSharedTerritoryContacts({ force });
+        if (cancelled || !enabledRef.current) return;
+        const points = aggregatePoints(records);
         pointsRef.current = points;
-        if (!cancelled) {
-          setMappedPoints(points.reduce((total, point) => total + point.count, 0));
-          renderLayer();
-        }
+        setMappedPoints(points.reduce((total, point) => total + point.count, 0));
+        window.requestAnimationFrame(renderLayer);
       } catch {
         // O mapa principal continua funcionando mesmo sem a camada de calor.
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
 
-    const installHeatmap = async (map: any) => {
+    const installHeatmap = (map: any) => {
       if (cancelled || !map || map._vfHeatmapInstalled) return;
       map._vfHeatmapInstalled = true;
       mapRef.current = map;
-      await loadPoints();
+      setVisible(true);
     };
 
     const patchLeaflet = () => {
@@ -134,7 +135,7 @@ export default function MapHeatmapEnhancer() {
       originalMapFactory = L.map;
       const wrappedMap = function (this: unknown, ...args: any[]) {
         const map = originalMapFactory.apply(this, args);
-        window.setTimeout(() => void installHeatmap(map), 0);
+        window.setTimeout(() => installHeatmap(map), 0);
         return map;
       };
       Object.assign(wrappedMap, originalMapFactory);
@@ -143,11 +144,6 @@ export default function MapHeatmapEnhancer() {
       return true;
     };
 
-    const refreshVisibility = () => setVisible(isMapView());
-    const observer = new MutationObserver(refreshVisibility);
-    observer.observe(document.body, { childList: true, subtree: true });
-    refreshVisibility();
-
     if (!patchLeaflet()) {
       patchTimer = window.setInterval(() => {
         if (patchLeaflet() && patchTimer) {
@@ -155,34 +151,60 @@ export default function MapHeatmapEnhancer() {
           patchTimer = null;
         }
       }, 250);
+      patchTimeout = window.setTimeout(() => {
+        if (patchTimer) window.clearInterval(patchTimer);
+        patchTimer = null;
+      }, 10_000);
     }
 
-    const handleGeocodingComplete = () => void loadPoints();
+    const handleToggle = (event: Event) => {
+      const open = Boolean(
+        (event as CustomEvent<{ open?: boolean }>).detail?.open,
+      );
+      setVisible(open);
+    };
+
+    const handleGeocodingComplete = () => {
+      if (enabledRef.current) void loadPoints(true);
+    };
+
+    window.addEventListener("voto-forte:heatmap-toggle", handleToggle);
     window.addEventListener("voto-forte:geocoding-complete", handleGeocodingComplete);
+
+    const handleEnable = () => void loadPoints(false);
+    window.addEventListener("voto-forte:heatmap-enable", handleEnable);
 
     return () => {
       cancelled = true;
-      observer.disconnect();
+      window.removeEventListener("voto-forte:heatmap-toggle", handleToggle);
+      window.removeEventListener("voto-forte:heatmap-enable", handleEnable);
       window.removeEventListener(
         "voto-forte:geocoding-complete",
         handleGeocodingComplete,
       );
       if (patchTimer) window.clearInterval(patchTimer);
-      const map = mapRef.current;
-      const layer = layerRef.current;
-      if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
+      if (patchTimeout) window.clearTimeout(patchTimeout);
+      clearLayer();
       const L = (window as any).L;
       if (L?.map?.__vfHeatmapPatched && originalMapFactory) L.map = originalMapFactory;
     };
   }, []);
 
-  useEffect(() => {
+  const toggleHeatmap = () => {
+    const next = !enabled;
+    setEnabled(next);
+    enabledRef.current = next;
+
+    if (next) {
+      window.dispatchEvent(new Event("voto-forte:heatmap-enable"));
+      return;
+    }
+
     const map = mapRef.current;
     const layer = layerRef.current;
-    if (!map || !layer) return;
-    if (enabled && !map.hasLayer(layer)) layer.addTo(map);
-    if (!enabled && map.hasLayer(layer)) map.removeLayer(layer);
-  }, [enabled, mappedPoints]);
+    if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
+    layerRef.current = null;
+  };
 
   if (!visible) return null;
 
@@ -191,14 +213,23 @@ export default function MapHeatmapEnhancer() {
       <div>
         <small>CAMADA ANALÍTICA</small>
         <strong>Mapa de calor</strong>
-        <span>{mappedPoints.toLocaleString("pt-BR")} ponto(s) considerados</span>
+        <span>
+          {loading
+            ? "Carregando concentrações..."
+            : `${mappedPoints.toLocaleString("pt-BR")} ponto(s) considerados`}
+        </span>
       </div>
       <button
         type="button"
         className={enabled ? "active" : ""}
-        onClick={() => setEnabled((current) => !current)}
+        onClick={toggleHeatmap}
+        disabled={loading}
       >
-        {enabled ? "Desligar mapa de calor" : "Ligar mapa de calor"}
+        {loading
+          ? "Preparando mapa de calor..."
+          : enabled
+            ? "Desligar mapa de calor"
+            : "Ligar mapa de calor"}
       </button>
       <div className="vf-heat-legend" aria-label="Legenda do mapa de calor">
         <span><i className="low" /> Baixa</span>
