@@ -14,17 +14,24 @@ as $$
       and u.status = 'active'
     limit 1
   ), visible_users as (
-    select u.id, lower(trim(u.email)) as email
+    select
+      u.id,
+      lower(trim(u.email)) as email,
+      array[u.id]::bigint[] as visited_ids
     from public.vf_users u
     join current_account account on account.id = u.id
     where u.status = 'active'
 
     union all
 
-    select child.id, lower(trim(child.email)) as email
+    select
+      child.id,
+      lower(trim(child.email)) as email,
+      parent.visited_ids || child.id
     from public.vf_users child
     join visible_users parent on child.parent_user_id = parent.id
     where child.status = 'active'
+      and not child.id = any(parent.visited_ids)
   )
   select lower(trim(u.email))
   from public.vf_users u
