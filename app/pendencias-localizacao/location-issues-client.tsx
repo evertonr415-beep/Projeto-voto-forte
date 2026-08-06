@@ -72,7 +72,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   }, [isAdmin]);
 
   useEffect(() => {
-    apiFetch(`/api/contacts?mode=summary&owner=${encodeURIComponent(scope)}`)
+    apiFetch(`/api/contacts?mode=summary&owner=${encodeURIComponent(scope)}&_=${Date.now()}`)
       .then((response) => response.json())
       .then((payload) => {
         setTotalContacts(Number(payload.total) || 0);
@@ -89,7 +89,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ owner: scope, page: String(page) });
+      const params = new URLSearchParams({ owner: scope, page: String(page), _: String(Date.now()) });
       if (category) params.set("category", category);
       const response = await apiFetch(`/api/location-issues?${params.toString()}`);
       const payload = await response.json();
@@ -163,17 +163,25 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
         <article><b>{districts.length.toLocaleString("pt-BR")}</b><span>Bairros disponíveis</span></article>
       </section>
 
-      <section className="issues-category-cards" aria-label="Resumo por categoria">
-        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-          <button
-            key={value}
-            className={category === value ? "active" : ""}
-            onClick={() => selectCategory(category === value ? "" : value)}
-          >
-            <b>{Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
-            <span>{label}</span>
-          </button>
-        ))}
+      <section className="issues-category-summary" aria-labelledby="issues-category-title">
+        <div className="issues-category-heading">
+          <small>RESUMO PERMANENTE</small>
+          <h2 id="issues-category-title">Pendências por categoria</h2>
+          <p>Toque em um cartão para filtrar a lista.</p>
+        </div>
+        <div className="issues-category-cards">
+          {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={category === value ? "active" : ""}
+              onClick={() => selectCategory(category === value ? "" : value)}
+            >
+              <b>{loading && !Object.keys(data.categoryCounts).length ? "…" : Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="issues-panel">
