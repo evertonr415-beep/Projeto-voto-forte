@@ -1,8 +1,7 @@
 import { getAccount, getVisibleUsers, isAdministrator } from "../../server-identity";
 
 const PAGE_SIZE = 50;
-const ISSUE_CATEGORIES = [
-  "duplicate_phone",
+const OPERATIONAL_ISSUE_CATEGORIES = [
   "invalid_phone",
   "missing_name",
   "incomplete_name",
@@ -19,6 +18,22 @@ const REQUIRED_FIELD_ISSUES = [
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
+type QualityIssueRow = Record<string, unknown> & {
+  issue_codes?: unknown;
+};
+
+type QualityUpdateBody = {
+  recordId?: number;
+  name?: string;
+  district?: string;
+  street?: string;
+};
+
+type QualityDeleteBody = {
+  recordIds?: number[];
+  confirmation?: string;
+};
+
 function sanitizeSearch(value: string) {
   return value
     .replace(/[,.()*\\%]/g, " ")
@@ -31,6 +46,16 @@ function normalizeRequiredText(value: unknown) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+async function readJsonBody<T>(request: Request): Promise<T | null> {
+  try {
+    const body = await request.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+    return body as T;
+  } catch {
+    return null;
+  }
 }
 
 async function visibleEmails(
@@ -78,10 +103,10 @@ export async function GET(request: Request) {
   if ("error" in resolved) return resolved.error;
 
   const { scope, emails } = resolved;
-  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+  const page = Math.min(100_000, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const requestedCategory = url.searchParams.get("category") ?? "";
-  const category = ISSUE_CATEGORIES.includes(
-    requestedCategory as (typeof ISSUE_CATEGORIES)[number],
+  const category = OPERATIONAL_ISSUE_CATEGORIES.includes(
+    requestedCategory as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
   )
     ? requestedCategory
     : "";
@@ -102,7 +127,7 @@ export async function GET(request: Request) {
         "record_id,owner_email,contact_name,phone,phone_normalized,district_original,city,state,street,street_number,cep,is_rural,issue_codes,severity,updated_at",
         { count: "exact" },
       )
-      .neq("severity", "ok")
+      .overlaps("issue_codes", [...OPERATIONAL_ISSUE_CATEGORIES])
       .order("severity_rank", { ascending: true })
       .order("updated_at", { ascending: false })
       .range(from, to);
@@ -116,7 +141,7 @@ export async function GET(request: Request) {
       );
 
     const countResults = await Promise.all(
-      ISSUE_CATEGORIES.map(async (item) => {
+      OPERATIONAL_ISSUE_CATEGORIES.map(async (item) => {
         let countQuery = account.supabase
           .from("vf_contact_quality")
           .select("record_id", { count: "exact", head: true })
@@ -133,7 +158,8 @@ export async function GET(request: Request) {
         let countQuery = account.supabase
           .from("vf_contact_quality")
           .select("record_id", { count: "exact", head: true })
-          .eq("severity", item);
+          .eq("severity", item)
+          .overlaps("issue_codes", [...OPERATIONAL_ISSUE_CATEGORIES]);
         countQuery = applyScope(countQuery, scope, emails);
         const { count, error } = await countQuery;
         if (error) throw new Error(error.message);
@@ -164,6 +190,18 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
+    const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => ({
+      ...issue,
+      issue_codes: Array.isArray(issue.issue_codes)
+        ? issue.issue_codes.filter(
+            (code: unknown): code is (typeof OPERATIONAL_ISSUE_CATEGORIES)[number] =>
+              typeof code === "string"
+              && OPERATIONAL_ISSUE_CATEGORIES.includes(
+                code as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
+              ),
+          )
+        : [],
+    }));
 
     return Response.json(
       {
@@ -179,7 +217,7 @@ export async function GET(request: Request) {
         categoryCounts,
         severityCounts,
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-        issues: data ?? [],
+        issues,
       },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
@@ -196,12 +234,10 @@ export async function PATCH(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const body = (await request.json()) as {
-    recordId?: number;
-    name?: string;
-    district?: string;
-    street?: string;
-  };
+  const body = await readJsonBody<QualityUpdateBody>(request);
+  if (!body)
+    return Response.json({ error: "Dados da correção inválidos." }, { status: 400 });
+
   const recordId = Number(body.recordId);
   const name = normalizeRequiredText(body.name);
   const district = normalizeRequiredText(body.district);
@@ -223,7 +259,7 @@ export async function PATCH(request: Request) {
   const emails = await visibleEmails(account);
   const { data: record, error: recordError } = await account.supabase
     .from("vf_owned_records")
-    .select("id,owner_email,payload")
+    .select("id,owner_email,payload,updated_at")
     .eq("id", recordId)
     .eq("kind", "contact")
     .single();
@@ -238,8 +274,12 @@ export async function PATCH(request: Request) {
     record.payload && typeof record.payload === "object"
       ? (record.payload as Record<string, unknown>)
       : {};
+  const previousUpdatedAt =
+    typeof record.updated_at === "string" && record.updated_at
+      ? record.updated_at
+      : null;
 
-  const { data: updated, error } = await account.supabase
+  let updateQuery = account.supabase
     .from("vf_owned_records")
     .update({
       payload: { ...currentPayload, name, district, street },
@@ -247,7 +287,13 @@ export async function PATCH(request: Request) {
     })
     .eq("id", recordId)
     .eq("kind", "contact")
-    .eq("owner_email", record.owner_email)
+    .eq("owner_email", record.owner_email);
+
+  updateQuery = previousUpdatedAt
+    ? updateQuery.eq("updated_at", previousUpdatedAt)
+    : updateQuery.is("updated_at", null);
+
+  const { data: updated, error } = await updateQuery
     .select("id")
     .maybeSingle();
 
@@ -265,7 +311,7 @@ export async function PATCH(request: Request) {
     actor_id: account.auth_user_id,
     actor_email: account.email,
     action: "Cadastro essencial do contato corrigido",
-    detail: `${record.owner_email} · registro ${recordId} · nome ${name} · bairro ${district} · rua ${street}`,
+    detail: `registro ${recordId} · nome, bairro e rua atualizados`,
   });
   if (auditError) console.error("Failed to audit contact quality update", auditError);
 
@@ -276,10 +322,10 @@ export async function DELETE(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const body = (await request.json()) as {
-    recordIds?: number[];
-    confirmation?: string;
-  };
+  const body = await readJsonBody<QualityDeleteBody>(request);
+  if (!body)
+    return Response.json({ error: "Dados da exclusão inválidos." }, { status: 400 });
+
   const recordIds = [...new Set((body.recordIds ?? []).map(Number))].filter(
     (id) => Number.isInteger(id) && id > 0,
   );
