@@ -18,6 +18,10 @@ const REQUIRED_FIELD_ISSUES = [
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
+type QualityIssueRow = Record<string, unknown> & {
+  issue_codes?: unknown;
+};
+
 type QualityUpdateBody = {
   recordId?: number;
   name?: string;
@@ -186,13 +190,15 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
-    const issues = (data ?? []).map((issue) => ({
+    const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => ({
       ...issue,
       issue_codes: Array.isArray(issue.issue_codes)
-        ? issue.issue_codes.filter((code) =>
-            OPERATIONAL_ISSUE_CATEGORIES.includes(
-              code as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
-            ),
+        ? issue.issue_codes.filter(
+            (code: unknown): code is (typeof OPERATIONAL_ISSUE_CATEGORIES)[number] =>
+              typeof code === "string"
+              && OPERATIONAL_ISSUE_CATEGORIES.includes(
+                code as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
+              ),
           )
         : [],
     }));
