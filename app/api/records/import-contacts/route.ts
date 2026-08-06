@@ -28,14 +28,18 @@ const MAX_BATCH_SIZE = 500;
 const PAGE_SIZE = 1000;
 
 function normalizePhone(value: unknown) {
-  return String(value ?? "").replace(/\D/g, "");
+  let normalized = String(value ?? "").replace(/\D/g, "");
+  if ((normalized.length === 12 || normalized.length === 13) && normalized.startsWith("55"))
+    normalized = normalized.slice(2);
+  return normalized;
 }
 
 function sanitizeContact(input: ContactPayload) {
   const name = String(input.name ?? "").trim();
   const phone = String(input.phone ?? "").trim();
   const phoneNormalized = normalizePhone(phone);
-  if (!name || phoneNormalized.length < 8) return null;
+  if (!name || !/^[1-9]\d{9,10}$/.test(phoneNormalized) || /^(\d)\1+$/.test(phoneNormalized))
+    return null;
 
   return {
     name,
@@ -132,27 +136,6 @@ async function countBatch(
   return count ?? 0;
 }
 
-async function findExistingNormalizedPhones(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-  ownerEmail: string,
-  phones: string[],
-) {
-  if (!phones.length) return new Set<string>();
-  const { data, error } = await account.supabase
-    .from("vf_owned_records")
-    .select("payload")
-    .eq("owner_email", ownerEmail)
-    .eq("kind", "contact")
-    .in("payload->>phoneNormalized", phones);
-
-  if (error) throw new Error(error.message);
-  return new Set(
-    ((data ?? []) as PayloadRow[])
-      .map((row) => normalizePhone(row.payload?.phoneNormalized))
-      .filter(Boolean),
-  );
-}
-
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -197,7 +180,6 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     contacts?: ContactPayload[];
     ownerEmail?: string;
-    existingPhonesChecked?: boolean;
     importSessionId?: string;
     importBatchId?: string;
   };
@@ -212,28 +194,6 @@ export async function POST(request: Request) {
 
   const resolved = await resolveOwner(account, body.ownerEmail);
   if ("error" in resolved) return resolved.error;
-  const { owner, targetEmail } = resolved;
-  const importSessionId = String(body.importSessionId ?? "").trim();
-  const importBatchId = String(body.importBatchId ?? "").trim();
-
-  if (importBatchId) {
-    try {
-      const alreadyInserted = await countBatch(account, targetEmail, importBatchId);
-      if (alreadyInserted > 0)
-        return Response.json({
-          inserted: alreadyInserted,
-          duplicates: 0,
-          invalid: 0,
-          failed: 0,
-          recovered: true,
-        });
-    } catch (error) {
-      return Response.json(
-        { error: error instanceof Error ? error.message : "Falha ao conferir o lote" },
-        { status: 400 },
-      );
-    }
-  }
 
   const valid = body.contacts
     .map(sanitizeContact)
@@ -241,8 +201,8 @@ export async function POST(request: Request) {
       (contact): contact is NonNullable<ReturnType<typeof sanitizeContact>> =>
         Boolean(contact),
     );
-
   const invalid = body.contacts.length - valid.length;
+
   const uniqueInBatch = new Map<string, (typeof valid)[number]>();
   let duplicatesInFile = 0;
   for (const contact of valid) {
@@ -250,121 +210,54 @@ export async function POST(request: Request) {
     else uniqueInBatch.set(contact.phoneNormalized, contact);
   }
 
-  const incoming = [...uniqueInBatch.values()];
-  let existingPhones = new Set<string>();
-
   try {
-    const normalizedExisting = await findExistingNormalizedPhones(
-      account,
-      targetEmail,
-      incoming.map((contact) => contact.phoneNormalized),
+    const { data, error } = await account.supabase.rpc(
+      "vf_import_contacts_deduplicated",
+      {
+        p_owner_email: resolved.targetEmail,
+        p_contacts: [...uniqueInBatch.values()],
+        p_import_session_id: String(body.importSessionId ?? "").trim() || null,
+        p_import_batch_id: String(body.importBatchId ?? "").trim() || null,
+      },
     );
-    normalizedExisting.forEach((phone) => existingPhones.add(phone));
 
-    if (!body.existingPhonesChecked) {
-      const allExistingPhones = await loadExistingPhones(account, targetEmail);
-      for (const contact of incoming) {
-        if (allExistingPhones.has(contact.phoneNormalized))
-          existingPhones.add(contact.phoneNormalized);
-      }
-    }
+    if (error) throw new Error(error.message);
+
+    const result = (data ?? {}) as {
+      inserted?: number;
+      duplicates?: number;
+      recovered?: boolean;
+    };
+    const inserted = Number(result.inserted) || 0;
+    const duplicates = (Number(result.duplicates) || 0) + duplicatesInFile;
+
+    await account.supabase.from("vf_audit_logs").insert({
+      actor_id: account.auth_user_id,
+      actor_email: account.email,
+      action: "Importação inteligente de contatos",
+      detail: `${resolved.targetEmail} · ${inserted} inseridos · ${duplicates} duplicados descartados · ${invalid} inválidos`,
+    });
+
+    return Response.json({
+      inserted,
+      duplicates,
+      invalid,
+      failed: 0,
+      recovered: Boolean(result.recovered),
+    });
   } catch (error) {
     return Response.json(
       {
         error:
           error instanceof Error
             ? error.message
-            : "Não foi possível conferir duplicidades",
+            : "Não foi possível importar os contatos",
+        inserted: 0,
+        duplicates: duplicatesInFile,
+        invalid,
+        failed: uniqueInBatch.size,
       },
       { status: 400 },
     );
   }
-
-  let toInsert = incoming.filter(
-    (contact) => !existingPhones.has(contact.phoneNormalized),
-  );
-
-  if (!toInsert.length) {
-    return Response.json({
-      inserted: 0,
-      duplicates: existingPhones.size + duplicatesInFile,
-      invalid,
-      failed: 0,
-    });
-  }
-
-  const now = new Date().toISOString();
-  let inserted = 0;
-
-  for (let attempt = 0; attempt < 2 && toInsert.length; attempt++) {
-    const rows = toInsert.map((contact) => ({
-      owner_id: owner.auth_user_id,
-      owner_email: owner.email,
-      kind: "contact",
-      payload: {
-        ...contact,
-        importSessionId: importSessionId || undefined,
-        importBatchId: importBatchId || undefined,
-      },
-      updated_at: now,
-    }));
-
-    const { data, error } = await account.supabase
-      .from("vf_owned_records")
-      .insert(rows)
-      .select("id");
-
-    if (!error) {
-      inserted += data?.length ?? 0;
-      toInsert = [];
-      break;
-    }
-
-    if (importBatchId) {
-      const recovered = await countBatch(account, targetEmail, importBatchId).catch(
-        () => 0,
-      );
-      if (recovered > 0) {
-        inserted += recovered;
-        toInsert = [];
-        break;
-      }
-    }
-
-    if (error.code !== "23505" || attempt === 1)
-      return Response.json(
-        {
-          error: error.message,
-          inserted,
-          duplicates: existingPhones.size + duplicatesInFile,
-          invalid,
-          failed: toInsert.length,
-        },
-        { status: 400 },
-      );
-
-    const concurrentlyInserted = await findExistingNormalizedPhones(
-      account,
-      targetEmail,
-      toInsert.map((contact) => contact.phoneNormalized),
-    );
-    concurrentlyInserted.forEach((phone) => existingPhones.add(phone));
-    toInsert = toInsert.filter(
-      (contact) => !concurrentlyInserted.has(contact.phoneNormalized),
-    );
-  }
-
-  await account.supabase.from("vf_audit_logs").insert({
-    actor_id: account.auth_user_id,
-    actor_email: account.email,
-    action: "Importação de contatos em lote",
-    detail: `${owner.email} · ${inserted} inseridos · ${existingPhones.size + duplicatesInFile} duplicados · ${invalid} inválidos`,
-  });
-
-  return Response.json({
-    inserted,
-    duplicates: existingPhones.size + duplicatesInFile,
-    invalid,
-    failed: toInsert.length,
-  });
 }
