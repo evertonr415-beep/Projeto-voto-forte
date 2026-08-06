@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import "./location-issues.css";
 import "./required-fields.css";
@@ -56,6 +56,15 @@ const CATEGORY_HELP: Record<string, string> = {
   location_divergence: "O bairro informado não corresponde ao catálogo reconhecido.",
   rural_location: "Contato identificado em zona rural, estrada, sítio ou localidade.",
 };
+
+const HIGHLIGHT_CATEGORY_KEYS = [
+  "invalid_phone",
+  "missing_name",
+  "incomplete_name",
+  "missing_district",
+  "location_divergence",
+  "rural_location",
+] as const;
 
 const EMPTY_PAGE: PageData = {
   page: 1,
@@ -174,12 +183,6 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     void load(controller.signal);
     return () => controller.abort();
   }, [load]);
-
-  const requiredCompletePercent = useMemo(() => {
-    if (!data.totalContacts) return "0,00";
-    return (((data.totalContacts - data.requiredIncomplete) / data.totalContacts) * 100)
-      .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }, [data.requiredIncomplete, data.totalContacts]);
 
   const allPageSelected = data.issues.length > 0
     && data.issues.every((issue) => selectedIds.has(issue.record_id));
@@ -303,7 +306,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
         <div>
           <small>CADASTRO ESSENCIAL PARA O TRABALHO DE CAMPO</small>
           <h1>Central de qualidade dos contatos</h1>
-          <p>Prioriza nome completo, bairro/localidade e rua, mantendo também a revisão de telefones e duplicidades.</p>
+          <p>Prioriza nome completo e bairro/localidade. Rua, telefone e duplicidades ficam disponíveis na análise detalhada.</p>
         </div>
         <div className="issues-actions">
           <a href="/contatos">Voltar ao painel</a>
@@ -328,19 +331,19 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       <section className="issues-kpis">
         <article className="critical"><b>{nameReviewCount.toLocaleString("pt-BR")}</b><span>Nomes para revisar</span></article>
         <article className="warning"><b>{Number(data.categoryCounts.missing_district ?? 0).toLocaleString("pt-BR")}</b><span>Sem bairro/localidade</span></article>
-        <article className="warning"><b>{Number(data.categoryCounts.missing_street ?? 0).toLocaleString("pt-BR")}</b><span>Sem rua</span></article>
-        <article><b>{requiredCompletePercent}%</b><span>Com nome, bairro e rua completos</span></article>
+        <article className="warning"><b>{Number(data.categoryCounts.location_divergence ?? 0).toLocaleString("pt-BR")}</b><span>Bairros divergentes</span></article>
+        <article><b>{Number(data.categoryCounts.rural_location ?? 0).toLocaleString("pt-BR")}</b><span>Zona rural/localidade</span></article>
       </section>
 
       <section className="issues-category-cards" aria-label="Resumo por categoria">
-        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+        {HIGHLIGHT_CATEGORY_KEYS.map((value) => (
           <button
             key={value}
             className={category === value ? "active" : ""}
             onClick={() => selectCategory(category === value ? "" : value)}
           >
             <b>{Number(data.categoryCounts[value] ?? 0).toLocaleString("pt-BR")}</b>
-            <span>{label}</span>
+            <span>{CATEGORY_LABELS[value]}</span>
             <small>{CATEGORY_HELP[value]}</small>
           </button>
         ))}
