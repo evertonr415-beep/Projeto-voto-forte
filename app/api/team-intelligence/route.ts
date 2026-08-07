@@ -20,7 +20,10 @@ const UPDATE_ACTIONS = [
   "Cadastro essencial do contato corrigido",
 ] as const;
 
-const IMPORT_ACTION = "Importação inteligente de contatos";
+const IMPORT_ACTIONS = [
+  "Importação inteligente de contatos",
+  "Importação de contatos em lote",
+] as const;
 
 const NON_OPERATIONAL_ACTIONS = new Set([
   "Acesso ao sistema",
@@ -71,7 +74,7 @@ async function countImportedContacts(account: Account, actorId: string) {
       .from("vf_audit_logs")
       .select("detail")
       .eq("actor_id", actorId)
-      .eq("action", IMPORT_ACTION)
+      .in("action", [...IMPORT_ACTIONS])
       .order("created_at", { ascending: false })
       .range(from, from + pageSize - 1);
 
