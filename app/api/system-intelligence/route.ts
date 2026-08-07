@@ -105,7 +105,7 @@ export async function GET() {
         .select("action,detail,created_at")
         .gte("created_at", thirtyDaysAgo)
         .order("created_at", { ascending: false })
-        .limit(AUDIT_LIMIT),
+        .limit(AUDIT_LIMIT + 1),
     ]);
 
     for (const result of [
@@ -129,7 +129,8 @@ export async function GET() {
     }).length;
     const leaders = activeUsers.filter((user) => user.role === "lider").length;
 
-    const audit = (auditResult.data ?? []) as AuditSignalRow[];
+    const auditRows = (auditResult.data ?? []) as AuditSignalRow[];
+    const audit = auditRows.slice(0, AUDIT_LIMIT);
     const navigationCounts = new Map<string, number>();
     let navigationEvents30Days = 0;
     let operationalEvents30Days = 0;
@@ -183,7 +184,7 @@ export async function GET() {
       auditEvents30Days: audit.length,
       navigationEvents30Days,
       operationalEvents30Days,
-      auditWindowTruncated: audit.length >= AUDIT_LIMIT,
+      auditWindowTruncated: auditRows.length > AUDIT_LIMIT,
       imports30Days: {
         runs: importRuns,
         inserted: imported,
