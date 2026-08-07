@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { loadSharedTerritoryContacts } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DistrictStats = {
@@ -8,6 +9,9 @@ type DistrictStats = {
   voters: number;
   leaders: number;
 };
+
+const TERRITORY_CACHE_KEY = "vf:territories:arapongas:v1";
+const TERRITORY_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 function normalize(value: unknown) {
   return String(value || "")
@@ -33,22 +37,10 @@ function densityOpacity(total: number, maximum: number) {
 }
 
 async function loadDistrictStats() {
-  const response = await fetch("/api/records?owner=all", {
-    headers: { accept: "application/json" },
-    cache: "no-store",
-  });
-  if (!response.ok) return new Map<string, DistrictStats>();
-
-  const data = (await response.json()) as {
-    records?: Array<{
-      kind?: string;
-      payload?: { district?: string; kind?: string };
-    }>;
-  };
-
+  const records = await loadSharedTerritoryContacts();
   const stats = new Map<string, DistrictStats>();
-  for (const record of data.records || []) {
-    if (record.kind !== "contact") continue;
+
+  for (const record of records) {
     const district = normalize(record.payload?.district);
     if (!district) continue;
 
@@ -58,10 +50,27 @@ async function loadDistrictStats() {
     else current.voters += 1;
     stats.set(district, current);
   }
+
   return stats;
 }
 
 async function loadTerritories() {
+  try {
+    const cached = window.sessionStorage.getItem(TERRITORY_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as { savedAt?: number; data?: unknown };
+      if (
+        parsed.savedAt &&
+        Date.now() - parsed.savedAt < TERRITORY_CACHE_TTL &&
+        parsed.data
+      ) {
+        return parsed.data;
+      }
+    }
+  } catch {
+    // Segue para a consulta externa caso o cache esteja indisponível.
+  }
+
   const query =
     '[out:json][timeout:30];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a););out tags center geom;';
   const response = await fetch("https://overpass-api.de/api/interpreter", {
@@ -72,7 +81,35 @@ async function loadTerritories() {
     body: `data=${encodeURIComponent(query)}`,
   });
   if (!response.ok) throw new Error("Limites territoriais indisponíveis");
-  return response.json();
+
+  const data = await response.json();
+  try {
+    window.sessionStorage.setItem(
+      TERRITORY_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), data }),
+    );
+  } catch {
+    // O cache é opcional.
+  }
+  return data;
+}
+
+function runWhenBrowserIsIdle(callback: () => void) {
+  const browser = window as typeof window & {
+    requestIdleCallback?: (
+      handler: () => void,
+      options?: { timeout?: number },
+    ) => number;
+    cancelIdleCallback?: (id: number) => void;
+  };
+
+  if (browser.requestIdleCallback) {
+    const id = browser.requestIdleCallback(callback, { timeout: 2500 });
+    return () => browser.cancelIdleCallback?.(id);
+  }
+
+  const id = window.setTimeout(callback, 800);
+  return () => window.clearTimeout(id);
 }
 
 export default function MapTerritoryEnhancer() {
@@ -82,6 +119,8 @@ export default function MapTerritoryEnhancer() {
     let territoryLayer: any = null;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
+    let patchTimeout: number | null = null;
+    let cancelIdleInstall: (() => void) | null = null;
     let maximumDensity = 1;
     const polygons = new Map<string, any[]>();
 
@@ -149,6 +188,7 @@ export default function MapTerritoryEnhancer() {
         territoryLayer = L.layerGroup().addTo(map);
 
         for (const element of territoryData.elements || []) {
+          if (cancelled) break;
           const name = String(element.tags?.name || "").trim();
           if (!name) continue;
           const key = normalize(name);
@@ -232,7 +272,7 @@ export default function MapTerritoryEnhancer() {
           }
 
           const center = element.center;
-          if (center) {
+          if (center && districtStats.total > 0) {
             L.marker([center.lat, center.lon], {
               interactive: true,
               icon: L.divIcon({
@@ -280,13 +320,21 @@ export default function MapTerritoryEnhancer() {
       }
     };
 
+    const scheduleTerritoryInstall = (map: any) => {
+      cancelIdleInstall?.();
+      cancelIdleInstall = runWhenBrowserIsIdle(() => {
+        cancelIdleInstall = null;
+        void installTerritoryLayer(map);
+      });
+    };
+
     const patchLeaflet = () => {
       const L = (window as any).L;
       if (!L?.map || L.map.__vfTerritoryPatched) return false;
       originalMapFactory = L.map;
       const wrappedMap = function (this: unknown, ...args: any[]) {
         const map = originalMapFactory.apply(this, args);
-        window.setTimeout(() => void installTerritoryLayer(map), 0);
+        scheduleTerritoryInstall(map);
         return map;
       };
       Object.assign(wrappedMap, originalMapFactory);
@@ -302,15 +350,21 @@ export default function MapTerritoryEnhancer() {
           patchTimer = null;
         }
       }, 250);
+      patchTimeout = window.setTimeout(() => {
+        if (patchTimer) window.clearInterval(patchTimer);
+        patchTimer = null;
+      }, 10_000);
     }
 
     return () => {
       cancelled = true;
+      cancelIdleInstall?.();
       window.removeEventListener(
         "voto-forte:district-filter-change",
         handleDistrictFilter,
       );
       if (patchTimer) window.clearInterval(patchTimer);
+      if (patchTimeout) window.clearTimeout(patchTimeout);
       if (territoryLayer && activeMap) activeMap.removeLayer(territoryLayer);
       const L = (window as any).L;
       if (L?.map?.__vfTerritoryPatched && originalMapFactory)
