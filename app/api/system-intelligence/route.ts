@@ -5,6 +5,25 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const AUDIT_LIMIT = 10_000;
 
+type UserSignalRow = {
+  id: number;
+  role: string;
+  status: string;
+  last_seen_at: string | null;
+};
+
+type AuditSignalRow = {
+  action: string | null;
+  detail: string | null;
+  created_at: string;
+};
+
+type BackupSignalRow = {
+  created_at: string;
+  created_by: string | null;
+  item_count: number | null;
+};
+
 function parseImportDetail(detail: unknown) {
   const text = String(detail ?? "");
   const read = (label: string) => {
@@ -101,7 +120,7 @@ export async function GET() {
       if (result.error) throw new Error(result.error.message);
     }
 
-    const users = usersResult.data ?? [];
+    const users = (usersResult.data ?? []) as UserSignalRow[];
     const activeUsers = users.filter((user) => user.status === "active");
     const blockedUsers = users.filter((user) => user.status === "blocked");
     const inactiveUsers30Days = activeUsers.filter((user) => {
@@ -110,7 +129,7 @@ export async function GET() {
     }).length;
     const leaders = activeUsers.filter((user) => user.role === "lider").length;
 
-    const audit = auditResult.data ?? [];
+    const audit = (auditResult.data ?? []) as AuditSignalRow[];
     const navigationCounts = new Map<string, number>();
     let navigationEvents30Days = 0;
     let operationalEvents30Days = 0;
@@ -150,7 +169,7 @@ export async function GET() {
       }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "pt-BR"));
 
-    const backup = backupResult.data;
+    const backup = (backupResult.data ?? null) as BackupSignalRow | null;
     const signals: SystemSignals = {
       generatedAt: new Date().toISOString(),
       totalContacts: totalContacts.count ?? 0,
