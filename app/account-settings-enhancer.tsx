@@ -53,45 +53,84 @@ export default function AccountSettingsEnhancer() {
   }, []);
 
   useEffect(() => {
-    const applyAvatar = () => {
-      document
-        .querySelectorAll<HTMLElement>(".profile > span, .profile-box > span")
-        .forEach((element) => {
-          if (avatar) {
-            element.style.backgroundImage = `url(${avatar})`;
-            element.style.backgroundSize = "cover";
-            element.style.backgroundPosition = "center";
-            element.style.color = "transparent";
-          } else {
-            element.style.removeProperty("background-image");
-            element.style.removeProperty("background-size");
-            element.style.removeProperty("background-position");
-            element.style.removeProperty("color");
-          }
-        });
+    let observer: MutationObserver | null = null;
+
+    const applyAvatarTo = (root: ParentNode) => {
+      const elements: HTMLElement[] = [];
+      if (
+        root instanceof HTMLElement &&
+        root.matches(".profile > span, .profile-box > span")
+      ) {
+        elements.push(root);
+      }
+      root
+        .querySelectorAll?.<HTMLElement>(".profile > span, .profile-box > span")
+        .forEach((element) => elements.push(element));
+
+      for (const element of elements) {
+        if (avatar) {
+          element.style.backgroundImage = `url(${avatar})`;
+          element.style.backgroundSize = "cover";
+          element.style.backgroundPosition = "center";
+          element.style.color = "transparent";
+        } else {
+          element.style.removeProperty("background-image");
+          element.style.removeProperty("background-size");
+          element.style.removeProperty("background-position");
+          element.style.removeProperty("color");
+        }
+      }
     };
 
-    const connectButton = () => {
-      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("button"));
-      const accountButton = buttons.find(
-        (button) => button.textContent?.trim() === "Configurações da conta",
-      );
-      if (accountButton && !accountButton.dataset.vfAccountSettings) {
-        accountButton.dataset.vfAccountSettings = "true";
-        accountButton.addEventListener("click", (event) => {
+    const connectAccountButton = (root: ParentNode) => {
+      const buttons: HTMLButtonElement[] = [];
+      if (root instanceof HTMLButtonElement) buttons.push(root);
+      root
+        .querySelectorAll?.<HTMLButtonElement>("button")
+        .forEach((button) => buttons.push(button));
+
+      for (const button of buttons) {
+        if (button.textContent?.trim() !== "Configurações da conta") continue;
+        if (button.dataset.vfAccountSettings === "true") return true;
+        button.dataset.vfAccountSettings = "true";
+        button.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopImmediatePropagation();
           setMessage("");
           setOpen(true);
         });
+        return true;
       }
-      applyAvatar();
+      return false;
     };
 
-    const observer = new MutationObserver(connectButton);
+    applyAvatarTo(document);
+    if (connectAccountButton(document)) return;
+
+    observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (!(node instanceof HTMLElement)) continue;
+          applyAvatarTo(node);
+          if (connectAccountButton(node)) {
+            observer?.disconnect();
+            observer = null;
+            return;
+          }
+        }
+      }
+    });
+
     observer.observe(document.body, { childList: true, subtree: true });
-    connectButton();
-    return () => observer.disconnect();
+    const timeout = window.setTimeout(() => {
+      observer?.disconnect();
+      observer = null;
+    }, 15_000);
+
+    return () => {
+      window.clearTimeout(timeout);
+      observer?.disconnect();
+    };
   }, [avatar]);
 
   const chooseAvatar = (event: ChangeEvent<HTMLInputElement>) => {
@@ -224,9 +263,7 @@ export default function AccountSettingsEnhancer() {
             <small>VOTO FORTE PARANÁ</small>
             <h2 id="account-settings-title">Configurações da conta</h2>
           </div>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">
-            ×
-          </button>
+          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">×</button>
         </header>
 
         <div className="account-settings-content">
@@ -276,10 +313,7 @@ export default function AccountSettingsEnhancer() {
             <h3>Notificações da Agenda Inteligente</h3>
             <p>Escolha por quais canais deseja receber os lembretes das reuniões.</p>
             <label className="account-toggle-row">
-              <span>
-                <b>WhatsApp</b>
-                <small>Receber lembretes no número cadastrado.</small>
-              </span>
+              <span><b>WhatsApp</b><small>Receber lembretes no número cadastrado.</small></span>
               <input
                 type="checkbox"
                 checked={preferences.agendaWhatsapp}
@@ -292,10 +326,7 @@ export default function AccountSettingsEnhancer() {
               />
             </label>
             <label className="account-toggle-row">
-              <span>
-                <b>E-mail</b>
-                <small>Receber lembretes no e-mail da conta.</small>
-              </span>
+              <span><b>E-mail</b><small>Receber lembretes no e-mail da conta.</small></span>
               <input
                 type="checkbox"
                 checked={preferences.agendaEmail}
@@ -350,9 +381,7 @@ export default function AccountSettingsEnhancer() {
         </div>
 
         <footer>
-          <button type="button" onClick={() => setOpen(false)}>
-            Fechar
-          </button>
+          <button type="button" onClick={() => setOpen(false)}>Fechar</button>
         </footer>
       </section>
     </div>

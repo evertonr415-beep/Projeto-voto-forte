@@ -2,22 +2,10 @@
 
 import { useEffect } from "react";
 
-const SESSION_KEY = "voto-forte:legacy-geocoding-ran-v2";
-
 export default function LegacyContactGeocoder() {
   useEffect(() => {
     let cancelled = false;
     let running = false;
-
-    const isMapView = () => {
-      const heading = Array.from(document.querySelectorAll("h1, h2, h3"))
-        .map((element) => element.textContent?.trim().toLowerCase() || "")
-        .some(
-          (text) =>
-            text.includes("mapa eleitoral") || text.includes("mapa real"),
-        );
-      return heading || Boolean(document.querySelector(".leaflet-container"));
-    };
 
     const updateProgress = (message: string) => {
       const target = document.querySelector(".real-map-toolbar strong");
@@ -25,9 +13,7 @@ export default function LegacyContactGeocoder() {
     };
 
     const run = async () => {
-      if (running || cancelled || !isMapView()) return;
-      if (sessionStorage.getItem(SESSION_KEY) === "true") return;
-
+      if (running || cancelled) return;
       running = true;
       let totalUpdated = 0;
 
@@ -65,7 +51,6 @@ export default function LegacyContactGeocoder() {
           await new Promise((resolve) => setTimeout(resolve, 1400));
         }
 
-        sessionStorage.setItem(SESSION_KEY, "true");
         if (totalUpdated > 0 && !cancelled) {
           window.dispatchEvent(
             new CustomEvent("voto-forte:geocoding-complete", {
@@ -73,26 +58,24 @@ export default function LegacyContactGeocoder() {
             }),
           );
           updateProgress(
-            `${totalUpdated} contato(s) organizados no mapa · atualizando visualização`,
+            `${totalUpdated} contato(s) organizados no mapa · dados atualizados`,
           );
-          window.setTimeout(() => window.location.reload(), 900);
         }
       } catch {
         updateProgress(
-          "Mapa ativo · alguns bairros continuarão sendo processados no próximo acesso",
+          "Mapa ativo · não foi possível concluir a organização automática agora",
         );
       } finally {
         running = false;
       }
     };
 
-    const observer = new MutationObserver(() => void run());
-    observer.observe(document.body, { childList: true, subtree: true });
-    void run();
+    const handleRun = () => void run();
+    window.addEventListener("voto-forte:legacy-geocoding-run", handleRun);
 
     return () => {
       cancelled = true;
-      observer.disconnect();
+      window.removeEventListener("voto-forte:legacy-geocoding-run", handleRun);
     };
   }, []);
 
