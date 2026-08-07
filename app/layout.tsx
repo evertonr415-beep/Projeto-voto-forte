@@ -10,6 +10,7 @@ import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import TeamIntelligenceNavigation from "./team-intelligence-navigation";
 import SystemIntelligenceNavigation from "./system-intelligence-navigation";
+import ExactLegacyMetrics from "./exact-legacy-metrics";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -71,6 +72,7 @@ export default function RootLayout({
         <ImportCompletionEnhancer />
         <TeamIntelligenceNavigation />
         <SystemIntelligenceNavigation />
+        <ExactLegacyMetrics />
         {children}
       </body>
     </html>
