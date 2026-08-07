@@ -18,16 +18,26 @@ type SessionUser = {
 
 const ADMIN_ROLES = new Set(["master", "gestor", "lider", "admin"]);
 const numberFormatter = new Intl.NumberFormat("pt-BR");
+const REFRESH_INTERVAL_MS = 60_000;
+
+function isLegacyDashboardPath() {
+  return (
+    window.location.pathname === "/" ||
+    window.location.pathname.startsWith("/sistema-completo")
+  );
+}
 
 export default function ExactLegacyMetrics() {
   const [fallbackScope, setFallbackScope] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const requestVersion = useRef(0);
+  const activeScope = useRef("");
 
   useEffect(() => {
+    if (!isLegacyDashboardPath()) return;
     let active = true;
 
-    void apiFetch("/api/session")
+    void apiFetch("/api/session", { cache: "no-store" })
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (!active || !response.ok) return;
@@ -49,6 +59,7 @@ export default function ExactLegacyMetrics() {
     try {
       const response = await apiFetch(
         `/api/contacts?mode=summary&owner=${encodeURIComponent(scope)}`,
+        { cache: "no-store" },
       );
       const data = (await response.json()) as Partial<Summary> & { error?: string };
       if (!response.ok) throw new Error(data.error || "Falha ao carregar resumo");
@@ -61,52 +72,57 @@ export default function ExactLegacyMetrics() {
         districtsReached: Number(data.districtsReached ?? 0),
       });
     } catch {
-      // O painel legado continua disponível com seus dados locais se o resumo falhar.
+      // O painel legado permanece funcional com seus dados locais se o resumo falhar.
     }
   }, []);
 
   useEffect(() => {
-    if (!fallbackScope) return;
+    if (!fallbackScope || !isLegacyDashboardPath()) return;
 
-    let currentScope = "";
     const getScope = () =>
       document.querySelector<HTMLSelectElement>(".scope-picker select")?.value ||
       fallbackScope;
 
     const refresh = (force = false) => {
       const nextScope = getScope();
-      if (!nextScope || (!force && nextScope === currentScope)) return;
-      currentScope = nextScope;
+      if (!nextScope || (!force && nextScope === activeScope.current)) return;
+      activeScope.current = nextScope;
       void loadSummary(nextScope);
     };
 
     const handleChange = (event: Event) => {
       const target = event.target as HTMLElement | null;
       if (!target?.matches(".scope-picker select")) return;
-      currentScope = "";
+      activeScope.current = "";
       refresh();
     };
 
-    const handleRecordsChanged = () => refresh(true);
+    const handleRefresh = () => refresh(true);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refresh(true);
+    };
 
     document.addEventListener("change", handleChange, true);
-    window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
-    window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleRefresh);
+    window.addEventListener("voto-forte:records-changed", handleRefresh);
+    window.addEventListener("voto-forte:geocoding-complete", handleRefresh);
 
-    const observer = new MutationObserver(() => refresh());
-    observer.observe(document.body, { childList: true, subtree: true });
     refresh();
+    const interval = window.setInterval(handleRefresh, REFRESH_INTERVAL_MS);
 
     return () => {
-      observer.disconnect();
+      window.clearInterval(interval);
       document.removeEventListener("change", handleChange, true);
-      window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
-      window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener("voto-forte:records-changed", handleRefresh);
+      window.removeEventListener("voto-forte:geocoding-complete", handleRefresh);
     };
   }, [fallbackScope, loadSummary]);
 
   useEffect(() => {
-    if (!summary) return;
+    if (!summary || !isLegacyDashboardPath()) return;
 
     const patchKpis = () => {
       const exactValues = new Map<string, number>([
@@ -122,20 +138,45 @@ export default function ExactLegacyMetrics() {
         const exactValue = exactValues.get(label);
         if (exactValue === undefined) return;
         const valueNode = card.querySelector<HTMLElement>("strong");
-        if (valueNode) valueNode.textContent = numberFormatter.format(exactValue);
+        if (!valueNode) return;
+        const formatted = numberFormatter.format(exactValue);
+        if (valueNode.textContent !== formatted) valueNode.textContent = formatted;
       });
 
       document
         .querySelectorAll<HTMLElement>("[data-vf-total-contacts]")
         .forEach((node) => {
-          node.textContent = numberFormatter.format(summary.total);
+          const formatted = numberFormatter.format(summary.total);
+          if (node.textContent !== formatted) node.textContent = formatted;
         });
     };
 
-    patchKpis();
-    const observer = new MutationObserver(patchKpis);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    const observeWorkspace = (workspace: HTMLElement) => {
+      patchKpis();
+      const observer = new MutationObserver(patchKpis);
+      observer.observe(workspace, { childList: true, subtree: true });
+      return observer;
+    };
+
+    const workspace = document.querySelector<HTMLElement>(".workspace");
+    if (workspace) {
+      const observer = observeWorkspace(workspace);
+      return () => observer.disconnect();
+    }
+
+    let workspaceObserver: MutationObserver | null = null;
+    const bodyObserver = new MutationObserver(() => {
+      const nextWorkspace = document.querySelector<HTMLElement>(".workspace");
+      if (!nextWorkspace) return;
+      bodyObserver.disconnect();
+      workspaceObserver = observeWorkspace(nextWorkspace);
+    });
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      bodyObserver.disconnect();
+      workspaceObserver?.disconnect();
+    };
   }, [summary]);
 
   return null;
