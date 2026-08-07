@@ -7,6 +7,10 @@ import {
 const allowedKinds = ["contact", "meeting", "draft"] as const;
 type AllowedKind = (typeof allowedKinds)[number];
 
+const DASHBOARD_MAPPED_CONTACT_LIMIT = 2000;
+const DASHBOARD_MEETING_LIMIT = 2000;
+const DASHBOARD_DRAFT_LIMIT = 500;
+
 type OwnedRecord = {
   id: number;
   owner_email: string;
@@ -44,6 +48,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const requested = url.searchParams.get("owner")?.trim().toLowerCase();
   const requestedKind = url.searchParams.get("kind")?.trim().toLowerCase();
+  const requestedMode = url.searchParams.get("mode")?.trim().toLowerCase();
   const kind = allowedKinds.includes(requestedKind as AllowedKind)
     ? (requestedKind as AllowedKind)
     : null;
@@ -62,6 +67,72 @@ export async function GET(request: Request) {
       { error: "Você não possui acesso a este ambiente" },
       { status: 403 },
     );
+
+  if (requestedMode === "dashboard" && !kind) {
+    const makeScopedQuery = (recordKind: AllowedKind, limit: number) => {
+      let query = account.supabase
+        .from("vf_owned_records")
+        .select("id,owner_email,kind,payload,created_at,updated_at")
+        .eq("kind", recordKind)
+        .order("updated_at", { ascending: false })
+        .limit(limit);
+
+      if (scope === "all") query = query.in("owner_email", emails);
+      else query = query.eq("owner_email", scope);
+      return query;
+    };
+
+    let mappedContactsQuery = makeScopedQuery(
+      "contact",
+      DASHBOARD_MAPPED_CONTACT_LIMIT,
+    )
+      .not("payload->>latitude", "is", null)
+      .not("payload->>longitude", "is", null)
+      .neq("payload->>latitude", "")
+      .neq("payload->>longitude", "");
+
+    const [mappedContactsResult, meetingsResult, draftsResult] =
+      await Promise.all([
+        mappedContactsQuery,
+        makeScopedQuery("meeting", DASHBOARD_MEETING_LIMIT),
+        makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT),
+      ]);
+
+    const error =
+      mappedContactsResult.error || meetingsResult.error || draftsResult.error;
+    if (error)
+      return Response.json({ error: error.message }, { status: 400 });
+
+    const mappedContacts = (mappedContactsResult.data ?? []) as OwnedRecord[];
+    const meetings = (meetingsResult.data ?? []) as OwnedRecord[];
+    const drafts = (draftsResult.data ?? []) as OwnedRecord[];
+    const dashboardRecords = [...mappedContacts, ...meetings, ...drafts].sort(
+      (left, right) =>
+        new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+    );
+
+    return Response.json(
+      {
+        scope,
+        kind: null,
+        mode: "dashboard",
+        visibleOwners: emails,
+        records: dashboardRecords.map(mapRecord),
+        total: dashboardRecords.length,
+        mappedContacts: mappedContacts.length,
+        meetings: meetings.length,
+        drafts: drafts.length,
+        truncated: false,
+        mappedContactsTruncated:
+          mappedContacts.length >= DASHBOARD_MAPPED_CONTACT_LIMIT,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+        },
+      },
+    );
+  }
 
   const pageSize = 1000;
   const maxRecords = 20000;
