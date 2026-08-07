@@ -233,7 +233,6 @@ export default function OptimizedDashboardClient({
       ? Math.round((summary.districtsReached / summary.districts.length) * 100)
       : 0;
     const votersPercent = summary.total ? Math.round((summary.voters / summary.total) * 100) : 0;
-    const votersPerLeader = summary.leaders ? Math.round(summary.voters / summary.leaders) : 0;
     const topDistrictShare = summary.total && topDistrict
       ? Math.round((topDistrict.total / summary.total) * 100)
       : 0;
@@ -246,7 +245,6 @@ export default function OptimizedDashboardClient({
       topDistrict,
       coveragePercent,
       votersPercent,
-      votersPerLeader,
       topDistrictShare,
       maxDistrictTotal,
     };
@@ -272,13 +270,6 @@ export default function OptimizedDashboardClient({
         label: "Prioridade territorial",
         title: `Avance sobre ${analytics.emptyDistricts.toLocaleString("pt-BR")} bairros sem cobertura`,
         detail: "Use a lista de prioridades para localizar os bairros ainda sem contatos e orientar a próxima ação de campo.",
-      };
-    }
-    if (analytics.votersPerLeader > 250) {
-      return {
-        label: "Distribuição da equipe",
-        title: `${analytics.votersPerLeader.toLocaleString("pt-BR")} eleitores por liderança`,
-        detail: "A proporção está alta. Considere ampliar ou redistribuir as lideranças para melhorar o acompanhamento.",
       };
     }
     if (summary.meetings < summary.leaders) {
@@ -387,7 +378,7 @@ export default function OptimizedDashboardClient({
           <article>
             <span className="optimized-kpi-label">Lideranças</span>
             <b>{metric(summary.leaders)}</b>
-            <small>{loadingSummary ? "calculando…" : analytics.votersPerLeader ? `${analytics.votersPerLeader.toLocaleString("pt-BR")} eleitores por liderança` : "nenhuma liderança identificada"}</small>
+            <small>{loadingSummary ? "calculando…" : summary.leaders ? "contatos classificados como liderança" : "nenhuma liderança identificada"}</small>
           </article>
           <article>
             <span className="optimized-kpi-label">Cobertura territorial</span>
