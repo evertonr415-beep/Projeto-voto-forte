@@ -9,13 +9,15 @@ function numberFrom(element: Element | null) {
 
 export default function ReportsSimplifier() {
   useEffect(() => {
+    let observer: MutationObserver | null = null;
+
     const enhance = () => {
       const grid = document.querySelector<HTMLElement>(".report-grid");
-      if (!grid || grid.dataset.vfSimplified === "true") return;
+      if (!grid || grid.dataset.vfSimplified === "true") return false;
 
       const coverage = grid.querySelector<HTMLElement>(".coverage-card");
       const chart = grid.querySelector<HTMLElement>(".chart-card");
-      if (!coverage || !chart) return;
+      if (!coverage || !chart) return false;
 
       const total = numberFrom(coverage.querySelector(".donut b"));
       const values = Array.from(coverage.querySelectorAll("li b")).map((item) =>
@@ -66,12 +68,27 @@ export default function ReportsSimplifier() {
           <span>bairros possuem presença cadastrada neste ambiente.</span>
         </div>
       `;
+
+      observer?.disconnect();
+      observer = null;
+      return true;
     };
 
-    const observer = new MutationObserver(enhance);
-    observer.observe(document.body, { childList: true, subtree: true });
-    enhance();
-    return () => observer.disconnect();
+    if (!enhance()) {
+      observer = new MutationObserver((mutations) => {
+        const hasReportNode = mutations.some((mutation) =>
+          Array.from(mutation.addedNodes).some(
+            (node) =>
+              node instanceof HTMLElement &&
+              (node.matches(".report-grid") || Boolean(node.querySelector(".report-grid"))),
+          ),
+        );
+        if (hasReportNode) enhance();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => observer?.disconnect();
   }, []);
 
   return null;
