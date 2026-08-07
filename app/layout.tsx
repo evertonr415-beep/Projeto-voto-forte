@@ -9,6 +9,7 @@ import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import TeamIntelligenceNavigation from "./team-intelligence-navigation";
+import SystemIntelligenceNavigation from "./system-intelligence-navigation";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -69,6 +70,7 @@ export default function RootLayout({
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
         <TeamIntelligenceNavigation />
+        <SystemIntelligenceNavigation />
         {children}
       </body>
     </html>
