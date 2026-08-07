@@ -30,6 +30,8 @@ const NON_OPERATIONAL_ACTIONS = new Set([
   "Navegação",
 ]);
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 type Account = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 
 type AuditRow = {
@@ -87,7 +89,11 @@ async function countImportedContacts(account: Account, actorId: string) {
   return total;
 }
 
-async function buildUserMetric(account: Account, user: HierarchyUser) {
+async function buildUserMetric(
+  account: Account,
+  user: HierarchyUser,
+  sevenDaysAgo: string,
+) {
   const actorId = String(user.auth_user_id);
   const ownerEmail = String(user.email).trim().toLowerCase();
 
@@ -96,6 +102,8 @@ async function buildUserMetric(account: Account, user: HierarchyUser) {
     importedContacts,
     updatedContacts,
     contactCountResult,
+    voterBaseResult,
+    recentVoterResult,
     pendingCountResult,
     recentResult,
   ] = await Promise.all([
@@ -107,6 +115,21 @@ async function buildUserMetric(account: Account, user: HierarchyUser) {
       .select("id", { count: "exact", head: true })
       .eq("kind", "contact")
       .eq("owner_email", ownerEmail),
+    account.supabase
+      .from("vf_owned_records")
+      .select("created_at", { count: "exact" })
+      .eq("kind", "contact")
+      .eq("owner_email", ownerEmail)
+      .eq("payload->>kind", "Eleitor")
+      .order("created_at", { ascending: false })
+      .limit(1),
+    account.supabase
+      .from("vf_owned_records")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "contact")
+      .eq("owner_email", ownerEmail)
+      .eq("payload->>kind", "Eleitor")
+      .gte("created_at", sevenDaysAgo),
     account.supabase
       .from("vf_contact_quality")
       .select("record_id", { count: "exact", head: true })
@@ -121,6 +144,8 @@ async function buildUserMetric(account: Account, user: HierarchyUser) {
   ]);
 
   if (contactCountResult.error) throw new Error(contactCountResult.error.message);
+  if (voterBaseResult.error) throw new Error(voterBaseResult.error.message);
+  if (recentVoterResult.error) throw new Error(recentVoterResult.error.message);
   if (pendingCountResult.error) throw new Error(pendingCountResult.error.message);
   if (recentResult.error) throw new Error(recentResult.error.message);
 
@@ -133,6 +158,9 @@ async function buildUserMetric(account: Account, user: HierarchyUser) {
     recentActions.find((item) => !NON_OPERATIONAL_ACTIONS.has(item.action)) ??
     recentActions[0] ??
     null;
+  const lastVoterRow = (voterBaseResult.data?.[0] ?? null) as {
+    created_at?: string | null;
+  } | null;
 
   return {
     id: Number(user.id),
@@ -146,6 +174,9 @@ async function buildUserMetric(account: Account, user: HierarchyUser) {
     importedContacts,
     updatedContacts,
     totalContacts: contactCountResult.count ?? 0,
+    voterContacts: voterBaseResult.count ?? 0,
+    votersLast7Days: recentVoterResult.count ?? 0,
+    lastVoterCreatedAt: lastVoterRow?.created_at ?? null,
     pendingContacts: pendingCountResult.count ?? 0,
     lastAction,
     recentActions,
@@ -165,10 +196,13 @@ export async function GET() {
     const visibleUsers = await getVisibleUsers(account);
     const users: Awaited<ReturnType<typeof buildUserMetric>>[] = [];
     const batchSize = 8;
+    const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
 
     for (let index = 0; index < visibleUsers.length; index += batchSize) {
       const batch = await Promise.all(
-        visibleUsers.slice(index, index + batchSize).map((user) => buildUserMetric(account, user)),
+        visibleUsers
+          .slice(index, index + batchSize)
+          .map((user) => buildUserMetric(account, user, sevenDaysAgo)),
       );
       users.push(...batch);
     }
@@ -184,13 +218,35 @@ export async function GET() {
         createdContacts: result.createdContacts + user.createdContacts,
         updatedContacts: result.updatedContacts + user.updatedContacts,
         pendingContacts: result.pendingContacts + user.pendingContacts,
+        voterContacts: result.voterContacts + user.voterContacts,
+        votersLast7Days: result.votersLast7Days + user.votersLast7Days,
+        leaders:
+          result.leaders +
+          Number(user.status === "active" && user.role === "lider"),
+        leadersWithoutRecentVoters:
+          result.leadersWithoutRecentVoters +
+          Number(
+            user.status === "active" &&
+              user.role === "lider" &&
+              user.votersLast7Days === 0,
+          ),
       }),
-      { users: 0, createdContacts: 0, updatedContacts: 0, pendingContacts: 0 },
+      {
+        users: 0,
+        createdContacts: 0,
+        updatedContacts: 0,
+        pendingContacts: 0,
+        voterContacts: 0,
+        votersLast7Days: 0,
+        leaders: 0,
+        leadersWithoutRecentVoters: 0,
+      },
     );
 
     return Response.json(
       {
         generatedAt: new Date().toISOString(),
+        period: { sevenDaysAgo },
         summary,
         users,
       },
