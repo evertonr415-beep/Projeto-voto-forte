@@ -36,6 +36,43 @@ export const supabase = new Proxy({} as SupabaseClient, {
   },
 });
 
+function optimizeLegacyDashboardRead(
+  input: RequestInfo | URL,
+  init: RequestInit,
+): RequestInfo | URL {
+  if (typeof window === "undefined") return input;
+
+  const method = String(init.method ?? "GET").toUpperCase();
+  if (method !== "GET") return input;
+
+  let rawUrl = "";
+  if (typeof input === "string") rawUrl = input;
+  else if (input instanceof URL) rawUrl = input.toString();
+  else if (input instanceof Request) rawUrl = input.url;
+  if (!rawUrl) return input;
+
+  const currentPath = window.location.pathname;
+  if (
+    currentPath !== "/" &&
+    !currentPath.startsWith("/sistema-completo")
+  ) {
+    return input;
+  }
+
+  const requestUrl = new URL(rawUrl, window.location.origin);
+  if (
+    requestUrl.origin !== window.location.origin ||
+    requestUrl.pathname !== "/api/records" ||
+    requestUrl.searchParams.has("kind") ||
+    requestUrl.searchParams.has("mode")
+  ) {
+    return input;
+  }
+
+  requestUrl.searchParams.set("mode", "dashboard");
+  return requestUrl;
+}
+
 export async function apiFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},
@@ -45,5 +82,5 @@ export async function apiFetch(
   if (data.session?.access_token) {
     headers.set("authorization", `Bearer ${data.session.access_token}`);
   }
-  return fetch(input, { ...init, headers });
+  return fetch(optimizeLegacyDashboardRead(input, init), { ...init, headers });
 }
