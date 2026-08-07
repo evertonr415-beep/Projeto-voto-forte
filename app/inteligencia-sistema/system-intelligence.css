@@ -41,7 +41,7 @@
 .system-intelligence-section-head p,.system-intelligence-section-head small,.system-intelligence-roadmap p{margin:0;color:var(--sys-muted);line-height:1.5}
 .system-signal-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .system-signal-grid article{padding:15px;border:1px solid var(--sys-border);border-radius:13px;background:#fff}
-.system-signal-grid article b{display:block;margin-top:8px;font-size:20px;word-break:break-word}
+.system-signal-grid article b{display:block;margin-top:8px;font-size:20px;overflow-wrap:anywhere}
 .system-signal-grid article small{display:block;margin-top:5px;color:var(--sys-muted);font-size:11px}
 .system-intelligence-filters{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
 .system-intelligence-filters button{padding:8px 10px;border:1px solid #cbd6e2;border-radius:10px;background:#fff;color:var(--sys-text);font-weight:800;cursor:pointer}
