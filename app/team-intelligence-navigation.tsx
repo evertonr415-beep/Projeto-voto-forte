@@ -8,8 +8,11 @@ type CurrentUser = {
   role?: string;
 };
 
+type NavigationMode = "optimized" | "legacy";
+
 export default function TeamIntelligenceNavigation() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [mode, setMode] = useState<NavigationMode | null>(null);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
@@ -30,31 +33,28 @@ export default function TeamIntelligenceNavigation() {
   }, []);
 
   useEffect(() => {
-    if (!allowed) return;
+    if (!allowed || window.location.pathname.startsWith("/inteligencia-equipe")) return;
 
     let observer: MutationObserver | null = null;
 
     const detect = () => {
-      const nav = document.querySelector<HTMLElement>(".sidebar nav");
-      if (!nav) return false;
-
-      let slot = nav.querySelector<HTMLElement>("[data-vf-team-intelligence-slot]");
-      if (!slot) {
-        slot = document.createElement("span");
-        slot.dataset.vfTeamIntelligenceSlot = "true";
-        slot.style.display = "contents";
-
-        const usersButton = Array.from(nav.querySelectorAll<HTMLButtonElement>("button")).find(
-          (button) => button.querySelector(".nav-name")?.textContent?.trim() === "Usuários",
-        );
-
-        if (usersButton) usersButton.after(slot);
-        else nav.append(slot);
+      const optimizedNav = document.querySelector<HTMLElement>(".optimized-quick-actions");
+      if (optimizedNav) {
+        setTarget(optimizedNav);
+        setMode("optimized");
+        observer?.disconnect();
+        return true;
       }
 
-      setTarget(slot);
-      observer?.disconnect();
-      return true;
+      const legacyNav = document.querySelector<HTMLElement>(".sidebar nav");
+      if (legacyNav) {
+        setTarget(legacyNav);
+        setMode("legacy");
+        observer?.disconnect();
+        return true;
+      }
+
+      return false;
     };
 
     if (!detect()) {
@@ -66,13 +66,25 @@ export default function TeamIntelligenceNavigation() {
 
     return () => {
       observer?.disconnect();
-      const slot = document.querySelector<HTMLElement>("[data-vf-team-intelligence-slot]");
-      slot?.remove();
       setTarget(null);
+      setMode(null);
     };
   }, [allowed]);
 
-  if (!allowed || !target) return null;
+  if (!allowed || !target || !mode) return null;
+
+  if (mode === "optimized") {
+    return createPortal(
+      <a href="/inteligencia-equipe">
+        <span className="optimized-action-icon" aria-hidden="true">◈</span>
+        <span>
+          <b>Inteligência da Equipe</b>
+          <small>Atividade, ações e pendências</small>
+        </span>
+      </a>,
+      target,
+    );
+  }
 
   return createPortal(
     <button
