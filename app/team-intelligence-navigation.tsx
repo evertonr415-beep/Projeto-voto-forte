@@ -1,0 +1,102 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { apiFetch } from "./supabase-client";
+
+type CurrentUser = {
+  role?: string;
+};
+
+type NavigationMode = "optimized" | "legacy";
+
+export default function TeamIntelligenceNavigation() {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [mode, setMode] = useState<NavigationMode | null>(null);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void apiFetch("/api/session")
+      .then(async (response) => ({ response, data: await response.json() }))
+      .then(({ response, data }) => {
+        if (!active || !response.ok) return;
+        const user = data.user as CurrentUser | undefined;
+        setAllowed(["master", "gestor", "lider"].includes(String(user?.role ?? "")));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!allowed || window.location.pathname.startsWith("/inteligencia-equipe")) return;
+
+    let observer: MutationObserver | null = null;
+
+    const detect = () => {
+      const optimizedNav = document.querySelector<HTMLElement>(".optimized-quick-actions");
+      if (optimizedNav) {
+        setTarget(optimizedNav);
+        setMode("optimized");
+        observer?.disconnect();
+        return true;
+      }
+
+      const legacyNav = document.querySelector<HTMLElement>(".sidebar nav");
+      if (legacyNav) {
+        setTarget(legacyNav);
+        setMode("legacy");
+        observer?.disconnect();
+        return true;
+      }
+
+      return false;
+    };
+
+    if (!detect()) {
+      observer = new MutationObserver(() => {
+        detect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observer?.disconnect();
+      setTarget(null);
+      setMode(null);
+    };
+  }, [allowed]);
+
+  if (!allowed || !target || !mode) return null;
+
+  if (mode === "optimized") {
+    return createPortal(
+      <a href="/inteligencia-equipe">
+        <span className="optimized-action-icon" aria-hidden="true">◈</span>
+        <span>
+          <b>Inteligência da Equipe</b>
+          <small>Atividade, ações e pendências</small>
+        </span>
+      </a>,
+      target,
+    );
+  }
+
+  return createPortal(
+    <button
+      type="button"
+      onClick={() => window.location.assign("/inteligencia-equipe")}
+      title="Inteligência da Equipe"
+      aria-label="Abrir Inteligência da Equipe"
+    >
+      <span className="nav-icon" aria-hidden="true">◈</span>
+      <span className="nav-name">Inteligência da Equipe</span>
+      <em>GESTÃO</em>
+    </button>,
+    target,
+  );
+}
