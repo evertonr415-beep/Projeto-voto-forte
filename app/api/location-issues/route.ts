@@ -1,25 +1,31 @@
 import { getAccount, getVisibleUsers, isAdministrator } from "../../server-identity";
 
 const PAGE_SIZE = 50;
-const OPERATIONAL_ISSUE_CATEGORIES = [
+const ESSENTIAL_ISSUE_CATEGORIES = [
   "invalid_phone",
   "missing_name",
   "incomplete_name",
   "missing_district",
-  "missing_street",
   "location_divergence",
+] as const;
+const AUXILIARY_FILTER_CATEGORIES = [
+  "missing_street",
   "rural_location",
+] as const;
+const FILTER_CATEGORIES = [
+  ...ESSENTIAL_ISSUE_CATEGORIES,
+  ...AUXILIARY_FILTER_CATEGORIES,
 ] as const;
 const REQUIRED_FIELD_ISSUES = [
   "missing_name",
   "incomplete_name",
   "missing_district",
-  "missing_street",
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
 type QualityIssueRow = Record<string, unknown> & {
   issue_codes?: unknown;
+  severity?: unknown;
 };
 
 type QualityUpdateBody = {
@@ -94,6 +100,12 @@ function applyScope<T>(query: T, scope: string, emails: string[]) {
     : scoped.eq("owner_email", scope);
 }
 
+function isAuxiliaryCategory(value: string) {
+  return AUXILIARY_FILTER_CATEGORIES.includes(
+    value as (typeof AUXILIARY_FILTER_CATEGORIES)[number],
+  );
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -105,8 +117,8 @@ export async function GET(request: Request) {
   const { scope, emails } = resolved;
   const page = Math.min(100_000, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const requestedCategory = url.searchParams.get("category") ?? "";
-  const category = OPERATIONAL_ISSUE_CATEGORIES.includes(
-    requestedCategory as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
+  const category = FILTER_CATEGORIES.includes(
+    requestedCategory as (typeof FILTER_CATEGORIES)[number],
   )
     ? requestedCategory
     : "";
@@ -127,21 +139,24 @@ export async function GET(request: Request) {
         "record_id,owner_email,contact_name,phone,phone_normalized,district_original,city,state,street,street_number,cep,is_rural,issue_codes,severity,updated_at",
         { count: "exact" },
       )
-      .overlaps("issue_codes", [...OPERATIONAL_ISSUE_CATEGORIES])
       .order("severity_rank", { ascending: true })
-      .order("updated_at", { ascending: false })
-      .range(from, to);
+      .order("updated_at", { ascending: false });
 
     query = applyScope(query, scope, emails);
-    if (category) query = query.contains("issue_codes", [category]);
-    if (severity) query = query.eq("severity", severity);
+    query = category
+      ? query.contains("issue_codes", [category])
+      : query.overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
+
+    if (severity && !isAuxiliaryCategory(category)) query = query.eq("severity", severity);
     if (queryText)
       query = query.or(
         `contact_name.ilike.*${queryText}*,phone.ilike.*${queryText}*,phone_normalized.ilike.*${queryText}*,district_original.ilike.*${queryText}*,street.ilike.*${queryText}*`,
       );
 
+    query = query.range(from, to);
+
     const countResults = await Promise.all(
-      OPERATIONAL_ISSUE_CATEGORIES.map(async (item) => {
+      FILTER_CATEGORIES.map(async (item) => {
         let countQuery = account.supabase
           .from("vf_contact_quality")
           .select("record_id", { count: "exact", head: true })
@@ -159,7 +174,7 @@ export async function GET(request: Request) {
           .from("vf_contact_quality")
           .select("record_id", { count: "exact", head: true })
           .eq("severity", item)
-          .overlaps("issue_codes", [...OPERATIONAL_ISSUE_CATEGORIES]);
+          .overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
         countQuery = applyScope(countQuery, scope, emails);
         const { count, error } = await countQuery;
         if (error) throw new Error(error.message);
@@ -190,18 +205,26 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
-    const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => ({
-      ...issue,
-      issue_codes: Array.isArray(issue.issue_codes)
+    const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => {
+      const issueCodes = Array.isArray(issue.issue_codes)
         ? issue.issue_codes.filter(
-            (code: unknown): code is (typeof OPERATIONAL_ISSUE_CATEGORIES)[number] =>
+            (code: unknown): code is (typeof FILTER_CATEGORIES)[number] =>
               typeof code === "string"
-              && OPERATIONAL_ISSUE_CATEGORIES.includes(
-                code as (typeof OPERATIONAL_ISSUE_CATEGORIES)[number],
-              ),
+              && FILTER_CATEGORIES.includes(code as (typeof FILTER_CATEGORIES)[number]),
           )
-        : [],
-    }));
+        : [];
+      const hasEssentialIssue = issueCodes.some((code) =>
+        ESSENTIAL_ISSUE_CATEGORIES.includes(
+          code as (typeof ESSENTIAL_ISSUE_CATEGORIES)[number],
+        ),
+      );
+
+      return {
+        ...issue,
+        issue_codes: issueCodes,
+        severity: hasEssentialIssue ? issue.severity : "info",
+      };
+    });
 
     return Response.json(
       {
@@ -253,8 +276,6 @@ export async function PATCH(request: Request) {
     );
   if (!district)
     return Response.json({ error: "Informe o bairro ou a localidade." }, { status: 400 });
-  if (!street)
-    return Response.json({ error: "Informe a rua onde o contato mora." }, { status: 400 });
 
   const emails = await visibleEmails(account);
   const { data: record, error: recordError } = await account.supabase
@@ -311,7 +332,7 @@ export async function PATCH(request: Request) {
     actor_id: account.auth_user_id,
     actor_email: account.email,
     action: "Cadastro essencial do contato corrigido",
-    detail: `registro ${recordId} · nome, bairro e rua atualizados`,
+    detail: `registro ${recordId} · nome e bairro atualizados; rua revisada quando informada`,
   });
   if (auditError) console.error("Failed to audit contact quality update", auditError);
 
