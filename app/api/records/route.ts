@@ -11,6 +11,8 @@ const DASHBOARD_MAPPED_CONTACT_LIMIT = 2000;
 const DASHBOARD_MEETING_LIMIT = 2000;
 const DASHBOARD_DRAFT_LIMIT = 500;
 
+type PayloadObject = Record<string, unknown>;
+
 type OwnedRecord = {
   id: number;
   owner_email: string;
@@ -29,6 +31,53 @@ function mapRecord(record: OwnedRecord) {
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
+}
+
+function isPayloadObject(value: unknown): value is PayloadObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isMissingCoordinate(value: unknown) {
+  return value === undefined || value === null || value === "";
+}
+
+function normalizeCoordinates(payload: PayloadObject) {
+  const normalized = { ...payload };
+  const latitude = normalized.latitude;
+  const longitude = normalized.longitude;
+  const latitudeMissing = isMissingCoordinate(latitude);
+  const longitudeMissing = isMissingCoordinate(longitude);
+
+  if (latitudeMissing && longitudeMissing) {
+    delete normalized.latitude;
+    delete normalized.longitude;
+    return { payload: normalized, error: null };
+  }
+
+  if (latitudeMissing !== longitudeMissing) {
+    return {
+      payload: normalized,
+      error: "Latitude e longitude devem ser informadas juntas.",
+    };
+  }
+
+  if (
+    typeof latitude !== "number" ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    typeof longitude !== "number" ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return {
+      payload: normalized,
+      error: "As coordenadas informadas são inválidas.",
+    };
+  }
+
+  return { payload: normalized, error: null };
 }
 
 async function visibleOwners(account: NonNullable<Awaited<ReturnType<typeof getAccount>>>) {
@@ -93,6 +142,9 @@ export async function GET(request: Request) {
       return query;
     };
 
+    // As rotas de escrita mantêm a invariável: quando existem, latitude e
+    // longitude são números finitos e válidos. Assim o filtro textual abaixo
+    // pode permanecer simples e indexável sem aceitar novos valores inválidos.
     const mappedContactsQuery = makeScopedQuery(
       "contact",
       DASHBOARD_MAPPED_CONTACT_LIMIT,
@@ -134,6 +186,11 @@ export async function GET(request: Request) {
     );
     const meetings = (meetingsResult.data ?? []) as OwnedRecord[];
     const drafts = (draftsResult.data ?? []) as OwnedRecord[];
+    const mappedContactsTruncated = mappedContactsTotal > mappedContacts.length;
+    const truncated =
+      mappedContactsTruncated ||
+      meetings.length >= DASHBOARD_MEETING_LIMIT ||
+      drafts.length >= DASHBOARD_DRAFT_LIMIT;
     const dashboardRecords = [...mappedContacts, ...meetings, ...drafts].sort(
       (left, right) =>
         new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
@@ -147,13 +204,12 @@ export async function GET(request: Request) {
         visibleOwners: emails,
         records: dashboardRecords.map(mapRecord),
         total: dashboardRecords.length,
-        mappedContacts: mappedContactsTotal,
         mappedContactsTotal,
         mappedContactRecords: mappedContacts.length,
         meetings: meetings.length,
         drafts: drafts.length,
-        truncated: false,
-        mappedContactsTruncated: mappedContactsTotal > mappedContacts.length,
+        truncated,
+        mappedContactsTruncated,
       },
       {
         headers: {
@@ -217,10 +273,13 @@ export async function POST(request: Request) {
 
   if (
     !allowedKinds.includes(body.kind as AllowedKind) ||
-    !body.payload ||
-    typeof body.payload !== "object"
+    !isPayloadObject(body.payload)
   )
     return Response.json({ error: "Registro inválido" }, { status: 400 });
+
+  const normalized = normalizeCoordinates(body.payload);
+  if (normalized.error)
+    return Response.json({ error: normalized.error }, { status: 400 });
 
   const { users, emails } = await visibleOwners(account);
   const requested = body.ownerEmail?.trim().toLowerCase();
@@ -251,7 +310,7 @@ export async function POST(request: Request) {
       owner_id: owner.auth_user_id,
       owner_email: owner.email,
       kind: body.kind,
-      payload: body.payload,
+      payload: normalized.payload,
       updated_at: now,
     })
     .select()
@@ -321,17 +380,12 @@ export async function PATCH(request: Request) {
 
   const body = (await request.json()) as { id?: number; payload?: unknown };
   const id = Number(body.id);
-  if (
-    !Number.isInteger(id) ||
-    id <= 0 ||
-    !body.payload ||
-    typeof body.payload !== "object"
-  )
+  if (!Number.isInteger(id) || id <= 0 || !isPayloadObject(body.payload))
     return Response.json({ error: "Registro inválido" }, { status: 400 });
 
   const { data: record } = await account.supabase
     .from("vf_owned_records")
-    .select("id,owner_email,kind")
+    .select("id,owner_email,kind,payload")
     .eq("id", id)
     .single();
 
@@ -342,9 +396,20 @@ export async function PATCH(request: Request) {
   if (!emails.includes(String(record.owner_email).toLowerCase()))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
+  const currentPayload = isPayloadObject(record.payload) ? record.payload : {};
+  const normalized = normalizeCoordinates({
+    ...currentPayload,
+    ...body.payload,
+  });
+  if (normalized.error)
+    return Response.json({ error: normalized.error }, { status: 400 });
+
   const { data, error } = await account.supabase
     .from("vf_owned_records")
-    .update({ payload: body.payload, updated_at: new Date().toISOString() })
+    .update({
+      payload: normalized.payload,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .select()
     .single();
