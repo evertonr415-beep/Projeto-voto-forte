@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "./supabase-client";
 
 type DashboardSection = "overview" | "coverage";
 
@@ -24,7 +25,7 @@ type DashboardRecord = {
 
 type DashboardPayload = {
   records?: DashboardRecord[];
-  mappedContacts?: number;
+  mappedContactsTotal?: number;
   mappedContactsTruncated?: boolean;
 };
 
@@ -44,6 +45,11 @@ const sectionLabels: Record<DashboardSection, string> = {
 
 const numberFormatter = new Intl.NumberFormat("pt-BR");
 
+function finiteNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(0, numeric) : 0;
+}
+
 function formatNumber(value: number) {
   return numberFormatter.format(Math.max(0, Math.round(value)));
 }
@@ -56,20 +62,22 @@ export default function ExecutiveDashboard() {
   const [section, setSection] = useState<DashboardSection>("overview");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const requestVersion = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
+      const version = ++requestVersion.current;
       setLoading(true);
       setError("");
       try {
         const [summaryResponse, dashboardResponse] = await Promise.all([
-          fetch("/api/contacts?mode=summary&owner=all", {
+          apiFetch("/api/contacts?mode=summary&owner=all", {
             headers: { accept: "application/json" },
             cache: "no-store",
           }),
-          fetch("/api/records?owner=all&mode=dashboard", {
+          apiFetch("/api/records?owner=all&mode=dashboard", {
             headers: { accept: "application/json" },
             cache: "no-store",
           }),
@@ -78,33 +86,42 @@ export default function ExecutiveDashboard() {
         const [summaryData, dashboardData] = (await Promise.all([
           summaryResponse.json(),
           dashboardResponse.json(),
-        ])) as [Partial<Summary> & { error?: string }, DashboardPayload & { error?: string }];
+        ])) as [
+          Partial<Summary> & { error?: string },
+          DashboardPayload & { error?: string },
+        ];
 
         if (!summaryResponse.ok) {
-          throw new Error(summaryData.error || "Falha ao carregar o resumo executivo.");
+          throw new Error(
+            summaryData.error || "Falha ao carregar o resumo executivo.",
+          );
         }
         if (!dashboardResponse.ok) {
-          throw new Error(dashboardData.error || "Falha ao carregar os dados do mapa.");
+          throw new Error(
+            dashboardData.error || "Falha ao carregar os dados do mapa.",
+          );
         }
-        if (cancelled) return;
+        if (cancelled || version !== requestVersion.current) return;
 
         setSummary({
-          total: Number(summaryData.total ?? 0),
-          voters: Number(summaryData.voters ?? 0),
-          leaders: Number(summaryData.leaders ?? 0),
-          meetings: Number(summaryData.meetings ?? 0),
-          districtsReached: Number(summaryData.districtsReached ?? 0),
+          total: finiteNumber(summaryData.total),
+          voters: finiteNumber(summaryData.voters),
+          leaders: finiteNumber(summaryData.leaders),
+          meetings: finiteNumber(summaryData.meetings),
+          districtsReached: finiteNumber(summaryData.districtsReached),
           districts: Array.isArray(summaryData.districts)
             ? summaryData.districts.map((item) => ({
                 district: String(item.district || "").trim(),
-                total: Number(item.total ?? 0),
+                total: finiteNumber(item.total),
               }))
             : [],
         });
-        setMappedContacts(Number(dashboardData.mappedContacts ?? 0));
-        setMappedContactsTruncated(Boolean(dashboardData.mappedContactsTruncated));
+        setMappedContacts(finiteNumber(dashboardData.mappedContactsTotal));
+        setMappedContactsTruncated(
+          Boolean(dashboardData.mappedContactsTruncated),
+        );
       } catch (loadError) {
-        if (!cancelled) {
+        if (!cancelled && version === requestVersion.current) {
           setError(
             loadError instanceof Error
               ? loadError.message
@@ -112,7 +129,7 @@ export default function ExecutiveDashboard() {
           );
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && version === requestVersion.current) setLoading(false);
       }
     };
 
@@ -124,9 +141,13 @@ export default function ExecutiveDashboard() {
       if (open) void load();
     };
 
-    window.addEventListener("voto-forte:executive-dashboard-toggle", handleToggle);
+    window.addEventListener(
+      "voto-forte:executive-dashboard-toggle",
+      handleToggle,
+    );
     return () => {
       cancelled = true;
+      requestVersion.current += 1;
       window.removeEventListener(
         "voto-forte:executive-dashboard-toggle",
         handleToggle,
@@ -186,7 +207,9 @@ export default function ExecutiveDashboard() {
           <strong>Dashboard Executivo</strong>
           <p>Indicadores consolidados diretamente do banco de dados.</p>
         </div>
-        <button type="button" onClick={close}>Fechar</button>
+        <button type="button" onClick={close}>
+          Fechar
+        </button>
       </header>
 
       <nav aria-label="Seções do dashboard">
@@ -243,7 +266,8 @@ export default function ExecutiveDashboard() {
 
           {mappedContactsTruncated && (
             <div className="vf-executive-loading">
-              A camada de pontos atingiu o limite de visualização; os totais acima continuam exatos.
+              A camada de pontos atingiu o limite de visualização; os totais acima
+              continuam exatos.
             </div>
           )}
 
@@ -253,7 +277,8 @@ export default function ExecutiveDashboard() {
                 <small>BASE CONSOLIDADA</small>
                 <strong>{formatNumber(summary.total)} contatos</strong>
                 <span>
-                  {formatNumber(summary.voters)} eleitores e {formatNumber(summary.leaders)} lideranças.
+                  {formatNumber(summary.voters)} eleitores e{" "}
+                  {formatNumber(summary.leaders)} lideranças.
                 </span>
               </div>
               <div>
@@ -263,7 +288,8 @@ export default function ExecutiveDashboard() {
                   <i style={{ width: `${mappedPercent}%` }} />
                 </div>
                 <span>
-                  {formatNumber(summary.districtsReached)} bairros com presença cadastrada.
+                  {formatNumber(summary.districtsReached)} bairros com presença
+                  cadastrada.
                 </span>
               </div>
             </section>
