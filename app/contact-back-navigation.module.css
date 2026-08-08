@@ -25,6 +25,10 @@
   transform: translateY(-1px);
 }
 
+:global(.optimized-quick-actions.vf-contact-actions) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 @media (max-width: 760px) {
   .backLink {
     margin: 0 0 9px 2px;
@@ -34,5 +38,15 @@
 
   .arrow {
     font-size: 23px;
+  }
+
+  :global(.optimized-quick-actions.vf-contact-actions) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  :global(.optimized-quick-actions.vf-contact-actions) {
+    grid-template-columns: 1fr;
   }
 }
