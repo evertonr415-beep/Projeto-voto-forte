@@ -96,13 +96,13 @@ export default function MapToolsGate() {
   return (
     <>
       <MapContactLayer />
+      <MapTerritoryEnhancer />
       {enabled && (
         <>
           <MobileMapLayersToggle />
           <MobileAnalyticsControls />
           <LegacyContactGeocoder />
           <SafeMapContactTools />
-          <MapTerritoryEnhancer />
           <MapGeocodingPanel />
           <MapDistrictFilter />
           <MapHeatmapEnhancer />
