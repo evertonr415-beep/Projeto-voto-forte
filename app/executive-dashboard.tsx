@@ -1,63 +1,116 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  buildTerritoryStatistics,
-  type TerritoryRecord,
-} from "./territory-statistics";
-import {
-  buildTerritoryRankings,
-  type TerritoryRankingKey,
-} from "./territory-rankings";
 
-type DashboardSection =
-  | "overview"
-  | "growth"
-  | "coverage"
-  | "voters"
-  | "leaders"
-  | "unmapped";
+type DashboardSection = "overview" | "coverage";
+
+type Summary = {
+  total: number;
+  voters: number;
+  leaders: number;
+  meetings: number;
+  districtsReached: number;
+  districts: { district: string; total: number }[];
+};
+
+type DashboardRecord = {
+  kind?: string;
+  payload?: {
+    district?: string;
+    latitude?: number | string;
+    longitude?: number | string;
+  };
+};
+
+type DashboardPayload = {
+  records?: DashboardRecord[];
+  mappedContacts?: number;
+  mappedContactsTruncated?: boolean;
+};
+
+const EMPTY_SUMMARY: Summary = {
+  total: 0,
+  voters: 0,
+  leaders: 0,
+  meetings: 0,
+  districtsReached: 0,
+  districts: [],
+};
 
 const sectionLabels: Record<DashboardSection, string> = {
   overview: "Visão geral",
-  growth: "Crescimento",
-  coverage: "Cobertura",
-  voters: "Eleitores",
-  leaders: "Lideranças",
-  unmapped: "Pendências",
+  coverage: "Bairros",
 };
 
-const sectionRankingMap: Partial<
-  Record<DashboardSection, TerritoryRankingKey>
-> = {
-  growth: "growth",
-  coverage: "coverage",
-  voters: "voters",
-  leaders: "leaders",
-  unmapped: "unmapped",
-};
+const numberFormatter = new Intl.NumberFormat("pt-BR");
+
+function formatNumber(value: number) {
+  return numberFormatter.format(Math.max(0, Math.round(value)));
+}
 
 export default function ExecutiveDashboard() {
-  const [records, setRecords] = useState<TerritoryRecord[]>([]);
+  const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY);
+  const [mappedContacts, setMappedContacts] = useState(0);
+  const [mappedContactsTruncated, setMappedContactsTruncated] = useState(false);
   const [visible, setVisible] = useState(false);
   const [section, setSection] = useState<DashboardSection>("overview");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
       setLoading(true);
+      setError("");
       try {
-        const response = await fetch("/api/records?owner=all&kind=contact", {
-          headers: { accept: "application/json" },
-          cache: "no-store",
+        const [summaryResponse, dashboardResponse] = await Promise.all([
+          fetch("/api/contacts?mode=summary&owner=all", {
+            headers: { accept: "application/json" },
+            cache: "no-store",
+          }),
+          fetch("/api/records?owner=all&mode=dashboard", {
+            headers: { accept: "application/json" },
+            cache: "no-store",
+          }),
+        ]);
+
+        const [summaryData, dashboardData] = (await Promise.all([
+          summaryResponse.json(),
+          dashboardResponse.json(),
+        ])) as [Partial<Summary> & { error?: string }, DashboardPayload & { error?: string }];
+
+        if (!summaryResponse.ok) {
+          throw new Error(summaryData.error || "Falha ao carregar o resumo executivo.");
+        }
+        if (!dashboardResponse.ok) {
+          throw new Error(dashboardData.error || "Falha ao carregar os dados do mapa.");
+        }
+        if (cancelled) return;
+
+        setSummary({
+          total: Number(summaryData.total ?? 0),
+          voters: Number(summaryData.voters ?? 0),
+          leaders: Number(summaryData.leaders ?? 0),
+          meetings: Number(summaryData.meetings ?? 0),
+          districtsReached: Number(summaryData.districtsReached ?? 0),
+          districts: Array.isArray(summaryData.districts)
+            ? summaryData.districts.map((item) => ({
+                district: String(item.district || "").trim(),
+                total: Number(item.total ?? 0),
+              }))
+            : [],
         });
-        if (!response.ok) return;
-        const data = (await response.json()) as { records?: TerritoryRecord[] };
-        if (!cancelled) setRecords(data.records || []);
-      } catch {
-        // Os demais recursos do sistema continuam disponíveis.
+        setMappedContacts(Number(dashboardData.mappedContacts ?? 0));
+        setMappedContactsTruncated(Boolean(dashboardData.mappedContactsTruncated));
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Não foi possível atualizar os indicadores agora.",
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -81,19 +134,26 @@ export default function ExecutiveDashboard() {
     };
   }, []);
 
-  const statistics = useMemo(
-    () => buildTerritoryStatistics(records),
-    [records],
-  );
-  const rankings = useMemo(
-    () => buildTerritoryRankings(statistics, 8),
-    [statistics],
+  const topDistricts = useMemo(
+    () =>
+      summary.districts
+        .filter((item) => item.district && item.total > 0)
+        .sort(
+          (left, right) =>
+            right.total - left.total ||
+            left.district.localeCompare(right.district, "pt-BR"),
+        )
+        .slice(0, 12),
+    [summary.districts],
   );
 
   if (!visible) return null;
 
-  const rankingKey = sectionRankingMap[section];
-  const ranking = rankingKey ? rankings[rankingKey] : [];
+  const mapped = Math.min(summary.total, mappedContacts);
+  const unmapped = Math.max(0, summary.total - mapped);
+  const mappedPercent = summary.total
+    ? Math.round((mapped / summary.total) * 100)
+    : 0;
 
   const close = () => {
     setVisible(false);
@@ -124,7 +184,7 @@ export default function ExecutiveDashboard() {
         <div>
           <small>GESTÃO TERRITORIAL</small>
           <strong>Dashboard Executivo</strong>
-          <p>Indicadores consolidados da base de cadastros.</p>
+          <p>Indicadores consolidados diretamente do banco de dados.</p>
         </div>
         <button type="button" onClick={close}>Fechar</button>
       </header>
@@ -144,78 +204,89 @@ export default function ExecutiveDashboard() {
 
       {loading ? (
         <div className="vf-executive-loading">Atualizando indicadores...</div>
+      ) : error ? (
+        <div className="vf-executive-loading">{error}</div>
       ) : (
         <>
           <section className="vf-executive-kpis">
             <article>
               <small>Eleitores</small>
-              <strong>{statistics.voters}</strong>
-              <span>{statistics.total} cadastros totais</span>
+              <strong>{formatNumber(summary.voters)}</strong>
+              <span>{formatNumber(summary.total)} cadastros totais</span>
             </article>
             <article>
               <small>Lideranças</small>
-              <strong>{statistics.leaders}</strong>
-              <span>{statistics.districtsReached} bairros alcançados</span>
+              <strong>{formatNumber(summary.leaders)}</strong>
+              <span>{formatNumber(summary.districtsReached)} bairros alcançados</span>
             </article>
             <article>
               <small>Cobertura</small>
-              <strong>{statistics.mappedPercent}%</strong>
-              <span>{statistics.mapped} registros mapeados</span>
+              <strong>{mappedPercent}%</strong>
+              <span>{formatNumber(mapped)} registros mapeados</span>
             </article>
             <article>
-              <small>Pendências</small>
-              <strong>{statistics.unmapped}</strong>
+              <small>Pendências de mapa</small>
+              <strong>{formatNumber(unmapped)}</strong>
               <span>sem geolocalização</span>
             </article>
             <article>
-              <small>Últimos 7 dias</small>
-              <strong>{statistics.registrationsLast7Days}</strong>
-              <span>{statistics.weeklyGrowth >= 0 ? "+" : ""}{statistics.weeklyGrowth}% de evolução</span>
+              <small>Bairros</small>
+              <strong>{formatNumber(summary.districtsReached)}</strong>
+              <span>com presença cadastrada</span>
             </article>
             <article>
-              <small>Hoje</small>
-              <strong>{statistics.registrationsToday}</strong>
-              <span>novos registros</span>
+              <small>Reuniões</small>
+              <strong>{formatNumber(summary.meetings)}</strong>
+              <span>no ambiente consolidado</span>
             </article>
           </section>
+
+          {mappedContactsTruncated && (
+            <div className="vf-executive-loading">
+              A camada de pontos atingiu o limite de visualização; os totais acima continuam exatos.
+            </div>
+          )}
 
           {section === "overview" ? (
             <section className="vf-executive-overview">
               <div>
-                <small>COBERTURA TERRITORIAL</small>
-                <strong>{statistics.mappedPercent}% da base mapeada</strong>
-                <div className="vf-executive-progress">
-                  <i style={{ width: `${statistics.mappedPercent}%` }} />
-                </div>
+                <small>BASE CONSOLIDADA</small>
+                <strong>{formatNumber(summary.total)} contatos</strong>
+                <span>
+                  {formatNumber(summary.voters)} eleitores e {formatNumber(summary.leaders)} lideranças.
+                </span>
               </div>
               <div>
-                <small>CRESCIMENTO SEMANAL</small>
-                <strong>{statistics.weeklyGrowth >= 0 ? "+" : ""}{statistics.weeklyGrowth}%</strong>
+                <small>COBERTURA TERRITORIAL</small>
+                <strong>{mappedPercent}% da base com coordenadas</strong>
+                <div className="vf-executive-progress">
+                  <i style={{ width: `${mappedPercent}%` }} />
+                </div>
                 <span>
-                  {statistics.registrationsLast7Days} registros nesta semana contra {statistics.registrationsPrevious7Days} na anterior.
+                  {formatNumber(summary.districtsReached)} bairros com presença cadastrada.
                 </span>
               </div>
             </section>
           ) : (
             <section className="vf-executive-ranking">
-              <h3>{sectionLabels[section]}</h3>
-              {ranking.length ? (
-                ranking.map((item, index) => (
+              <h3>Bairros com mais cadastros</h3>
+              {topDistricts.length ? (
+                topDistricts.map((item, index) => (
                   <button
                     type="button"
-                    key={`${section}-${item.district.key}`}
-                    onClick={() => selectDistrict(item.district.name)}
+                    key={item.district}
+                    onClick={() => selectDistrict(item.district)}
                   >
                     <b>{index + 1}</b>
                     <span>
-                      <strong>{item.district.name}</strong>
-                      <small>{item.label}</small>
+                      <strong>{item.district}</strong>
+                      <small>Cadastros no bairro</small>
                     </span>
-                    <em>{item.district.total}</em>
+                    <em>{formatNumber(item.total)}</em>
                   </button>
                 ))
               ) : (
-                <p>Não há dados suficientes para este ranking.</p>
+                <p>Não há dados territoriais disponíveis.</p>
               )}
             </section>
           )}
