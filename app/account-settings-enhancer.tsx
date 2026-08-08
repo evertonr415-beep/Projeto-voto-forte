@@ -53,8 +53,6 @@ export default function AccountSettingsEnhancer() {
   }, []);
 
   useEffect(() => {
-    let observer: MutationObserver | null = null;
-
     const applyAvatarTo = (root: ParentNode) => {
       const elements: HTMLElement[] = [];
       if (
@@ -82,54 +80,46 @@ export default function AccountSettingsEnhancer() {
       }
     };
 
-    const connectAccountButton = (root: ParentNode) => {
-      const buttons: HTMLButtonElement[] = [];
-      if (root instanceof HTMLButtonElement) buttons.push(root);
-      root
-        .querySelectorAll?.<HTMLButtonElement>("button")
-        .forEach((button) => buttons.push(button));
+    const handleAccountClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest("button") as HTMLButtonElement | null;
+      if (!button) return;
 
-      for (const button of buttons) {
-        if (button.textContent?.trim() !== "Configurações da conta") continue;
-        if (button.dataset.vfAccountSettings === "true") return true;
-        button.dataset.vfAccountSettings = "true";
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          setMessage("");
-          setOpen(true);
-        });
-        return true;
-      }
-      return false;
+      const label = button.textContent?.replace(/\s+/g, " ").trim();
+      if (label !== "Configurações da conta") return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setMessage("");
+      setOpen(true);
+    };
+
+    const handleAvatarUpdated = (event: Event) => {
+      const next = String(
+        (event as CustomEvent<{ avatarUrl?: string }>).detail?.avatarUrl || "",
+      );
+      setAvatar(next);
+      window.requestAnimationFrame(() => applyAvatarTo(document));
     };
 
     applyAvatarTo(document);
-    if (connectAccountButton(document)) return;
+    document.addEventListener("click", handleAccountClick, true);
+    window.addEventListener("voto-forte:avatar-updated", handleAvatarUpdated);
 
-    observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of Array.from(mutation.addedNodes)) {
-          if (!(node instanceof HTMLElement)) continue;
-          applyAvatarTo(node);
-          if (connectAccountButton(node)) {
-            observer?.disconnect();
-            observer = null;
-            return;
-          }
+          if (node instanceof HTMLElement) applyAvatarTo(node);
         }
       }
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
-    const timeout = window.setTimeout(() => {
-      observer?.disconnect();
-      observer = null;
-    }, 15_000);
 
     return () => {
-      window.clearTimeout(timeout);
-      observer?.disconnect();
+      document.removeEventListener("click", handleAccountClick, true);
+      window.removeEventListener("voto-forte:avatar-updated", handleAvatarUpdated);
+      observer.disconnect();
     };
   }, [avatar]);
 
@@ -169,11 +159,12 @@ export default function AccountSettingsEnhancer() {
         ]);
         avatarUrl = "";
       } else if (avatarFile) {
-        const extension = avatarFile.type === "image/png"
-          ? "png"
-          : avatarFile.type === "image/webp"
-            ? "webp"
-            : "jpg";
+        const extension =
+          avatarFile.type === "image/png"
+            ? "png"
+            : avatarFile.type === "image/webp"
+              ? "webp"
+              : "jpg";
         const path = `${objectPath}.${extension}`;
         const { error: uploadError } = await supabase.storage
           .from("profile-avatars")
@@ -263,7 +254,9 @@ export default function AccountSettingsEnhancer() {
             <small>VOTO FORTE PARANÁ</small>
             <h2 id="account-settings-title">Configurações da conta</h2>
           </div>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">×</button>
+          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">
+            ×
+          </button>
         </header>
 
         <div className="account-settings-content">
@@ -310,10 +303,13 @@ export default function AccountSettingsEnhancer() {
           </section>
 
           <section className="account-settings-section">
-            <h3>Notificações da Agenda Inteligente</h3>
-            <p>Escolha por quais canais deseja receber os lembretes das reuniões.</p>
+            <h3>Preferências de notificações</h3>
+            <p>Escolha por quais canais deseja receber lembretes da Agenda Inteligente.</p>
             <label className="account-toggle-row">
-              <span><b>WhatsApp</b><small>Receber lembretes no número cadastrado.</small></span>
+              <span>
+                <b>WhatsApp</b>
+                <small>Receber lembretes no número cadastrado.</small>
+              </span>
               <input
                 type="checkbox"
                 checked={preferences.agendaWhatsapp}
@@ -326,7 +322,10 @@ export default function AccountSettingsEnhancer() {
               />
             </label>
             <label className="account-toggle-row">
-              <span><b>E-mail</b><small>Receber lembretes no e-mail da conta.</small></span>
+              <span>
+                <b>E-mail</b>
+                <small>Receber lembretes no e-mail da conta.</small>
+              </span>
               <input
                 type="checkbox"
                 checked={preferences.agendaEmail}
@@ -344,7 +343,7 @@ export default function AccountSettingsEnhancer() {
               onClick={() => void savePreferences()}
               disabled={saving}
             >
-              {saving ? "Salvando..." : "Salvar preferências"}
+              {saving ? "Salvando..." : "Salvar foto e preferências"}
             </button>
           </section>
 
@@ -381,7 +380,9 @@ export default function AccountSettingsEnhancer() {
         </div>
 
         <footer>
-          <button type="button" onClick={() => setOpen(false)}>Fechar</button>
+          <button type="button" onClick={() => setOpen(false)}>
+            Fechar
+          </button>
         </footer>
       </section>
     </div>
