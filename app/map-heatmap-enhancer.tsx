@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadSharedTerritoryContacts } from "./territory-data-client";
+import { loadSharedMappedTerritoryData } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type HeatPoint = {
@@ -46,7 +46,9 @@ export default function MapHeatmapEnhancer() {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mappedPoints, setMappedPoints] = useState(0);
+  const [loadedMappedPoints, setLoadedMappedPoints] = useState(0);
+  const [totalMappedPoints, setTotalMappedPoints] = useState(0);
+  const [truncated, setTruncated] = useState(false);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const pointsRef = useRef<HeatPoint[]>([]);
@@ -109,11 +111,13 @@ export default function MapHeatmapEnhancer() {
       if (!enabledRef.current || cancelled) return;
       setLoading(true);
       try {
-        const records = await loadSharedTerritoryContacts({ force });
+        const mappedData = await loadSharedMappedTerritoryData({ force });
         if (cancelled || !enabledRef.current) return;
-        const points = aggregatePoints(records);
+        const points = aggregatePoints(mappedData.records);
         pointsRef.current = points;
-        setMappedPoints(points.reduce((total, point) => total + point.count, 0));
+        setLoadedMappedPoints(mappedData.records.length);
+        setTotalMappedPoints(mappedData.total);
+        setTruncated(mappedData.truncated);
         window.requestAnimationFrame(renderLayer);
       } catch {
         // O mapa principal continua funcionando mesmo sem a camada de calor.
@@ -208,15 +212,20 @@ export default function MapHeatmapEnhancer() {
 
   if (!visible) return null;
 
+  const loadedLabel = loadedMappedPoints.toLocaleString("pt-BR");
+  const totalLabel = totalMappedPoints.toLocaleString("pt-BR");
+
   return (
     <aside className="vf-heatmap-control">
       <div>
-        <small>CAMADA ANALÍTICA</small>
+        <small>CAMADA VISUAL</small>
         <strong>Mapa de calor</strong>
         <span>
           {loading
             ? "Carregando concentrações..."
-            : `${mappedPoints.toLocaleString("pt-BR")} ponto(s) considerados`}
+            : truncated
+              ? `${loadedLabel} de ${totalLabel} pontos exibidos para manter o mapa leve`
+              : `${loadedLabel} ponto(s) mapeado(s) exibidos`}
         </span>
       </div>
       <button
