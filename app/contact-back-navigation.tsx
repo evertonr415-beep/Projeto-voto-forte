@@ -8,7 +8,8 @@ export default function ContactBackNavigation() {
   useEffect(() => {
     let cancelled = false;
     let backLink: HTMLAnchorElement | null = null;
-    let hiddenLink: HTMLElement | null = null;
+    let hiddenSystemLink: HTMLElement | null = null;
+    let hiddenRefreshButton: HTMLElement | null = null;
     let actions: HTMLElement | null = null;
 
     const install = () => {
@@ -21,10 +22,18 @@ export default function ContactBackNavigation() {
       const systemLink = Array.from(actions.querySelectorAll<HTMLElement>("a")).find(
         (item) => item.textContent?.includes("Sistema completo"),
       );
+      const refreshButton = Array.from(actions.querySelectorAll<HTMLElement>("button")).find(
+        (item) => item.textContent?.includes("Atualizar painel"),
+      );
 
       if (systemLink) {
-        hiddenLink = systemLink;
+        hiddenSystemLink = systemLink;
         systemLink.style.display = "none";
+      }
+
+      if (refreshButton) {
+        hiddenRefreshButton = refreshButton;
+        refreshButton.style.display = "none";
       }
 
       actions.classList.add("vf-contact-actions");
@@ -47,12 +56,17 @@ export default function ContactBackNavigation() {
       return true;
     };
 
+    const restore = () => {
+      backLink?.remove();
+      hiddenSystemLink?.style.removeProperty("display");
+      hiddenRefreshButton?.style.removeProperty("display");
+      actions?.classList.remove("vf-contact-actions");
+    };
+
     if (install()) {
       return () => {
         cancelled = true;
-        backLink?.remove();
-        if (hiddenLink) hiddenLink.style.removeProperty("display");
-        actions?.classList.remove("vf-contact-actions");
+        restore();
       };
     }
 
@@ -66,9 +80,7 @@ export default function ContactBackNavigation() {
     return () => {
       cancelled = true;
       observer.disconnect();
-      backLink?.remove();
-      if (hiddenLink) hiddenLink.style.removeProperty("display");
-      actions?.classList.remove("vf-contact-actions");
+      restore();
     };
   }, []);
 
