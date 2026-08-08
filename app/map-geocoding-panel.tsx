@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "./supabase-client";
 import {
-  invalidateSharedTerritoryContacts,
-  loadSharedTerritoryContacts,
+  invalidateSharedTerritoryData,
+  loadSharedMappedTerritoryData,
+  loadSharedTerritorySummary,
 } from "./territory-data-client";
 
 type Progress = {
@@ -20,22 +22,16 @@ type BatchResult = {
 };
 
 async function readProgress(force = false): Promise<Progress> {
-  const records = await loadSharedTerritoryContacts({ force });
-  let mapped = 0;
-
-  for (const record of records) {
-    if (
-      Number.isFinite(Number(record.payload?.latitude)) &&
-      Number.isFinite(Number(record.payload?.longitude))
-    ) {
-      mapped += 1;
-    }
-  }
+  const [summary, mappedData] = await Promise.all([
+    loadSharedTerritorySummary({ force }),
+    loadSharedMappedTerritoryData({ force }),
+  ]);
+  const mapped = Math.min(summary.total, mappedData.total);
 
   return {
-    total: records.length,
+    total: summary.total,
     mapped,
-    pending: Math.max(0, records.length - mapped),
+    pending: Math.max(0, summary.total - mapped),
   };
 }
 
@@ -48,7 +44,10 @@ export default function MapGeocodingPanel() {
     mapped: 0,
     pending: 0,
   });
-  const [message, setMessage] = useState("Abra o painel para verificar o mapeamento.");
+  const [message, setMessage] = useState(
+    "Abra o painel para verificar o mapeamento.",
+  );
+  const visibleRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,13 +75,15 @@ export default function MapGeocodingPanel() {
       const open = Boolean(
         (event as CustomEvent<{ open?: boolean }>).detail?.open,
       );
+      visibleRef.current = open;
       setVisible(open);
       if (open) void refresh(false);
     };
 
-    const handleGeocodingComplete = () => {
-      invalidateSharedTerritoryContacts();
-      if (visible) void refresh(true);
+    const handleGeocodingComplete = (event: Event) => {
+      const source = (event as CustomEvent<{ source?: string }>).detail?.source;
+      if (source === "map-geocoding-panel") return;
+      if (visibleRef.current) void refresh(true);
     };
 
     window.addEventListener("voto-forte:geocoding-panel-toggle", handleToggle);
@@ -102,7 +103,7 @@ export default function MapGeocodingPanel() {
         handleGeocodingComplete,
       );
     };
-  }, [visible]);
+  }, []);
 
   async function processMapping() {
     if (running) return;
@@ -112,7 +113,7 @@ export default function MapGeocodingPanel() {
     try {
       for (let batch = 0; batch < 20; batch += 1) {
         setMessage(`Processando lote ${batch + 1} de 20…`);
-        const response = await fetch("/api/geocode-missing", {
+        const response = await apiFetch("/api/geocode-missing", {
           method: "POST",
           headers: { accept: "application/json" },
         });
@@ -123,7 +124,7 @@ export default function MapGeocodingPanel() {
 
         const result = (await response.json()) as BatchResult;
         const updated = Number(result.updated || 0);
-        updatedTotal += updated;
+        updatedTotal += Number.isFinite(updated) ? Math.max(0, updated) : 0;
         setMessage(
           result.district
             ? `${result.district}: ${updated} alfinete(s) organizado(s).`
@@ -140,7 +141,7 @@ export default function MapGeocodingPanel() {
         await new Promise((resolve) => setTimeout(resolve, 1400));
       }
 
-      invalidateSharedTerritoryContacts();
+      invalidateSharedTerritoryData();
       const next = await readProgress(true);
       setProgress(next);
       setMessage(
@@ -152,7 +153,7 @@ export default function MapGeocodingPanel() {
       if (updatedTotal > 0) {
         window.dispatchEvent(
           new CustomEvent("voto-forte:geocoding-complete", {
-            detail: { updated: updatedTotal },
+            detail: { updated: updatedTotal, source: "map-geocoding-panel" },
           }),
         );
         window.dispatchEvent(new Event("voto-forte:records-changed"));
@@ -182,11 +183,16 @@ export default function MapGeocodingPanel() {
         <i style={{ width: `${percentage}%` }} />
       </div>
       <small>
-        {progress.mapped.toLocaleString("pt-BR")} de {progress.total.toLocaleString("pt-BR")} mapeados
+        {progress.mapped.toLocaleString("pt-BR")} de{" "}
+        {progress.total.toLocaleString("pt-BR")} mapeados
       </small>
       <p>{message}</p>
       {progress.pending > 0 && (
-        <button type="button" onClick={processMapping} disabled={running || loading}>
+        <button
+          type="button"
+          onClick={processMapping}
+          disabled={running || loading}
+        >
           {running ? "Mapeando bairros…" : "Iniciar ou retomar mapeamento"}
         </button>
       )}

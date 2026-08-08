@@ -41,7 +41,8 @@ export async function apiFetch(
   init: RequestInit = {},
 ) {
   const { data } = await supabase.auth.getSession();
-  const headers = new Headers(init.headers);
+  const headers = new Headers(input instanceof Request ? input.headers : undefined);
+  new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   if (data.session?.access_token) {
     headers.set("authorization", `Bearer ${data.session.access_token}`);
   }

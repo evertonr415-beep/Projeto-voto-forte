@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadSharedTerritoryContacts } from "./territory-data-client";
+import { loadSharedMappedTerritoryData } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type HeatPoint = {
@@ -46,11 +46,14 @@ export default function MapHeatmapEnhancer() {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mappedPoints, setMappedPoints] = useState(0);
+  const [loadedMappedPoints, setLoadedMappedPoints] = useState(0);
+  const [totalMappedPoints, setTotalMappedPoints] = useState(0);
+  const [truncated, setTruncated] = useState(false);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const pointsRef = useRef<HeatPoint[]>([]);
   const enabledRef = useRef(false);
+  const loadRequestRef = useRef(0);
 
   useEffect(() => {
     enabledRef.current = enabled;
@@ -107,18 +110,29 @@ export default function MapHeatmapEnhancer() {
 
     const loadPoints = async (force = false) => {
       if (!enabledRef.current || cancelled) return;
+      const requestId = ++loadRequestRef.current;
       setLoading(true);
       try {
-        const records = await loadSharedTerritoryContacts({ force });
-        if (cancelled || !enabledRef.current) return;
-        const points = aggregatePoints(records);
+        const mappedData = await loadSharedMappedTerritoryData({ force });
+        if (
+          cancelled ||
+          !enabledRef.current ||
+          requestId !== loadRequestRef.current
+        ) {
+          return;
+        }
+        const points = aggregatePoints(mappedData.records);
         pointsRef.current = points;
-        setMappedPoints(points.reduce((total, point) => total + point.count, 0));
+        setLoadedMappedPoints(mappedData.records.length);
+        setTotalMappedPoints(mappedData.total);
+        setTruncated(mappedData.truncated);
         window.requestAnimationFrame(renderLayer);
       } catch {
         // O mapa principal continua funcionando mesmo sem a camada de calor.
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && requestId === loadRequestRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -176,6 +190,7 @@ export default function MapHeatmapEnhancer() {
 
     return () => {
       cancelled = true;
+      loadRequestRef.current += 1;
       window.removeEventListener("voto-forte:heatmap-toggle", handleToggle);
       window.removeEventListener("voto-forte:heatmap-enable", handleEnable);
       window.removeEventListener(
@@ -200,6 +215,8 @@ export default function MapHeatmapEnhancer() {
       return;
     }
 
+    loadRequestRef.current += 1;
+    setLoading(false);
     const map = mapRef.current;
     const layer = layerRef.current;
     if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
@@ -208,15 +225,20 @@ export default function MapHeatmapEnhancer() {
 
   if (!visible) return null;
 
+  const loadedLabel = loadedMappedPoints.toLocaleString("pt-BR");
+  const totalLabel = totalMappedPoints.toLocaleString("pt-BR");
+
   return (
     <aside className="vf-heatmap-control">
       <div>
-        <small>CAMADA ANALÍTICA</small>
+        <small>CAMADA VISUAL</small>
         <strong>Mapa de calor</strong>
         <span>
           {loading
             ? "Carregando concentrações..."
-            : `${mappedPoints.toLocaleString("pt-BR")} ponto(s) considerados`}
+            : truncated
+              ? `${loadedLabel} de ${totalLabel} contatos mapeados carregados para manter o mapa leve`
+              : `${loadedLabel} contato(s) mapeado(s) carregado(s)`}
         </span>
       </div>
       <button

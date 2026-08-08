@@ -7,8 +7,6 @@ type Panel =
   | "district"
   | "heatmap"
   | "mapping"
-  | "priority"
-  | "strategy"
   | "dashboard"
   | "quality"
   | null;
@@ -23,8 +21,6 @@ const panelSelectors: Record<Exclude<Panel, null>, string> = {
   district: ".vf-district-filter",
   heatmap: ".vf-heatmap-control",
   mapping: ".vf-map-progress",
-  priority: ".vf-priority-panel",
-  strategy: ".vf-strategy-insights",
   dashboard: ".vf-executive-dashboard",
   quality: ".vf-data-quality-panel",
 };
@@ -33,15 +29,13 @@ const panelLabels: Record<Exclude<Panel, null>, string> = {
   district: "Análise territorial",
   heatmap: "Mapa de calor",
   mapping: "Mapeamento",
-  priority: "Prioridades",
-  strategy: "Insights estratégicos",
   dashboard: "Dashboard Executivo",
   quality: "Qualidade dos Dados",
 };
 
 const panelEvents = {
-  priority: "voto-forte:priority-panel-toggle",
-  strategy: "voto-forte:strategy-insights-toggle",
+  heatmap: "voto-forte:heatmap-toggle",
+  mapping: "voto-forte:geocoding-panel-toggle",
   dashboard: "voto-forte:executive-dashboard-toggle",
   quality: "voto-forte:data-quality-toggle",
 } as const;
@@ -257,7 +251,7 @@ export default function MobileAnalyticsControls() {
             <span aria-hidden="true">📊</span>
             <div>
               <strong>Dashboard Executivo</strong>
-              <small>Indicadores e rankings consolidados</small>
+              <small>Indicadores consolidados</small>
             </div>
           </button>
           <button type="button" role="menuitem" onClick={() => selectPanel("quality")}>
@@ -271,14 +265,14 @@ export default function MobileAnalyticsControls() {
             <span aria-hidden="true">⌖</span>
             <div>
               <strong>Análise territorial</strong>
-              <small>Filtrar e analisar bairros</small>
+              <small>Filtrar bairros pela base agregada</small>
             </div>
           </button>
           <button type="button" role="menuitem" onClick={() => selectPanel("heatmap")}>
             <span aria-hidden="true">🔥</span>
             <div>
               <strong>Mapa de calor</strong>
-              <small>Visualizar concentrações</small>
+              <small>Visualizar pontos georreferenciados</small>
             </div>
           </button>
           <button type="button" role="menuitem" onClick={() => selectPanel("mapping")}>
@@ -286,20 +280,6 @@ export default function MobileAnalyticsControls() {
             <div>
               <strong>Mapeamento</strong>
               <small>Acompanhar geocodificação</small>
-            </div>
-          </button>
-          <button type="button" role="menuitem" onClick={() => selectPanel("priority")}>
-            <span aria-hidden="true">🎯</span>
-            <div>
-              <strong>Prioridades</strong>
-              <small>Identificar bairros que exigem ação</small>
-            </div>
-          </button>
-          <button type="button" role="menuitem" onClick={() => selectPanel("strategy")}>
-            <span aria-hidden="true">💡</span>
-            <div>
-              <strong>Insights estratégicos</strong>
-              <small>Equilibrar eleitores, lideranças e mapeamento</small>
             </div>
           </button>
         </div>
