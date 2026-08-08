@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import styles from "./quality-back-navigation.module.css";
+import styles from "../shared-back-navigation.module.css";
 
 export default function QualityBackNavigation() {
   useEffect(() => {
