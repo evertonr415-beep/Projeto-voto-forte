@@ -14,17 +14,7 @@ type Summary = {
   districts: { district: string; total: number }[];
 };
 
-type DashboardRecord = {
-  kind?: string;
-  payload?: {
-    district?: string;
-    latitude?: number | string;
-    longitude?: number | string;
-  };
-};
-
 type DashboardPayload = {
-  records?: DashboardRecord[];
   mappedContactsTotal?: number;
   mappedContactsTruncated?: boolean;
 };
