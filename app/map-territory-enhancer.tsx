@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { loadSharedTerritoryContacts } from "./territory-data-client";
+import { loadSharedTerritorySummary } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DistrictStats = {
   total: number;
-  voters: number;
-  leaders: number;
 };
 
 const TERRITORY_CACHE_KEY = "vf:territories:arapongas:v1";
@@ -37,18 +35,13 @@ function densityOpacity(total: number, maximum: number) {
 }
 
 async function loadDistrictStats() {
-  const records = await loadSharedTerritoryContacts();
+  const summary = await loadSharedTerritorySummary();
   const stats = new Map<string, DistrictStats>();
 
-  for (const record of records) {
-    const district = normalize(record.payload?.district);
-    if (!district) continue;
-
-    const current = stats.get(district) || { total: 0, voters: 0, leaders: 0 };
-    current.total += 1;
-    if (normalize(record.payload?.kind).includes("LIDER")) current.leaders += 1;
-    else current.voters += 1;
-    stats.set(district, current);
+  for (const district of summary.districts) {
+    const key = normalize(district.district);
+    if (!key) continue;
+    stats.set(key, { total: Number(district.total || 0) });
   }
 
   return stats;
@@ -192,17 +185,13 @@ export default function MapTerritoryEnhancer() {
           const name = String(element.tags?.name || "").trim();
           if (!name) continue;
           const key = normalize(name);
-          const districtStats = stats.get(key) || {
-            total: 0,
-            voters: 0,
-            leaders: 0,
-          };
+          const districtStats = stats.get(key) || { total: 0 };
           const popup = `
             <div class="vf-territory-popup">
               <strong>${escapeHtml(name)}</strong>
-              <span>${districtStats.total} cadastro(s)</span>
-              <small>${districtStats.voters} eleitor(es) · ${districtStats.leaders} liderança(s)</small>
-              <button type="button" data-vf-district="${escapeHtml(name)}">Ver cadastros deste bairro</button>
+              <span>${districtStats.total.toLocaleString("pt-BR")} cadastro(s)</span>
+              <small>Total oficial do resumo agregado.</small>
+              <button type="button" data-vf-district="${escapeHtml(name)}">Ver este bairro</button>
             </div>
           `;
 
@@ -277,7 +266,7 @@ export default function MapTerritoryEnhancer() {
               interactive: true,
               icon: L.divIcon({
                 className: "vf-territory-label",
-                html: `<span>${escapeHtml(name)}</span><b>${districtStats.total}</b>`,
+                html: `<span>${escapeHtml(name)}</span><b>${districtStats.total.toLocaleString("pt-BR")}</b>`,
                 iconSize: [150, 34],
                 iconAnchor: [75, 17],
               }),
