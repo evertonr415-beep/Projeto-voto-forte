@@ -53,6 +53,7 @@ export default function MapHeatmapEnhancer() {
   const layerRef = useRef<any>(null);
   const pointsRef = useRef<HeatPoint[]>([]);
   const enabledRef = useRef(false);
+  const loadRequestRef = useRef(0);
 
   useEffect(() => {
     enabledRef.current = enabled;
@@ -109,10 +110,17 @@ export default function MapHeatmapEnhancer() {
 
     const loadPoints = async (force = false) => {
       if (!enabledRef.current || cancelled) return;
+      const requestId = ++loadRequestRef.current;
       setLoading(true);
       try {
         const mappedData = await loadSharedMappedTerritoryData({ force });
-        if (cancelled || !enabledRef.current) return;
+        if (
+          cancelled ||
+          !enabledRef.current ||
+          requestId !== loadRequestRef.current
+        ) {
+          return;
+        }
         const points = aggregatePoints(mappedData.records);
         pointsRef.current = points;
         setLoadedMappedPoints(mappedData.records.length);
@@ -122,7 +130,9 @@ export default function MapHeatmapEnhancer() {
       } catch {
         // O mapa principal continua funcionando mesmo sem a camada de calor.
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && requestId === loadRequestRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -180,6 +190,7 @@ export default function MapHeatmapEnhancer() {
 
     return () => {
       cancelled = true;
+      loadRequestRef.current += 1;
       window.removeEventListener("voto-forte:heatmap-toggle", handleToggle);
       window.removeEventListener("voto-forte:heatmap-enable", handleEnable);
       window.removeEventListener(
@@ -204,6 +215,8 @@ export default function MapHeatmapEnhancer() {
       return;
     }
 
+    loadRequestRef.current += 1;
+    setLoading(false);
     const map = mapRef.current;
     const layer = layerRef.current;
     if (map && layer && map.hasLayer(layer)) map.removeLayer(layer);
@@ -224,8 +237,8 @@ export default function MapHeatmapEnhancer() {
           {loading
             ? "Carregando concentrações..."
             : truncated
-              ? `${loadedLabel} de ${totalLabel} pontos exibidos para manter o mapa leve`
-              : `${loadedLabel} ponto(s) mapeado(s) exibidos`}
+              ? `${loadedLabel} de ${totalLabel} contatos mapeados carregados para manter o mapa leve`
+              : `${loadedLabel} contato(s) mapeado(s) carregado(s)`}
         </span>
       </div>
       <button
