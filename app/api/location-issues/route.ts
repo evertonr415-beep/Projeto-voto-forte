@@ -20,6 +20,8 @@ const REQUIRED_FIELD_ISSUES = [
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
+type FilterCategory = (typeof FILTER_CATEGORIES)[number];
+
 type QualityIssueRow = Record<string, unknown> & {
   issue_codes?: unknown;
   severity?: unknown;
@@ -115,7 +117,7 @@ export async function GET(request: Request) {
   const page = Math.min(100_000, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const requestedCategory = url.searchParams.get("category") ?? "";
   const category = FILTER_CATEGORIES.includes(
-    requestedCategory as (typeof FILTER_CATEGORIES)[number],
+    requestedCategory as FilterCategory,
   )
     ? requestedCategory
     : "";
@@ -202,17 +204,16 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
-    const responseCategories = isAuxiliaryCategory(category)
-      ? FILTER_CATEGORIES
-      : ESSENTIAL_ISSUE_CATEGORIES;
+    const responseCategorySet = new Set<string>(
+      isAuxiliaryCategory(category)
+        ? FILTER_CATEGORIES
+        : ESSENTIAL_ISSUE_CATEGORIES,
+    );
     const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => {
       const issueCodes = Array.isArray(issue.issue_codes)
         ? issue.issue_codes.filter(
-            (code: unknown): code is (typeof FILTER_CATEGORIES)[number] =>
-              typeof code === "string"
-              && responseCategories.includes(
-                code as (typeof responseCategories)[number],
-              ),
+            (code: unknown): code is FilterCategory =>
+              typeof code === "string" && responseCategorySet.has(code),
           )
         : [];
       const hasEssentialIssue = issueCodes.some((code) =>
