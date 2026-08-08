@@ -61,26 +61,11 @@ export async function GET(request: Request) {
   }
 
   const profile = PROFILES.has(requestedProfile) ? requestedProfile : "";
-  const south = Math.max(
-    -90,
-    Math.min(90, finiteParam(url.searchParams.get("south"), -90)),
-  );
-  const north = Math.max(
-    -90,
-    Math.min(90, finiteParam(url.searchParams.get("north"), 90)),
-  );
-  const west = Math.max(
-    -180,
-    Math.min(180, finiteParam(url.searchParams.get("west"), -180)),
-  );
-  const east = Math.max(
-    -180,
-    Math.min(180, finiteParam(url.searchParams.get("east"), 180)),
-  );
-  const zoom = Math.max(
-    1,
-    Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))),
-  );
+  const south = Math.max(-90, Math.min(90, finiteParam(url.searchParams.get("south"), -90)));
+  const north = Math.max(-90, Math.min(90, finiteParam(url.searchParams.get("north"), 90)));
+  const west = Math.max(-180, Math.min(180, finiteParam(url.searchParams.get("west"), -180)));
+  const east = Math.max(-180, Math.min(180, finiteParam(url.searchParams.get("east"), 180)));
+  const zoom = Math.max(1, Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))));
 
   const featurePromise = account.supabase.rpc("vf_map_contact_features", {
     p_owner_emails: scopeEmails,
@@ -92,10 +77,8 @@ export async function GET(request: Request) {
     p_profile: profile || null,
   });
 
-  // As bolhas de bairro representam TODOS os contatos do bairro, inclusive
-  // aqueles que também possuem coordenadas exatas e aparecem como pino individual.
   const districtPromise = includeStats
-    ? account.supabase.rpc("vf_map_district_counts", {
+    ? account.supabase.rpc("vf_map_district_bubbles", {
         p_owner_emails: scopeEmails,
         p_profile: profile || null,
       })
@@ -114,7 +97,7 @@ export async function GET(request: Request) {
     );
   }
   if (districtResult.error) {
-    console.error("Failed to load district totals", districtResult.error);
+    console.error("Failed to load district bubbles", districtResult.error);
   }
 
   let stats:
@@ -123,6 +106,7 @@ export async function GET(request: Request) {
         mappedContacts: number;
         approximatedContacts: number;
         unresolvedContacts: number;
+        resolvedDistricts: number;
       }
     | undefined;
 
@@ -143,32 +127,30 @@ export async function GET(request: Request) {
       .neq("payload->>longitude", "");
     mappedQuery = applyProfile(applyScope(mappedQuery, scopeEmails), profile);
 
-    const [totalResult, mappedResult] = await Promise.all([
-      totalQuery,
-      mappedQuery,
-    ]);
-    if (totalResult.error || mappedResult.error) {
-      console.error(
-        "Failed to load map contact stats",
-        totalResult.error || mappedResult.error,
-      );
-    } else {
+    const [totalResult, mappedResult] = await Promise.all([totalQuery, mappedQuery]);
+    if (!totalResult.error && !mappedResult.error) {
       const totalContacts = Number(totalResult.count ?? 0);
       const mappedContacts = Number(mappedResult.count ?? 0);
-      const districtContacts = Array.isArray(districtResult.data)
-        ? districtResult.data.reduce(
-            (sum: number, item: { total?: number | string }) =>
-              sum + Number(item.total || 0),
-            0,
-          )
-        : 0;
+      const bubbles = Array.isArray(districtResult.data) ? districtResult.data : [];
+      const districtContacts = bubbles.reduce(
+        (sum: number, item: { total?: number | string }) => sum + Number(item.total || 0),
+        0,
+      );
+      const resolvedContacts = bubbles.reduce(
+        (
+          sum: number,
+          item: { total?: number | string; resolved?: boolean },
+        ) => sum + (item.resolved ? Number(item.total || 0) : 0),
+        0,
+      );
       stats = {
         totalContacts,
         mappedContacts,
-        // Campo mantido por compatibilidade com a camada visual atual.
-        // Agora significa contatos contabilizados em bolhas de bairro.
-        approximatedContacts: districtContacts,
-        unresolvedContacts: Math.max(0, totalContacts - districtContacts),
+        approximatedContacts: resolvedContacts,
+        unresolvedContacts: Math.max(0, totalContacts - resolvedContacts),
+        resolvedDistricts: bubbles.filter(
+          (item: { resolved?: boolean }) => item.resolved,
+        ).length,
       };
     }
   }
@@ -178,8 +160,6 @@ export async function GET(request: Request) {
       scope,
       profile: profile || null,
       features: Array.isArray(data) ? data : [],
-      // Campo mantido por compatibilidade. Agora contém a contagem COMPLETA
-      // de cada bairro, e não apenas os contatos sem coordenadas.
       approximateDistricts: Array.isArray(districtResult.data)
         ? districtResult.data
         : undefined,
