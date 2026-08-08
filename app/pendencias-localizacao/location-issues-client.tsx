@@ -43,7 +43,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   missing_district: "Sem bairro/localidade",
   missing_street: "Sem rua",
   location_divergence: "Bairro divergente",
-  rural_location: "Zona rural / localidade",
 };
 
 const FILTER_CATEGORY_KEYS = [
@@ -51,9 +50,8 @@ const FILTER_CATEGORY_KEYS = [
   "missing_name",
   "incomplete_name",
   "missing_district",
-  "missing_street",
   "location_divergence",
-  "rural_location",
+  "missing_street",
 ] as const;
 
 const EMPTY_PAGE: PageData = {
@@ -224,7 +222,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
                 ? stringValue((item as { district?: unknown }).district)
                 : "",
             )
-            .filter((district) => district && district !== "Zona rural")
+            .filter(Boolean)
             .sort((a, b) => a.localeCompare(b, "pt-BR")),
         );
       })
@@ -294,14 +292,14 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   const allPageSelected = data.issues.length > 0
     && data.issues.every((issue) => selectedIds.has(issue.record_id));
   const canSaveRequiredFields = editName.trim().split(/\s+/).filter(Boolean).length >= 2
-    && Boolean(editDistrict.trim())
-    && Boolean(editStreet.trim());
+    && Boolean(editDistrict.trim());
   const nameReviewCount = Number(data.categoryCounts.missing_name ?? 0)
     + Number(data.categoryCounts.incomplete_name ?? 0);
   const hasActiveFilters = Boolean(category || severity || query);
 
   function selectCategory(value: string) {
     setCategory(value);
+    if (value === "missing_street") setSeverity("");
     setPage(1);
   }
 
@@ -366,7 +364,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
       setEditName("");
       setEditDistrict("");
       setEditStreet("");
-      setMessage("Nome, bairro e rua atualizados. O contato foi reanalisado automaticamente.");
+      setMessage("Nome e bairro/localidade atualizados. A rua foi salva quando informada.");
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao atualizar o contato.");
@@ -424,8 +422,8 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
           <span className="issues-eyebrow">QUALIDADE DOS CONTATOS</span>
           <h1>Central de qualidade</h1>
           <p>
-            Priorize nome completo e bairro/localidade para manter a equipe pronta para o trabalho de campo.
-            Rua e telefone continuam disponíveis na análise detalhada.
+            A qualidade essencial considera telefone, nome completo e bairro/localidade.
+            Rua permanece disponível como filtro complementar quando você quiser revisar esse dado.
           </p>
         </div>
         <div className="issues-actions">
@@ -460,7 +458,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
         <article className="warning">
           <span className="issues-kpi-label">Sem bairro/localidade</span>
           <b>{Number(data.categoryCounts.missing_district ?? 0).toLocaleString("pt-BR")}</b>
-          <small>Prioridade para organização territorial</small>
+          <small>Cadastros sem bairro ou localidade</small>
         </article>
         <article className="warning">
           <span className="issues-kpi-label">Bairros divergentes</span>
@@ -468,9 +466,9 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
           <small>Cadastros fora do catálogo reconhecido</small>
         </article>
         <article className="info">
-          <span className="issues-kpi-label">Zona rural/localidade</span>
-          <b>{Number(data.categoryCounts.rural_location ?? 0).toLocaleString("pt-BR")}</b>
-          <small>Contatos em áreas rurais ou localidades</small>
+          <span className="issues-kpi-label">Telefones para revisar</span>
+          <b>{Number(data.categoryCounts.invalid_phone ?? 0).toLocaleString("pt-BR")}</b>
+          <small>Telefone ausente ou fora do padrão válido</small>
         </article>
       </section>
 
@@ -497,7 +495,11 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
             </label>
             <label className="issues-control">
               <span>Prioridade</span>
-              <select value={severity} onChange={(event) => selectSeverity(event.target.value)}>
+              <select
+                value={severity}
+                disabled={category === "missing_street"}
+                onChange={(event) => selectSeverity(event.target.value)}
+              >
                 <option value="">Todas</option>
                 <option value="critical">Críticas</option>
                 <option value="warning">Atenção</option>
@@ -507,7 +509,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
             <label className="issues-control">
               <span>Categoria</span>
               <select value={category} onChange={(event) => selectCategory(event.target.value)}>
-                <option value="">Todas</option>
+                <option value="">Pendências essenciais</option>
                 {FILTER_CATEGORY_KEYS.map((value) => (
                   <option key={value} value={value}>{CATEGORY_LABELS[value]}</option>
                 ))}
@@ -550,7 +552,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
             <span className="issues-spinner" aria-hidden="true" />
             <div>
               <b>Analisando a qualidade da base</b>
-              <small>Organizando os contatos por prioridade…</small>
+              <small>Organizando os contatos por qualidade essencial…</small>
             </div>
           </div>
         ) : data.issues.length ? (
@@ -562,7 +564,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
                   <th>Contato</th>
                   <th>Telefone</th>
                   <th>Bairro e rua</th>
-                  <th>Problemas encontrados</th>
+                  <th>Pendências</th>
                   <th>Prioridade</th>
                   {isAdmin && <th>Responsável</th>}
                   <th>Ação</th>
@@ -592,7 +594,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
                           .join(" · ")}
                       </small>
                     </td>
-                    <td data-label="Problemas">
+                    <td data-label="Pendências">
                       <div className="issue-tags">
                         {issue.issue_codes.map((code) => (
                           <span key={code} className={`issue-tag ${code}`}>
@@ -672,7 +674,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
             <div className="issues-review-summary">
               <p><span>Telefone</span><strong>{editing.phone || "Não informado"}</strong></p>
               <p>
-                <span>Problemas</span>
+                <span>Pendências</span>
                 <strong>{editing.issue_codes.map((code) => CATEGORY_LABELS[code] || code).join(", ")}</strong>
               </p>
             </div>
@@ -694,14 +696,14 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
                   list="district-options"
                   value={editDistrict}
                   onChange={(event) => setEditDistrict(event.target.value)}
-                  placeholder="Bairro, distrito ou localidade"
+                  placeholder="Bairro, zona rural ou localidade"
                 />
                 <datalist id="district-options">
                   {districts.map((district) => <option key={district} value={district} />)}
                 </datalist>
               </label>
               <label>
-                Rua onde mora
+                Rua (opcional)
                 <input
                   autoComplete="street-address"
                   value={editStreet}
