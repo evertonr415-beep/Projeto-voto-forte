@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import styles from "./contact-back-navigation.module.css";
+import styles from "./shared-back-navigation.module.css";
+import "./contact-back-navigation.module.css";
 
 export default function ContactBackNavigation() {
   useEffect(() => {
