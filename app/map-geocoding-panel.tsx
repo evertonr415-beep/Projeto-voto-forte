@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-  invalidateSharedTerritoryContacts,
-  loadSharedTerritoryContacts,
+  invalidateSharedTerritoryData,
+  loadSharedMappedTerritoryContacts,
+  loadSharedTerritorySummary,
 } from "./territory-data-client";
 
 type Progress = {
@@ -20,22 +21,16 @@ type BatchResult = {
 };
 
 async function readProgress(force = false): Promise<Progress> {
-  const records = await loadSharedTerritoryContacts({ force });
-  let mapped = 0;
-
-  for (const record of records) {
-    if (
-      Number.isFinite(Number(record.payload?.latitude)) &&
-      Number.isFinite(Number(record.payload?.longitude))
-    ) {
-      mapped += 1;
-    }
-  }
+  const [summary, mappedRecords] = await Promise.all([
+    loadSharedTerritorySummary({ force }),
+    loadSharedMappedTerritoryContacts({ force }),
+  ]);
+  const mapped = mappedRecords.length;
 
   return {
-    total: records.length,
+    total: summary.total,
     mapped,
-    pending: Math.max(0, records.length - mapped),
+    pending: Math.max(0, summary.total - mapped),
   };
 }
 
@@ -81,7 +76,7 @@ export default function MapGeocodingPanel() {
     };
 
     const handleGeocodingComplete = () => {
-      invalidateSharedTerritoryContacts();
+      invalidateSharedTerritoryData();
       if (visible) void refresh(true);
     };
 
@@ -140,7 +135,7 @@ export default function MapGeocodingPanel() {
         await new Promise((resolve) => setTimeout(resolve, 1400));
       }
 
-      invalidateSharedTerritoryContacts();
+      invalidateSharedTerritoryData();
       const next = await readProgress(true);
       setProgress(next);
       setMessage(
