@@ -1,13 +1,31 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import DashboardClient, { type CurrentUser } from "./dashboard-client";
-import NeutralDashboardClient from "./neutral-dashboard-client";
+import type { CurrentUser } from "./dashboard-client";
 import { apiFetch, supabase } from "./supabase-client";
 
 type Mode = "login" | "signup" | "forgot" | "recovery";
 type DashboardMode = "full" | "neutral";
+
+const DashboardClient = dynamic(() => import("./dashboard-client"), {
+  ssr: false,
+  loading: () => (
+    <main className="auth-page">
+      <div className="auth-card">Preparando seu ambiente…</div>
+    </main>
+  ),
+});
+
+const NeutralDashboardClient = dynamic(() => import("./neutral-dashboard-client"), {
+  ssr: false,
+  loading: () => (
+    <main className="auth-page">
+      <div className="auth-card">Preparando seu ambiente…</div>
+    </main>
+  ),
+});
 
 const OFFICIAL_SITE_URL = "https://www.sistemavotoforte.com.br";
 const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
