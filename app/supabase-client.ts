@@ -42,13 +42,17 @@ function optimizeLegacyDashboardRead(
 ): RequestInfo | URL {
   if (typeof window === "undefined") return input;
 
-  const method = String(init.method ?? "GET").toUpperCase();
+  const method = String(
+    init.method ?? (input instanceof Request ? input.method : "GET"),
+  ).toUpperCase();
   if (method !== "GET") return input;
 
+  // A Request carrega headers, body, credentials e signal próprios. Não o
+  // substituímos por URL; a otimização só vale para chamadas simples.
   let rawUrl = "";
   if (typeof input === "string") rawUrl = input;
   else if (input instanceof URL) rawUrl = input.toString();
-  else if (input instanceof Request) rawUrl = input.url;
+  else return input;
   if (!rawUrl) return input;
 
   const currentPath = window.location.pathname;
