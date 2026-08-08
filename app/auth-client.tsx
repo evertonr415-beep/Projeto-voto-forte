@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import DashboardClient, { type CurrentUser } from "./dashboard-client";
 import NeutralDashboardClient from "./neutral-dashboard-client";
 import { apiFetch, supabase } from "./supabase-client";
 
 type Mode = "login" | "signup" | "forgot" | "recovery";
-
-type CurrentUser = {
-  email: string;
-  name: string;
-  role: string;
-};
+type DashboardMode = "full" | "neutral";
 
 const OFFICIAL_SITE_URL = "https://www.sistemavotoforte.com.br";
 const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
 
-export default function AuthClient() {
+export default function AuthClient({
+  dashboardMode = "full",
+}: {
+  dashboardMode?: DashboardMode;
+}) {
   const [session, setSession] = useState<Session | null>(null);
   const [account, setAccount] = useState<CurrentUser | null>(null);
   const [mode, setMode] = useState<Mode>("login");
@@ -136,7 +136,14 @@ export default function AuthClient() {
         <div className="auth-card">Validando acesso protegido…</div>
       </main>
     );
-  if (account) return <NeutralDashboardClient currentUser={account} />;
+
+  if (account) {
+    return dashboardMode === "neutral" ? (
+      <NeutralDashboardClient currentUser={account} />
+    ) : (
+      <DashboardClient currentUser={account} />
+    );
+  }
 
   const title =
     mode === "login"
