@@ -22,9 +22,11 @@ type SessionResponse = {
 };
 
 type OrderMode = "rank" | "alphabetical";
+type MobileSection = "contacts" | "districts";
 
 const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
 const DESKTOP_QUERY = "(min-width: 1121px)";
+const MOBILE_QUERY = "(max-width: 760px)";
 
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
@@ -36,6 +38,7 @@ export default function ContactDistrictRanking() {
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
   const [mode, setMode] = useState<OrderMode>("rank");
   const [showAll, setShowAll] = useState(false);
+  const [mobileSection, setMobileSection] = useState<MobileSection>("contacts");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [target, setTarget] = useState<HTMLElement | null>(null);
@@ -121,6 +124,24 @@ export default function ContactDistrictRanking() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!target) return;
+    target.classList.toggle("mobile-show-districts", mobileSection === "districts");
+    return () => target.classList.remove("mobile-show-districts");
+  }, [mobileSection, target]);
+
+  const switchMobileSection = useCallback(
+    (next: MobileSection) => {
+      setMobileSection(next);
+      if (!target || !window.matchMedia(MOBILE_QUERY).matches) return;
+      window.requestAnimationFrame(() => {
+        const top = target.getBoundingClientRect().top + window.scrollY - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      });
+    },
+    [target],
+  );
+
   const load = useCallback(async () => {
     if (!scope) return;
     const version = ++requestVersion.current;
@@ -194,6 +215,27 @@ export default function ContactDistrictRanking() {
   const visibleRows = showAll ? rows : rows.slice(0, 12);
   const maxTotal = Math.max(1, ranked[0]?.total || 0);
   const reached = districts.filter((item) => item.total > 0).length;
+
+  const mobileSwitch = (
+    <nav className="contact-mobile-switch" aria-label="Visualização do painel de contatos">
+      <button
+        type="button"
+        className={mobileSection === "contacts" ? "is-active" : ""}
+        aria-pressed={mobileSection === "contacts"}
+        onClick={() => switchMobileSection("contacts")}
+      >
+        Contatos
+      </button>
+      <button
+        type="button"
+        className={mobileSection === "districts" ? "is-active" : ""}
+        aria-pressed={mobileSection === "districts"}
+        onClick={() => switchMobileSection("districts")}
+      >
+        Bairros
+      </button>
+    </nav>
+  );
 
   const panel = (
     <aside className="optimized-panel district-panel" aria-busy={loading}>
@@ -275,5 +317,5 @@ export default function ContactDistrictRanking() {
     </aside>
   );
 
-  return target ? createPortal(panel, target) : null;
+  return target ? createPortal(<>{mobileSwitch}{panel}</>, target) : null;
 }
