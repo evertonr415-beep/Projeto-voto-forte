@@ -9,8 +9,16 @@ export default function ContactNavigationInterceptor() {
       const button = target?.closest("button");
       if (!button) return;
 
-      const label = button.querySelector(".nav-name")?.textContent?.trim();
-      if (label !== "Contatos") return;
+      const navLabel = button.querySelector(".nav-name")?.textContent?.trim();
+      const kpiLabel = button.querySelector(".kpi b")?.textContent?.trim();
+      const buttonText = button.textContent?.trim() || "";
+
+      const opensContacts = navLabel === "Contatos" || navLabel === "Gestão";
+      const opensVoters =
+        kpiLabel === "Eleitores cadastrados" ||
+        buttonText.includes("Ver relatório de eleitores");
+
+      if (!opensContacts && !opensVoters) return;
 
       event.preventDefault();
       event.stopPropagation();
