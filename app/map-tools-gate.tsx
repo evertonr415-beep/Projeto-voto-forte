@@ -10,8 +10,6 @@ import MapGeocodingPanel from "./map-geocoding-panel";
 import MapDistrictFilter from "./map-district-filter";
 import MapHeatmapEnhancer from "./map-heatmap-enhancer";
 import MapDistrictSummary from "./map-district-summary";
-import MapPriorityPanel from "./map-priority-panel";
-import MapStrategyInsights from "./map-strategy-insights";
 import ExecutiveDashboard from "./executive-dashboard";
 import DataQualityPanel from "./data-quality-panel";
 
@@ -71,8 +69,6 @@ export default function MapToolsGate() {
       <MapDistrictFilter />
       <MapHeatmapEnhancer />
       <MapDistrictSummary />
-      <MapPriorityPanel />
-      <MapStrategyInsights />
       <ExecutiveDashboard />
       <DataQualityPanel />
     </>
