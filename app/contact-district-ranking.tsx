@@ -14,19 +14,62 @@ type SummaryResponse = {
   error?: string;
 };
 
+type SessionResponse = {
+  user?: {
+    email?: string;
+    role?: string;
+  };
+};
+
+const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
+
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? Math.max(0, numeric) : 0;
 }
 
-export default function ContactDistrictRanking({ scope }: { scope: string }) {
+export default function ContactDistrictRanking() {
+  const [scope, setScope] = useState("");
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const requestVersion = useRef(0);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void apiFetch("/api/session", { cache: "no-store" })
+      .then(async (response) => ({
+        response,
+        data: (await response.json()) as SessionResponse,
+      }))
+      .then(({ response, data }) => {
+        if (cancelled || !response.ok) return;
+        const email = String(data.user?.email || "").trim().toLowerCase();
+        const role = String(data.user?.role || "").trim().toLowerCase();
+        if (!email) return;
+        setScope(ADMIN_ROLES.has(role) ? "all" : email);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Não foi possível identificar o escopo dos bairros.");
+      });
+
+    const handleScopeChange = (event: Event) => {
+      const target = event.target as HTMLSelectElement | null;
+      if (!target?.matches(".optimized-scope-control select")) return;
+      setScope(target.value);
+    };
+
+    document.addEventListener("change", handleScopeChange, true);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("change", handleScopeChange, true);
+    };
+  }, []);
+
   const load = useCallback(async () => {
+    if (!scope) return;
     const version = ++requestVersion.current;
     setLoading(true);
     setError("");
@@ -66,6 +109,7 @@ export default function ContactDistrictRanking({ scope }: { scope: string }) {
   }, [scope]);
 
   useEffect(() => {
+    if (!scope) return;
     void load();
     const refresh = () => void load();
     window.addEventListener("voto-forte:records-changed", refresh);
@@ -73,7 +117,7 @@ export default function ContactDistrictRanking({ scope }: { scope: string }) {
       requestVersion.current += 1;
       window.removeEventListener("voto-forte:records-changed", refresh);
     };
-  }, [load]);
+  }, [load, scope]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("pt-BR");
@@ -107,7 +151,7 @@ export default function ContactDistrictRanking({ scope }: { scope: string }) {
         />
       </div>
 
-      {loading ? (
+      {!scope || loading ? (
         <div className={styles.state}>Carregando relação de bairros…</div>
       ) : error ? (
         <div className={styles.state}>{error}</div>
