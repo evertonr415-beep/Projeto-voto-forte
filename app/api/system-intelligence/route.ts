@@ -5,6 +5,14 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const AUDIT_LIMIT = 10_000;
 
+const ESSENTIAL_QUALITY_ISSUES = [
+  "invalid_phone",
+  "missing_name",
+  "incomplete_name",
+  "missing_district",
+  "location_divergence",
+] as const;
+
 type UserSignalRow = {
   id: number;
   role: string;
@@ -72,15 +80,7 @@ export async function GET() {
       account.supabase
         .from("vf_contact_quality")
         .select("record_id", { count: "exact", head: true })
-        .overlaps("issue_codes", [
-          "invalid_phone",
-          "missing_name",
-          "incomplete_name",
-          "missing_district",
-          "missing_street",
-          "location_divergence",
-          "rural_location",
-        ]),
+        .overlaps("issue_codes", [...ESSENTIAL_QUALITY_ISSUES]),
       account.supabase
         .from("vf_owned_records")
         .select("id", { count: "exact", head: true })
