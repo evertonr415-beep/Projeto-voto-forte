@@ -64,7 +64,7 @@ const EMPTY_PAGE: ContactPage = {
 };
 
 const numberFormatter = new Intl.NumberFormat("pt-BR");
-const ADMIN_ROLES = new Set(["master", "gestor", "lider", "admin"]);
+const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
 
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
@@ -231,50 +231,58 @@ export default function NeutralDashboardClient({
 
   async function deleteContact(contact: Contact) {
     if (!window.confirm(`Excluir o contato ${contact.name || "selecionado"}?`)) return;
-    const response = await apiFetch(`/api/records?id=${contact.id}`, {
-      method: "DELETE",
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setMessage(data.error || "Não foi possível excluir o contato.");
-      return;
+    try {
+      const response = await apiFetch(`/api/records?id=${contact.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error || "Não foi possível excluir o contato.");
+        return;
+      }
+      setMessage("Contato excluído.");
+      window.dispatchEvent(new Event("voto-forte:records-changed"));
+    } catch {
+      setMessage("Não foi possível excluir o contato agora. Verifique sua conexão e tente novamente.");
     }
-    setMessage("Contato excluído.");
-    window.dispatchEvent(new Event("voto-forte:records-changed"));
   }
 
   async function saveContact(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editing) return;
 
-    const response = await apiFetch("/api/records", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        id: editing.id,
-        payload: {
-          name: String(editing.name || "").trim(),
-          phone: String(editing.phone || "").trim(),
-          phoneNormalized: String(editing.phone || "").replace(/\D/g, ""),
-          district: String(editing.district || "").trim(),
-          leader: String(editing.leader || "").trim(),
-          kind: editing.kind === "Liderança" ? "Liderança" : "Eleitor",
-          cep: String(editing.cep || "").trim(),
-          street: String(editing.street || "").trim(),
-          number: String(editing.number || "").trim(),
-          city: String(editing.city || "").trim(),
-          state: String(editing.state || "").trim(),
-        },
-      }),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setMessage(data.error || "Não foi possível atualizar o contato.");
-      return;
+    try {
+      const response = await apiFetch("/api/records", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: editing.id,
+          payload: {
+            name: String(editing.name || "").trim(),
+            phone: String(editing.phone || "").trim(),
+            phoneNormalized: String(editing.phone || "").replace(/\D/g, ""),
+            district: String(editing.district || "").trim(),
+            leader: String(editing.leader || "").trim(),
+            kind: editing.kind === "Liderança" ? "Liderança" : "Eleitor",
+            cep: String(editing.cep || "").trim(),
+            street: String(editing.street || "").trim(),
+            number: String(editing.number || "").trim(),
+            city: String(editing.city || "").trim(),
+            state: String(editing.state || "").trim(),
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error || "Não foi possível atualizar o contato.");
+        return;
+      }
+      setEditing(null);
+      setMessage("Contato atualizado.");
+      window.dispatchEvent(new Event("voto-forte:records-changed"));
+    } catch {
+      setMessage("Não foi possível atualizar o contato agora. Verifique sua conexão e tente novamente.");
     }
-    setEditing(null);
-    setMessage("Contato atualizado.");
-    window.dispatchEvent(new Event("voto-forte:records-changed"));
   }
 
   function clearFilters() {
