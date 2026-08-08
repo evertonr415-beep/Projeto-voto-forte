@@ -76,6 +76,8 @@ export default function MobileAnalyticsControls() {
 
   useEffect(() => {
     let currentHost: Host | null = null;
+    let observer: MutationObserver | null = null;
+    let frame: number | null = null;
 
     const removeHost = () => {
       currentHost?.root.remove();
@@ -84,6 +86,7 @@ export default function MobileAnalyticsControls() {
     };
 
     const refresh = () => {
+      frame = null;
       const map = findVisibleMap();
       if (!map) {
         setOpenPanel(null);
@@ -111,20 +114,26 @@ export default function MobileAnalyticsControls() {
       }
     };
 
-    const observer = new MutationObserver(refresh);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
-    window.addEventListener("resize", refresh);
-    window.addEventListener("popstate", refresh);
+    const scheduleRefresh = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(refresh);
+    };
+
+    const workspace = document.querySelector<HTMLElement>(".workspace");
+    if (workspace) {
+      observer = new MutationObserver(scheduleRefresh);
+      observer.observe(workspace, { childList: true, subtree: false });
+    }
+
+    window.addEventListener("resize", scheduleRefresh);
+    window.addEventListener("popstate", scheduleRefresh);
     refresh();
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", refresh);
-      window.removeEventListener("popstate", refresh);
+      observer?.disconnect();
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", scheduleRefresh);
+      window.removeEventListener("popstate", scheduleRefresh);
       dispatchPanelState(null);
       removeHost();
     };
