@@ -1,3 +1,5 @@
+import { apiFetch } from "./supabase-client";
+
 export type SharedTerritoryRecord = {
   id?: number | string;
   ownerEmail?: string;
@@ -111,7 +113,7 @@ export async function loadSharedTerritorySummary(options?: { force?: boolean }) 
   if (!force && pendingSummaryRequest) return pendingSummaryRequest;
 
   const generation = summaryGeneration;
-  const request: Promise<SharedTerritorySummary> = fetch(
+  const request: Promise<SharedTerritorySummary> = apiFetch(
     "/api/contacts?mode=summary&owner=all",
     {
       headers: { accept: "application/json" },
@@ -180,7 +182,7 @@ export async function loadSharedMappedTerritoryData(options?: {
   if (!force && pendingMappedRequest) return pendingMappedRequest;
 
   const generation = mappedGeneration;
-  const request: Promise<SharedMappedTerritoryData> = fetch(
+  const request: Promise<SharedMappedTerritoryData> = apiFetch(
     "/api/records?owner=all&mode=dashboard",
     {
       headers: { accept: "application/json" },
