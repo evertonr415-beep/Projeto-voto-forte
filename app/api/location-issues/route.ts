@@ -8,10 +8,7 @@ const ESSENTIAL_ISSUE_CATEGORIES = [
   "missing_district",
   "location_divergence",
 ] as const;
-const AUXILIARY_FILTER_CATEGORIES = [
-  "missing_street",
-  "rural_location",
-] as const;
+const AUXILIARY_FILTER_CATEGORIES = ["missing_street"] as const;
 const FILTER_CATEGORIES = [
   ...ESSENTIAL_ISSUE_CATEGORIES,
   ...AUXILIARY_FILTER_CATEGORIES,
@@ -205,12 +202,17 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
+    const responseCategories = isAuxiliaryCategory(category)
+      ? FILTER_CATEGORIES
+      : ESSENTIAL_ISSUE_CATEGORIES;
     const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => {
       const issueCodes = Array.isArray(issue.issue_codes)
         ? issue.issue_codes.filter(
             (code: unknown): code is (typeof FILTER_CATEGORIES)[number] =>
               typeof code === "string"
-              && FILTER_CATEGORIES.includes(code as (typeof FILTER_CATEGORIES)[number]),
+              && responseCategories.includes(
+                code as (typeof responseCategories)[number],
+              ),
           )
         : [];
       const hasEssentialIssue = issueCodes.some((code) =>
