@@ -36,55 +36,15 @@ export const supabase = new Proxy({} as SupabaseClient, {
   },
 });
 
-function optimizeLegacyDashboardRead(
-  input: RequestInfo | URL,
-  init: RequestInit,
-): RequestInfo | URL {
-  if (typeof window === "undefined") return input;
-
-  const method = String(
-    init.method ?? (input instanceof Request ? input.method : "GET"),
-  ).toUpperCase();
-  if (method !== "GET") return input;
-
-  // A Request carrega headers, body, credentials e signal próprios. Não o
-  // substituímos por URL; a otimização só vale para chamadas simples.
-  let rawUrl = "";
-  if (typeof input === "string") rawUrl = input;
-  else if (input instanceof URL) rawUrl = input.toString();
-  else return input;
-  if (!rawUrl) return input;
-
-  const currentPath = window.location.pathname;
-  if (
-    currentPath !== "/" &&
-    !currentPath.startsWith("/sistema-completo")
-  ) {
-    return input;
-  }
-
-  const requestUrl = new URL(rawUrl, window.location.origin);
-  if (
-    requestUrl.origin !== window.location.origin ||
-    requestUrl.pathname !== "/api/records" ||
-    requestUrl.searchParams.has("kind") ||
-    requestUrl.searchParams.has("mode")
-  ) {
-    return input;
-  }
-
-  requestUrl.searchParams.set("mode", "dashboard");
-  return requestUrl;
-}
-
 export async function apiFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ) {
   const { data } = await supabase.auth.getSession();
-  const headers = new Headers(init.headers);
+  const headers = new Headers(input instanceof Request ? input.headers : undefined);
+  new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   if (data.session?.access_token) {
     headers.set("authorization", `Bearer ${data.session.access_token}`);
   }
-  return fetch(optimizeLegacyDashboardRead(input, init), { ...init, headers });
+  return fetch(input, { ...init, headers });
 }
