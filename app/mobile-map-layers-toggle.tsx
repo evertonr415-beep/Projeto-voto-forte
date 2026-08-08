@@ -78,21 +78,24 @@ export default function MobileMapLayersToggle() {
       syncButtonsWithModal();
     };
 
-    const observer = new MutationObserver(() => {
-      enhanceMaps();
-      syncButtonsWithModal();
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
-    });
+    const appShell = document.querySelector<HTMLElement>(".app-shell");
+    const observer = appShell
+      ? new MutationObserver(() => {
+          syncButtonsWithModal();
+        })
+      : null;
+
+    if (observer && appShell) {
+      observer.observe(appShell, {
+        childList: true,
+        subtree: false,
+      });
+    }
 
     enhanceMaps();
     syncButtonsWithModal();
 
-    return () => observer.disconnect();
+    return () => observer?.disconnect();
   }, []);
 
   return null;
