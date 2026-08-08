@@ -42,8 +42,11 @@ export default function MapDistrictSummary() {
     };
 
     window.addEventListener("voto-forte:district-selected", handleSelected);
-    return () =>
+    window.addEventListener("voto-forte:district-filter-change", handleSelected);
+    return () => {
       window.removeEventListener("voto-forte:district-selected", handleSelected);
+      window.removeEventListener("voto-forte:district-filter-change", handleSelected);
+    };
   }, []);
 
   const summary = useMemo(
@@ -72,6 +75,11 @@ export default function MapDistrictSummary() {
         onClick={() => {
           setSelected("");
           setVisible(false);
+          window.dispatchEvent(
+            new CustomEvent("voto-forte:district-filter-change", {
+              detail: { district: "" },
+            }),
+          );
         }}
       >
         Fechar
