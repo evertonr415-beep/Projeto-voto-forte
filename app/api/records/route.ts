@@ -117,7 +117,11 @@ export async function GET(request: Request) {
       { status: 403 },
     );
 
-  if (requestedMode === "dashboard" && !kind) {
+  // O modo leve é o padrão para leituras consolidadas do Sistema Completo.
+  // A leitura histórica de até 20 mil registros só fica disponível quando
+  // solicitada explicitamente com mode=full, preservando compatibilidade sem
+  // expor a interface principal a cargas massivas ou visões parciais da base.
+  if (!kind && requestedMode !== "full") {
     const makeScopedQuery = (recordKind: AllowedKind, limit: number) => {
       let query = account.supabase
         .from("vf_owned_records")
@@ -142,9 +146,6 @@ export async function GET(request: Request) {
       return query;
     };
 
-    // As rotas de escrita mantêm a invariável: quando existem, latitude e
-    // longitude são números finitos e válidos. Assim o filtro textual abaixo
-    // pode permanecer simples e indexável sem aceitar novos valores inválidos.
     const mappedContactsQuery = makeScopedQuery(
       "contact",
       DASHBOARD_MAPPED_CONTACT_LIMIT,
@@ -247,6 +248,7 @@ export async function GET(request: Request) {
     {
       scope,
       kind,
+      mode: requestedMode === "full" ? "full" : null,
       visibleOwners: emails,
       records: allRecords.map(mapRecord),
       total: allRecords.length,
