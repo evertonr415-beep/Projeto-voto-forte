@@ -23,17 +23,13 @@ async function visibleEmails(
 }
 
 function applyScope<T>(query: T, emails: string[]) {
-  const scoped = query as T & {
-    in: (column: string, values: string[]) => T;
-  };
+  const scoped = query as T & { in: (column: string, values: string[]) => T };
   return scoped.in("owner_email", emails);
 }
 
 function applyProfile<T>(query: T, profile: string) {
   if (!profile) return query;
-  const scoped = query as T & {
-    eq: (column: string, value: string) => T;
-  };
+  const scoped = query as T & { eq: (column: string, value: string) => T };
   return scoped.eq("payload->>kind", profile);
 }
 
@@ -71,7 +67,7 @@ export async function GET(request: Request) {
   const east = Math.max(-180, Math.min(180, finiteParam(url.searchParams.get("east"), 180)));
   const zoom = Math.max(1, Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))));
 
-  const { data, error } = await account.supabase.rpc("vf_map_contact_features", {
+  const featurePromise = account.supabase.rpc("vf_map_contact_features", {
     p_owner_emails: scopeEmails,
     p_south: south,
     p_west: west,
@@ -80,6 +76,17 @@ export async function GET(request: Request) {
     p_zoom: zoom,
     p_profile: profile || null,
   });
+  const districtPromise = includeStats
+    ? account.supabase.rpc("vf_map_unmapped_district_counts", {
+        p_owner_emails: scopeEmails,
+        p_profile: profile || null,
+      })
+    : Promise.resolve({ data: undefined, error: null });
+
+  const [{ data, error }, districtResult] = await Promise.all([
+    featurePromise,
+    districtPromise,
+  ]);
 
   if (error) {
     console.error("Failed to load map contact features", error);
@@ -88,9 +95,17 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
+  if (districtResult.error) {
+    console.error("Failed to load approximate district counts", districtResult.error);
+  }
 
   let stats:
-    | { totalContacts: number; mappedContacts: number; unmappedContacts: number }
+    | {
+        totalContacts: number;
+        mappedContacts: number;
+        approximatedContacts: number;
+        unresolvedContacts: number;
+      }
     | undefined;
 
   if (includeStats) {
@@ -112,17 +127,24 @@ export async function GET(request: Request) {
 
     const [totalResult, mappedResult] = await Promise.all([totalQuery, mappedQuery]);
     if (totalResult.error || mappedResult.error) {
-      console.error(
-        "Failed to load map contact stats",
-        totalResult.error || mappedResult.error,
-      );
+      console.error("Failed to load map contact stats", totalResult.error || mappedResult.error);
     } else {
       const totalContacts = Number(totalResult.count ?? 0);
       const mappedContacts = Number(mappedResult.count ?? 0);
+      const approximatedContacts = Array.isArray(districtResult.data)
+        ? districtResult.data.reduce(
+            (sum: number, item: { total?: number | string }) => sum + Number(item.total || 0),
+            0,
+          )
+        : 0;
       stats = {
         totalContacts,
         mappedContacts,
-        unmappedContacts: Math.max(0, totalContacts - mappedContacts),
+        approximatedContacts,
+        unresolvedContacts: Math.max(
+          0,
+          totalContacts - mappedContacts - approximatedContacts,
+        ),
       };
     }
   }
@@ -132,12 +154,11 @@ export async function GET(request: Request) {
       scope,
       profile: profile || null,
       features: Array.isArray(data) ? data : [],
+      approximateDistricts: Array.isArray(districtResult.data)
+        ? districtResult.data
+        : undefined,
       stats,
     },
-    {
-      headers: {
-        "Cache-Control": "private, no-store, max-age=0",
-      },
-    },
+    { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
 }
