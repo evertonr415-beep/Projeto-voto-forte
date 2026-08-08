@@ -24,7 +24,6 @@ export type SharedMappedTerritoryData = {
 
 type DashboardRecordsResponse = {
   records?: SharedTerritoryRecord[];
-  mappedContacts?: number;
   mappedContactsTotal?: number;
   mappedContactRecords?: number;
   mappedContactsTruncated?: boolean;
@@ -32,8 +31,8 @@ type DashboardRecordsResponse = {
 
 const MEMORY_CACHE_TTL_MS = 2 * 60_000;
 const SESSION_CACHE_TTL_MS = 10 * 60_000;
-const MAPPED_SESSION_CACHE_KEY = "vf:territory-mapped-contacts:v4";
-const SUMMARY_SESSION_CACHE_KEY = "vf:territory-summary:v3";
+const MAPPED_SESSION_CACHE_KEY = "vf:territory-mapped-contacts:v5";
+const SUMMARY_SESSION_CACHE_KEY = "vf:territory-summary:v4";
 
 let cachedMappedData: SharedMappedTerritoryData | null = null;
 let mappedCachedAt = 0;
@@ -42,6 +41,11 @@ let cachedSummary: SharedTerritorySummary | null = null;
 let summaryCachedAt = 0;
 let pendingSummaryRequest: Promise<SharedTerritorySummary> | null = null;
 let listenersInstalled = false;
+
+function finiteNumber(value: unknown, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(0, numeric) : fallback;
+}
 
 function readSessionCache<T>(key: string, now: number): T | null {
   if (typeof window === "undefined") return null;
@@ -104,25 +108,28 @@ export async function loadSharedTerritorySummary(options?: { force?: boolean }) 
 
   if (!force && pendingSummaryRequest) return pendingSummaryRequest;
 
-  pendingSummaryRequest = fetch("/api/contacts?mode=summary&owner=all", {
-    headers: { accept: "application/json" },
-    cache: "no-store",
-  })
+  const request: Promise<SharedTerritorySummary> = fetch(
+    "/api/contacts?mode=summary&owner=all",
+    {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    },
+  )
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`Falha ao carregar resumo territorial: ${response.status}`);
       }
       const data = (await response.json()) as Partial<SharedTerritorySummary>;
       const summary: SharedTerritorySummary = {
-        total: Number(data.total ?? 0),
-        voters: Number(data.voters ?? 0),
-        leaders: Number(data.leaders ?? 0),
-        meetings: Number(data.meetings ?? 0),
-        districtsReached: Number(data.districtsReached ?? 0),
+        total: finiteNumber(data.total),
+        voters: finiteNumber(data.voters),
+        leaders: finiteNumber(data.leaders),
+        meetings: finiteNumber(data.meetings),
+        districtsReached: finiteNumber(data.districtsReached),
         districts: Array.isArray(data.districts)
           ? data.districts.map((item) => ({
               district: String(item.district || "").trim(),
-              total: Number(item.total ?? 0),
+              total: finiteNumber(item.total),
             }))
           : [],
       };
@@ -132,10 +139,11 @@ export async function loadSharedTerritorySummary(options?: { force?: boolean }) 
       return summary;
     })
     .finally(() => {
-      pendingSummaryRequest = null;
+      if (pendingSummaryRequest === request) pendingSummaryRequest = null;
     });
 
-  return pendingSummaryRequest;
+  pendingSummaryRequest = request;
+  return request;
 }
 
 export async function loadSharedMappedTerritoryData(options?: {
@@ -166,10 +174,13 @@ export async function loadSharedMappedTerritoryData(options?: {
 
   if (!force && pendingMappedRequest) return pendingMappedRequest;
 
-  pendingMappedRequest = fetch("/api/records?owner=all&mode=dashboard", {
-    headers: { accept: "application/json" },
-    cache: "no-store",
-  })
+  const request: Promise<SharedMappedTerritoryData> = fetch(
+    "/api/records?owner=all&mode=dashboard",
+    {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    },
+  )
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`Falha ao carregar pontos do mapa: ${response.status}`);
@@ -178,10 +189,8 @@ export async function loadSharedMappedTerritoryData(options?: {
       const records = (data.records || []).filter(
         (record) => record.kind === "contact",
       );
-      const total = Math.max(
-        records.length,
-        Number(data.mappedContactsTotal ?? data.mappedContacts ?? records.length),
-      );
+      const reportedTotal = finiteNumber(data.mappedContactsTotal, records.length);
+      const total = Math.max(records.length, reportedTotal);
       const mappedData: SharedMappedTerritoryData = {
         records,
         total,
@@ -193,10 +202,11 @@ export async function loadSharedMappedTerritoryData(options?: {
       return mappedData;
     })
     .finally(() => {
-      pendingMappedRequest = null;
+      if (pendingMappedRequest === request) pendingMappedRequest = null;
     });
 
-  return pendingMappedRequest;
+  pendingMappedRequest = request;
+  return request;
 }
 
 export async function loadSharedMappedTerritoryContacts(options?: {
