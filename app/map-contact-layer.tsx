@@ -117,7 +117,10 @@ export default function MapContactLayer() {
       const control = L.control({ position: "topright" });
       let controlNode: HTMLElement | null = null;
       control.onAdd = () => {
-        const node = L.DomUtil.create("div", "vf-map-contact-control");
+        const node = L.DomUtil.create(
+          "div",
+          "vf-map-contact-control",
+        ) as HTMLElement;
         node.innerHTML = `
           <strong>Contatos no mapa</strong>
           <div class="vf-map-contact-tabs">
@@ -133,7 +136,7 @@ export default function MapContactLayer() {
         node.querySelectorAll<HTMLButtonElement>("[data-profile]").forEach((button) => {
           button.addEventListener("click", () => {
             profile = button.dataset.profile || "";
-            node.querySelectorAll("button").forEach((item: HTMLButtonElement) =>
+            node.querySelectorAll<HTMLButtonElement>("button").forEach((item) =>
               item.classList.toggle("active", item === button),
             );
             stats = null;
@@ -188,7 +191,9 @@ export default function MapContactLayer() {
             continue;
           }
 
-          const isLeader = String(feature.profile || "").toLocaleLowerCase("pt-BR") === "liderança";
+          const isLeader =
+            String(feature.profile || "").toLocaleLowerCase("pt-BR") ===
+            "liderança";
           const marker = L.marker([lat, lon], {
             icon: L.divIcon({
               className: "vf-map-person",
@@ -198,7 +203,9 @@ export default function MapContactLayer() {
               popupAnchor: [0, -30],
             }),
           });
-          const address = [feature.street, feature.street_number].filter(Boolean).join(", ");
+          const address = [feature.street, feature.street_number]
+            .filter(Boolean)
+            .join(", ");
           marker.bindPopup(
             `<div class="vf-map-contact-popup"><strong>${escapeHtml(feature.contact_name || "Contato")}</strong><b>${escapeHtml(feature.profile || "Eleitor")}</b>${feature.district ? `<p>${escapeHtml(feature.district)}</p>` : ""}${address ? `<p>${escapeHtml(address)}</p>` : ""}</div>`,
             { maxWidth: 260, closeButton: true },
@@ -241,7 +248,9 @@ export default function MapContactLayer() {
           updateStatus(false);
         } catch {
           if (id === requestId && controlNode) {
-            const node = controlNode.querySelector<HTMLElement>(".vf-map-contact-status");
+            const node = controlNode.querySelector<HTMLElement>(
+              ".vf-map-contact-status",
+            );
             if (node) node.textContent = "Não foi possível atualizar a camada agora";
           }
         }
