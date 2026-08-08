@@ -16,20 +16,28 @@ export type SharedTerritorySummary = {
   districts: { district: string; total: number }[];
 };
 
+export type SharedMappedTerritoryData = {
+  records: SharedTerritoryRecord[];
+  total: number;
+  truncated: boolean;
+};
+
 type DashboardRecordsResponse = {
   records?: SharedTerritoryRecord[];
   mappedContacts?: number;
+  mappedContactsTotal?: number;
+  mappedContactRecords?: number;
   mappedContactsTruncated?: boolean;
 };
 
 const MEMORY_CACHE_TTL_MS = 2 * 60_000;
 const SESSION_CACHE_TTL_MS = 10 * 60_000;
-const MAPPED_SESSION_CACHE_KEY = "vf:territory-mapped-contacts:v3";
+const MAPPED_SESSION_CACHE_KEY = "vf:territory-mapped-contacts:v4";
 const SUMMARY_SESSION_CACHE_KEY = "vf:territory-summary:v3";
 
-let cachedMappedRecords: SharedTerritoryRecord[] | null = null;
+let cachedMappedData: SharedMappedTerritoryData | null = null;
 let mappedCachedAt = 0;
-let pendingMappedRequest: Promise<SharedTerritoryRecord[]> | null = null;
+let pendingMappedRequest: Promise<SharedMappedTerritoryData> | null = null;
 let cachedSummary: SharedTerritorySummary | null = null;
 let summaryCachedAt = 0;
 let pendingSummaryRequest: Promise<SharedTerritorySummary> | null = null;
@@ -130,7 +138,7 @@ export async function loadSharedTerritorySummary(options?: { force?: boolean }) 
   return pendingSummaryRequest;
 }
 
-export async function loadSharedMappedTerritoryContacts(options?: {
+export async function loadSharedMappedTerritoryData(options?: {
   force?: boolean;
 }) {
   const now = Date.now();
@@ -138,21 +146,21 @@ export async function loadSharedMappedTerritoryContacts(options?: {
 
   if (
     !force &&
-    cachedMappedRecords &&
+    cachedMappedData &&
     now - mappedCachedAt < MEMORY_CACHE_TTL_MS
   ) {
-    return cachedMappedRecords;
+    return cachedMappedData;
   }
 
   if (!force) {
-    const sessionRecords = readSessionCache<SharedTerritoryRecord[]>(
+    const sessionData = readSessionCache<SharedMappedTerritoryData>(
       MAPPED_SESSION_CACHE_KEY,
       now,
     );
-    if (sessionRecords) {
-      cachedMappedRecords = sessionRecords;
+    if (sessionData) {
+      cachedMappedData = sessionData;
       mappedCachedAt = now;
-      return sessionRecords;
+      return sessionData;
     }
   }
 
@@ -167,16 +175,22 @@ export async function loadSharedMappedTerritoryContacts(options?: {
         throw new Error(`Falha ao carregar pontos do mapa: ${response.status}`);
       }
       const data = (await response.json()) as DashboardRecordsResponse;
-      cachedMappedRecords = (data.records || []).filter(
+      const records = (data.records || []).filter(
         (record) => record.kind === "contact",
       );
-      mappedCachedAt = Date.now();
-      writeSessionCache(
-        MAPPED_SESSION_CACHE_KEY,
-        cachedMappedRecords,
-        mappedCachedAt,
+      const total = Math.max(
+        records.length,
+        Number(data.mappedContactsTotal ?? data.mappedContacts ?? records.length),
       );
-      return cachedMappedRecords;
+      const mappedData: SharedMappedTerritoryData = {
+        records,
+        total,
+        truncated: Boolean(data.mappedContactsTruncated) || total > records.length,
+      };
+      cachedMappedData = mappedData;
+      mappedCachedAt = Date.now();
+      writeSessionCache(MAPPED_SESSION_CACHE_KEY, mappedData, mappedCachedAt);
+      return mappedData;
     })
     .finally(() => {
       pendingMappedRequest = null;
@@ -185,8 +199,14 @@ export async function loadSharedMappedTerritoryContacts(options?: {
   return pendingMappedRequest;
 }
 
+export async function loadSharedMappedTerritoryContacts(options?: {
+  force?: boolean;
+}) {
+  return (await loadSharedMappedTerritoryData(options)).records;
+}
+
 export function invalidateSharedTerritoryData() {
-  cachedMappedRecords = null;
+  cachedMappedData = null;
   mappedCachedAt = 0;
   pendingMappedRequest = null;
   cachedSummary = null;
