@@ -178,7 +178,7 @@ export default function MapTerritoryEnhancer() {
             <div class="vf-territory-popup">
               <strong>${escapeHtml(name)}</strong>
               <span>${districtStats.total.toLocaleString("pt-BR")} cadastro(s)</span>
-              <small>Total oficial do resumo agregado.</small>
+              <small>Total do bairro. Quem tem coordenada exata também continua aparecendo como pino individual.</small>
               <button type="button" data-vf-district="${escapeHtml(name)}">Ver este bairro</button>
             </div>
           `;
@@ -258,13 +258,17 @@ export default function MapTerritoryEnhancer() {
           if (center && districtStats.total > 0) {
             L.marker([center.lat, center.lon], {
               interactive: true,
+              zIndexOffset: 650,
               icon: L.divIcon({
-                className: "vf-territory-label",
-                html: `<span>${escapeHtml(name)}</span><b>${districtStats.total.toLocaleString("pt-BR")}</b>`,
-                iconSize: [150, 34],
-                iconAnchor: [75, 17],
+                className: "vf-map-district-cluster",
+                html: `<span>${districtStats.total.toLocaleString("pt-BR")}</span>`,
+                iconSize: [52, 52],
+                iconAnchor: [26, 26],
               }),
             })
+              .bindTooltip(`${name} · ${districtStats.total.toLocaleString("pt-BR")} cadastro(s)`, {
+                direction: "top",
+              })
               .bindPopup(popup, { maxWidth: 280 })
               .addTo(territoryLayer);
           }
