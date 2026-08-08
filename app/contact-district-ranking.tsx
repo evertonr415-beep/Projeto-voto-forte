@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
-import styles from "./contact-district-ranking.module.css";
 
 type DistrictItem = {
   district: string;
@@ -21,7 +21,10 @@ type SessionResponse = {
   };
 };
 
+type OrderMode = "rank" | "alphabetical";
+
 const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
+const DESKTOP_QUERY = "(min-width: 1121px)";
 
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
@@ -31,9 +34,11 @@ function finiteNumber(value: unknown) {
 export default function ContactDistrictRanking() {
   const [scope, setScope] = useState("");
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
-  const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<OrderMode>("rank");
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [target, setTarget] = useState<HTMLElement | null>(null);
   const requestVersion = useRef(0);
 
   useEffect(() => {
@@ -56,15 +61,63 @@ export default function ContactDistrictRanking() {
       });
 
     const handleScopeChange = (event: Event) => {
-      const target = event.target as HTMLSelectElement | null;
-      if (!target?.matches(".optimized-scope-control select")) return;
-      setScope(target.value);
+      const control = event.target as HTMLSelectElement | null;
+      if (!control?.matches(".optimized-scope-control select")) return;
+      setScope(control.value);
+      setShowAll(false);
     };
 
     document.addEventListener("change", handleScopeChange, true);
     return () => {
       cancelled = true;
       document.removeEventListener("change", handleScopeChange, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    let observed = true;
+    let grid: HTMLElement | null = null;
+    let previousGridTemplate = "";
+    let media: MediaQueryList | null = null;
+
+    const syncGrid = () => {
+      if (!grid || !media) return;
+      grid.style.gridTemplateColumns = media.matches
+        ? "minmax(0, 1fr) 330px"
+        : "1fr";
+    };
+
+    const attach = () => {
+      const next = document.querySelector<HTMLElement>(".optimized-content");
+      if (!next || !observed) return false;
+      grid = next;
+      previousGridTemplate = next.style.gridTemplateColumns;
+      media = window.matchMedia(DESKTOP_QUERY);
+      syncGrid();
+      media.addEventListener("change", syncGrid);
+      setTarget(next);
+      return true;
+    };
+
+    if (attach()) {
+      return () => {
+        observed = false;
+        media?.removeEventListener("change", syncGrid);
+        if (grid) grid.style.gridTemplateColumns = previousGridTemplate;
+      };
+    }
+
+    const observer = new MutationObserver(() => {
+      if (!attach()) return;
+      observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observed = false;
+      observer.disconnect();
+      media?.removeEventListener("change", syncGrid);
+      if (grid) grid.style.gridTemplateColumns = previousGridTemplate;
     };
   }, []);
 
@@ -88,7 +141,7 @@ export default function ContactDistrictRanking() {
           district: String(item.district || "").trim(),
           total: finiteNumber(item.total),
         }))
-        .filter((item) => item.district && item.total > 0)
+        .filter((item) => item.district)
         .sort(
           (left, right) =>
             right.total - left.total ||
@@ -119,76 +172,108 @@ export default function ContactDistrictRanking() {
     };
   }, [load, scope]);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase("pt-BR");
-    if (!term) return districts;
-    return districts.filter((item) =>
-      item.district.toLocaleLowerCase("pt-BR").includes(term),
-    );
-  }, [districts, query]);
-
-  return (
-    <section className={styles.panel} aria-busy={loading}>
-      <div className={styles.header}>
-        <div className={styles.heading}>
-          <small>RELAÇÃO DE BAIRROS</small>
-          <h2>Bairros por quantidade de cadastros</h2>
-          <p>Distribuição descritiva da base, do maior para o menor total.</p>
-        </div>
-        <span className={styles.count}>
-          {districts.length.toLocaleString("pt-BR")} bairros
-        </span>
-      </div>
-
-      <div className={styles.toolbar}>
-        <input
-          className={styles.search}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar bairro"
-          aria-label="Buscar bairro"
-        />
-      </div>
-
-      {!scope || loading ? (
-        <div className={styles.state}>Carregando relação de bairros…</div>
-      ) : error ? (
-        <div className={styles.state}>{error}</div>
-      ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Posição</th>
-                <th>Bairro</th>
-                <th>Cadastros</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => {
-                const position = districts.findIndex(
-                  (district) => district.district === item.district,
-                ) + 1;
-                return (
-                  <tr key={item.district}>
-                    <td><span className={styles.rank}>{position}</span></td>
-                    <td className={styles.district}>{item.district}</td>
-                    <td className={styles.total}>{item.total.toLocaleString("pt-BR")}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!filtered.length && (
-            <div className={styles.state}>Nenhum bairro encontrado.</div>
-          )}
-        </div>
-      )}
-
-      <p className={styles.note}>
-        A ordem representa somente a quantidade de cadastros registrada em cada bairro.
-      </p>
-    </section>
+  const ranked = useMemo(
+    () =>
+      [...districts].sort(
+        (left, right) =>
+          right.total - left.total ||
+          left.district.localeCompare(right.district, "pt-BR"),
+      ),
+    [districts],
   );
+
+  const rows = useMemo(() => {
+    if (mode === "alphabetical") {
+      return [...districts].sort((left, right) =>
+        left.district.localeCompare(right.district, "pt-BR"),
+      );
+    }
+    return ranked;
+  }, [districts, mode, ranked]);
+
+  const visibleRows = showAll ? rows : rows.slice(0, 12);
+  const maxTotal = Math.max(1, ranked[0]?.total || 0);
+  const reached = districts.filter((item) => item.total > 0).length;
+
+  const panel = (
+    <aside className="optimized-panel district-panel" aria-busy={loading}>
+      <div className="district-panel-head">
+        <small>RELAÇÃO DE BAIRROS</small>
+        <h2>Bairros</h2>
+        <p>
+          Quantidade de cadastros por bairro. {reached.toLocaleString("pt-BR")} bairros com registros neste escopo.
+        </p>
+      </div>
+
+      <div
+        className="district-tabs"
+        role="tablist"
+        aria-label="Ordenação dos bairros"
+        style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+      >
+        <button
+          type="button"
+          className={mode === "rank" ? "is-active" : ""}
+          onClick={() => {
+            setMode("rank");
+            setShowAll(false);
+          }}
+        >
+          Mais cadastros
+        </button>
+        <button
+          type="button"
+          className={mode === "alphabetical" ? "is-active" : ""}
+          onClick={() => {
+            setMode("alphabetical");
+            setShowAll(false);
+          }}
+        >
+          A–Z
+        </button>
+      </div>
+
+      {loading || !scope ? (
+        <p className="optimized-empty">Carregando bairros…</p>
+      ) : error ? (
+        <p className="optimized-empty">{error}</p>
+      ) : (
+        <>
+          <ol>
+            {visibleRows.map((item) => (
+              <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
+                <span className="district-name">
+                  <span>{item.district}</span>
+                  <span className="district-bar" aria-hidden="true">
+                    <i
+                      style={{
+                        width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
+                      }}
+                    />
+                  </span>
+                </span>
+                <b>{item.total.toLocaleString("pt-BR")}</b>
+              </li>
+            ))}
+          </ol>
+          {!visibleRows.length && (
+            <p className="optimized-empty">Nenhum bairro disponível.</p>
+          )}
+          {rows.length > 12 && (
+            <button
+              className="district-show-more"
+              type="button"
+              onClick={() => setShowAll((value) => !value)}
+            >
+              {showAll
+                ? "Mostrar menos"
+                : `Ver todos (${rows.length.toLocaleString("pt-BR")})`}
+            </button>
+          )}
+        </>
+      )}
+    </aside>
+  );
+
+  return target ? createPortal(panel, target) : null;
 }
