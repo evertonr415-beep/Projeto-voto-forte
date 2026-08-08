@@ -121,7 +121,7 @@ export async function GET(request: Request) {
     | {
         totalContacts: number;
         mappedContacts: number;
-        districtContacts: number;
+        approximatedContacts: number;
         unresolvedContacts: number;
       }
     | undefined;
@@ -165,7 +165,9 @@ export async function GET(request: Request) {
       stats = {
         totalContacts,
         mappedContacts,
-        districtContacts,
+        // Campo mantido por compatibilidade com a camada visual atual.
+        // Agora significa contatos contabilizados em bolhas de bairro.
+        approximatedContacts: districtContacts,
         unresolvedContacts: Math.max(0, totalContacts - districtContacts),
       };
     }
@@ -176,7 +178,9 @@ export async function GET(request: Request) {
       scope,
       profile: profile || null,
       features: Array.isArray(data) ? data : [],
-      districts: Array.isArray(districtResult.data)
+      // Campo mantido por compatibilidade. Agora contém a contagem COMPLETA
+      // de cada bairro, e não apenas os contatos sem coordenadas.
+      approximateDistricts: Array.isArray(districtResult.data)
         ? districtResult.data
         : undefined,
       stats,
