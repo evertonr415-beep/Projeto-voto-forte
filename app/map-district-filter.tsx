@@ -22,9 +22,11 @@ export default function MapDistrictFilter() {
   const [selected, setSelected] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setFailed(false);
 
     loadSharedTerritorySummary()
       .then((summary) => {
@@ -40,7 +42,9 @@ export default function MapDistrictFilter() {
             ),
         );
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -124,6 +128,8 @@ export default function MapDistrictFilter() {
       <div className="vf-district-list">
         {loading ? (
           <span>Carregando bairros…</span>
+        ) : failed ? (
+          <span>Não foi possível carregar os bairros agora.</span>
         ) : (
           filteredSummaries.slice(0, 12).map((summary) => (
             <button
