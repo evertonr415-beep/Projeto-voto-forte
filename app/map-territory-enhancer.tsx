@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { loadSharedTerritorySummary } from "./territory-data-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DistrictStats = {
   total: number;
+};
+
+type TerritoryCenterDetail = {
+  name: string;
+  latitude: number;
+  longitude: number;
 };
 
 const TERRITORY_CACHE_KEY = "vf:territories:arapongas:v1";
@@ -87,33 +93,14 @@ async function loadTerritories() {
   return data;
 }
 
-function runWhenBrowserIsIdle(callback: () => void) {
-  const browser = window as typeof window & {
-    requestIdleCallback?: (
-      handler: () => void,
-      options?: { timeout?: number },
-    ) => number;
-    cancelIdleCallback?: (id: number) => void;
-  };
-
-  if (browser.requestIdleCallback) {
-    const id = browser.requestIdleCallback(callback, { timeout: 2500 });
-    return () => browser.cancelIdleCallback?.(id);
-  }
-
-  const id = window.setTimeout(callback, 800);
-  return () => window.clearTimeout(id);
-}
-
 export default function MapTerritoryEnhancer() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
     let activeMap: any = null;
     let territoryLayer: any = null;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
     let patchTimeout: number | null = null;
-    let cancelIdleInstall: (() => void) | null = null;
     let maximumDensity = 1;
     const polygons = new Map<string, any[]>();
 
@@ -179,6 +166,7 @@ export default function MapTerritoryEnhancer() {
           ...Array.from(stats.values()).map((item) => item.total),
         );
         territoryLayer = L.layerGroup().addTo(map);
+        const centers: TerritoryCenterDetail[] = [];
 
         for (const element of territoryData.elements || []) {
           if (cancelled) break;
@@ -261,6 +249,12 @@ export default function MapTerritoryEnhancer() {
           }
 
           const center = element.center;
+          const latitude = Number(center?.lat);
+          const longitude = Number(center?.lon);
+          if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+            centers.push({ name, latitude, longitude });
+          }
+
           if (center && districtStats.total > 0) {
             L.marker([center.lat, center.lon], {
               interactive: true,
@@ -275,6 +269,12 @@ export default function MapTerritoryEnhancer() {
               .addTo(territoryLayer);
           }
         }
+
+        window.dispatchEvent(
+          new CustomEvent("voto-forte:territory-centers-ready", {
+            detail: { centers },
+          }),
+        );
 
         map.on("popupopen", (event: any) => {
           const node = event.popup?.getElement?.();
@@ -309,12 +309,10 @@ export default function MapTerritoryEnhancer() {
       }
     };
 
-    const scheduleTerritoryInstall = (map: any) => {
-      cancelIdleInstall?.();
-      cancelIdleInstall = runWhenBrowserIsIdle(() => {
-        cancelIdleInstall = null;
+    const installOnMap = (map: any) => {
+      window.setTimeout(() => {
         void installTerritoryLayer(map);
-      });
+      }, 0);
     };
 
     const patchLeaflet = () => {
@@ -323,7 +321,7 @@ export default function MapTerritoryEnhancer() {
       originalMapFactory = L.map;
       const wrappedMap = function (this: unknown, ...args: any[]) {
         const map = originalMapFactory.apply(this, args);
-        scheduleTerritoryInstall(map);
+        installOnMap(map);
         return map;
       };
       Object.assign(wrappedMap, originalMapFactory);
@@ -338,16 +336,15 @@ export default function MapTerritoryEnhancer() {
           window.clearInterval(patchTimer);
           patchTimer = null;
         }
-      }, 250);
+      }, 50);
       patchTimeout = window.setTimeout(() => {
         if (patchTimer) window.clearInterval(patchTimer);
         patchTimer = null;
-      }, 10_000);
+      }, 8_000);
     }
 
     return () => {
       cancelled = true;
-      cancelIdleInstall?.();
       window.removeEventListener(
         "voto-forte:district-filter-change",
         handleDistrictFilter,
