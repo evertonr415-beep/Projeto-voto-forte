@@ -170,9 +170,9 @@ export function analyzeSystemSignals(signals: SystemSignals) {
       title: "Pendências de qualidade estão pressionando a base",
       summary: `${formatPercent(qualityRate)} dos contatos possuem pelo menos uma pendência operacional monitorada.`,
       impact:
-        "Filtros, segmentação territorial e contato com eleitores podem perder precisão.",
+        "Filtros e consultas operacionais podem perder precisão.",
       recommendation:
-        "Priorizar a Central de Qualidade por categoria e reduzir primeiro as pendências com maior impacto operacional.",
+        "Revisar a Central de Qualidade por categoria e reduzir primeiro as pendências com maior impacto operacional.",
       evidence: [
         `${formatNumber(signals.pendingContacts)} contatos com pendência`,
         `${formatNumber(signals.totalContacts)} contatos na base`,
@@ -256,28 +256,6 @@ export function analyzeSystemSignals(signals: SystemSignals) {
     });
   }
 
-  if (signals.totalContacts > 20_000) {
-    findings.push({
-      id: "legacy-record-cap",
-      category: "architecture",
-      severity: signals.totalContacts >= 100_000 ? "high" : "medium",
-      confidence: "high",
-      title: "O Sistema Completo ultrapassou o teto de carga do endpoint legado",
-      summary:
-        "O endpoint /api/records limita a leitura a 20.000 registros, enquanto a base atual já é maior. O painel principal usa paginação, mas módulos legados podem trabalhar com uma visão parcial.",
-      impact:
-        "Relatórios ou telas antigas que dependem da carga completa podem omitir parte da base e ainda consumir mais memória do que o necessário.",
-      recommendation:
-        "Migrar gradualmente os módulos legados para consultas paginadas ou agregações no banco, priorizando as telas que ainda usam /api/records.",
-      evidence: [
-        `Base atual: ${formatNumber(signals.totalContacts)} contatos`,
-        "Teto conhecido do endpoint legado: 20.000 registros",
-      ],
-      actionHref: "/sistema-completo",
-      actionLabel: "Abrir Sistema Completo",
-    });
-  }
-
   if (signals.activeUsers >= 8) {
     findings.push({
       id: "team-intelligence-query-fanout",
@@ -322,10 +300,7 @@ export function analyzeSystemSignals(signals: SystemSignals) {
     });
   }
 
-  if (
-    signals.auditEvents30Days >= 100 &&
-    auditNoiseRate >= 80
-  ) {
+  if (signals.auditEvents30Days >= 100 && auditNoiseRate >= 80) {
     findings.push({
       id: "audit-noise",
       category: "architecture",
@@ -402,7 +377,7 @@ export function analyzeSystemSignals(signals: SystemSignals) {
   return {
     engine: {
       name: "VOTO FORTE Neural",
-      version: "0.1-observer",
+      version: "0.2-observer",
       mode: "observer" as const,
       autonomyLevel: 1,
       autonomyLabel: "Recomendar, sem alterar produção",
