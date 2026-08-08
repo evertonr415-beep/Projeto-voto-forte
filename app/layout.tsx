@@ -28,6 +28,7 @@ import "./data-quality-panel.css";
 import "./user-hierarchy.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
+import "./sidebar-scroll-fix.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
