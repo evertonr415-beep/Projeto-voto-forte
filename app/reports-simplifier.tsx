@@ -15,7 +15,7 @@ type SessionUser = {
   role?: string;
 };
 
-const ADMIN_ROLES = new Set(["master", "gestor", "lider", "admin"]);
+const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
 const numberFormatter = new Intl.NumberFormat("pt-BR");
 
 function finiteNumber(value: unknown) {
