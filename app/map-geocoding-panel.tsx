@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   invalidateSharedTerritoryData,
-  loadSharedMappedTerritoryContacts,
+  loadSharedMappedTerritoryData,
   loadSharedTerritorySummary,
 } from "./territory-data-client";
 
@@ -21,11 +21,11 @@ type BatchResult = {
 };
 
 async function readProgress(force = false): Promise<Progress> {
-  const [summary, mappedRecords] = await Promise.all([
+  const [summary, mappedData] = await Promise.all([
     loadSharedTerritorySummary({ force }),
-    loadSharedMappedTerritoryContacts({ force }),
+    loadSharedMappedTerritoryData({ force }),
   ]);
-  const mapped = mappedRecords.length;
+  const mapped = Math.min(summary.total, mappedData.total);
 
   return {
     total: summary.total,
