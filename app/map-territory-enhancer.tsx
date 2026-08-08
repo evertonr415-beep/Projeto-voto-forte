@@ -1,363 +1,218 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { loadSharedTerritorySummary } from "./territory-data-client";
+import { apiFetch } from "./supabase-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type DistrictStats = {
-  total: number;
+type DistrictBubble = {
+  district: string;
+  total: number | string;
+  voters: number | string;
+  leaders: number | string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  source?: string | null;
+  reference_cep?: string | null;
+  resolved?: boolean;
 };
 
-type TerritoryCenterDetail = {
-  name: string;
-  latitude: number;
-  longitude: number;
-};
-
-const TERRITORY_CACHE_KEY = "vf:territories:arapongas:v1";
-const TERRITORY_CACHE_TTL = 24 * 60 * 60 * 1000;
-
-function normalize(value: unknown) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, " ")
-    .trim()
-    .toUpperCase();
-}
+const STYLE_ID = "vf-stable-district-bubbles-style";
+const NUMBER = new Intl.NumberFormat("pt-BR");
 
 function escapeHtml(value: unknown) {
-  return String(value || "")
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+    .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
 
-function densityOpacity(total: number, maximum: number) {
-  if (!total || !maximum) return 0.04;
-  return Math.min(0.46, 0.1 + (total / maximum) * 0.36);
+function currentScope() {
+  return document.querySelector<HTMLSelectElement>(".scope-picker select")?.value || "";
 }
 
-async function loadDistrictStats() {
-  const summary = await loadSharedTerritorySummary();
-  const stats = new Map<string, DistrictStats>();
-
-  for (const district of summary.districts) {
-    const key = normalize(district.district);
-    if (!key) continue;
-    stats.set(key, { total: Number(district.total || 0) });
-  }
-
-  return stats;
-}
-
-async function loadTerritories() {
-  try {
-    const cached = window.sessionStorage.getItem(TERRITORY_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached) as { savedAt?: number; data?: unknown };
-      if (
-        parsed.savedAt &&
-        Date.now() - parsed.savedAt < TERRITORY_CACHE_TTL &&
-        parsed.data
-      ) {
-        return parsed.data;
-      }
-    }
-  } catch {
-    // Segue para a consulta externa caso o cache esteja indisponível.
-  }
-
-  const query =
-    '[out:json][timeout:30];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a););out tags center geom;';
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-  if (!response.ok) throw new Error("Limites territoriais indisponíveis");
-
-  const data = await response.json();
-  try {
-    window.sessionStorage.setItem(
-      TERRITORY_CACHE_KEY,
-      JSON.stringify({ savedAt: Date.now(), data }),
-    );
-  } catch {
-    // O cache é opcional.
-  }
-  return data;
+function installStyles() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    .vf-stable-district-bubble{background:transparent!important;border:0!important}
+    .vf-stable-district-bubble span{display:grid;place-items:center;min-width:50px;height:50px;padding:0 7px;border-radius:999px;background:#315f8f;color:#fff;border:3px solid #fff;box-shadow:0 5px 16px rgba(15,35,65,.3);font:900 12px/1 Arial,sans-serif}
+    .vf-stable-district-bubble.large span{min-width:58px;height:58px;background:#244f7c;font-size:13px}
+    .vf-stable-district-popup{min-width:190px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}
+    .vf-stable-district-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}
+    .vf-stable-district-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2f8;color:#244f7c;font-size:10px;margin-bottom:5px}
+    .vf-stable-district-popup p{margin:4px 0}.vf-stable-district-popup small{display:block;margin-top:7px;color:#64748b}
+  `;
+  document.head.appendChild(style);
 }
 
 export default function MapTerritoryEnhancer() {
   useLayoutEffect(() => {
+    installStyles();
+
     let cancelled = false;
-    let activeMap: any = null;
-    let territoryLayer: any = null;
     let originalMapFactory: any = null;
     let patchTimer: number | null = null;
     let patchTimeout: number | null = null;
-    let maximumDensity = 1;
-    const polygons = new Map<string, any[]>();
+    const cleanups = new Set<() => void>();
 
-    const applyDistrictFilter = (district: string) => {
-      const selected = normalize(district);
-      let selectedBounds: any = null;
+    const setupMap = (map: any) => {
+      const container = map?.getContainer?.() as HTMLElement | undefined;
+      if (
+        cancelled ||
+        !container?.closest(".full-map") ||
+        map._vfStableDistrictBubbles
+      )
+        return;
 
-      for (const [key, layers] of polygons.entries()) {
-        const active = !selected || key === selected;
-        for (const polygon of layers) {
-          const total = Number(polygon.options?.vfTotal || 0);
-          polygon.setStyle({
-            color: active && selected ? "#9f3f00" : "#c9661c",
-            weight: active && selected ? 5 : total ? 3 : 1.5,
-            opacity: active ? 0.98 : 0.25,
-            fillOpacity: active
-              ? selected
-                ? 0.58
-                : densityOpacity(total, maximumDensity)
-              : 0.025,
+      map._vfStableDistrictBubbles = true;
+      const L = (window as any).L;
+      if (!L) return;
+
+      const layer = L.layerGroup().addTo(map);
+      let requestId = 0;
+      let lastScope = currentScope();
+
+      const draw = async () => {
+        const id = ++requestId;
+        const scope = currentScope();
+        lastScope = scope;
+        const params = new URLSearchParams({ stats: "1" });
+        if (scope) params.set("owner", scope);
+
+        try {
+          const response = await apiFetch(`/api/map-contacts?${params.toString()}`, {
+            cache: "no-store",
           });
-          if (active && selected) {
-            selectedBounds = selectedBounds
-              ? selectedBounds.extend(polygon.getBounds())
-              : polygon.getBounds();
-            polygon.bringToFront();
-          }
-        }
-      }
+          const payload = (await response.json()) as {
+            approximateDistricts?: DistrictBubble[];
+            error?: string;
+          };
+          if (!response.ok) throw new Error(payload.error || "Falha ao carregar bairros");
+          if (cancelled || id !== requestId || !map._container) return;
 
-      if (selected && selectedBounds?.isValid?.() && activeMap) {
-        activeMap.fitBounds(selectedBounds, { padding: [36, 36], maxZoom: 15 });
-      }
-    };
+          layer.clearLayers();
+          const bubbles = Array.isArray(payload.approximateDistricts)
+            ? payload.approximateDistricts
+            : [];
 
-    const handleDistrictFilter = (event: Event) => {
-      const district =
-        (event as CustomEvent<{ district?: string }>).detail?.district || "";
-      applyDistrictFilter(district);
-    };
+          for (const bubble of bubbles) {
+            if (!bubble.resolved) continue;
+            const latitude = Number(bubble.latitude);
+            const longitude = Number(bubble.longitude);
+            const total = Number(bubble.total || 0);
+            if (
+              !Number.isFinite(latitude) ||
+              !Number.isFinite(longitude) ||
+              total <= 0
+            )
+              continue;
 
-    window.addEventListener(
-      "voto-forte:district-filter-change",
-      handleDistrictFilter,
-    );
-
-    const installTerritoryLayer = async (map: any) => {
-      if (cancelled || !map || map._vfTerritoryInstalled) return;
-      map._vfTerritoryInstalled = true;
-      activeMap = map;
-
-      try {
-        const [stats, territoryData] = await Promise.all([
-          loadDistrictStats(),
-          loadTerritories(),
-        ]);
-        if (cancelled || !activeMap) return;
-
-        const L = (window as any).L;
-        if (!L) return;
-        maximumDensity = Math.max(
-          1,
-          ...Array.from(stats.values()).map((item) => item.total),
-        );
-        territoryLayer = L.layerGroup().addTo(map);
-        const centers: TerritoryCenterDetail[] = [];
-
-        for (const element of territoryData.elements || []) {
-          if (cancelled) break;
-          const name = String(element.tags?.name || "").trim();
-          if (!name) continue;
-          const key = normalize(name);
-          const districtStats = stats.get(key) || { total: 0 };
-          const popup = `
-            <div class="vf-territory-popup">
-              <strong>${escapeHtml(name)}</strong>
-              <span>${districtStats.total.toLocaleString("pt-BR")} cadastro(s)</span>
-              <small>Total do bairro. Quem tem coordenada exata também continua aparecendo como pino individual.</small>
-              <button type="button" data-vf-district="${escapeHtml(name)}">Ver este bairro</button>
-            </div>
-          `;
-
-          const parts =
-            element.type === "relation"
-              ? (element.members || []).filter((member: any) => member.geometry)
-              : [element];
-
-          for (const part of parts) {
-            if (!part.geometry?.length || part.geometry.length < 2) continue;
-            const points = part.geometry.map((point: any) => [point.lat, point.lon]);
-            const first = part.geometry[0];
-            const last = part.geometry[part.geometry.length - 1];
-            const closed = first.lat === last.lat && first.lon === last.lon;
-            if (!closed) continue;
-
-            const polygon = L.polygon(points, {
-              color: "#c9661c",
-              weight: districtStats.total ? 3 : 1.5,
-              opacity: 0.95,
-              fillColor: "#ef8429",
-              fillOpacity: densityOpacity(districtStats.total, maximumDensity),
-              className: "vf-territory-polygon",
-              vfTotal: districtStats.total,
-              vfDistrict: key,
-            });
-            polygon.bindPopup(popup, {
-              autoClose: true,
-              closeOnClick: true,
-              closeButton: true,
-              maxWidth: 280,
-            });
-            polygon.on("mouseover", () => {
-              const selected = normalize(
-                (document.querySelector(
-                  ".vf-district-list button.active span",
-                ) as HTMLElement | null)?.textContent,
-              );
-              if (selected && selected !== key) return;
-              polygon.setStyle({
-                weight: 4,
-                fillOpacity: Math.min(
-                  0.58,
-                  densityOpacity(districtStats.total, maximumDensity) + 0.12,
-                ),
-              });
-            });
-            polygon.on("mouseout", () => {
-              const selected = normalize(
-                (document.querySelector(
-                  ".vf-district-list button.active span",
-                ) as HTMLElement | null)?.textContent,
-              );
-              if (selected) {
-                applyDistrictFilter(selected);
-                return;
-              }
-              polygon.setStyle({
-                weight: districtStats.total ? 3 : 1.5,
-                fillOpacity: densityOpacity(districtStats.total, maximumDensity),
-              });
-            });
-            polygon.addTo(territoryLayer);
-            const registered = polygons.get(key) || [];
-            registered.push(polygon);
-            polygons.set(key, registered);
-          }
-
-          const center = element.center;
-          const latitude = Number(center?.lat);
-          const longitude = Number(center?.lon);
-          if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-            centers.push({ name, latitude, longitude });
-          }
-
-          if (center && districtStats.total > 0) {
-            L.marker([center.lat, center.lon], {
-              interactive: true,
-              zIndexOffset: 650,
+            const marker = L.marker([latitude, longitude], {
+              zIndexOffset: 700,
               icon: L.divIcon({
-                className: "vf-map-district-cluster",
-                html: `<span>${districtStats.total.toLocaleString("pt-BR")}</span>`,
-                iconSize: [52, 52],
-                iconAnchor: [26, 26],
+                className: `vf-stable-district-bubble${total >= 3000 ? " large" : ""}`,
+                html: `<span>${NUMBER.format(total)}</span>`,
+                iconSize: [60, 60],
+                iconAnchor: [30, 30],
               }),
-            })
-              .bindTooltip(`${name} · ${districtStats.total.toLocaleString("pt-BR")} cadastro(s)`, {
-                direction: "top",
-              })
-              .bindPopup(popup, { maxWidth: 280 })
-              .addTo(territoryLayer);
+            });
+
+            marker.bindTooltip(
+              `${bubble.district} · ${NUMBER.format(total)} cadastro(s)`,
+              { direction: "top", opacity: 0.95 },
+            );
+            marker.bindPopup(
+              `<div class="vf-stable-district-popup"><strong>${escapeHtml(bubble.district)}</strong><b>Total do bairro</b><p>${NUMBER.format(Number(bubble.voters || 0))} eleitor(es) · ${NUMBER.format(Number(bubble.leaders || 0))} liderança(s)</p><small>Posição de referência obtida por CEP do próprio bairro. Contatos com coordenada exata continuam aparecendo também como pino individual.</small></div>`,
+              { maxWidth: 290 },
+            );
+            marker.addTo(layer);
           }
+
+          map._vfStableDistrictBubbleCount = layer.getLayers?.().length || 0;
+          const message = document.querySelector<HTMLElement>(
+            ".real-map-toolbar strong",
+          );
+          if (message && map._vfStableDistrictBubbleCount > 0) {
+            message.textContent = `${map._vfStableDistrictBubbleCount} bairro(s) com bolhas no mapa`;
+          }
+        } catch {
+          const message = document.querySelector<HTMLElement>(
+            ".real-map-toolbar strong",
+          );
+          if (message)
+            message.textContent = "Mapa ativo · não foi possível carregar as bolhas agora";
         }
+      };
 
-        window.dispatchEvent(
-          new CustomEvent("voto-forte:territory-centers-ready", {
-            detail: { centers },
-          }),
-        );
+      const handleScopeChange = (event: Event) => {
+        const target = event.target as HTMLElement | null;
+        if (!target?.matches(".scope-picker select")) return;
+        if (currentScope() !== lastScope) void draw();
+      };
+      const handleRecordsChanged = () => void draw();
 
-        map.on("popupopen", (event: any) => {
-          const node = event.popup?.getElement?.();
-          const button = node?.querySelector?.(
-            "[data-vf-district]",
-          ) as HTMLButtonElement | null;
-          if (!button || button.dataset.vfBound === "true") return;
-          button.dataset.vfBound = "true";
-          button.addEventListener("click", () => {
-            const district = button.dataset.vfDistrict || "";
-            window.dispatchEvent(
-              new CustomEvent("voto-forte:district-selected", {
-                detail: { district },
-              }),
-            );
-            window.dispatchEvent(
-              new CustomEvent("voto-forte:district-filter-change", {
-                detail: { district },
-              }),
-            );
-            const message = document.querySelector(".real-map-toolbar strong");
-            if (message)
-              message.textContent = `${district} · camada territorial selecionada`;
-            map.closePopup();
-          });
-        });
-      } catch {
-        const message = document.querySelector(".real-map-toolbar strong");
-        if (message)
-          message.textContent =
-            "Mapa ativo · limites territoriais temporariamente indisponíveis";
-      }
-    };
+      document.addEventListener("change", handleScopeChange, true);
+      window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
+      window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
 
-    const installOnMap = (map: any) => {
-      window.setTimeout(() => {
-        void installTerritoryLayer(map);
-      }, 0);
+      window.setTimeout(() => void draw(), 0);
+
+      const cleanup = () => {
+        requestId += 1;
+        document.removeEventListener("change", handleScopeChange, true);
+        window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
+        window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+        try {
+          map.removeLayer(layer);
+        } catch {
+          // O mapa pode ter sido destruído durante a navegação.
+        }
+        cleanups.delete(cleanup);
+      };
+      cleanups.add(cleanup);
+      map.on?.("unload", cleanup);
     };
 
     const patchLeaflet = () => {
       const L = (window as any).L;
-      if (!L?.map || L.map.__vfTerritoryPatched) return false;
+      if (!L?.map || L.map.__vfStableDistrictBubblesPatched) return false;
+
       originalMapFactory = L.map;
       const wrappedMap = function (this: unknown, ...args: any[]) {
         const map = originalMapFactory.apply(this, args);
-        installOnMap(map);
+        window.setTimeout(() => setupMap(map), 0);
         return map;
       };
       Object.assign(wrappedMap, originalMapFactory);
-      wrappedMap.__vfTerritoryPatched = true;
+      wrappedMap.__vfStableDistrictBubblesPatched = true;
       L.map = wrappedMap;
       return true;
     };
 
     if (!patchLeaflet()) {
       patchTimer = window.setInterval(() => {
-        if (patchLeaflet() && patchTimer) {
+        if (patchLeaflet() && patchTimer !== null) {
           window.clearInterval(patchTimer);
           patchTimer = null;
         }
       }, 50);
       patchTimeout = window.setTimeout(() => {
-        if (patchTimer) window.clearInterval(patchTimer);
+        if (patchTimer !== null) window.clearInterval(patchTimer);
         patchTimer = null;
-      }, 8_000);
+      }, 10_000);
     }
 
     return () => {
       cancelled = true;
-      window.removeEventListener(
-        "voto-forte:district-filter-change",
-        handleDistrictFilter,
-      );
-      if (patchTimer) window.clearInterval(patchTimer);
-      if (patchTimeout) window.clearTimeout(patchTimeout);
-      if (territoryLayer && activeMap) activeMap.removeLayer(territoryLayer);
+      cleanups.forEach((cleanup) => cleanup());
+      cleanups.clear();
+      if (patchTimer !== null) window.clearInterval(patchTimer);
+      if (patchTimeout !== null) window.clearTimeout(patchTimeout);
       const L = (window as any).L;
-      if (L?.map?.__vfTerritoryPatched && originalMapFactory)
+      if (L?.map?.__vfStableDistrictBubblesPatched && originalMapFactory)
         L.map = originalMapFactory;
     };
   }, []);
