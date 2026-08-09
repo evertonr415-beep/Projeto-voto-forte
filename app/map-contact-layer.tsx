@@ -250,6 +250,10 @@ export default function MapContactLayer() {
         return node;
       };
       control.addTo(map);
+      (window as any).__vfElectoralMap = map;
+      window.dispatchEvent(
+        new CustomEvent("voto-forte:electoral-map-ready", { detail: { map } }),
+      );
 
       const updateStatus = (loading = false) => {
         const node = controlNode?.querySelector<HTMLElement>(".vf-map-contact-status");
@@ -474,6 +478,9 @@ export default function MapContactLayer() {
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
         window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+        if ((window as any).__vfElectoralMap === map) {
+          delete (window as any).__vfElectoralMap;
+        }
         try {
           map.removeLayer(layer);
           map.removeControl(control);
