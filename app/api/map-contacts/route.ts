@@ -61,11 +61,26 @@ export async function GET(request: Request) {
   }
 
   const profile = PROFILES.has(requestedProfile) ? requestedProfile : "";
-  const south = Math.max(-90, Math.min(90, finiteParam(url.searchParams.get("south"), -90)));
-  const north = Math.max(-90, Math.min(90, finiteParam(url.searchParams.get("north"), 90)));
-  const west = Math.max(-180, Math.min(180, finiteParam(url.searchParams.get("west"), -180)));
-  const east = Math.max(-180, Math.min(180, finiteParam(url.searchParams.get("east"), 180)));
-  const zoom = Math.max(1, Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))));
+  const south = Math.max(
+    -90,
+    Math.min(90, finiteParam(url.searchParams.get("south"), -90)),
+  );
+  const north = Math.max(
+    -90,
+    Math.min(90, finiteParam(url.searchParams.get("north"), 90)),
+  );
+  const west = Math.max(
+    -180,
+    Math.min(180, finiteParam(url.searchParams.get("west"), -180)),
+  );
+  const east = Math.max(
+    -180,
+    Math.min(180, finiteParam(url.searchParams.get("east"), 180)),
+  );
+  const zoom = Math.max(
+    1,
+    Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))),
+  );
 
   const featurePromise = account.supabase.rpc("vf_map_contact_features", {
     p_owner_emails: scopeEmails,
@@ -96,8 +111,16 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
+
   if (districtResult.error) {
     console.error("Failed to load district bubbles", districtResult.error);
+    return Response.json(
+      {
+        error:
+          "Não foi possível carregar as bolhas dos bairros agora. Tente novamente em instantes.",
+      },
+      { status: 500 },
+    );
   }
 
   let stats:
@@ -127,15 +150,16 @@ export async function GET(request: Request) {
       .neq("payload->>longitude", "");
     mappedQuery = applyProfile(applyScope(mappedQuery, scopeEmails), profile);
 
-    const [totalResult, mappedResult] = await Promise.all([totalQuery, mappedQuery]);
+    const [totalResult, mappedResult] = await Promise.all([
+      totalQuery,
+      mappedQuery,
+    ]);
     if (!totalResult.error && !mappedResult.error) {
       const totalContacts = Number(totalResult.count ?? 0);
       const mappedContacts = Number(mappedResult.count ?? 0);
-      const bubbles = Array.isArray(districtResult.data) ? districtResult.data : [];
-      const districtContacts = bubbles.reduce(
-        (sum: number, item: { total?: number | string }) => sum + Number(item.total || 0),
-        0,
-      );
+      const bubbles = Array.isArray(districtResult.data)
+        ? districtResult.data
+        : [];
       const resolvedContacts = bubbles.reduce(
         (
           sum: number,
@@ -162,7 +186,7 @@ export async function GET(request: Request) {
       features: Array.isArray(data) ? data : [],
       approximateDistricts: Array.isArray(districtResult.data)
         ? districtResult.data
-        : undefined,
+        : [],
       stats,
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
