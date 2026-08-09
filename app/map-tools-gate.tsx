@@ -1,13 +1,13 @@
 "use client";
 
 import MapContactLayer from "./map-contact-layer";
-import MapDistrictMarkerLayer from "./map-district-marker-layer";
+import MapTerritoryEnhancer from "./map-territory-enhancer";
 
 export default function MapToolsGate() {
   return (
     <>
       <MapContactLayer />
-      <MapDistrictMarkerLayer />
+      <MapTerritoryEnhancer />
     </>
   );
 }
