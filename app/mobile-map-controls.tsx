@@ -133,11 +133,19 @@ export default function MobileMapControls() {
     const media = window.matchMedia(MOBILE_QUERY);
     let cleanupCurrent: (() => void) | null = null;
     let retry: number | null = null;
+    let fallbackTimer: number | null = null;
+
+    const setFallback = (enabled: boolean) => {
+      document.documentElement.classList.toggle("vf-mobile-map-fallback", enabled);
+    };
 
     const attach = () => {
       cleanupCurrent?.();
       cleanupCurrent = null;
-      if (!media.matches) return false;
+      if (!media.matches) {
+        setFallback(false);
+        return false;
+      }
 
       const fullMap = document.querySelector<HTMLElement>(".full-map");
       const toolbar = fullMap?.querySelector<HTMLElement>(".real-map-toolbar");
@@ -164,6 +172,11 @@ export default function MobileMapControls() {
         return false;
       }
 
+      setFallback(false);
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
       fullMap.classList.add("vf-mobile-map-ui");
       fullMap.classList.remove("vf-mobile-contacts-open");
       const labels = ["Centralizar alfinetes", "Minha localização", "Arapongas"];
@@ -292,26 +305,39 @@ export default function MobileMapControls() {
       return true;
     };
 
-    const handleResize = () => attach();
-    media.addEventListener("change", handleResize);
-    if (!attach()) {
+    const startRetry = () => {
+      if (retry !== null) window.clearInterval(retry);
+      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      setFallback(false);
       retry = window.setInterval(() => {
         if (attach() && retry !== null) {
           window.clearInterval(retry);
           retry = null;
         }
       }, 150);
-      window.setTimeout(() => {
+      fallbackTimer = window.setTimeout(() => {
+        fallbackTimer = null;
         if (retry !== null) {
           window.clearInterval(retry);
           retry = null;
+          if (media.matches) setFallback(true);
         }
       }, 12_000);
-    }
+    };
+
+    const handleResize = () => {
+      if (attach()) return;
+      if (media.matches) startRetry();
+      else setFallback(false);
+    };
+    media.addEventListener("change", handleResize);
+    if (!attach()) startRetry();
 
     return () => {
       media.removeEventListener("change", handleResize);
       if (retry !== null) window.clearInterval(retry);
+      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      setFallback(false);
       cleanupCurrent?.();
     };
   }, []);

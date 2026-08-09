@@ -3,6 +3,44 @@
 }
 
 @media (max-width: 760px) {
+  /*
+   * O mapa nasce com os controles desktop e só depois o enhancer mobile os
+   * reorganiza. Ocultamos apenas esse estado intermediário para impedir o
+   * flash visual durante refresh/hidratação. Se o enhancer não conseguir
+   * inicializar, ele adiciona .vf-mobile-map-fallback e libera o layout legado.
+   */
+  html:not(.vf-mobile-map-fallback)
+    .workspace:has(.full-map)
+    .page-head
+    > button:not(.vf-mobile-page-contacts-toggle) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html:not(.vf-mobile-map-fallback)
+    .full-map:not(.vf-mobile-map-ui)
+    .real-map-toolbar,
+  html:not(.vf-mobile-map-fallback)
+    .full-map:not(.vf-mobile-map-ui)
+    .leaflet-control-zoom {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html:not(.vf-mobile-map-fallback) .full-map .vf-map-contact-control,
+  html:not(.vf-mobile-map-fallback) .full-map .vf-district-map-control {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .vf-mobile-contacts-host .vf-map-contact-control,
+  .vf-mobile-district-host .vf-district-map-control {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
   .full-map .map-legend {
     display: block !important;
     position: absolute;
