@@ -76,7 +76,7 @@ function installStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.13);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.16);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c;backdrop-filter:blur(6px)}
-    .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}
+    .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3;display:flex;gap:8px;align-items:flex-start}.vf-district-map-control header>div{min-width:0;flex:1}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}.vf-district-map-toggle{display:none;border:1px solid #d9e3ef;background:#f5f8fc;color:#173f75;border-radius:8px;width:30px;height:30px;flex:0 0 30px;font:900 15px/1 Arial,sans-serif;cursor:pointer}
     .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
     .vf-district-map-scale{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale .vf-district-point-legend{width:9px;height:9px;border-radius:50%;background:#2563a8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.24)}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
     .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
@@ -87,7 +87,24 @@ function installStyles() {
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 5px rgba(37,99,168,.18),0 0 0 1px rgba(24,74,124,.42),0 3px 8px rgba(22,66,108,.3)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-count{border-color:rgba(37,99,168,.55);box-shadow:0 3px 10px rgba(37,99,168,.24)}
     .vf-district-area-popup{min-width:195px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}
-    @media(max-width:760px){.vf-district-map-control{width:210px;max-height:240px}.vf-district-map-list{max-height:175px}.vf-district-map-row{padding:6px}.vf-district-map-control header{padding:8px}.vf-district-map-scale em{display:none}.vf-district-point-count{font-size:9px;padding:3px 5px}.vf-district-point-dot{width:12px;height:12px}}
+    @media(max-width:760px){
+      .full-map{height:72vh!important;min-height:520px!important}
+      .full-map .real-map-toolbar{top:8px!important;left:8px!important;right:8px!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;align-items:stretch!important}
+      .full-map .real-map-toolbar>div{grid-column:1/-1;width:auto!important;margin:0!important;padding:7px 9px!important;border-radius:8px!important}
+      .full-map .real-map-toolbar strong{font-size:8px!important;line-height:1.25!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .full-map .real-map-toolbar small{display:none!important}
+      .full-map .real-map-toolbar button{width:100%!important;padding:8px 5px!important;font-size:7px!important;line-height:1.1!important;white-space:nowrap!important;border-radius:7px!important}
+      .full-map .map-legend{top:82px!important;left:auto!important;right:8px!important;width:auto!important;max-width:190px!important;padding:8px 10px!important;border-radius:9px!important}
+      .full-map .map-legend h4,.full-map .map-legend hr,.full-map .map-legend>small,.full-map .map-legend>strong{display:none!important}
+      .full-map .map-legend label{margin:4px 0!important;font-size:7px!important;gap:5px!important}
+      .vf-district-map-control{width:min(240px,calc(100vw - 32px));max-height:260px}
+      .vf-district-map-control header{padding:8px 9px;border-bottom:0;align-items:center}.vf-district-map-control header strong{font-size:12px}.vf-district-map-control header small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vf-district-map-toggle{display:block}
+      .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,.vf-district-map-control[data-collapsed="true"] .vf-district-map-scale{display:none}
+      .vf-district-map-control[data-collapsed="true"] header{border-bottom:0}
+      .vf-district-map-list{max-height:170px}.vf-district-map-row{padding:6px}.vf-district-map-scale em{display:none}.vf-district-point-count{font-size:9px;padding:3px 5px}.vf-district-point-dot{width:12px;height:12px}
+      .leaflet-control-zoom{margin-top:94px!important}
+    }
+    @media(max-width:480px){.full-map{height:74vh!important;min-height:540px!important}.full-map .map-legend{max-width:165px!important}.vf-district-map-control{width:min(220px,calc(100vw - 28px))}}
   `;
   document.head.appendChild(style);
 }
@@ -131,11 +148,24 @@ export default function MapTerritoryEnhancer() {
       let controlNode: HTMLElement | null = null;
       control.onAdd = () => {
         const node = L.DomUtil.create("div", "vf-district-map-control") as HTMLElement;
+        const startsCollapsed = window.matchMedia("(max-width: 760px)").matches;
+        node.dataset.collapsed = startsCollapsed ? "true" : "false";
         node.innerHTML = `
-          <header><strong>Contatos por bairro</strong><small>Carregando distribuição territorial…</small></header>
+          <header>
+            <div><strong>Contatos por bairro</strong><small>Carregando distribuição territorial…</small></div>
+            <button type="button" class="vf-district-map-toggle" aria-label="Abrir contatos por bairro" aria-expanded="${startsCollapsed ? "false" : "true"}">${startsCollapsed ? "+" : "−"}</button>
+          </header>
           <div class="vf-district-map-list"><div class="vf-district-map-empty">Carregando bairros…</div></div>
           <div class="vf-district-map-scale"><span class="vf-district-point-legend"></span><span>ponto territorial do bairro</span><em>aproxime para detalhar</em></div>
         `;
+        const toggle = node.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
+        toggle?.addEventListener("click", () => {
+          const nextCollapsed = node.dataset.collapsed !== "true";
+          node.dataset.collapsed = nextCollapsed ? "true" : "false";
+          toggle.textContent = nextCollapsed ? "+" : "−";
+          toggle.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
+          toggle.setAttribute("aria-label", nextCollapsed ? "Abrir contatos por bairro" : "Recolher contatos por bairro");
+        });
         L.DomEvent.disableClickPropagation(node);
         L.DomEvent.disableScrollPropagation(node);
         controlNode = node;
