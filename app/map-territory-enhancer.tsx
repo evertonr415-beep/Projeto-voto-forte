@@ -11,9 +11,6 @@ type DistrictBubble = {
   leaders: number | string;
   latitude?: number | string | null;
   longitude?: number | string | null;
-  source?: string | null;
-  reference_cep?: string | null;
-  resolved?: boolean;
 };
 
 const STYLE_ID = "vf-stable-district-bubbles-style";
@@ -79,27 +76,27 @@ export default function MapTerritoryEnhancer() {
         const id = ++requestId;
         const scope = currentScope();
         lastScope = scope;
-        const params = new URLSearchParams({ stats: "1" });
+        const params = new URLSearchParams();
         if (scope) params.set("owner", scope);
 
         try {
-          const response = await apiFetch(`/api/map-contacts?${params.toString()}`, {
-            cache: "no-store",
-          });
+          const query = params.toString();
+          const response = await apiFetch(
+            `/api/map-district-markers${query ? `?${query}` : ""}`,
+            { cache: "no-store" },
+          );
           const payload = (await response.json()) as {
-            approximateDistricts?: DistrictBubble[];
+            markers?: DistrictBubble[];
             error?: string;
           };
-          if (!response.ok) throw new Error(payload.error || "Falha ao carregar bairros");
+          if (!response.ok)
+            throw new Error(payload.error || "Falha ao carregar bairros");
           if (cancelled || id !== requestId || !map._container) return;
 
           layer.clearLayers();
-          const bubbles = Array.isArray(payload.approximateDistricts)
-            ? payload.approximateDistricts
-            : [];
+          const bubbles = Array.isArray(payload.markers) ? payload.markers : [];
 
           for (const bubble of bubbles) {
-            if (!bubble.resolved) continue;
             const latitude = Number(bubble.latitude);
             const longitude = Number(bubble.longitude);
             const total = Number(bubble.total || 0);
@@ -125,7 +122,7 @@ export default function MapTerritoryEnhancer() {
               { direction: "top", opacity: 0.95 },
             );
             marker.bindPopup(
-              `<div class="vf-stable-district-popup"><strong>${escapeHtml(bubble.district)}</strong><b>Total do bairro</b><p>${NUMBER.format(Number(bubble.voters || 0))} eleitor(es) · ${NUMBER.format(Number(bubble.leaders || 0))} liderança(s)</p><small>Posição de referência obtida por CEP do próprio bairro. Contatos com coordenada exata continuam aparecendo também como pino individual.</small></div>`,
+              `<div class="vf-stable-district-popup"><strong>${escapeHtml(bubble.district)}</strong><b>Total do bairro</b><p>${NUMBER.format(Number(bubble.voters || 0))} eleitor(es) · ${NUMBER.format(Number(bubble.leaders || 0))} liderança(s)</p><small>Posição territorial aproximada do bairro. Contatos com coordenada exata continuam aparecendo também como pino individual.</small></div>`,
               { maxWidth: 290 },
             );
             marker.addTo(layer);
@@ -135,10 +132,13 @@ export default function MapTerritoryEnhancer() {
           const message = document.querySelector<HTMLElement>(
             ".real-map-toolbar strong",
           );
-          if (message && map._vfStableDistrictBubbleCount > 0) {
-            message.textContent = `${map._vfStableDistrictBubbleCount} bairro(s) com bolhas no mapa`;
+          if (message) {
+            message.textContent = map._vfStableDistrictBubbleCount > 0
+              ? `${map._vfStableDistrictBubbleCount} bairro(s) com bolhas no mapa`
+              : "Mapa ativo · nenhum bairro territorial foi desenhado";
           }
-        } catch {
+        } catch (error) {
+          console.error("Failed to load stable district bubbles", error);
           const message = document.querySelector<HTMLElement>(
             ".real-map-toolbar strong",
           );
