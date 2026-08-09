@@ -87,6 +87,20 @@ function installStyles() {
         z-index: auto !important;
         box-sizing: border-box !important;
       }
+      .vf-mobile-district-host {
+        display: block;
+        width: 100%;
+        margin: 0 0 14px;
+      }
+      .vf-mobile-district-host .vf-district-map-control {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
       .page-head .vf-mobile-page-contacts-toggle[aria-expanded="true"] {
         box-shadow: 0 8px 24px rgba(157, 101, 12, .24);
       }
@@ -122,13 +136,23 @@ export default function MobileMapControls() {
       const status = toolbar?.querySelector<HTMLElement>("strong");
       const buttons = toolbar ? Array.from(toolbar.querySelectorAll<HTMLButtonElement>("button")) : [];
       const contactPanel = fullMap?.querySelector<HTMLElement>(".vf-map-contact-control");
+      const districtPanel = fullMap?.querySelector<HTMLElement>(".vf-district-map-control");
       const pageHead =
         fullMap?.previousElementSibling instanceof HTMLElement &&
         fullMap.previousElementSibling.classList.contains("page-head")
           ? fullMap.previousElementSibling
           : document.querySelector<HTMLElement>(".page-head");
       const pageAction = pageHead?.querySelector<HTMLButtonElement>(":scope > button");
-      if (!fullMap || !toolbar || !status || buttons.length < 3 || !contactPanel || !pageHead || !pageAction) {
+      if (
+        !fullMap ||
+        !toolbar ||
+        !status ||
+        buttons.length < 3 ||
+        !contactPanel ||
+        !districtPanel ||
+        !pageHead ||
+        !pageAction
+      ) {
         return false;
       }
 
@@ -153,6 +177,13 @@ export default function MobileMapControls() {
       contactsHost.className = "vf-mobile-contacts-host";
       pageHead.insertAdjacentElement("afterend", contactsHost);
       contactsHost.appendChild(contactPanel);
+
+      const originalDistrictParent = districtPanel.parentNode;
+      const originalDistrictNextSibling = districtPanel.nextSibling;
+      const districtHost = document.createElement("div");
+      districtHost.className = "vf-mobile-district-host";
+      contactsHost.insertAdjacentElement("afterend", districtHost);
+      districtHost.appendChild(districtPanel);
 
       const originalActionText = pageAction.textContent || "Filtros do mapa";
       const originalActionTitle = pageAction.getAttribute("title");
@@ -223,6 +254,15 @@ export default function MobileMapControls() {
         else homeButton.setAttribute("aria-hidden", originalHomeAriaHidden);
         if (originalHomeTabIndex === null) homeButton.removeAttribute("tabindex");
         else homeButton.setAttribute("tabindex", originalHomeTabIndex);
+
+        if (originalDistrictParent) {
+          if (originalDistrictNextSibling && originalDistrictNextSibling.parentNode === originalDistrictParent) {
+            originalDistrictParent.insertBefore(districtPanel, originalDistrictNextSibling);
+          } else {
+            originalDistrictParent.appendChild(districtPanel);
+          }
+        }
+        districtHost.remove();
 
         if (originalPanelParent) {
           if (originalPanelNextSibling && originalPanelNextSibling.parentNode === originalPanelParent) {
