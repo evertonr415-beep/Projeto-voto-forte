@@ -132,35 +132,93 @@ export default function MobileMapControls() {
     installStyles();
     const media = window.matchMedia(MOBILE_QUERY);
     let cleanupCurrent: (() => void) | null = null;
-    let retry: number | null = null;
+    let activeMap: HTMLElement | null = null;
+    let pendingMap: HTMLElement | null = null;
     let fallbackTimer: number | null = null;
+    let lifecycleFrame: number | null = null;
 
     const setFallback = (enabled: boolean) => {
       document.documentElement.classList.toggle("vf-mobile-map-fallback", enabled);
     };
 
-    const attach = () => {
+    const clearFallbackTimer = () => {
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    const clearPending = () => {
+      pendingMap = null;
+      clearFallbackTimer();
+      setFallback(false);
+    };
+
+    const beginPending = (fullMap: HTMLElement) => {
+      if (pendingMap === fullMap) return;
+      pendingMap = fullMap;
+      clearFallbackTimer();
+      setFallback(false);
+      fallbackTimer = window.setTimeout(() => {
+        fallbackTimer = null;
+        if (
+          media.matches &&
+          pendingMap === fullMap &&
+          activeMap !== fullMap &&
+          fullMap.isConnected
+        ) {
+          setFallback(true);
+        }
+      }, 12_000);
+    };
+
+    const teardownCurrent = () => {
       cleanupCurrent?.();
       cleanupCurrent = null;
+      activeMap = null;
+    };
+
+    const attach = () => {
       if (!media.matches) {
-        setFallback(false);
+        teardownCurrent();
+        clearPending();
         return false;
       }
 
       const fullMap = document.querySelector<HTMLElement>(".full-map");
-      const toolbar = fullMap?.querySelector<HTMLElement>(".real-map-toolbar");
+      if (!fullMap) {
+        teardownCurrent();
+        clearPending();
+        return false;
+      }
+
+      if (
+        activeMap === fullMap &&
+        cleanupCurrent &&
+        fullMap.isConnected &&
+        fullMap.classList.contains("vf-mobile-map-ui")
+      ) {
+        clearPending();
+        return true;
+      }
+
+      if (activeMap && activeMap !== fullMap) teardownCurrent();
+      beginPending(fullMap);
+
+      const toolbar = fullMap.querySelector<HTMLElement>(".real-map-toolbar");
       const status = toolbar?.querySelector<HTMLElement>("strong");
-      const buttons = toolbar ? Array.from(toolbar.querySelectorAll<HTMLButtonElement>("button")) : [];
-      const contactPanel = fullMap?.querySelector<HTMLElement>(".vf-map-contact-control");
-      const districtPanel = fullMap?.querySelector<HTMLElement>(".vf-district-map-control");
+      const buttons = toolbar
+        ? Array.from(toolbar.querySelectorAll<HTMLButtonElement>("button"))
+        : [];
+      const contactPanel = fullMap.querySelector<HTMLElement>(".vf-map-contact-control");
+      const districtPanel = fullMap.querySelector<HTMLElement>(".vf-district-map-control");
       const pageHead =
-        fullMap?.previousElementSibling instanceof HTMLElement &&
+        fullMap.previousElementSibling instanceof HTMLElement &&
         fullMap.previousElementSibling.classList.contains("page-head")
           ? fullMap.previousElementSibling
           : document.querySelector<HTMLElement>(".page-head");
       const pageAction = pageHead?.querySelector<HTMLButtonElement>(":scope > button");
       if (
-        !fullMap ||
         !toolbar ||
         !status ||
         buttons.length < 3 ||
@@ -172,11 +230,7 @@ export default function MobileMapControls() {
         return false;
       }
 
-      setFallback(false);
-      if (fallbackTimer !== null) {
-        window.clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
+      clearPending();
       fullMap.classList.add("vf-mobile-map-ui");
       fullMap.classList.remove("vf-mobile-contacts-open");
       const labels = ["Centralizar alfinetes", "Minha localização", "Arapongas"];
@@ -248,7 +302,7 @@ export default function MobileMapControls() {
         status.title = status.dataset.vfFullStatus || current;
       };
       syncStatus();
-      const observer = new MutationObserver(() => {
+      const statusObserver = new MutationObserver(() => {
         if (!applyingStatus) {
           const current = status.textContent || "";
           if (current && current !== shortStatus(status.dataset.vfFullStatus || "")) {
@@ -257,10 +311,15 @@ export default function MobileMapControls() {
           syncStatus();
         }
       });
-      observer.observe(status, { childList: true, characterData: true, subtree: true });
+      statusObserver.observe(status, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
 
+      activeMap = fullMap;
       cleanupCurrent = () => {
-        observer.disconnect();
+        statusObserver.disconnect();
         pageAction.removeEventListener("click", handleContactsToggle, true);
         pageAction.classList.remove("vf-mobile-page-contacts-toggle");
         pageAction.textContent = originalActionText;
@@ -277,7 +336,10 @@ export default function MobileMapControls() {
         else homeButton.setAttribute("tabindex", originalHomeTabIndex);
 
         if (originalDistrictParent) {
-          if (originalDistrictNextSibling && originalDistrictNextSibling.parentNode === originalDistrictParent) {
+          if (
+            originalDistrictNextSibling &&
+            originalDistrictNextSibling.parentNode === originalDistrictParent
+          ) {
             originalDistrictParent.insertBefore(districtPanel, originalDistrictNextSibling);
           } else {
             originalDistrictParent.appendChild(districtPanel);
@@ -286,7 +348,10 @@ export default function MobileMapControls() {
         districtHost.remove();
 
         if (originalPanelParent) {
-          if (originalPanelNextSibling && originalPanelNextSibling.parentNode === originalPanelParent) {
+          if (
+            originalPanelNextSibling &&
+            originalPanelNextSibling.parentNode === originalPanelParent
+          ) {
             originalPanelParent.insertBefore(contactPanel, originalPanelNextSibling);
           } else {
             originalPanelParent.appendChild(contactPanel);
@@ -301,44 +366,31 @@ export default function MobileMapControls() {
           status.textContent = status.dataset.vfFullStatus;
           delete status.dataset.vfFullStatus;
         }
+        if (activeMap === fullMap) activeMap = null;
       };
       return true;
     };
 
-    const startRetry = () => {
-      if (retry !== null) window.clearInterval(retry);
-      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
-      setFallback(false);
-      retry = window.setInterval(() => {
-        if (attach() && retry !== null) {
-          window.clearInterval(retry);
-          retry = null;
-        }
-      }, 150);
-      fallbackTimer = window.setTimeout(() => {
-        fallbackTimer = null;
-        if (retry !== null) {
-          window.clearInterval(retry);
-          retry = null;
-          if (media.matches) setFallback(true);
-        }
-      }, 12_000);
+    const scheduleSync = () => {
+      if (lifecycleFrame !== null) return;
+      lifecycleFrame = window.requestAnimationFrame(() => {
+        lifecycleFrame = null;
+        attach();
+      });
     };
 
-    const handleResize = () => {
-      if (attach()) return;
-      if (media.matches) startRetry();
-      else setFallback(false);
-    };
-    media.addEventListener("change", handleResize);
-    if (!attach()) startRetry();
+    const lifecycleObserver = new MutationObserver(scheduleSync);
+    lifecycleObserver.observe(document.body, { childList: true, subtree: true });
+    media.addEventListener("change", scheduleSync);
+    attach();
 
     return () => {
-      media.removeEventListener("change", handleResize);
-      if (retry !== null) window.clearInterval(retry);
-      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      media.removeEventListener("change", scheduleSync);
+      lifecycleObserver.disconnect();
+      if (lifecycleFrame !== null) window.cancelAnimationFrame(lifecycleFrame);
+      clearFallbackTimer();
       setFallback(false);
-      cleanupCurrent?.();
+      teardownCurrent();
     };
   }, []);
 
