@@ -10,6 +10,14 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    .vf-map-pin.voter {
+      width: 22px !important;
+      height: 22px !important;
+      margin: 4px 0 0 4px;
+    }
+    .vf-map-pin.voter i {
+      font-size: 9px !important;
+    }
     @media (max-width: 760px) {
       .full-map.vf-mobile-map-ui .real-map-toolbar {
         top: 8px !important;
