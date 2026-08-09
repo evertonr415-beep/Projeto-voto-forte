@@ -8,7 +8,6 @@ import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import SafeMapContactTools from "./safe-map-contact-tools";
 import MapGeocodingPanel from "./map-geocoding-panel";
 import MapDistrictFilter from "./map-district-filter";
-import MapHeatmapEnhancer from "./map-heatmap-enhancer";
 import MapDistrictSummary from "./map-district-summary";
 import ExecutiveDashboard from "./executive-dashboard";
 import DataQualityPanel from "./data-quality-panel";
@@ -103,7 +102,6 @@ export default function MapToolsGate() {
           <SafeMapContactTools />
           <MapGeocodingPanel />
           <MapDistrictFilter />
-          <MapHeatmapEnhancer />
           <MapDistrictSummary />
           <ExecutiveDashboard />
           <DataQualityPanel />
