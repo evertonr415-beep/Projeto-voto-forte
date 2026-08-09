@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import { apiFetch } from "./supabase-client";
 
 type Issue = {
@@ -64,7 +64,7 @@ function installStyles() {
 }
 
 export default function TerritorialPendingCenter() {
-  useLayoutEffect(() => {
+  useEffect(() => {
     installStyles();
     let disposed = false;
     let host: HTMLElement | null = null;
