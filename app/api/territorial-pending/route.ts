@@ -250,8 +250,10 @@ export async function PATCH(request: Request) {
         ? { ...record.payload }
         : {};
     payload.district = canonical;
+    const latitude = Number(payload.latitude);
+    const longitude = Number(payload.longitude);
     payload.locationPrecision =
-      Number.isFinite(payload.latitude) && Number.isFinite(payload.longitude)
+      Number.isFinite(latitude) && Number.isFinite(longitude)
         ? "exact"
         : "approximate";
     payload.territorialCorrection = {
