@@ -9,20 +9,15 @@ type DistrictSummaryItem = {
   total?: number | string;
 };
 
-type DistrictBubbleItem = {
-  district?: string;
-  voters?: number | string;
-  leaders?: number | string;
+type DistrictGeocodeItem = {
+  canonical_name?: string;
   latitude?: number | string | null;
   longitude?: number | string | null;
-  resolved?: boolean;
 };
 
 type DistrictMarker = {
   district: string;
   total: number;
-  voters: number;
-  leaders: number;
   latitude: number;
   longitude: number;
 };
@@ -72,14 +67,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const [summaryResult, bubbleResult] = await Promise.all([
+  const [summaryResult, geocodeResult] = await Promise.all([
     account.supabase.rpc("vf_contact_dashboard_summary", {
       p_owner_emails: scopeEmails,
     }),
-    account.supabase.rpc("vf_map_district_bubbles", {
-      p_owner_emails: scopeEmails,
-      p_profile: null,
-    }),
+    account.supabase
+      .from("vf_arapongas_district_geocodes")
+      .select("canonical_name, latitude, longitude")
+      .not("latitude", "is", null)
+      .not("longitude", "is", null),
   ]);
 
   if (summaryResult.error) {
@@ -90,10 +86,10 @@ export async function GET(request: Request) {
     );
   }
 
-  if (bubbleResult.error) {
-    console.error("Failed to load district geocodes", bubbleResult.error);
+  if (geocodeResult.error) {
+    console.error("Failed to load validated district geocodes", geocodeResult.error);
     return Response.json(
-      { error: "Não foi possível carregar as posições dos bairros agora." },
+      { error: "Não foi possível carregar as referências territoriais agora." },
       { status: 500 },
     );
   }
@@ -114,18 +110,18 @@ export async function GET(request: Request) {
   }
 
   const markers: DistrictMarker[] = [];
-  const bubbleRows = Array.isArray(bubbleResult.data) ? bubbleResult.data : [];
+  const geocodeRows = Array.isArray(geocodeResult.data) ? geocodeResult.data : [];
 
-  for (const rawItem of bubbleRows) {
-    const item = (rawItem ?? {}) as unknown as DistrictBubbleItem;
-    const key = normalizeDistrict(item.district);
+  for (const rawItem of geocodeRows) {
+    const item = (rawItem ?? {}) as unknown as DistrictGeocodeItem;
+    const key = normalizeDistrict(item.canonical_name);
     const summaryItem = totals.get(key);
     const latitude = Number(item.latitude);
     const longitude = Number(item.longitude);
 
     if (
       !summaryItem ||
-      !item.resolved ||
+      !key ||
       !Number.isFinite(latitude) ||
       !Number.isFinite(longitude)
     ) {
@@ -135,8 +131,6 @@ export async function GET(request: Request) {
     markers.push({
       district: summaryItem.district,
       total: summaryItem.total,
-      voters: Math.max(0, Number(item.voters || 0)),
-      leaders: Math.max(0, Number(item.leaders || 0)),
       latitude,
       longitude,
     });
@@ -157,6 +151,7 @@ export async function GET(request: Request) {
         (sum, marker) => sum + marker.total,
         0,
       ),
+      availableGeocodes: geocodeRows.length,
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
