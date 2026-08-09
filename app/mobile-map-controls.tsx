@@ -67,49 +67,28 @@ function installStyles() {
         display: none !important;
       }
 
-      .full-map.vf-mobile-map-ui .vf-map-contact-control {
-        display: none !important;
-        position: absolute !important;
-        top: 193px !important;
-        right: 58px !important;
-        width: min(235px, calc(100vw - 92px)) !important;
+      .vf-mobile-contacts-host {
+        display: none;
+        width: 100%;
+        margin: -2px 0 14px;
+      }
+      .vf-mobile-contacts-host.vf-mobile-contacts-open {
+        display: block;
+      }
+      .vf-mobile-contacts-host .vf-map-contact-control {
+        display: block !important;
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        width: 100% !important;
         min-width: 0 !important;
         max-width: none !important;
         margin: 0 !important;
-        z-index: 520 !important;
+        z-index: auto !important;
+        box-sizing: border-box !important;
       }
-      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-map-contact-control {
-        display: block !important;
-      }
-      .full-map.vf-mobile-map-ui .vf-mobile-contacts-toggle {
-        position: absolute;
-        z-index: 530;
-        right: 8px;
-        top: 193px;
-        min-width: 42px;
-        height: 42px;
-        padding: 0 10px;
-        border: 0;
-        border-radius: 12px;
-        background: rgba(255,255,255,.97);
-        color: #173f75;
-        box-shadow: 0 5px 16px rgba(7,26,51,.24);
-        font: 800 11px/1 Arial,sans-serif;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-      }
-      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-mobile-contacts-toggle {
-        background: #173f75;
-        color: #fff;
-      }
-      .full-map.vf-mobile-map-ui .vf-mobile-contacts-toggle .vf-mobile-contacts-label {
-        display: none;
-      }
-      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-mobile-contacts-toggle .vf-mobile-contacts-label {
-        display: inline;
+      .page-head .vf-mobile-page-contacts-toggle[aria-expanded="true"] {
+        box-shadow: 0 8px 24px rgba(157, 101, 12, .24);
       }
       .full-map.vf-mobile-map-ui .leaflet-control-zoom {
         margin-top: 58px !important;
@@ -143,7 +122,15 @@ export default function MobileMapControls() {
       const status = toolbar?.querySelector<HTMLElement>("strong");
       const buttons = toolbar ? Array.from(toolbar.querySelectorAll<HTMLButtonElement>("button")) : [];
       const contactPanel = fullMap?.querySelector<HTMLElement>(".vf-map-contact-control");
-      if (!fullMap || !toolbar || !status || buttons.length < 3 || !contactPanel) return false;
+      const pageHead =
+        fullMap?.previousElementSibling instanceof HTMLElement &&
+        fullMap.previousElementSibling.classList.contains("page-head")
+          ? fullMap.previousElementSibling
+          : document.querySelector<HTMLElement>(".page-head");
+      const pageAction = pageHead?.querySelector<HTMLButtonElement>(":scope > button");
+      if (!fullMap || !toolbar || !status || buttons.length < 3 || !contactPanel || !pageHead || !pageAction) {
+        return false;
+      }
 
       fullMap.classList.add("vf-mobile-map-ui");
       fullMap.classList.remove("vf-mobile-contacts-open");
@@ -155,20 +142,38 @@ export default function MobileMapControls() {
         button.setAttribute("aria-label", labels[index]);
       });
 
-      const contactsToggle = document.createElement("button");
-      contactsToggle.type = "button";
-      contactsToggle.className = "vf-mobile-contacts-toggle";
-      contactsToggle.innerHTML = '<span aria-hidden="true">👥</span><span class="vf-mobile-contacts-label">Contatos</span>';
-      contactsToggle.title = "Abrir contatos no mapa";
-      contactsToggle.setAttribute("aria-label", "Abrir contatos no mapa");
-      contactsToggle.setAttribute("aria-expanded", "false");
-      contactsToggle.addEventListener("click", () => {
-        const open = fullMap.classList.toggle("vf-mobile-contacts-open");
-        contactsToggle.title = open ? "Fechar contatos no mapa" : "Abrir contatos no mapa";
-        contactsToggle.setAttribute("aria-label", contactsToggle.title);
-        contactsToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      });
-      fullMap.appendChild(contactsToggle);
+      const originalPanelParent = contactPanel.parentNode;
+      const originalPanelNextSibling = contactPanel.nextSibling;
+      const contactsHost = document.createElement("div");
+      contactsHost.className = "vf-mobile-contacts-host";
+      pageHead.insertAdjacentElement("afterend", contactsHost);
+      contactsHost.appendChild(contactPanel);
+
+      const originalActionText = pageAction.textContent || "Filtros do mapa";
+      const originalActionTitle = pageAction.getAttribute("title");
+      const originalActionAriaLabel = pageAction.getAttribute("aria-label");
+      const originalActionAriaExpanded = pageAction.getAttribute("aria-expanded");
+      pageAction.classList.add("vf-mobile-page-contacts-toggle");
+      pageAction.textContent = "👥 Contatos";
+      pageAction.title = "Abrir contatos no mapa";
+      pageAction.setAttribute("aria-label", "Abrir contatos no mapa");
+      pageAction.setAttribute("aria-expanded", "false");
+
+      const setContactsOpen = (open: boolean) => {
+        contactsHost.classList.toggle("vf-mobile-contacts-open", open);
+        pageAction.textContent = open ? "× Contatos" : "👥 Contatos";
+        pageAction.title = open ? "Fechar contatos no mapa" : "Abrir contatos no mapa";
+        pageAction.setAttribute("aria-label", pageAction.title);
+        pageAction.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+
+      const handleContactsToggle = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        setContactsOpen(!contactsHost.classList.contains("vf-mobile-contacts-open"));
+      };
+      pageAction.addEventListener("click", handleContactsToggle, true);
 
       let applyingStatus = false;
       const syncStatus = () => {
@@ -199,7 +204,24 @@ export default function MobileMapControls() {
 
       cleanupCurrent = () => {
         observer.disconnect();
-        contactsToggle.remove();
+        pageAction.removeEventListener("click", handleContactsToggle, true);
+        pageAction.classList.remove("vf-mobile-page-contacts-toggle");
+        pageAction.textContent = originalActionText;
+        if (originalActionTitle === null) pageAction.removeAttribute("title");
+        else pageAction.setAttribute("title", originalActionTitle);
+        if (originalActionAriaLabel === null) pageAction.removeAttribute("aria-label");
+        else pageAction.setAttribute("aria-label", originalActionAriaLabel);
+        if (originalActionAriaExpanded === null) pageAction.removeAttribute("aria-expanded");
+        else pageAction.setAttribute("aria-expanded", originalActionAriaExpanded);
+
+        if (originalPanelParent) {
+          if (originalPanelNextSibling && originalPanelNextSibling.parentNode === originalPanelParent) {
+            originalPanelParent.insertBefore(contactPanel, originalPanelNextSibling);
+          } else {
+            originalPanelParent.appendChild(contactPanel);
+          }
+        }
+        contactsHost.remove();
         fullMap.classList.remove("vf-mobile-map-ui", "vf-mobile-contacts-open");
         buttons.slice(0, 3).forEach((button) => {
           delete button.dataset.vfIcon;
