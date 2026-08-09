@@ -61,7 +61,7 @@ function installStyles() {
       }
       .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1) { top: 44px !important; }
       .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) { top: 91px !important; }
-      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(3) { top: 138px !important; }
+      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(3) { display: none !important; }
 
       .full-map.vf-mobile-map-ui .map-legend {
         display: none !important;
@@ -141,6 +141,11 @@ export default function MobileMapControls() {
         button.title = labels[index];
         button.setAttribute("aria-label", labels[index]);
       });
+      const homeButton = buttons[2];
+      const originalHomeAriaHidden = homeButton.getAttribute("aria-hidden");
+      const originalHomeTabIndex = homeButton.getAttribute("tabindex");
+      homeButton.setAttribute("aria-hidden", "true");
+      homeButton.tabIndex = -1;
 
       const originalPanelParent = contactPanel.parentNode;
       const originalPanelNextSibling = contactPanel.nextSibling;
@@ -213,6 +218,11 @@ export default function MobileMapControls() {
         else pageAction.setAttribute("aria-label", originalActionAriaLabel);
         if (originalActionAriaExpanded === null) pageAction.removeAttribute("aria-expanded");
         else pageAction.setAttribute("aria-expanded", originalActionAriaExpanded);
+
+        if (originalHomeAriaHidden === null) homeButton.removeAttribute("aria-hidden");
+        else homeButton.setAttribute("aria-hidden", originalHomeAriaHidden);
+        if (originalHomeTabIndex === null) homeButton.removeAttribute("tabindex");
+        else homeButton.setAttribute("tabindex", originalHomeTabIndex);
 
         if (originalPanelParent) {
           if (originalPanelNextSibling && originalPanelNextSibling.parentNode === originalPanelParent) {
