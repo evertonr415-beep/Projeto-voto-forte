@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MapContactLayer from "./map-contact-layer";
+import MapUnifiedLayer from "./map-unified-layer";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import MobileAnalyticsControls from "./mobile-analytics-controls";
 import LegacyContactGeocoder from "./legacy-contact-geocoder";
 import SafeMapContactTools from "./safe-map-contact-tools";
-import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MapGeocodingPanel from "./map-geocoding-panel";
 import MapDistrictFilter from "./map-district-filter";
 import MapHeatmapEnhancer from "./map-heatmap-enhancer";
@@ -95,8 +94,7 @@ export default function MapToolsGate() {
 
   return (
     <>
-      <MapContactLayer />
-      <MapTerritoryEnhancer />
+      <MapUnifiedLayer />
       {enabled && (
         <>
           <MobileMapLayersToggle />
