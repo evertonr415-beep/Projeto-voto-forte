@@ -18,6 +18,15 @@ type DistrictBubbleItem = {
   resolved?: boolean;
 };
 
+type DistrictMarker = {
+  district: string;
+  total: number;
+  voters: number;
+  leaders: number;
+  latitude: number;
+  longitude: number;
+};
+
 function normalizeDistrict(value: unknown) {
   return String(value ?? "")
     .normalize("NFD")
@@ -89,7 +98,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const summary = (summaryResult.data ?? {}) as { districts?: DistrictSummaryItem[] };
+  const summary = (summaryResult.data ?? {}) as {
+    districts?: DistrictSummaryItem[];
+  };
   const totals = new Map<string, { district: string; total: number }>();
 
   for (const item of Array.isArray(summary.districts) ? summary.districts : []) {
@@ -102,40 +113,40 @@ export async function GET(request: Request) {
     });
   }
 
-  const markers = (Array.isArray(bubbleResult.data) ? bubbleResult.data : [])
-    .map((item: DistrictBubbleItem) => {
-      const key = normalizeDistrict(item.district);
-      const summaryItem = totals.get(key);
-      const latitude = Number(item.latitude);
-      const longitude = Number(item.longitude);
-      if (
-        !summaryItem ||
-        !item.resolved ||
-        !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude)
-      ) {
-        return null;
-      }
+  const markers: DistrictMarker[] = [];
+  const bubbleRows = Array.isArray(bubbleResult.data) ? bubbleResult.data : [];
 
-      return {
-        district: summaryItem.district,
-        total: summaryItem.total,
-        voters: Math.max(0, Number(item.voters || 0)),
-        leaders: Math.max(0, Number(item.leaders || 0)),
-        latitude,
-        longitude,
-      };
-    })
-    .filter(Boolean)
-    .sort(
-      (left, right) =>
-        Number((right as { total: number }).total) -
-          Number((left as { total: number }).total) ||
-        String((left as { district: string }).district).localeCompare(
-          String((right as { district: string }).district),
-          "pt-BR",
-        ),
-    );
+  for (const rawItem of bubbleRows) {
+    const item = (rawItem ?? {}) as unknown as DistrictBubbleItem;
+    const key = normalizeDistrict(item.district);
+    const summaryItem = totals.get(key);
+    const latitude = Number(item.latitude);
+    const longitude = Number(item.longitude);
+
+    if (
+      !summaryItem ||
+      !item.resolved ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+      continue;
+    }
+
+    markers.push({
+      district: summaryItem.district,
+      total: summaryItem.total,
+      voters: Math.max(0, Number(item.voters || 0)),
+      leaders: Math.max(0, Number(item.leaders || 0)),
+      latitude,
+      longitude,
+    });
+  }
+
+  markers.sort(
+    (left, right) =>
+      right.total - left.total ||
+      left.district.localeCompare(right.district, "pt-BR"),
+  );
 
   return Response.json(
     {
@@ -143,7 +154,7 @@ export async function GET(request: Request) {
       markers,
       resolvedDistricts: markers.length,
       representedContacts: markers.reduce(
-        (sum, marker) => sum + Number((marker as { total: number }).total || 0),
+        (sum, marker) => sum + marker.total,
         0,
       ),
     },
