@@ -27,6 +27,23 @@ type ContactRecord = {
   payload: Record<string, unknown> | null;
 };
 
+type CorrectionBody = {
+  recordId?: unknown;
+  district?: unknown;
+  applyToMatching?: unknown;
+  owner?: unknown;
+};
+
+async function readJsonBody(request: Request): Promise<CorrectionBody | null> {
+  try {
+    const body = await request.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+    return body as CorrectionBody;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveScope(account: Account, requestedOwner?: string | null) {
   const users = await getVisibleUsers(account);
   const emails = users
@@ -143,21 +160,26 @@ export async function PATCH(request: Request) {
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  const body = (await request.json()) as {
-    recordId?: number;
-    district?: string;
-    applyToMatching?: boolean;
-    owner?: string;
-  };
+  const body = await readJsonBody(request);
+  if (!body)
+    return Response.json({ error: "Dados da correção inválidos" }, { status: 400 });
+
   const recordId = Number(body.recordId);
   if (!Number.isInteger(recordId) || recordId <= 0)
     return Response.json({ error: "Contato inválido" }, { status: 400 });
+  if (typeof body.district !== "string" || !body.district.trim())
+    return Response.json({ error: "Selecione o bairro correto" }, { status: 400 });
+  if (body.owner !== undefined && typeof body.owner !== "string")
+    return Response.json({ error: "Ambiente inválido" }, { status: 400 });
+  if (body.applyToMatching !== undefined && typeof body.applyToMatching !== "boolean")
+    return Response.json({ error: "Opção de correção em grupo inválida" }, { status: 400 });
 
-  const resolved = await resolveScope(account, body.owner);
+  const owner = typeof body.owner === "string" ? body.owner : undefined;
+  const resolved = await resolveScope(account, owner);
   if ("error" in resolved) return resolved.error;
   const { scope, emails } = resolved;
 
-  const canonical = await canonicalDistrict(account, body.district || "");
+  const canonical = await canonicalDistrict(account, body.district);
   if (!canonical)
     return Response.json(
       { error: "Selecione um bairro reconhecido de Arapongas" },
@@ -181,8 +203,9 @@ export async function PATCH(request: Request) {
       { status: 404 },
     );
 
+  const applyToMatching = body.applyToMatching === true && Boolean(issue.district_key);
   let targetIds = [recordId];
-  if (body.applyToMatching && issue.district_key) {
+  if (applyToMatching && issue.district_key) {
     let matchingQuery = account.supabase
       .from("vf_contact_location_issues")
       .select("record_id")
@@ -215,40 +238,63 @@ export async function PATCH(request: Request) {
   const safeRecords = ((records ?? []) as ContactRecord[]).filter((record) =>
     allowedOwners.has(String(record.owner_email).toLowerCase()),
   );
+  if (!safeRecords.length)
+    return Response.json({ error: "Nenhum contato autorizado para corrigir" }, { status: 404 });
 
   let updated = 0;
+  let failed = 0;
+  const correctedAt = new Date().toISOString();
   for (const record of safeRecords) {
     const payload =
       record.payload && typeof record.payload === "object"
         ? { ...record.payload }
         : {};
     payload.district = canonical;
-    payload.locationPrecision = payload.latitude && payload.longitude ? "exact" : "approximate";
+    payload.locationPrecision =
+      Number.isFinite(payload.latitude) && Number.isFinite(payload.longitude)
+        ? "exact"
+        : "approximate";
     payload.territorialCorrection = {
       source: "manual_district_assignment",
       originalDistrict: issue.district_original,
-      correctedAt: new Date().toISOString(),
+      correctedAt,
       correctedBy: account.email,
     };
 
     const { error } = await account.supabase
       .from("vf_owned_records")
-      .update({ payload, updated_at: new Date().toISOString() })
-      .eq("id", record.id);
-    if (!error) updated += 1;
+      .update({ payload, updated_at: correctedAt })
+      .eq("id", record.id)
+      .eq("owner_email", record.owner_email);
+    if (error) failed += 1;
+    else updated += 1;
   }
 
-  await account.supabase.from("vf_audit_logs").insert({
+  const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
     actor_id: account.auth_user_id,
     actor_email: account.email,
-    action: "Pendência territorial corrigida",
-    detail: `${updated} contato(s) · ${issue.district_original || "sem bairro"} → ${canonical}`,
+    action: failed ? "Pendência territorial corrigida parcialmente" : "Pendência territorial corrigida",
+    detail: `${updated} contato(s) corrigido(s)${failed ? ` · ${failed} falha(s)` : ""} · ${issue.district_original || "sem bairro"} → ${canonical}`,
   });
+
+  if (failed || auditError) {
+    if (auditError) console.error("Failed to audit territorial correction", auditError);
+    return Response.json(
+      {
+        error: failed
+          ? `A correção foi parcial: ${updated} contato(s) atualizado(s) e ${failed} falha(s). Recarregue antes de tentar novamente.`
+          : "A correção foi aplicada, mas não foi possível registrar a auditoria.",
+        updated,
+        failed,
+      },
+      { status: 409 },
+    );
+  }
 
   return Response.json({
     ok: true,
     updated,
     district: canonical,
-    appliedToMatching: Boolean(body.applyToMatching),
+    appliedToMatching: applyToMatching,
   });
 }
