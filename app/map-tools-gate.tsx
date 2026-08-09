@@ -1,7 +1,7 @@
 "use client";
 
-import MapDirectOverlay from "./map-direct-overlay";
+import MapContactLayer from "./map-contact-layer";
 
 export default function MapToolsGate() {
-  return <MapDirectOverlay />;
+  return <MapContactLayer />;
 }
