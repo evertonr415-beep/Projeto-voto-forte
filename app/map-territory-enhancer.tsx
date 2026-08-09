@@ -15,17 +15,6 @@ type DistrictCenter = {
   longitude?: number | string | null;
 };
 
-type OverpassPoint = { lat: number; lon: number };
-type OverpassElement = {
-  type?: string;
-  lat?: number;
-  lon?: number;
-  center?: { lat?: number; lon?: number };
-  tags?: { name?: string };
-  geometry?: OverpassPoint[];
-  members?: Array<{ role?: string; geometry?: OverpassPoint[] }>;
-};
-
 type DistrictItem = {
   district: string;
   total: number;
@@ -34,9 +23,8 @@ type DistrictItem = {
 
 type CenterPoint = { latitude: number; longitude: number };
 
-const STYLE_ID = "vf-district-choropleth-style";
+const STYLE_ID = "vf-district-zones-style";
 const NUMBER = new Intl.NumberFormat("pt-BR");
-let overpassPromise: Promise<OverpassElement[]> | null = null;
 
 function escapeHtml(value: unknown) {
   return String(value ?? "")
@@ -75,35 +63,6 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-async function loadDistrictBoundaries() {
-  if (overpassPromise) return overpassPromise;
-  overpassPromise = (async () => {
-    const query =
-      '[out:json][timeout:25];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a););out tags center geom;';
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 9000);
-    try {
-      const response = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error("Falha ao carregar limites territoriais");
-      const data = (await response.json()) as { elements?: OverpassElement[] };
-      return Array.isArray(data.elements) ? data.elements : [];
-    } catch (error) {
-      overpassPromise = null;
-      throw error;
-    } finally {
-      window.clearTimeout(timeout);
-    }
-  })();
-  return overpassPromise;
-}
-
 export default function MapTerritoryEnhancer() {
   useLayoutEffect(() => {
     installStyles();
@@ -114,16 +73,24 @@ export default function MapTerritoryEnhancer() {
 
     const setupMap = (map: any) => {
       const container = map?.getContainer?.() as HTMLElement | undefined;
-      if (cancelled || !container?.closest(".full-map") || map._vfDistrictChoropleth)
+      if (cancelled || !container?.closest(".full-map") || map._vfDistrictZones)
         return false;
 
       const L = (window as any).L;
       if (!L) return false;
-      map._vfDistrictChoropleth = true;
+      map._vfDistrictZones = true;
 
-      const areaLayer = L.layerGroup().addTo(map);
-      const districtBounds = new Map<string, any>();
+      if (!map.getPane?.("vfDistrictZonesPane")) {
+        const pane = map.createPane?.("vfDistrictZonesPane");
+        if (pane) {
+          pane.style.zIndex = "330";
+          pane.style.pointerEvents = "auto";
+        }
+      }
+
+      const zoneLayer = L.layerGroup().addTo(map);
       const districtCenters = new Map<string, CenterPoint>();
+      const districtZones = new Map<string, any>();
       let requestId = 0;
       let lastScope = currentScope();
       let rankingItems: DistrictItem[] = [];
@@ -145,22 +112,29 @@ export default function MapTerritoryEnhancer() {
       control.addTo(map);
 
       const focusDistrict = (item: DistrictItem) => {
-        const bounds = districtBounds.get(item.key);
+        const zone = districtZones.get(item.key);
+        const bounds = zone?.getBounds?.();
         if (bounds?.isValid?.()) {
-          map.fitBounds(bounds, { padding: [42, 42], maxZoom: 16 });
+          map.fitBounds(bounds, { padding: [42, 42], maxZoom: 15 });
+          window.setTimeout(() => zone.openPopup?.(), 220);
           return;
         }
         const center = districtCenters.get(item.key);
-        if (center) map.setView([center.latitude, center.longitude], 15, { animate: true });
+        if (center)
+          map.setView([center.latitude, center.longitude], 15, { animate: true });
       };
 
-      const renderRanking = (areaKeys = new Set<string>()) => {
+      const renderRanking = (mappedKeys = new Set<string>()) => {
         if (!controlNode) return;
         const header = controlNode.querySelector<HTMLElement>("header small");
         const list = controlNode.querySelector<HTMLElement>(".vf-district-map-list");
         if (!list) return;
+        const represented = rankingItems.reduce(
+          (sum, item) => sum + (mappedKeys.has(item.key) ? item.total : 0),
+          0,
+        );
         if (header)
-          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos distribuídos em ${NUMBER.format(rankingItems.length)} bairros`;
+          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · ${NUMBER.format(represented)} em zonas azuis`;
         list.innerHTML = "";
         if (!rankingItems.length) {
           list.innerHTML = '<div class="vf-district-map-empty">Nenhum bairro com contatos neste ambiente.</div>';
@@ -170,10 +144,10 @@ export default function MapTerritoryEnhancer() {
           const button = document.createElement("button");
           button.type = "button";
           button.className = "vf-district-map-row";
-          const canFocus = areaKeys.has(item.key) || districtCenters.has(item.key);
-          button.disabled = !canFocus;
-          button.innerHTML = `<span>${escapeHtml(item.district)}<small>${areaKeys.has(item.key) ? "área territorial" : districtCenters.has(item.key) ? "referência territorial" : "sem contorno disponível"}</small></span><b>${NUMBER.format(item.total)}</b>`;
-          if (canFocus) button.addEventListener("click", () => focusDistrict(item));
+          const hasCenter = districtCenters.has(item.key);
+          button.disabled = !hasCenter;
+          button.innerHTML = `<span>${escapeHtml(item.district)}<small>${mappedKeys.has(item.key) ? "zona azul aproximada" : hasCenter ? "referência territorial" : "sem referência territorial"}</small></span><b>${NUMBER.format(item.total)}</b>`;
+          if (hasCenter) button.addEventListener("click", () => focusDistrict(item));
           list.appendChild(button);
         }
       };
@@ -235,82 +209,69 @@ export default function MapTerritoryEnhancer() {
             }
           }
 
-          renderRanking();
-
-          let boundaries: OverpassElement[] = [];
-          try {
-            boundaries = await loadDistrictBoundaries();
-          } catch {
-            boundaries = [];
-          }
-          if (cancelled || id !== requestId || !map._container) return;
-
-          areaLayer.clearLayers();
-          districtBounds.clear();
-          const totals = new Map(rankingItems.map((item) => [item.key, item]));
+          zoneLayer.clearLayers();
+          districtZones.clear();
           const maxTotal = Math.max(1, ...rankingItems.map((item) => item.total));
-          const areaKeys = new Set<string>();
+          const mappedKeys = new Set<string>();
+          const pane = map.getPane?.("vfDistrictZonesPane")
+            ? "vfDistrictZonesPane"
+            : undefined;
 
-          for (const element of boundaries) {
-            const key = normalize(element.tags?.name);
-            const item = totals.get(key);
-            if (!item) continue;
-            const geometries =
-              element.type === "relation"
-                ? (element.members || [])
-                    .filter((member) => !member.role || member.role === "outer")
-                    .map((member) => member.geometry)
-                : [element.geometry];
+          for (const item of rankingItems) {
+            const center = districtCenters.get(item.key);
+            if (!center) continue;
+            const ratio = Math.sqrt(item.total / maxTotal);
+            const radius = Math.round(260 + ratio * 540);
+            const fillOpacity = 0.12 + ratio * 0.44;
+            const baseWeight = 1.3 + ratio * 1.4;
+            const options: Record<string, unknown> = {
+              radius,
+              color: "#285b8e",
+              weight: baseWeight,
+              opacity: 0.72,
+              fillColor: "#356ea8",
+              fillOpacity,
+            };
+            if (pane) options.pane = pane;
 
-            for (const geometry of geometries) {
-              if (!geometry || geometry.length < 4) continue;
-              const first = geometry[0];
-              const last = geometry[geometry.length - 1];
-              if (!first || !last || first.lat !== last.lat || first.lon !== last.lon)
-                continue;
-              const points = geometry.map((point) => [point.lat, point.lon]);
-              const ratio = Math.sqrt(item.total / maxTotal);
-              const polygon = L.polygon(points, {
-                color: "#285b8e",
-                weight: 2,
-                opacity: 0.82,
-                fillColor: "#356ea8",
-                fillOpacity: 0.14 + ratio * 0.5,
-              });
-              polygon.bindTooltip(
-                `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
-                { sticky: true, opacity: 0.96 },
-              );
-              polygon.bindPopup(
-                `<div class="vf-district-area-popup"><strong>${escapeHtml(item.district)}</strong><b>Total do bairro</b><p>${NUMBER.format(item.total)} contato(s) cadastrados</p><small>Representação por área do bairro. Os pinos individuais continuam indicando somente contatos com coordenada exata.</small></div>`,
-                { maxWidth: 300, closeButton: true },
-              );
-              polygon.on("mouseover", () => polygon.setStyle({ weight: 3, fillOpacity: Math.min(0.78, 0.24 + ratio * 0.54) }));
-              polygon.on("mouseout", () => polygon.setStyle({ weight: 2, fillOpacity: 0.14 + ratio * 0.5 }));
-              polygon.addTo(areaLayer);
-              areaKeys.add(key);
-
-              const bounds = polygon.getBounds?.();
-              if (bounds?.isValid?.()) {
-                const current = districtBounds.get(key);
-                if (current?.extend) current.extend(bounds);
-                else districtBounds.set(key, L.latLngBounds(bounds));
-              }
-            }
+            const zone = L.circle(
+              [center.latitude, center.longitude],
+              options,
+            );
+            zone.bindTooltip(
+              `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
+              { sticky: true, opacity: 0.96 },
+            );
+            zone.bindPopup(
+              `<div class="vf-district-area-popup"><strong>${escapeHtml(item.district)}</strong><b>Zona territorial aproximada</b><p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p><small>O círculo representa concentração territorial a partir de uma referência do bairro e não o limite geográfico oficial. Os pinos individuais continuam mostrando somente contatos com coordenada exata.</small></div>`,
+              { maxWidth: 310, closeButton: true },
+            );
+            zone.on("mouseover", () =>
+              zone.setStyle({
+                weight: baseWeight + 1.2,
+                fillOpacity: Math.min(0.72, fillOpacity + 0.12),
+              }),
+            );
+            zone.on("mouseout", () =>
+              zone.setStyle({ weight: baseWeight, fillOpacity }),
+            );
+            zone.addTo(zoneLayer);
+            districtZones.set(item.key, zone);
+            mappedKeys.add(item.key);
           }
 
-          renderRanking(areaKeys);
-          map._vfDistrictAreaCount = areaKeys.size;
+          renderRanking(mappedKeys);
+          map._vfDistrictZoneCount = mappedKeys.size;
           const message = document.querySelector<HTMLElement>(
             ".real-map-toolbar strong",
           );
           if (message) {
-            message.textContent = areaKeys.size
-              ? `${areaKeys.size} bairro(s) destacados por área · ranking territorial ativo`
-              : "Ranking territorial ativo · contornos dos bairros indisponíveis agora";
+            message.textContent = mappedKeys.size
+              ? `${mappedKeys.size} bairro(s) representados por zonas azuis aproximadas · ranking ativo`
+              : "Ranking territorial ativo · sem referências territoriais para desenhar zonas";
           }
         } catch (error) {
-          console.error("Failed to render district choropleth", error);
+          console.error("Failed to render district zones", error);
           if (controlNode) {
             const header = controlNode.querySelector<HTMLElement>("header small");
             const list = controlNode.querySelector<HTMLElement>(".vf-district-map-list");
@@ -339,12 +300,12 @@ export default function MapTerritoryEnhancer() {
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
         window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
         try {
-          map.removeLayer(areaLayer);
+          map.removeLayer(zoneLayer);
           map.removeControl(control);
         } catch {
           // O mapa pode ter sido destruído durante a navegação.
         }
-        if (map._vfDistrictChoropleth) delete map._vfDistrictChoropleth;
+        if (map._vfDistrictZones) delete map._vfDistrictZones;
       };
       map.on?.("unload", cleanupActiveMap);
       return true;
