@@ -23,6 +23,12 @@ type DistrictItem = {
 
 type CenterPoint = { latitude: number; longitude: number };
 
+type ZoneVisual = {
+  zone: any;
+  item: DistrictItem;
+  center: CenterPoint;
+};
+
 const STYLE_ID = "vf-district-zones-style";
 const NUMBER = new Intl.NumberFormat("pt-BR");
 
@@ -48,17 +54,24 @@ function currentScope() {
   return document.querySelector<HTMLSelectElement>(".scope-picker select")?.value || "";
 }
 
+function visibilityForZoom(zoom: number) {
+  if (zoom <= 12) return { limit: 12, minDistance: 52, detail: "visão geral" };
+  if (zoom === 13) return { limit: 26, minDistance: 38, detail: "principais bairros" };
+  if (zoom === 14) return { limit: 60, minDistance: 24, detail: "mais bairros" };
+  return { limit: Number.POSITIVE_INFINITY, minDistance: 0, detail: "todos os bairros" };
+}
+
 function installStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.16);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.18);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c}
+    .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.13);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.16);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c;backdrop-filter:blur(6px)}
     .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}
-    .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#eaf2fb}.vf-district-map-row:disabled{cursor:default;opacity:.72}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
-    .vf-district-map-scale{display:flex;align-items:center;gap:5px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale i{display:block;width:18px;height:8px;border-radius:99px;background:#356ea8}.vf-district-map-scale i:nth-of-type(1){opacity:.2}.vf-district-map-scale i:nth-of-type(2){opacity:.45}.vf-district-map-scale i:nth-of-type(3){opacity:.75}
+    .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
+    .vf-district-map-scale{display:flex;align-items:center;gap:5px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale i{display:block;width:18px;height:8px;border-radius:99px;background:#356ea8}.vf-district-map-scale i:nth-of-type(1){opacity:.14}.vf-district-map-scale i:nth-of-type(2){opacity:.24}.vf-district-map-scale i:nth-of-type(3){opacity:.36}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
     .vf-district-area-popup{min-width:195px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}
-    @media(max-width:760px){.vf-district-map-control{width:210px;max-height:240px}.vf-district-map-list{max-height:175px}.vf-district-map-row{padding:6px}.vf-district-map-control header{padding:8px}}
+    @media(max-width:760px){.vf-district-map-control{width:210px;max-height:240px}.vf-district-map-list{max-height:175px}.vf-district-map-row{padding:6px}.vf-district-map-control header{padding:8px}.vf-district-map-scale em{display:none}}
   `;
   document.head.appendChild(style);
 }
@@ -83,17 +96,19 @@ export default function MapTerritoryEnhancer() {
       if (!map.getPane?.("vfDistrictZonesPane")) {
         const pane = map.createPane?.("vfDistrictZonesPane");
         if (pane) {
-          pane.style.zIndex = "330";
+          pane.style.zIndex = "320";
           pane.style.pointerEvents = "auto";
         }
       }
 
       const zoneLayer = L.layerGroup().addTo(map);
       const districtCenters = new Map<string, CenterPoint>();
-      const districtZones = new Map<string, any>();
+      const districtZones = new Map<string, ZoneVisual>();
       let requestId = 0;
       let lastScope = currentScope();
       let rankingItems: DistrictItem[] = [];
+      let mappedKeys = new Set<string>();
+      let visibleKeys = new Set<string>();
 
       const control = L.control({ position: "bottomleft" });
       let controlNode: HTMLElement | null = null;
@@ -102,7 +117,7 @@ export default function MapTerritoryEnhancer() {
         node.innerHTML = `
           <header><strong>Contatos por bairro</strong><small>Carregando distribuição territorial…</small></header>
           <div class="vf-district-map-list"><div class="vf-district-map-empty">Carregando bairros…</div></div>
-          <div class="vf-district-map-scale"><span>menos</span><i></i><i></i><i></i><span>mais contatos</span></div>
+          <div class="vf-district-map-scale"><span>menos</span><i></i><i></i><i></i><span>mais</span><em>aproxime para detalhar</em></div>
         `;
         L.DomEvent.disableClickPropagation(node);
         L.DomEvent.disableScrollPropagation(node);
@@ -111,20 +126,7 @@ export default function MapTerritoryEnhancer() {
       };
       control.addTo(map);
 
-      const focusDistrict = (item: DistrictItem) => {
-        const zone = districtZones.get(item.key);
-        const bounds = zone?.getBounds?.();
-        if (bounds?.isValid?.()) {
-          map.fitBounds(bounds, { padding: [42, 42], maxZoom: 15 });
-          window.setTimeout(() => zone.openPopup?.(), 220);
-          return;
-        }
-        const center = districtCenters.get(item.key);
-        if (center)
-          map.setView([center.latitude, center.longitude], 15, { animate: true });
-      };
-
-      const renderRanking = (mappedKeys = new Set<string>()) => {
+      const renderRanking = () => {
         if (!controlNode) return;
         const header = controlNode.querySelector<HTMLElement>("header small");
         const list = controlNode.querySelector<HTMLElement>(".vf-district-map-list");
@@ -134,7 +136,7 @@ export default function MapTerritoryEnhancer() {
           0,
         );
         if (header)
-          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · ${NUMBER.format(represented)} em zonas azuis`;
+          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · ${NUMBER.format(represented)} com referência`;
         list.innerHTML = "";
         if (!rankingItems.length) {
           list.innerHTML = '<div class="vf-district-map-empty">Nenhum bairro com contatos neste ambiente.</div>';
@@ -146,10 +148,75 @@ export default function MapTerritoryEnhancer() {
           button.className = "vf-district-map-row";
           const hasCenter = districtCenters.has(item.key);
           button.disabled = !hasCenter;
-          button.innerHTML = `<span>${escapeHtml(item.district)}<small>${mappedKeys.has(item.key) ? "zona azul aproximada" : hasCenter ? "referência territorial" : "sem referência territorial"}</small></span><b>${NUMBER.format(item.total)}</b>`;
-          if (hasCenter) button.addEventListener("click", () => focusDistrict(item));
+          const status = visibleKeys.has(item.key)
+            ? "zona azul visível"
+            : mappedKeys.has(item.key)
+              ? "zona azul disponível"
+              : "sem referência territorial";
+          button.innerHTML = `<span>${escapeHtml(item.district)}<small>${status}</small></span><b>${NUMBER.format(item.total)}</b>`;
+          if (hasCenter) {
+            button.addEventListener("click", () => {
+              const center = districtCenters.get(item.key);
+              if (!center) return;
+              map.setView([center.latitude, center.longitude], 15, { animate: true });
+              window.setTimeout(() => {
+                const visual = districtZones.get(item.key);
+                visual?.zone?.openPopup?.();
+              }, 320);
+            });
+          }
           list.appendChild(button);
         }
+      };
+
+      const updateVisibleZones = () => {
+        if (!map?._container) return;
+        const zoom = Math.round(Number(map.getZoom?.() ?? 13));
+        const config = visibilityForZoom(zoom);
+        const selected: Array<{ key: string; x: number; y: number }> = [];
+        const nextVisible = new Set<string>();
+
+        for (const item of rankingItems) {
+          if (nextVisible.size >= config.limit) break;
+          const visual = districtZones.get(item.key);
+          if (!visual) continue;
+          const point = map.latLngToContainerPoint?.([
+            visual.center.latitude,
+            visual.center.longitude,
+          ]);
+          if (!point) continue;
+          if (
+            config.minDistance > 0 &&
+            selected.some((candidate) => {
+              const dx = candidate.x - point.x;
+              const dy = candidate.y - point.y;
+              return Math.sqrt(dx * dx + dy * dy) < config.minDistance;
+            })
+          ) {
+            continue;
+          }
+          nextVisible.add(item.key);
+          selected.push({ key: item.key, x: point.x, y: point.y });
+        }
+
+        for (const [key, visual] of districtZones) {
+          const shouldShow = nextVisible.has(key);
+          const isShown = zoneLayer.hasLayer?.(visual.zone);
+          if (shouldShow && !isShown) visual.zone.addTo(zoneLayer);
+          if (!shouldShow && isShown) zoneLayer.removeLayer(visual.zone);
+        }
+
+        visibleKeys = nextVisible;
+        map._vfDistrictVisibleZoneCount = visibleKeys.size;
+        map._vfDistrictZoneCount = mappedKeys.size;
+
+        const message = document.querySelector<HTMLElement>(".real-map-toolbar strong");
+        if (message) {
+          message.textContent = mappedKeys.size
+            ? `${visibleKeys.size} zona(s) visíveis · ${mappedKeys.size} bairros com referência · ${config.detail}`
+            : "Ranking territorial ativo · sem referências territoriais para desenhar zonas";
+        }
+        renderRanking();
       };
 
       const draw = async () => {
@@ -211,8 +278,9 @@ export default function MapTerritoryEnhancer() {
 
           zoneLayer.clearLayers();
           districtZones.clear();
+          mappedKeys = new Set<string>();
+          visibleKeys = new Set<string>();
           const maxTotal = Math.max(1, ...rankingItems.map((item) => item.total));
-          const mappedKeys = new Set<string>();
           const pane = map.getPane?.("vfDistrictZonesPane")
             ? "vfDistrictZonesPane"
             : undefined;
@@ -221,55 +289,47 @@ export default function MapTerritoryEnhancer() {
             const center = districtCenters.get(item.key);
             if (!center) continue;
             const ratio = Math.sqrt(item.total / maxTotal);
-            const radius = Math.round(260 + ratio * 540);
-            const fillOpacity = 0.12 + ratio * 0.44;
-            const baseWeight = 1.3 + ratio * 1.4;
+            const radius = Math.round(125 + ratio * 185);
+            const fillOpacity = 0.08 + ratio * 0.2;
+            const baseWeight = 0.8 + ratio * 0.45;
             const options: Record<string, unknown> = {
               radius,
-              color: "#285b8e",
+              color: "#2f6597",
               weight: baseWeight,
-              opacity: 0.72,
-              fillColor: "#356ea8",
+              opacity: 0.42,
+              fillColor: "#3f78ad",
               fillOpacity,
             };
             if (pane) options.pane = pane;
 
-            const zone = L.circle(
-              [center.latitude, center.longitude],
-              options,
-            );
+            const zone = L.circle([center.latitude, center.longitude], options);
             zone.bindTooltip(
               `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
-              { sticky: true, opacity: 0.96 },
+              { sticky: true, opacity: 0.94 },
             );
             zone.bindPopup(
-              `<div class="vf-district-area-popup"><strong>${escapeHtml(item.district)}</strong><b>Zona territorial aproximada</b><p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p><small>O círculo representa concentração territorial a partir de uma referência do bairro e não o limite geográfico oficial. Os pinos individuais continuam mostrando somente contatos com coordenada exata.</small></div>`,
+              `<div class="vf-district-area-popup"><strong>${escapeHtml(item.district)}</strong><b>Zona territorial aproximada</b><p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p><small>Visualização de concentração a partir da referência territorial do bairro; não representa o limite geográfico oficial. Os pinos individuais continuam indicando somente contatos com coordenada exata.</small></div>`,
               { maxWidth: 310, closeButton: true },
             );
             zone.on("mouseover", () =>
               zone.setStyle({
-                weight: baseWeight + 1.2,
-                fillOpacity: Math.min(0.72, fillOpacity + 0.12),
+                weight: Math.max(1.6, baseWeight + 0.8),
+                opacity: 0.72,
+                fillOpacity: Math.min(0.4, fillOpacity + 0.1),
               }),
             );
             zone.on("mouseout", () =>
-              zone.setStyle({ weight: baseWeight, fillOpacity }),
+              zone.setStyle({
+                weight: baseWeight,
+                opacity: 0.42,
+                fillOpacity,
+              }),
             );
-            zone.addTo(zoneLayer);
-            districtZones.set(item.key, zone);
+            districtZones.set(item.key, { zone, item, center });
             mappedKeys.add(item.key);
           }
 
-          renderRanking(mappedKeys);
-          map._vfDistrictZoneCount = mappedKeys.size;
-          const message = document.querySelector<HTMLElement>(
-            ".real-map-toolbar strong",
-          );
-          if (message) {
-            message.textContent = mappedKeys.size
-              ? `${mappedKeys.size} bairro(s) representados por zonas azuis aproximadas · ranking ativo`
-              : "Ranking territorial ativo · sem referências territoriais para desenhar zonas";
-          }
+          updateVisibleZones();
         } catch (error) {
           console.error("Failed to render district zones", error);
           if (controlNode) {
@@ -288,10 +348,12 @@ export default function MapTerritoryEnhancer() {
         if (currentScope() !== lastScope) void draw();
       };
       const handleRecordsChanged = () => void draw();
+      const handleZoomEnd = () => updateVisibleZones();
 
       document.addEventListener("change", handleScopeChange, true);
       window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
       window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+      map.on?.("zoomend", handleZoomEnd);
       void draw();
 
       cleanupActiveMap = () => {
@@ -299,6 +361,7 @@ export default function MapTerritoryEnhancer() {
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
         window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
+        map.off?.("zoomend", handleZoomEnd);
         try {
           map.removeLayer(zoneLayer);
           map.removeControl(control);
