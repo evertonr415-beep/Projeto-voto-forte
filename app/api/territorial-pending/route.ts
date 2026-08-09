@@ -27,6 +27,14 @@ type ContactRecord = {
   payload: Record<string, unknown> | null;
 };
 
+type DistrictNameRow = {
+  canonical_name?: unknown;
+};
+
+type RecordIdRow = {
+  record_id?: unknown;
+};
+
 type CorrectionBody = {
   recordId?: unknown;
   district?: unknown;
@@ -135,7 +143,7 @@ export async function GET(request: Request) {
 
   const districts = Array.from(
     new Set(
-      (districtsResult.data ?? [])
+      ((districtsResult.data ?? []) as DistrictNameRow[])
         .map((row) => String(row.canonical_name || "").trim())
         .filter(Boolean),
     ),
@@ -215,7 +223,7 @@ export async function PATCH(request: Request) {
     const { data: matching, error: matchingError } = await matchingQuery;
     if (matchingError)
       return Response.json({ error: matchingError.message }, { status: 400 });
-    targetIds = (matching ?? []).map((row) => Number(row.record_id));
+    targetIds = ((matching ?? []) as RecordIdRow[]).map((row) => Number(row.record_id));
     if (targetIds.length > MAX_MATCHING_UPDATES)
       return Response.json(
         {
