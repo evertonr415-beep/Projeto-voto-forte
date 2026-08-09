@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MapUnifiedLayer from "./map-unified-layer";
+import MapDirectOverlay from "./map-direct-overlay";
 import MobileMapLayersToggle from "./mobile-map-layers-toggle";
 import MobileAnalyticsControls from "./mobile-analytics-controls";
 import LegacyContactGeocoder from "./legacy-contact-geocoder";
@@ -93,7 +93,7 @@ export default function MapToolsGate() {
 
   return (
     <>
-      <MapUnifiedLayer />
+      <MapDirectOverlay />
       {enabled && (
         <>
           <MobileMapLayersToggle />
