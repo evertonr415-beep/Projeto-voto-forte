@@ -66,40 +66,50 @@ function installStyles() {
       .full-map.vf-mobile-map-ui .map-legend {
         display: none !important;
       }
-      .full-map.vf-mobile-map-ui.vf-mobile-legend-open .map-legend {
-        display: block !important;
-        top: 232px !important;
-        left: auto !important;
-        right: 8px !important;
-        width: min(210px, calc(100% - 72px)) !important;
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
+
+      .full-map.vf-mobile-map-ui .vf-map-contact-control {
+        display: none !important;
+        position: absolute !important;
+        top: 193px !important;
+        right: 58px !important;
+        width: min(235px, calc(100vw - 92px)) !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
         z-index: 520 !important;
       }
-      .full-map.vf-mobile-map-ui.vf-mobile-legend-open .map-legend h4 {
-        margin-bottom: 8px !important;
+      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-map-contact-control {
+        display: block !important;
       }
-      .full-map.vf-mobile-map-ui.vf-mobile-legend-open .map-legend label {
-        margin: 7px 0 !important;
-        font-size: 8px !important;
-      }
-      .full-map.vf-mobile-map-ui.vf-mobile-legend-open .map-legend > strong {
-        font-size: 15px !important;
-      }
-      .full-map.vf-mobile-map-ui .vf-mobile-legend-toggle {
+      .full-map.vf-mobile-map-ui .vf-mobile-contacts-toggle {
         position: absolute;
-        z-index: 520;
+        z-index: 530;
         right: 8px;
         top: 193px;
-        width: 42px;
-        height: 34px;
+        min-width: 42px;
+        height: 42px;
+        padding: 0 10px;
         border: 0;
-        border-radius: 10px;
-        background: rgba(255,255,255,.96);
+        border-radius: 12px;
+        background: rgba(255,255,255,.97);
         color: #173f75;
         box-shadow: 0 5px 16px rgba(7,26,51,.24);
-        font: 900 14px/1 Arial,sans-serif;
+        font: 800 11px/1 Arial,sans-serif;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-mobile-contacts-toggle {
+        background: #173f75;
+        color: #fff;
+      }
+      .full-map.vf-mobile-map-ui .vf-mobile-contacts-toggle .vf-mobile-contacts-label {
+        display: none;
+      }
+      .full-map.vf-mobile-map-ui.vf-mobile-contacts-open .vf-mobile-contacts-toggle .vf-mobile-contacts-label {
+        display: inline;
       }
       .full-map.vf-mobile-map-ui .leaflet-control-zoom {
         margin-top: 58px !important;
@@ -132,10 +142,11 @@ export default function MobileMapControls() {
       const toolbar = fullMap?.querySelector<HTMLElement>(".real-map-toolbar");
       const status = toolbar?.querySelector<HTMLElement>("strong");
       const buttons = toolbar ? Array.from(toolbar.querySelectorAll<HTMLButtonElement>("button")) : [];
-      const legend = fullMap?.querySelector<HTMLElement>(".map-legend");
-      if (!fullMap || !toolbar || !status || buttons.length < 3 || !legend) return false;
+      const contactPanel = fullMap?.querySelector<HTMLElement>(".vf-map-contact-control");
+      if (!fullMap || !toolbar || !status || buttons.length < 3 || !contactPanel) return false;
 
       fullMap.classList.add("vf-mobile-map-ui");
+      fullMap.classList.remove("vf-mobile-contacts-open");
       const labels = ["Centralizar alfinetes", "Minha localização", "Arapongas"];
       const icons = ["⌖", "◎", "⌂"];
       buttons.slice(0, 3).forEach((button, index) => {
@@ -144,26 +155,24 @@ export default function MobileMapControls() {
         button.setAttribute("aria-label", labels[index]);
       });
 
-      const legendToggle = document.createElement("button");
-      legendToggle.type = "button";
-      legendToggle.className = "vf-mobile-legend-toggle";
-      legendToggle.textContent = "☰";
-      legendToggle.title = "Abrir legenda do mapa";
-      legendToggle.setAttribute("aria-label", "Abrir legenda do mapa");
-      legendToggle.setAttribute("aria-expanded", "false");
-      legendToggle.addEventListener("click", () => {
-        const open = fullMap.classList.toggle("vf-mobile-legend-open");
-        legendToggle.textContent = open ? "×" : "☰";
-        legendToggle.title = open ? "Fechar legenda do mapa" : "Abrir legenda do mapa";
-        legendToggle.setAttribute("aria-label", legendToggle.title);
-        legendToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      const contactsToggle = document.createElement("button");
+      contactsToggle.type = "button";
+      contactsToggle.className = "vf-mobile-contacts-toggle";
+      contactsToggle.innerHTML = '<span aria-hidden="true">👥</span><span class="vf-mobile-contacts-label">Contatos</span>';
+      contactsToggle.title = "Abrir contatos no mapa";
+      contactsToggle.setAttribute("aria-label", "Abrir contatos no mapa");
+      contactsToggle.setAttribute("aria-expanded", "false");
+      contactsToggle.addEventListener("click", () => {
+        const open = fullMap.classList.toggle("vf-mobile-contacts-open");
+        contactsToggle.title = open ? "Fechar contatos no mapa" : "Abrir contatos no mapa";
+        contactsToggle.setAttribute("aria-label", contactsToggle.title);
+        contactsToggle.setAttribute("aria-expanded", open ? "true" : "false");
       });
-      fullMap.appendChild(legendToggle);
+      fullMap.appendChild(contactsToggle);
 
       let applyingStatus = false;
       const syncStatus = () => {
         if (applyingStatus) return;
-        const full = status.dataset.vfFullStatus || status.textContent || "";
         const current = status.textContent || "";
         if (!status.dataset.vfFullStatus || current !== shortStatus(status.dataset.vfFullStatus)) {
           status.dataset.vfFullStatus = current;
@@ -190,8 +199,8 @@ export default function MobileMapControls() {
 
       cleanupCurrent = () => {
         observer.disconnect();
-        legendToggle.remove();
-        fullMap.classList.remove("vf-mobile-map-ui", "vf-mobile-legend-open");
+        contactsToggle.remove();
+        fullMap.classList.remove("vf-mobile-map-ui", "vf-mobile-contacts-open");
         buttons.slice(0, 3).forEach((button) => {
           delete button.dataset.vfIcon;
         });
