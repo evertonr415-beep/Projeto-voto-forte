@@ -33,6 +33,11 @@ function applyProfile<T>(query: T, profile: string) {
   return scoped.eq("payload->>kind", profile);
 }
 
+type ExactRecord = {
+  id: number;
+  payload: Record<string, unknown> | null;
+};
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -77,20 +82,16 @@ export async function GET(request: Request) {
     -180,
     Math.min(180, finiteParam(url.searchParams.get("east"), 180)),
   );
-  const zoom = Math.max(
-    1,
-    Math.min(20, Math.round(finiteParam(url.searchParams.get("zoom"), 13))),
-  );
 
-  const featurePromise = account.supabase.rpc("vf_map_contact_features", {
-    p_owner_emails: scopeEmails,
-    p_south: south,
-    p_west: west,
-    p_north: north,
-    p_east: east,
-    p_zoom: zoom,
-    p_profile: profile || null,
-  });
+  let exactQuery = account.supabase
+    .from("vf_owned_records")
+    .select("id,payload")
+    .eq("kind", "contact")
+    .not("payload->>latitude", "is", null)
+    .not("payload->>longitude", "is", null)
+    .neq("payload->>latitude", "")
+    .neq("payload->>longitude", "");
+  exactQuery = applyProfile(applyScope(exactQuery, scopeEmails), profile);
 
   const districtPromise = includeStats
     ? account.supabase.rpc("vf_map_district_bubbles", {
@@ -99,13 +100,13 @@ export async function GET(request: Request) {
       })
     : Promise.resolve({ data: undefined, error: null });
 
-  const [{ data, error }, districtResult] = await Promise.all([
-    featurePromise,
+  const [exactResult, districtResult] = await Promise.all([
+    exactQuery,
     districtPromise,
   ]);
 
-  if (error) {
-    console.error("Failed to load map contact features", error);
+  if (exactResult.error) {
+    console.error("Failed to load exact map contacts", exactResult.error);
     return Response.json(
       { error: "Não foi possível carregar os contatos do mapa agora." },
       { status: 400 },
@@ -122,6 +123,35 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
+
+  const exactRecords = (exactResult.data || []) as ExactRecord[];
+  const features = exactRecords.flatMap((record) => {
+    const payload = record.payload || {};
+    const latitude = Number(payload.latitude);
+    const longitude = Number(payload.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
+    if (latitude < south || latitude > north || longitude < west || longitude > east)
+      return [];
+
+    const contactProfile =
+      String(payload.kind || "") === "Liderança" ? "Liderança" : "Eleitor";
+
+    return [
+      {
+        feature_type: "point" as const,
+        latitude,
+        longitude,
+        total: 1,
+        voters: contactProfile === "Eleitor" ? 1 : 0,
+        leaders: contactProfile === "Liderança" ? 1 : 0,
+        contact_name: String(payload.name || "Contato"),
+        profile: contactProfile,
+        district: String(payload.district || ""),
+        street: String(payload.street || ""),
+        street_number: String(payload.number || ""),
+      },
+    ];
+  });
 
   let stats:
     | {
@@ -140,23 +170,10 @@ export async function GET(request: Request) {
       .eq("kind", "contact");
     totalQuery = applyProfile(applyScope(totalQuery, scopeEmails), profile);
 
-    let mappedQuery = account.supabase
-      .from("vf_owned_records")
-      .select("id", { count: "exact", head: true })
-      .eq("kind", "contact")
-      .not("payload->>latitude", "is", null)
-      .not("payload->>longitude", "is", null)
-      .neq("payload->>latitude", "")
-      .neq("payload->>longitude", "");
-    mappedQuery = applyProfile(applyScope(mappedQuery, scopeEmails), profile);
-
-    const [totalResult, mappedResult] = await Promise.all([
-      totalQuery,
-      mappedQuery,
-    ]);
-    if (!totalResult.error && !mappedResult.error) {
+    const totalResult = await totalQuery;
+    if (!totalResult.error) {
       const totalContacts = Number(totalResult.count ?? 0);
-      const mappedContacts = Number(mappedResult.count ?? 0);
+      const mappedContacts = exactRecords.length;
       const bubbles = Array.isArray(districtResult.data)
         ? districtResult.data
         : [];
@@ -183,7 +200,7 @@ export async function GET(request: Request) {
     {
       scope,
       profile: profile || null,
-      features: Array.isArray(data) ? data : [],
+      features,
       approximateDistricts: Array.isArray(districtResult.data)
         ? districtResult.data
         : [],
