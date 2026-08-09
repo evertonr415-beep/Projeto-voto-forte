@@ -51,6 +51,11 @@ export async function GET(request: Request) {
     p_profile: profile || null,
   });
 
+  const districtPromise = account.supabase.rpc("vf_map_district_bubbles", {
+    p_owner_emails: scopeEmails,
+    p_profile: profile || null,
+  });
+
   const statsPromise = includeStats
     ? account.supabase.rpc("vf_map_scope_stats", {
         p_owner_emails: scopeEmails,
@@ -58,8 +63,9 @@ export async function GET(request: Request) {
       })
     : Promise.resolve({ data: undefined, error: null });
 
-  const [exactResult, statsResult] = await Promise.all([
+  const [exactResult, districtResult, statsResult] = await Promise.all([
     exactPromise,
+    districtPromise,
     statsPromise,
   ]);
 
@@ -71,6 +77,10 @@ export async function GET(request: Request) {
     );
   }
 
+  if (districtResult.error) {
+    console.error("Failed to load district map markers", districtResult.error);
+  }
+
   if (statsResult.error) {
     console.error("Failed to load map stats", statsResult.error);
     return Response.json(
@@ -80,6 +90,7 @@ export async function GET(request: Request) {
   }
 
   const features = Array.isArray(exactResult.data) ? exactResult.data : [];
+  const districts = Array.isArray(districtResult.data) ? districtResult.data : [];
 
   let stats:
     | {
@@ -95,13 +106,21 @@ export async function GET(request: Request) {
     const row = Array.isArray(statsResult.data) ? statsResult.data[0] : undefined;
     const totalContacts = Number(row?.total_contacts ?? 0);
     const mappedContacts = Number(row?.mapped_contacts ?? features.length);
+    const resolvedDistricts = districts.filter(
+      (item: { resolved?: boolean }) => item.resolved,
+    );
+    const approximatedContacts = resolvedDistricts.reduce(
+      (sum: number, item: { total?: number | string }) =>
+        sum + Number(item.total || 0),
+      0,
+    );
 
     stats = {
       totalContacts,
       mappedContacts,
-      approximatedContacts: 0,
-      unresolvedContacts: Math.max(0, totalContacts - mappedContacts),
-      resolvedDistricts: 0,
+      approximatedContacts,
+      unresolvedContacts: Math.max(0, totalContacts - approximatedContacts),
+      resolvedDistricts: resolvedDistricts.length,
     };
   }
 
@@ -110,7 +129,7 @@ export async function GET(request: Request) {
       scope,
       profile: profile || null,
       features,
-      approximateDistricts: [],
+      approximateDistricts: districts,
       stats,
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
