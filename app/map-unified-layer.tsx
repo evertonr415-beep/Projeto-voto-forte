@@ -74,7 +74,7 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .vf-unified-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.12);border-radius:14px;box-shadow:0 10px 28px rgba(15,35,65,.16);padding:10px;min-width:230px;font:600 12px/1.3 Arial,sans-serif;color:#17345c;z-index:1000}
+    .vf-unified-control{background:rgba(255,255,255,.98);border:2px solid #17345c;border-radius:14px;box-shadow:0 10px 28px rgba(15,35,65,.22);padding:10px;min-width:230px;font:600 12px/1.3 Arial,sans-serif;color:#17345c;z-index:1000}
     .vf-unified-control strong{display:block;font-size:13px;margin-bottom:7px}.vf-unified-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.vf-unified-tabs button{border:1px solid #d8e1ec;border-radius:9px;background:#fff;color:#17345c;padding:7px 5px;font:700 11px/1 Arial,sans-serif;cursor:pointer}.vf-unified-tabs button.active{background:#17345c;color:#fff}.vf-unified-status{display:block;margin-top:8px;color:#64748b;font-size:11px}
     .vf-unified-bubble,.vf-unified-person,.vf-unified-cluster{background:transparent!important;border:0!important}.vf-unified-bubble span{display:grid;place-items:center;min-width:50px;height:50px;padding:0 7px;border-radius:999px;background:#315f8f;color:#fff;border:3px solid #fff;box-shadow:0 5px 16px rgba(15,35,65,.3);font:900 12px/1 Arial,sans-serif}.vf-unified-bubble.large span{min-width:58px;height:58px;background:#244f7c;font-size:13px}.vf-unified-cluster span{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#17345c;color:#fff;border:3px solid #fff;box-shadow:0 4px 14px rgba(15,35,65,.28);font:800 12px/1 Arial,sans-serif}.vf-unified-pin{display:grid;place-items:center;width:30px;height:30px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 3px 10px rgba(15,35,65,.28)}.vf-unified-pin i{transform:rotate(45deg);font:900 12px/1 Arial,sans-serif;color:#fff;font-style:normal}.vf-unified-pin.voter{background:#239653}.vf-unified-pin.leader{background:#c62828}.vf-unified-popup{min-width:190px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-unified-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-unified-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2f8;color:#244f7c;font-size:10px;margin-bottom:5px}.vf-unified-popup p{margin:4px 0}.vf-unified-popup small{display:block;margin-top:7px;color:#64748b}
   `;
@@ -86,9 +86,8 @@ export default function MapUnifiedLayer() {
     installStyles();
 
     let cancelled = false;
-    let retryTimer: number | null = null;
-    let headObserver: MutationObserver | null = null;
-    let leafletScript: HTMLScriptElement | null = null;
+    let capturedLeaflet = (window as any).L;
+    let ownsLeafletInterceptor = false;
     const cleanups = new Set<() => void>();
 
     const setupMap = (map: any) => {
@@ -317,59 +316,62 @@ export default function MapUnifiedLayer() {
       window.setTimeout(() => setupMap(map), 0);
     };
 
-    const installNativeHook = () => {
-      const L = (window as any).L;
-      if (!L?.Map?.addInitHook) return false;
+    const installHookOn = (leaflet: any) => {
+      if (!leaflet?.Map?.addInitHook) return false;
 
       (window as any).__vfUnifiedMapSetup = setupDispatcher;
-
-      if (!L.Map.prototype.__vfUnifiedInitHookInstalled) {
-        L.Map.prototype.__vfUnifiedInitHookInstalled = true;
-        L.Map.addInitHook(function (this: any) {
+      if (!leaflet.Map.prototype.__vfUnifiedInitHookInstalled) {
+        leaflet.Map.prototype.__vfUnifiedInitHookInstalled = true;
+        leaflet.Map.addInitHook(function (this: any) {
           const dispatcher = (window as any).__vfUnifiedMapSetup;
           if (typeof dispatcher === "function") dispatcher(this);
         });
       }
-
       return true;
     };
 
-    const handleLeafletLoad = () => {
-      installNativeHook();
-    };
-
-    const attachLeafletScript = () => {
-      const script = document.querySelector<HTMLScriptElement>("script[data-vf-leaflet]");
-      if (script && script !== leafletScript) {
-        leafletScript?.removeEventListener("load", handleLeafletLoad);
-        leafletScript = script;
-        leafletScript.addEventListener("load", handleLeafletLoad);
+    const descriptor = Object.getOwnPropertyDescriptor(window, "L");
+    if (!capturedLeaflet && (!descriptor || descriptor.configurable)) {
+      try {
+        Object.defineProperty(window, "L", {
+          configurable: true,
+          enumerable: true,
+          get() {
+            return capturedLeaflet;
+          },
+          set(value) {
+            capturedLeaflet = value;
+            installHookOn(value);
+          },
+        });
+        ownsLeafletInterceptor = true;
+      } catch {
+        ownsLeafletInterceptor = false;
       }
-      installNativeHook();
-    };
-
-    attachLeafletScript();
-    headObserver = new MutationObserver(attachLeafletScript);
-    headObserver.observe(document.head, { childList: true, subtree: true });
-
-    if (!installNativeHook()) {
-      retryTimer = window.setInterval(() => {
-        if (installNativeHook() && retryTimer !== null) {
-          window.clearInterval(retryTimer);
-          retryTimer = null;
-        }
-      }, 50);
     }
+
+    if (capturedLeaflet) installHookOn(capturedLeaflet);
 
     return () => {
       cancelled = true;
       cleanups.forEach((cleanup) => cleanup());
       cleanups.clear();
-      headObserver?.disconnect();
-      leafletScript?.removeEventListener("load", handleLeafletLoad);
-      if (retryTimer !== null) window.clearInterval(retryTimer);
+
       if ((window as any).__vfUnifiedMapSetup === setupDispatcher) {
         delete (window as any).__vfUnifiedMapSetup;
+      }
+
+      if (ownsLeafletInterceptor) {
+        try {
+          Object.defineProperty(window, "L", {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: capturedLeaflet,
+          });
+        } catch {
+          // Mantém o Leaflet disponível mesmo se o descritor não puder ser restaurado.
+        }
       }
     };
   }, []);
