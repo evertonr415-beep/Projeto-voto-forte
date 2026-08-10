@@ -202,7 +202,7 @@ export default function MapContactLayer() {
     const cleanupMaps = new Set<() => void>();
 
     const setupMap = (map: any) => {
-      if (cancelled || !isElectoralMapContainer(map) || map._vfModernContacts) return;
+      if (cancelled || !isElectoralMapContainer(map) || map._vfModernContacts) return false;
       map._vfModernContacts = true;
       const L = (window as any).L;
       if (!L) return;
@@ -491,7 +491,21 @@ export default function MapContactLayer() {
       };
       cleanupMaps.add(cleanup);
       map.on("unload", cleanup);
+      return true;
     };
+
+    const attachExistingMap = () => {
+      const map = (window as any).__vfBaseElectoralMap;
+      return Boolean(map?._container && setupMap(map));
+    };
+
+    const handleBaseMapReady = (event: Event) => {
+      const map = (event as CustomEvent<{ map?: any }>).detail?.map;
+      if (map?._container) setupMap(map);
+    };
+
+    window.addEventListener("voto-forte:base-electoral-map-ready", handleBaseMapReady);
+    attachExistingMap();
 
     const patchLeaflet = () => {
       const L = (window as any).L;
@@ -538,6 +552,7 @@ export default function MapContactLayer() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener("voto-forte:base-electoral-map-ready", handleBaseMapReady);
       cleanupMaps.forEach((cleanup) => cleanup());
       cleanupMaps.clear();
       headObserver?.disconnect();

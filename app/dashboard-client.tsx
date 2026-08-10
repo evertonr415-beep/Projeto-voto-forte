@@ -886,6 +886,10 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
         attribution: "&copy; OpenStreetMap",
       }).addTo(map);
       mapInstance.current = map;
+      (window as any).__vfBaseElectoralMap = map;
+      window.dispatchEvent(
+        new CustomEvent("voto-forte:base-electoral-map-ready", { detail: { map } }),
+      );
       const closePopup = () => map.closePopup();
       window.addEventListener("voto-forte:close-map-popup", closePopup);
       map.on("movestart zoomstart", closePopup);
@@ -982,6 +986,8 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
       if (mapInstance.current) {
         if (mapInstance.current._vfClosePopup)
           window.removeEventListener("voto-forte:close-map-popup", mapInstance.current._vfClosePopup);
+        if ((window as any).__vfBaseElectoralMap === mapInstance.current)
+          delete (window as any).__vfBaseElectoralMap;
         mapInstance.current.remove();
         mapInstance.current = null;
         contactLayer.current = null;
