@@ -1,0 +1,36 @@
+name: Fixar Administracao no final
+
+on:
+  push:
+    paths:
+      - ".github/scripts/pin-administration-last.py"
+      - ".github/workflows/run-pin-administration-last.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar ajuste
+        run: python3 .github/scripts/pin-administration-last.py
+      - name: Verificar resultado
+        shell: bash
+        run: |
+          grep -q 'administration-nav-item' app/dashboard-client.tsx
+          grep -q 'navigateTo("Administração")' app/dashboard-client.tsx
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/pin-administration-last.py
+          rm -f .github/workflows/run-pin-administration-last.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx .github/scripts/pin-administration-last.py .github/workflows/run-pin-administration-last.yml
+          git diff --cached --check
+          git commit -m "fixa administracao no final do menu"
+          git push origin HEAD:main
