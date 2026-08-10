@@ -11,7 +11,8 @@ security definer
 set search_path to ''
 as $function$
 declare
-  v_actor_id bigint;
+  v_actor_user_id bigint;
+  v_actor_auth_user_id uuid;
   v_actor_email text;
   v_actor_role text;
   v_canonical text;
@@ -21,14 +22,14 @@ begin
     raise exception 'Usuário não autenticado.' using errcode = '42501';
   end if;
 
-  select u.id, lower(trim(u.email)), u.role
-    into v_actor_id, v_actor_email, v_actor_role
+  select u.id, u.auth_user_id, lower(trim(u.email)), u.role
+    into v_actor_user_id, v_actor_auth_user_id, v_actor_email, v_actor_role
   from public.vf_users u
   where u.auth_user_id = (select auth.uid())
     and u.status = 'active'
   limit 1;
 
-  if v_actor_id is null then
+  if v_actor_user_id is null then
     raise exception 'Usuário sem acesso ativo.' using errcode = '42501';
   end if;
 
@@ -92,7 +93,7 @@ begin
     action,
     detail
   ) values (
-    v_actor_id,
+    v_actor_auth_user_id,
     v_actor_email,
     'Referência territorial definida',
     v_canonical || ' · ponto territorial manual validado no Mapa Eleitoral'
