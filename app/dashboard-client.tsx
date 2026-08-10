@@ -618,28 +618,6 @@ function Overview({
         />
       </div>
       <div className="dashboard-grid">
-        <article className="panel territorial">
-          <PanelTitle
-            title="Presença territorial"
-            subtitle="Distribuição estratégica dos cadastros em Arapongas"
-            action="Abrir mapa"
-            onClick={() => go("Mapa Eleitoral")}
-          />
-          <CityMap contacts={contacts} />
-          <div className="coverage">
-            <div>
-              <span>
-                <b>{districts}</b> bairros com presença
-              </span>
-              <small>Dados exclusivos do ambiente selecionado</small>
-            </div>
-            <div className="bar">
-              <i
-                style={{ width: `${Math.min(100, (districts / 38) * 100)}%` }}
-              />
-            </div>
-          </div>
-        </article>
         <article className="panel agenda-summary">
           <PanelTitle
             title="Próximos compromissos"
