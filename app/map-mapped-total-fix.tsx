@@ -40,19 +40,21 @@ export default function MapMappedTotalFix() {
       if (!map?._container || Number(map.getZoom?.() ?? 13) > 12 || mappedTotal <= 0)
         return;
 
+      const container = map.getContainer?.() as HTMLElement | undefined;
+      if (!container) return;
+
       const formatted = NUMBER.format(mappedTotal);
-      const marker = map
-        .getContainer?.()
-        ?.querySelector<HTMLElement>(".vf-district-overview-total-wrap");
+      const marker = container.querySelector<HTMLElement>(
+        ".vf-district-overview-total-wrap",
+      );
       const strong = marker?.querySelector<HTMLElement>("strong");
       const small = marker?.querySelector<HTMLElement>("small");
       if (strong && strong.textContent !== formatted) strong.textContent = formatted;
       if (small && small.textContent !== "contatos mapeados")
         small.textContent = "contatos mapeados";
 
-      const toolbar = map
-        .getContainer?.()
-        ?.closest(".full-map")
+      const toolbar = container
+        .closest(".full-map")
         ?.querySelector<HTMLElement>(".real-map-toolbar strong");
       const toolbarText = `${formatted} contatos mapeados · visão geral`;
       if (toolbar && toolbar.textContent !== toolbarText)
@@ -60,7 +62,8 @@ export default function MapMappedTotalFix() {
     };
 
     const attachMap = (nextMap: any) => {
-      if (!nextMap?._container || map === nextMap) return;
+      const container = nextMap?.getContainer?.() as HTMLElement | undefined;
+      if (!nextMap?._container || !container || map === nextMap) return;
       observer?.disconnect();
       if (map) {
         map.off?.("zoomend", applyMappedTotal);
@@ -70,7 +73,7 @@ export default function MapMappedTotalFix() {
       map.on?.("zoomend", applyMappedTotal);
       map.on?.("moveend", applyMappedTotal);
       observer = new MutationObserver(applyMappedTotal);
-      observer.observe(map.getContainer(), {
+      observer.observe(container, {
         childList: true,
         subtree: true,
         characterData: true,
