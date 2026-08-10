@@ -129,6 +129,27 @@ function installStyles() {
       .full-map.vf-mobile-map-ui .leaflet-control-zoom {
         display: none !important;
       }
+      .vf-mobile-district-host .vf-district-map-control header {
+        padding: 8px 9px !important;
+        border-bottom: 0 !important;
+        align-items: center !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control header strong {
+        font-size: 12px !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control header small {
+        font-size: 8px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .vf-mobile-district-host .vf-district-map-toggle {
+        display: block !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,
+      .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-scale {
+        display: none !important;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -275,10 +296,21 @@ export default function MobileMapControls() {
 
       const originalDistrictParent = districtPanel.parentNode;
       const originalDistrictNextSibling = districtPanel.nextSibling;
+      const originalDistrictCollapsed = districtPanel.getAttribute("data-collapsed");
       const districtHost = document.createElement("div");
       districtHost.className = "vf-mobile-district-host";
       contactsHost.insertAdjacentElement("afterend", districtHost);
       districtHost.appendChild(districtPanel);
+
+      const districtToggle = districtPanel.querySelector<HTMLButtonElement>(
+        ".vf-district-map-toggle",
+      );
+      districtPanel.dataset.collapsed = "true";
+      if (districtToggle) {
+        districtToggle.textContent = "+";
+        districtToggle.setAttribute("aria-expanded", "false");
+        districtToggle.setAttribute("aria-label", "Abrir contatos por bairro");
+      }
 
       const originalActionText = pageAction.textContent || "Filtros do mapa";
       const originalActionTitle = pageAction.getAttribute("title");
@@ -363,6 +395,9 @@ export default function MobileMapControls() {
         else homeButton.setAttribute("aria-hidden", originalHomeAriaHidden);
         if (originalHomeTabIndex === null) homeButton.removeAttribute("tabindex");
         else homeButton.setAttribute("tabindex", originalHomeTabIndex);
+
+        if (originalDistrictCollapsed === null) districtPanel.removeAttribute("data-collapsed");
+        else districtPanel.setAttribute("data-collapsed", originalDistrictCollapsed);
 
         if (originalDistrictParent) {
           if (
