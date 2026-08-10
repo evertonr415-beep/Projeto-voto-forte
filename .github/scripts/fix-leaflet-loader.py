@@ -120,4 +120,4 @@ if text == original:
 path.write_text(text, encoding="utf-8")
 print("Carregamento independente do Leaflet corrigido sem alterar o Mapa Eleitoral.")
 
-# trigger workflow after registration
+# trigger workflow after validation fix
