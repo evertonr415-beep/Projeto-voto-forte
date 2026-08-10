@@ -10,6 +10,29 @@ type CurrentUser = {
 
 type NavigationMode = "optimized" | "legacy";
 
+function ensureLegacySlot(nav: HTMLElement) {
+  const selector = '[data-vf-intelligence-slot="team"]';
+  const existing = nav.querySelector<HTMLElement>(selector);
+  if (existing) return existing;
+
+  const slot = document.createElement("span");
+  slot.setAttribute("data-vf-intelligence-slot", "team");
+  slot.style.display = "contents";
+
+  const systemSlot = nav.querySelector<HTMLElement>(
+    '[data-vf-intelligence-slot="system"]',
+  );
+  const administration = nav.querySelector<HTMLElement>(
+    ".administration-nav-item",
+  );
+
+  if (systemSlot) nav.insertBefore(slot, systemSlot);
+  else if (administration) nav.insertBefore(slot, administration);
+  else nav.appendChild(slot);
+
+  return slot;
+}
+
 export default function TeamIntelligenceNavigation() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [mode, setMode] = useState<NavigationMode | null>(null);
@@ -23,7 +46,9 @@ export default function TeamIntelligenceNavigation() {
       .then(({ response, data }) => {
         if (!active || !response.ok) return;
         const user = data.user as CurrentUser | undefined;
-        setAllowed(["master", "gestor", "lider"].includes(String(user?.role ?? "")));
+        setAllowed(
+          ["master", "gestor", "lider"].includes(String(user?.role ?? "")),
+        );
       })
       .catch(() => undefined);
 
@@ -33,12 +58,17 @@ export default function TeamIntelligenceNavigation() {
   }, []);
 
   useEffect(() => {
-    if (!allowed || window.location.pathname.startsWith("/inteligencia-equipe")) return;
+    if (
+      !allowed ||
+      window.location.pathname.startsWith("/inteligencia-equipe")
+    )
+      return;
 
     let observer: MutationObserver | null = null;
 
     const detect = () => {
-      const optimizedNav = document.querySelector<HTMLElement>(".optimized-quick-actions");
+      const optimizedNav =
+        document.querySelector<HTMLElement>(".optimized-quick-actions");
       if (optimizedNav) {
         setTarget(optimizedNav);
         setMode("optimized");
@@ -48,7 +78,7 @@ export default function TeamIntelligenceNavigation() {
 
       const legacyNav = document.querySelector<HTMLElement>(".sidebar nav");
       if (legacyNav) {
-        setTarget(legacyNav);
+        setTarget(ensureLegacySlot(legacyNav));
         setMode("legacy");
         observer?.disconnect();
         return true;
@@ -76,7 +106,9 @@ export default function TeamIntelligenceNavigation() {
   if (mode === "optimized") {
     return createPortal(
       <a href="/inteligencia-equipe">
-        <span className="optimized-action-icon" aria-hidden="true">◈</span>
+        <span className="optimized-action-icon" aria-hidden="true">
+          ◈
+        </span>
         <span>
           <b>Inteligência da Equipe</b>
           <small>Atividade, ações e pendências</small>
@@ -93,7 +125,9 @@ export default function TeamIntelligenceNavigation() {
       title="Inteligência da Equipe"
       aria-label="Abrir Inteligência da Equipe"
     >
-      <span className="nav-icon" aria-hidden="true">◈</span>
+      <span className="nav-icon" aria-hidden="true">
+        ◈
+      </span>
       <span className="nav-name">Inteligência da Equipe</span>
       <em>GESTÃO</em>
     </button>,
