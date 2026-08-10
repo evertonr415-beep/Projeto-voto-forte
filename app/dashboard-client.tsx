@@ -6,7 +6,6 @@ import { apiFetch, supabase } from "./supabase-client";
 
 type View =
   | "Visão Geral"
-  | "Gestão"
   | "Contatos"
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
@@ -24,7 +23,6 @@ type Modal =
 
 const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
-  { label: "Gestão", icon: "♜" },
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
@@ -154,7 +152,7 @@ export default function DashboardClient({
 
  const navigateTo = (nextView: View) => {
   closeMapPopup();
-  if (nextView === "Gestão") setContactFilter("Todos");
+  if (nextView === "Contatos") setContactFilter("Todos");
   setView(nextView);
 
   if (window.matchMedia("(max-width: 900px)").matches) {
@@ -314,7 +312,7 @@ export default function DashboardClient({
         currentUser.name;
   const openVoterReport = () => {
     setContactFilter("Eleitor");
-    setView("Gestão");
+    setView("Contatos");
   };
   const content = loadingData ? (
     <div className="loading-state">Carregando ambiente protegido…</div>
@@ -328,16 +326,12 @@ export default function DashboardClient({
       contextName={contextName}
       userName={currentUser.name}
     />
-  ) : view === "Gestão" ? (
-    <Management
+  ) : view === "Contatos" ? (
+    <ContactManager
       contacts={contacts}
       open={setModal}
       filter={contactFilter}
       setFilter={setContactFilter}
-    />
-  ) : view === "Contatos" ? (
-    <ContactManager
-      contacts={contacts}
       tell={setNotice}
       importContact={(payload) => createRecord("contact", payload)}
       updateContact={updateContact}
@@ -1229,6 +1223,9 @@ function parseVcf(text: string): Contact[] {
 }
 function ContactManager({
   contacts,
+  open,
+  filter,
+  setFilter,
   tell,
   importContact,
   updateContact,
@@ -1236,6 +1233,9 @@ function ContactManager({
   isAdmin,
 }: {
   contacts: (Contact & { id: number; ownerEmail: string })[];
+  open: (m: Modal) => void;
+  filter: Contact["kind"] | "Todos";
+  setFilter: (filter: Contact["kind"] | "Todos") => void;
   tell: (s: string) => void;
   importContact: (c: Contact) => Promise<boolean>;
   updateContact: (id: number, c: Contact) => Promise<boolean>;
@@ -1248,11 +1248,18 @@ function ContactManager({
     [editing, setEditing] = useState<
       (Contact & { id: number; ownerEmail: string }) | null
     >(null);
-  const list = contacts.filter((c) =>
+  const filteredContacts =
+    filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter);
+  const list = filteredContacts.filter((c) =>
     `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  const voters = contacts.filter((c) => c.kind === "Eleitor").length;
+  const leaders = contacts.filter((c) => c.kind === "Liderança").length;
+  const districts = new Set(
+    contacts.map((c) => c.district).filter(Boolean),
+  ).size;
   async function pick(file?: File) {
     if (!file) return;
     const parsed = file.name.toLowerCase().endsWith(".vcf")
@@ -1368,7 +1375,47 @@ function ContactManager({
             ? "Consulte e gerencie contatos de todos os usuários no ambiente selecionado."
             : "Importe, edite e exporte somente os seus próprios contatos."
         }
+        action="+ Novo cadastro"
+        onClick={() => open("cadastro")}
       />
+      <div
+        className="management-filter"
+        role="group"
+        aria-label="Filtrar contatos"
+      >
+        <button
+          className={filter === "Todos" ? "active" : ""}
+          onClick={() => setFilter("Todos")}
+        >
+          Todos
+        </button>
+        <button
+          className={filter === "Eleitor" ? "active" : ""}
+          onClick={() => setFilter("Eleitor")}
+        >
+          Eleitores
+        </button>
+        <button
+          className={filter === "Liderança" ? "active" : ""}
+          onClick={() => setFilter("Liderança")}
+        >
+          Lideranças
+        </button>
+      </div>
+      <div className="summary-strip">
+        <span>
+          <b>{contacts.length}</b>Total de contatos
+        </span>
+        <span>
+          <b>{voters}</b>Eleitores
+        </span>
+        <span>
+          <b>{leaders}</b>Lideranças
+        </span>
+        <span>
+          <b>{districts}</b>Bairros
+        </span>
+      </div>
       <div className="contact-module-grid">
         <article className="panel import-contacts">
           <span className="feature-icon">⇧</span>
@@ -1593,138 +1640,6 @@ function ContactManager({
     </>
   );
 }
-function Management({
-  open,
-  contacts,
-  filter,
-  setFilter,
-}: {
-  open: (m: Modal) => void;
-  contacts: (Contact & { id: number; ownerEmail: string })[];
-  filter: Contact["kind"] | "Todos";
-  setFilter: (filter: Contact["kind"] | "Todos") => void;
-}) {
-  const [query, setQuery] = useState("");
-  const filteredContacts =
-    filter === "Todos" ? contacts : contacts.filter((p) => p.kind === filter);
-  const list = filteredContacts.filter(
-    (p) =>
-      p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.district.toLowerCase().includes(query.toLowerCase()) ||
-      p.phone.includes(query),
-  );
-  const leaders = contacts.filter((p) => p.kind === "Liderança").length;
-  const isVoterReport = filter === "Eleitor";
-  return (
-    <>
-      <PageHead
-        eyebrow={
-          isVoterReport
-            ? "RELATÓRIO DA BASE ELEITORAL"
-            : "BASE ELEITORAL PRIVATIVA"
-        }
-        title={isVoterReport ? "Eleitores cadastrados" : "Gestão de cadastros"}
-        text={
-          isVoterReport
-            ? "Consulte todos os eleitores cadastrados neste ambiente e inicie novos cadastros."
-            : "Cada cadastro pertence somente ao usuário responsável; administradores podem consolidar a análise."
-        }
-        action={isVoterReport ? "Realizar novo cadastro" : "+ Novo cadastro"}
-        onClick={() => open("cadastro")}
-      />
-      <div
-        className="management-filter"
-        role="group"
-        aria-label="Filtrar cadastros"
-      >
-        <button
-          className={filter === "Todos" ? "active" : ""}
-          onClick={() => setFilter("Todos")}
-        >
-          Todos
-        </button>
-        <button
-          className={filter === "Eleitor" ? "active" : ""}
-          onClick={() => setFilter("Eleitor")}
-        >
-          Eleitores
-        </button>
-        <button
-          className={filter === "Liderança" ? "active" : ""}
-          onClick={() => setFilter("Liderança")}
-        >
-          Lideranças
-        </button>
-      </div>
-      <div className="summary-strip">
-        <span>
-          <b>{contacts.length}</b>Total de contatos
-        </span>
-        <span>
-          <b>{contacts.filter((p) => p.phone).length}</b>Com WhatsApp
-        </span>
-        <span>
-          <b>{leaders}</b>Lideranças
-        </span>
-        <span>
-          <b>{new Set(contacts.map((p) => p.district)).size}</b>Bairros
-        </span>
-      </div>
-      <article className="panel data-panel">
-        <div className="table-tools">
-          <div className="search">
-            <span>⌕</span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome, telefone ou bairro"
-            />
-          </div>
-          <button className="outline">Exportar</button>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Contato</th>
-                <th>Perfil</th>
-                <th>WhatsApp</th>
-                <th>Bairro</th>
-                <th>Liderança</th>
-                <th>Responsável</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="person">
-                      <span>{initials(p.name)}</span>
-                      <b>{p.name}</b>
-                    </div>
-                  </td>
-                  <td>{p.kind}</td>
-                  <td>{p.phone}</td>
-                  <td>{p.district}</td>
-                  <td>{p.leader || "—"}</td>
-                  <td>{p.ownerEmail}</td>
-                  <td>
-                    <i className="active-status">Ativo</i>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <footer className="table-footer">
-          Exibindo {list.length} de {filteredContacts.length} registros
-        </footer>
-      </article>
-    </>
-  );
-}
-
 function Agenda({
   meetings,
   open,
