@@ -2,6 +2,13 @@
   display: none;
 }
 
+/* Os alfinetes legados podem existir por um frame antes da camada moderna assumir. */
+.full-map .contact-pin {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @media (max-width: 760px) {
   /*
    * O mapa nasce com os controles desktop e só depois o enhancer mobile os
@@ -39,13 +46,6 @@
   .vf-mobile-district-host .vf-district-map-control {
     opacity: 1 !important;
     visibility: visible !important;
-  }
-
-  /* Os alfinetes legados ainda podem existir por um frame ao restaurar a aba. */
-  .full-map .contact-pin {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
   }
 
   .full-map .map-legend {
