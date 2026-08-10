@@ -1,0 +1,47 @@
+name: Remover aba Relatorios
+
+on:
+  push:
+    paths:
+      - ".github/scripts/remove-reports.py"
+      - ".github/workflows/run-remove-reports.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Aplicar remocao
+        run: python3 .github/scripts/remove-reports.py
+
+      - name: Verificar referencias
+        shell: bash
+        run: |
+          ! grep -q '"Relatórios"' app/dashboard-client.tsx
+          ! grep -q 'function Reports' app/dashboard-client.tsx
+          grep -q 'function ContactManager' app/dashboard-client.tsx
+          grep -q 'function BackupCenter' app/dashboard-client.tsx
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Validar build
+        run: npm run build
+
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/remove-reports.py
+          rm -f .github/workflows/run-remove-reports.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx .github/scripts/remove-reports.py .github/workflows/run-remove-reports.yml
+          git diff --cached --check
+          git commit -m "remove aba relatorios"
+          git push origin HEAD:main
