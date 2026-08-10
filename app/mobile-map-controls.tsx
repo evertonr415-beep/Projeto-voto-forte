@@ -18,6 +18,9 @@ function installStyles() {
     .vf-map-pin.voter i {
       font-size: 9px !important;
     }
+    .vf-desktop-map-actions {
+      display: none;
+    }
     @media (min-width: 0px) {
       .full-map.vf-mobile-map-ui .real-map-toolbar {
         top: 8px !important;
@@ -117,17 +120,38 @@ function installStyles() {
       }
     }
     @media (min-width: 761px) {
-      .full-map.vf-mobile-map-ui .real-map-toolbar > div {
+      .full-map.vf-mobile-map-ui .real-map-toolbar {
         display: none !important;
-      }
-      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1) {
-        top: 8px !important;
-      }
-      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
-        top: 55px !important;
       }
       .full-map.vf-mobile-map-ui .leaflet-control-zoom {
         display: none !important;
+      }
+      .full-map.vf-mobile-map-ui .vf-desktop-map-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1201;
+        display: grid;
+        gap: 8px;
+        pointer-events: auto;
+      }
+      .full-map.vf-mobile-map-ui .vf-desktop-map-actions button {
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(255,255,255,.58);
+        border-radius: 12px;
+        background: rgba(15, 67, 128, .96);
+        color: #fff;
+        box-shadow: 0 7px 18px rgba(7, 26, 51, .22);
+        font: 400 24px/1 Arial, sans-serif;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+      }
+      .full-map.vf-mobile-map-ui .vf-desktop-map-actions button:hover {
+        background: #174f91;
       }
       .vf-mobile-district-host .vf-district-map-control header {
         padding: 8px 9px !important;
@@ -144,7 +168,9 @@ function installStyles() {
         text-overflow: ellipsis !important;
       }
       .vf-mobile-district-host .vf-district-map-toggle {
-        display: block !important;
+        display: grid !important;
+        place-items: center !important;
+        margin-left: auto !important;
       }
       .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,
       .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-scale {
@@ -312,6 +338,25 @@ export default function MobileMapControls() {
         districtToggle.setAttribute("aria-label", "Abrir contatos por bairro");
       }
 
+      const desktopActions = document.createElement("div");
+      desktopActions.className = "vf-desktop-map-actions";
+      const desktopActionButtons = buttons.slice(0, 2).map((sourceButton, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = icons[index];
+        button.title = labels[index];
+        button.setAttribute("aria-label", labels[index]);
+        const handleClick = (event: Event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          sourceButton.click();
+        };
+        button.addEventListener("click", handleClick);
+        desktopActions.appendChild(button);
+        return { button, handleClick };
+      });
+      fullMap.appendChild(desktopActions);
+
       const originalActionText = pageAction.textContent || "Filtros do mapa";
       const originalActionTitle = pageAction.getAttribute("title");
       const originalActionAriaLabel = pageAction.getAttribute("aria-label");
@@ -374,6 +419,7 @@ export default function MobileMapControls() {
         fullMap.isConnected &&
         contactsHost.isConnected &&
         districtHost.isConnected &&
+        desktopActions.isConnected &&
         contactPanel.parentElement === contactsHost &&
         districtPanel.parentElement === districtHost &&
         pageAction.isConnected &&
@@ -381,6 +427,10 @@ export default function MobileMapControls() {
 
       cleanupCurrent = () => {
         statusObserver.disconnect();
+        desktopActionButtons.forEach(({ button, handleClick }) =>
+          button.removeEventListener("click", handleClick),
+        );
+        desktopActions.remove();
         pageAction.removeEventListener("click", handleContactsToggle, true);
         pageAction.classList.remove("vf-mobile-page-contacts-toggle");
         pageAction.textContent = originalActionText;
