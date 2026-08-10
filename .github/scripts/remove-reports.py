@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 
+# Trigger de execucao apos o workflow existir na branch principal.
 path = Path("app/dashboard-client.tsx")
 text = path.read_text(encoding="utf-8")
 original = text
