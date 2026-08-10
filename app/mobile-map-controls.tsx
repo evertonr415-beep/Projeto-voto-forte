@@ -132,10 +132,12 @@ export default function MobileMapControls() {
     installStyles();
     const media = window.matchMedia(MOBILE_QUERY);
     let cleanupCurrent: (() => void) | null = null;
+    let currentAttachmentHealthy: (() => boolean) | null = null;
     let activeMap: HTMLElement | null = null;
     let pendingMap: HTMLElement | null = null;
     let fallbackTimer: number | null = null;
     let lifecycleFrame: number | null = null;
+    let resumeTimer: number | null = null;
 
     const setFallback = (enabled: boolean) => {
       document.documentElement.classList.toggle("vf-mobile-map-fallback", enabled);
@@ -175,6 +177,7 @@ export default function MobileMapControls() {
     const teardownCurrent = () => {
       cleanupCurrent?.();
       cleanupCurrent = null;
+      currentAttachmentHealthy = null;
       activeMap = null;
     };
 
@@ -192,17 +195,20 @@ export default function MobileMapControls() {
         return false;
       }
 
-      if (
-        activeMap === fullMap &&
-        cleanupCurrent &&
-        fullMap.isConnected &&
-        fullMap.classList.contains("vf-mobile-map-ui")
-      ) {
-        clearPending();
-        return true;
+      if (activeMap === fullMap && cleanupCurrent) {
+        if (
+          fullMap.isConnected &&
+          fullMap.classList.contains("vf-mobile-map-ui") &&
+          currentAttachmentHealthy?.()
+        ) {
+          clearPending();
+          return true;
+        }
+        teardownCurrent();
+      } else if (activeMap && activeMap !== fullMap) {
+        teardownCurrent();
       }
 
-      if (activeMap && activeMap !== fullMap) teardownCurrent();
       beginPending(fullMap);
 
       const toolbar = fullMap.querySelector<HTMLElement>(".real-map-toolbar");
@@ -318,6 +324,15 @@ export default function MobileMapControls() {
       });
 
       activeMap = fullMap;
+      currentAttachmentHealthy = () =>
+        fullMap.isConnected &&
+        contactsHost.isConnected &&
+        districtHost.isConnected &&
+        contactPanel.parentElement === contactsHost &&
+        districtPanel.parentElement === districtHost &&
+        pageAction.isConnected &&
+        pageAction.classList.contains("vf-mobile-page-contacts-toggle");
+
       cleanupCurrent = () => {
         statusObserver.disconnect();
         pageAction.removeEventListener("click", handleContactsToggle, true);
@@ -381,9 +396,12 @@ export default function MobileMapControls() {
 
     const restoreAfterResume = () => {
       if (!media.matches) return;
-      teardownCurrent();
-      clearPending();
       scheduleSync();
+      if (resumeTimer !== null) window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        resumeTimer = null;
+        scheduleSync();
+      }, 200);
     };
 
     const handleVisibilityChange = () => {
@@ -403,6 +421,7 @@ export default function MobileMapControls() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       lifecycleObserver.disconnect();
       if (lifecycleFrame !== null) window.cancelAnimationFrame(lifecycleFrame);
+      if (resumeTimer !== null) window.clearTimeout(resumeTimer);
       clearFallbackTimer();
       setFallback(false);
       teardownCurrent();
