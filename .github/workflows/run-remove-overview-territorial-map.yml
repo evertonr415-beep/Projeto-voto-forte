@@ -1,0 +1,38 @@
+name: Remover mapa da Visao Geral
+
+on:
+  push:
+    paths:
+      - ".github/scripts/remove-overview-territorial-map.py"
+      - ".github/workflows/run-remove-overview-territorial-map.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar remocao estrutural
+        run: python3 .github/scripts/remove-overview-territorial-map.py
+      - name: Validar estrutura
+        shell: bash
+        run: |
+          test "$(grep -c '<CityMap contacts={contacts} />' app/dashboard-client.tsx)" -eq 1
+          ! grep -q 'className="panel territorial"' app/dashboard-client.tsx
+          ! grep -q 'title="Presença territorial"' app/dashboard-client.tsx
+          grep -q 'function MapPage' app/dashboard-client.tsx
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/remove-overview-territorial-map.py
+          rm -f .github/workflows/run-remove-overview-territorial-map.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx app/sistema-completo/page.tsx .github/scripts/remove-overview-territorial-map.py .github/workflows/run-remove-overview-territorial-map.yml
+          git diff --cached --check
+          git commit -m "remove mapa territorial da visao geral"
+          git push origin HEAD:main
