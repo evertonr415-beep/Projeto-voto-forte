@@ -728,6 +728,60 @@ function PanelTitle({
   );
 }
 
+async function ensureLeaflet() {
+  let stylesheet = document.querySelector<HTMLLinkElement>(
+    'link[data-vf-leaflet]',
+  );
+  if (!stylesheet) {
+    stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    stylesheet.dataset.vfLeaflet = "true";
+    document.head.appendChild(stylesheet);
+  }
+
+  if (!stylesheet.sheet) {
+    await new Promise<void>((resolve, reject) => {
+      const loaded = () => resolve();
+      const failed = () => reject(new Error("leaflet-css"));
+      stylesheet?.addEventListener("load", loaded, { once: true });
+      stylesheet?.addEventListener("error", failed, { once: true });
+      window.setTimeout(() => {
+        if (stylesheet?.sheet) resolve();
+      }, 1500);
+    });
+  }
+
+  if (!(window as any).L) {
+    let script = document.querySelector<HTMLScriptElement>(
+      "script[data-vf-leaflet]",
+    );
+    if (!script) {
+      script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.dataset.vfLeaflet = "true";
+      document.head.appendChild(script);
+    }
+
+    if (!(window as any).L) {
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).L) {
+          resolve();
+          return;
+        }
+        script?.addEventListener("load", () => resolve(), { once: true });
+        script?.addEventListener("error", () => reject(new Error("leaflet-js")), {
+          once: true,
+        });
+      });
+    }
+  }
+
+  const L = (window as any).L;
+  if (!L) throw new Error("leaflet-unavailable");
+  return L;
+}
+
 async function geocodeMeetingAddress(address: string) {
   const query = /brasil/i.test(address) ? address : `${address}, Brasil`;
   const response = await fetch(
@@ -761,32 +815,8 @@ function MeetingLocationMap({
   useEffect(() => {
     let cancelled = false;
     async function start() {
-      if (!document.querySelector("link[data-vf-leaflet]")) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        link.dataset.vfLeaflet = "true";
-        document.head.appendChild(link);
-      }
-      if (!(window as any).L)
-        await new Promise<void>((resolve, reject) => {
-          const existing = document.querySelector(
-            "script[data-vf-leaflet]",
-          ) as HTMLScriptElement | null;
-          if (existing) {
-            existing.addEventListener("load", () => resolve(), { once: true });
-            existing.addEventListener("error", reject, { once: true });
-            return;
-          }
-          const script = document.createElement("script");
-          script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-          script.dataset.vfLeaflet = "true";
-          script.onload = () => resolve();
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
+      const L = await ensureLeaflet();
       if (cancelled || !element.current) return;
-      const L = (window as any).L;
       map.current = L.map(element.current).setView([latitude, longitude], 17);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -843,32 +873,8 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
   useEffect(() => {
     let cancelled = false;
     async function startMap() {
-      if (!document.querySelector("link[data-vf-leaflet]")) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        link.dataset.vfLeaflet = "true";
-        document.head.appendChild(link);
-      }
-      if (!(window as any).L)
-        await new Promise<void>((resolve, reject) => {
-          const existing = document.querySelector(
-            "script[data-vf-leaflet]",
-          ) as HTMLScriptElement | null;
-          if (existing) {
-            existing.addEventListener("load", () => resolve(), { once: true });
-            existing.addEventListener("error", reject, { once: true });
-            return;
-          }
-          const script = document.createElement("script");
-          script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-          script.dataset.vfLeaflet = "true";
-          script.onload = () => resolve();
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
+      const L = await ensureLeaflet();
       if (cancelled || !mapElement.current || mapInstance.current) return;
-      const L = (window as any).L;
       const map = L.map(mapElement.current, {
         zoomControl: true,
         attributionControl: true,
