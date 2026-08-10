@@ -379,13 +379,28 @@ export default function MobileMapControls() {
       });
     };
 
+    const restoreAfterResume = () => {
+      if (!media.matches) return;
+      teardownCurrent();
+      clearPending();
+      scheduleSync();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") restoreAfterResume();
+    };
+
     const lifecycleObserver = new MutationObserver(scheduleSync);
     lifecycleObserver.observe(document.body, { childList: true, subtree: true });
     media.addEventListener("change", scheduleSync);
+    window.addEventListener("pageshow", restoreAfterResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     attach();
 
     return () => {
       media.removeEventListener("change", scheduleSync);
+      window.removeEventListener("pageshow", restoreAfterResume);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       lifecycleObserver.disconnect();
       if (lifecycleFrame !== null) window.cancelAnimationFrame(lifecycleFrame);
       clearFallbackTimer();

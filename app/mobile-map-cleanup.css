@@ -41,6 +41,13 @@
     visibility: visible !important;
   }
 
+  /* Os alfinetes legados ainda podem existir por um frame ao restaurar a aba. */
+  .full-map .contact-pin {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
   .full-map .map-legend {
     display: block !important;
     position: absolute;
