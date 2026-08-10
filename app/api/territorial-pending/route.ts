@@ -6,6 +6,12 @@ import {
 
 const MAX_PAGE_SIZE = 50;
 const MAX_MATCHING_UPDATES = 500;
+const ARAPONGAS_BOUNDS = {
+  minLatitude: -23.55,
+  maxLatitude: -23.25,
+  minLongitude: -51.6,
+  maxLongitude: -51.3,
+};
 
 type Account = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 
@@ -29,6 +35,19 @@ type ContactRecord = {
 
 type DistrictNameRow = {
   canonical_name?: unknown;
+  cep_start?: unknown;
+  cep_end?: unknown;
+};
+
+type DistrictSummaryRow = {
+  district?: unknown;
+  total?: unknown;
+};
+
+type DistrictGeocodeRow = {
+  canonical_name?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
 };
 
 type RecordIdRow = {
@@ -40,6 +59,9 @@ type CorrectionBody = {
   district?: unknown;
   applyToMatching?: unknown;
   owner?: unknown;
+  referenceDistrict?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
 };
 
 async function readJsonBody(request: Request): Promise<CorrectionBody | null> {
@@ -84,6 +106,15 @@ function applyScope<T>(query: T, scope: string, emails: string[]) {
     : scoped.eq("owner_email", scope);
 }
 
+function normalizeDistrict(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
 async function canonicalDistrict(account: Account, value: string) {
   const candidate = value.trim().slice(0, 120);
   if (!candidate) return null;
@@ -126,28 +157,103 @@ export async function GET(request: Request) {
   issuesQuery = applyScope(issuesQuery, scope, emails);
   if (category) issuesQuery = issuesQuery.eq("category", category);
 
-  const districtsPromise = account.supabase
+  const postalRefsPromise = account.supabase
     .from("vf_arapongas_district_postal_refs")
-    .select("canonical_name")
+    .select("canonical_name,cep_start,cep_end")
     .order("canonical_name", { ascending: true });
+  const summaryPromise = account.supabase.rpc("vf_contact_dashboard_summary", {
+    p_owner_emails: scope === "all" ? emails : [scope],
+  });
+  const geocodesPromise = account.supabase
+    .from("vf_arapongas_district_geocodes")
+    .select("canonical_name,latitude,longitude");
 
-  const [{ data, count, error }, districtsResult] = await Promise.all([
+  const [
+    { data, count, error },
+    postalRefsResult,
+    summaryResult,
+    geocodesResult,
+  ] = await Promise.all([
     issuesQuery,
-    districtsPromise,
+    postalRefsPromise,
+    summaryPromise,
+    geocodesPromise,
   ]);
 
   if (error)
     return Response.json({ error: error.message }, { status: 400 });
-  if (districtsResult.error)
-    return Response.json({ error: districtsResult.error.message }, { status: 400 });
+  if (postalRefsResult.error)
+    return Response.json({ error: postalRefsResult.error.message }, { status: 400 });
+  if (summaryResult.error)
+    return Response.json({ error: summaryResult.error.message }, { status: 400 });
+  if (geocodesResult.error)
+    return Response.json({ error: geocodesResult.error.message }, { status: 400 });
 
+  const postalRows = (postalRefsResult.data ?? []) as DistrictNameRow[];
   const districts = Array.from(
     new Set(
-      ((districtsResult.data ?? []) as DistrictNameRow[])
+      postalRows
         .map((row) => String(row.canonical_name || "").trim())
         .filter(Boolean),
     ),
   );
+
+  const postalByDistrict = new Map<
+    string,
+    Array<{ cepStart: string; cepEnd: string }>
+  >();
+  for (const row of postalRows) {
+    const key = normalizeDistrict(row.canonical_name);
+    if (!key) continue;
+    const refs = postalByDistrict.get(key) ?? [];
+    const cepStart = String(row.cep_start || "").trim();
+    const cepEnd = String(row.cep_end || "").trim();
+    if (cepStart || cepEnd) refs.push({ cepStart, cepEnd });
+    postalByDistrict.set(key, refs);
+  }
+
+  const geocodedKeys = new Set(
+    ((geocodesResult.data ?? []) as DistrictGeocodeRow[])
+      .filter(
+        (row) =>
+          Number.isFinite(Number(row.latitude)) &&
+          Number.isFinite(Number(row.longitude)),
+      )
+      .map((row) => normalizeDistrict(row.canonical_name))
+      .filter(Boolean),
+  );
+
+  const summary = (summaryResult.data ?? {}) as {
+    districts?: DistrictSummaryRow[];
+  };
+  const referenceIssues = (Array.isArray(summary.districts)
+    ? summary.districts
+    : []
+  )
+    .map((row) => {
+      const district = String(row.district || "").trim();
+      const total = Math.max(0, Number(row.total || 0));
+      const key = normalizeDistrict(district);
+      return {
+        district,
+        total,
+        key,
+        postalReferences: postalByDistrict.get(key) ?? [],
+      };
+    })
+    .filter(
+      (row) =>
+        row.district &&
+        row.key &&
+        row.total > 0 &&
+        row.key !== "ZONA RURAL" &&
+        !geocodedKeys.has(row.key),
+    )
+    .sort(
+      (left, right) =>
+        right.total - left.total ||
+        left.district.localeCompare(right.district, "pt-BR"),
+    );
 
   return Response.json(
     {
@@ -158,6 +264,12 @@ export async function GET(request: Request) {
       totalPages: Math.max(1, Math.ceil((count ?? 0) / pageSize)),
       issues: (data ?? []) as LocationIssue[],
       districts,
+      referenceIssues,
+      referenceIssueContacts: referenceIssues.reduce(
+        (sum, item) => sum + item.total,
+        0,
+      ),
+      canManageReferences: account.role === "master",
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
@@ -171,6 +283,80 @@ export async function PATCH(request: Request) {
   const body = await readJsonBody(request);
   if (!body)
     return Response.json({ error: "Dados da correção inválidos" }, { status: 400 });
+
+  if (typeof body.referenceDistrict === "string") {
+    if (account.role !== "master")
+      return Response.json(
+        { error: "Somente o Administrador Master pode definir referências territoriais globais" },
+        { status: 403 },
+      );
+
+    const canonical = await canonicalDistrict(account, body.referenceDistrict);
+    if (!canonical)
+      return Response.json(
+        { error: "Bairro territorial não reconhecido" },
+        { status: 400 },
+      );
+
+    const latitude = Number(body.latitude);
+    const longitude = Number(body.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+      return Response.json(
+        { error: "Selecione um ponto válido no mapa" },
+        { status: 400 },
+      );
+    if (
+      latitude < ARAPONGAS_BOUNDS.minLatitude ||
+      latitude > ARAPONGAS_BOUNDS.maxLatitude ||
+      longitude < ARAPONGAS_BOUNDS.minLongitude ||
+      longitude > ARAPONGAS_BOUNDS.maxLongitude
+    )
+      return Response.json(
+        { error: "O ponto selecionado está fora da área esperada de Arapongas" },
+        { status: 400 },
+      );
+
+    const now = new Date().toISOString();
+    const { error: geocodeError } = await account.supabase
+      .from("vf_arapongas_district_geocodes")
+      .upsert(
+        {
+          canonical_name: canonical,
+          latitude,
+          longitude,
+          source: "Referência territorial validada manualmente no Mapa Eleitoral",
+          matched_neighborhood: canonical,
+          confidence: "manual_reference",
+          reference_cep: null,
+          reference_street: null,
+          geocode_attempted_at: now,
+          geocode_error: null,
+          updated_at: now,
+        },
+        { onConflict: "canonical_name" },
+      );
+    if (geocodeError)
+      return Response.json({ error: geocodeError.message }, { status: 400 });
+
+    const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
+      actor_id: account.auth_user_id,
+      actor_email: account.email,
+      action: "Referência territorial definida",
+      detail: `${canonical} · ponto territorial manual validado no Mapa Eleitoral`,
+    });
+    if (auditError) {
+      console.error("Failed to audit district territorial reference", auditError);
+      return Response.json(
+        {
+          error:
+            "A referência foi salva, mas não foi possível registrar a auditoria. Recarregue a tela antes de tentar novamente.",
+        },
+        { status: 409 },
+      );
+    }
+
+    return Response.json({ ok: true, district: canonical, latitude, longitude });
+  }
 
   const recordId = Number(body.recordId);
   if (!Number.isInteger(recordId) || recordId <= 0)
