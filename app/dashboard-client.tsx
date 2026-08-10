@@ -349,6 +349,7 @@ export default function DashboardClient({
       setFilter={setContactFilter}
       districtFilter={contactDistrictFilter}
       setDistrictFilter={setContactDistrictFilter}
+      scope={scope}
       tell={setNotice}
       importContact={(payload) => createRecord("contact", payload)}
       updateContact={updateContact}
@@ -1251,6 +1252,7 @@ function ContactManager({
   setFilter,
   districtFilter,
   setDistrictFilter,
+  scope,
   tell,
   importContact,
   updateContact,
@@ -1263,6 +1265,7 @@ function ContactManager({
   setFilter: (filter: Contact["kind"] | "Todos") => void;
   districtFilter: string;
   setDistrictFilter: (district: string) => void;
+  scope: string;
   tell: (s: string) => void;
   importContact: (c: Contact) => Promise<boolean>;
   updateContact: (id: number, c: Contact) => Promise<boolean>;
@@ -1275,18 +1278,75 @@ function ContactManager({
     [editing, setEditing] = useState<
       (Contact & { id: number; ownerEmail: string }) | null
     >(null);
+  const [districtContacts, setDistrictContacts] = useState<
+    (Contact & { id: number; ownerEmail: string })[]
+  >([]);
+  const [districtTotal, setDistrictTotal] = useState(0);
+  const [districtPage, setDistrictPage] = useState(1);
+  const [districtTotalPages, setDistrictTotalPages] = useState(1);
+  const [districtLoading, setDistrictLoading] = useState(false);
+
+  useEffect(() => {
+    setDistrictPage(1);
+  }, [districtFilter, filter, scope]);
+
+  useEffect(() => {
+    if (!districtFilter) {
+      setDistrictContacts([]);
+      setDistrictTotal(0);
+      setDistrictTotalPages(1);
+      setDistrictLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDistrictLoading(true);
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({
+        owner: scope,
+        district: districtFilter,
+        page: String(districtPage),
+        pageSize: "100",
+      });
+      if (filter === "Eleitor" || filter === "Liderança")
+        params.set("profile", filter);
+      if (query.trim()) params.set("q", query.trim());
+      apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" })
+        .then(async (response) => ({ response, data: await response.json() }))
+        .then(({ response, data }) => {
+          if (cancelled) return;
+          if (!response.ok) throw new Error(data.error || "Não foi possível carregar os contatos do bairro.");
+          setDistrictContacts(Array.isArray(data.contacts) ? data.contacts : []);
+          setDistrictTotal(Number(data.total || 0));
+          setDistrictTotalPages(Math.max(1, Number(data.totalPages || 1)));
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            setDistrictContacts([]);
+            setDistrictTotal(0);
+            setDistrictTotalPages(1);
+            tell(error instanceof Error ? error.message : "Não foi possível carregar os contatos do bairro.");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setDistrictLoading(false);
+        });
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [districtFilter, filter, scope, query, districtPage, tell]);
+
   const profileContacts =
     filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter);
-  const filteredContacts = districtFilter
-    ? profileContacts.filter(
-        (c) => c.district.trim().toLocaleLowerCase("pt-BR") === districtFilter.trim().toLocaleLowerCase("pt-BR"),
-      )
-    : profileContacts;
-  const list = filteredContacts.filter((c) =>
-    `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+  const filteredContacts = districtFilter ? districtContacts : profileContacts;
+  const list = districtFilter
+    ? filteredContacts
+    : filteredContacts.filter((c) =>
+        `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
+          .toLowerCase()
+          .includes(query.toLowerCase()),
+      );
   const voters = contacts.filter((c) => c.kind === "Eleitor").length;
   const leaders = contacts.filter((c) => c.kind === "Liderança").length;
   const districts = new Set(
@@ -1437,7 +1497,7 @@ function ContactManager({
       {districtFilter && (
         <div className="district-contact-filter" role="status">
           <span>
-            Bairro selecionado: <b>{districtFilter}</b> · {filteredContacts.length} contato(s)
+            Bairro selecionado: <b>{districtFilter}</b> · {districtLoading ? "carregando…" : `${districtTotal} contato(s)`}
           </span>
           <button type="button" onClick={() => setDistrictFilter("")}>
             Limpar bairro
@@ -1590,10 +1650,34 @@ function ContactManager({
               ))}
             </tbody>
           </table>
-          {!list.length && (
+          {!districtLoading && !list.length && (
             <p className="empty-state">Nenhum contato encontrado.</p>
           )}
+          {districtLoading && (
+            <p className="empty-state">Carregando contatos deste bairro…</p>
+          )}
         </div>
+        {districtFilter && districtTotalPages > 1 && (
+          <div className="import-actions">
+            <button
+              type="button"
+              disabled={districtPage <= 1 || districtLoading}
+              onClick={() => setDistrictPage((page) => Math.max(1, page - 1))}
+            >
+              Página anterior
+            </button>
+            <span>
+              Página {districtPage} de {districtTotalPages} · {districtTotal} contato(s)
+            </span>
+            <button
+              type="button"
+              disabled={districtPage >= districtTotalPages || districtLoading}
+              onClick={() => setDistrictPage((page) => Math.min(districtTotalPages, page + 1))}
+            >
+              Próxima página
+            </button>
+          </div>
+        )}
       </article>
       {editing && (
         <div className="modal-backdrop" onMouseDown={() => setEditing(null)}>
