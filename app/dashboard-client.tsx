@@ -10,7 +10,6 @@ type View =
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
   | "WhatsApp"
-  | "Relatórios"
   | "Usuários"
   | "Banco de Dados e Backup";
 type Modal =
@@ -27,7 +26,6 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
   { label: "WhatsApp", icon: "◉" },
-  { label: "Relatórios", icon: "▥" },
   { label: "Usuários", icon: "♙" },
   { label: "Banco de Dados e Backup", icon: "⛁" },
 ];
@@ -356,8 +354,6 @@ export default function DashboardClient({
       drafts={drafts}
       save={(payload) => createRecord("draft", payload)}
     />
-  ) : view === "Relatórios" ? (
-    <Reports tell={setNotice} contacts={contacts} />
   ) : view === "Banco de Dados e Backup" && currentUser.role === "master" ? (
     <BackupCenter tell={setNotice} />
   ) : isAdmin ? (
@@ -2084,79 +2080,6 @@ function Whatsapp({
           ) : (
             <p className="empty-state">Nenhum rascunho salvo neste ambiente.</p>
           )}
-        </article>
-      </div>
-    </>
-  );
-}
-function Reports({
-  tell,
-  contacts,
-}: {
-  tell: (s: string) => void;
-  contacts: (Contact & { id: number; ownerEmail: string })[];
-}) {
-  const leaders = contacts.filter((p) => p.kind === "Liderança").length;
-  const voters = contacts.length - leaders;
-  const districts = [...new Set(contacts.map((p) => p.district))];
-  const bars = Array.from(
-    { length: 7 },
-    (_, i) => contacts.filter((p) => p.id % 7 === i).length,
-  );
-  const max = Math.max(1, ...bars);
-  return (
-    <>
-      <PageHead
-        eyebrow="ANÁLISE DE DESEMPENHO"
-        title="Relatórios da campanha"
-        text="Indicadores calculados somente a partir do ambiente selecionado."
-        action="Exportar relatório"
-        onClick={() =>
-          tell("Relatório do ambiente selecionado preparado para exportação.")
-        }
-      />
-      <div className="report-grid">
-        <article className="panel chart-card">
-          <PanelTitle
-            title="Distribuição da base"
-            subtitle="Cadastros agrupados para análise"
-          />
-          <div className="chart-bars">
-            {bars.map((n, i) => (
-              <div key={i}>
-                <i style={{ height: `${Math.max(5, (n / max) * 155)}px` }}>
-                  <span>{n}</span>
-                </i>
-                <small>Grupo {i + 1}</small>
-              </div>
-            ))}
-          </div>
-        </article>
-        <article className="panel coverage-card">
-          <PanelTitle
-            title="Cobertura por perfil"
-            subtitle="Composição do ambiente atual"
-          />
-          <div className="donut">
-            <div>
-              <b>{contacts.length}</b>
-              <small>CONTATOS</small>
-            </div>
-          </div>
-          <ul>
-            <li>
-              <i className="green-dot" />
-              Eleitores <b>{voters}</b>
-            </li>
-            <li>
-              <i className="gold-dot" />
-              Lideranças <b>{leaders}</b>
-            </li>
-            <li>
-              <i className="blue-dot" />
-              Bairros <b>{districts.length}</b>
-            </li>
-          </ul>
         </article>
       </div>
     </>
