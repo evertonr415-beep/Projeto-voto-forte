@@ -10,8 +10,7 @@ type View =
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
   | "WhatsApp"
-  | "Usuários"
-  | "Banco de Dados e Backup";
+  | "Administração";
 type Modal =
   | null
   | "cadastro"
@@ -26,8 +25,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
   { label: "WhatsApp", icon: "◉" },
-  { label: "Usuários", icon: "♙" },
-  { label: "Banco de Dados e Backup", icon: "⛁" },
+  { label: "Administração", icon: "⚙" },
 ];
 
 function Brand() {
@@ -159,15 +157,8 @@ export default function DashboardClient({
   };
 
   const visibleMenu = isAdmin
-    ? menu.filter(
-        (item) =>
-          item.label !== "Banco de Dados e Backup" ||
-          currentUser.role === "master",
-      )
-    : menu.filter(
-        (item) =>
-          item.label !== "Usuários" && item.label !== "Banco de Dados e Backup",
-      );
+    ? menu
+    : menu.filter((item) => item.label !== "Administração");
   useEffect(() => {
     apiFetch("/api/audit", {
       method: "POST",
@@ -354,10 +345,8 @@ export default function DashboardClient({
       drafts={drafts}
       save={(payload) => createRecord("draft", payload)}
     />
-  ) : view === "Banco de Dados e Backup" && currentUser.role === "master" ? (
-    <BackupCenter tell={setNotice} />
-  ) : isAdmin ? (
-    <Users
+  ) : view === "Administração" && isAdmin ? (
+    <Administration
       currentUser={currentUser}
       tell={setNotice}
       onUsersChange={setAvailableUsers}
@@ -2086,6 +2075,69 @@ function Whatsapp({
   );
 }
 
+
+function Administration({
+  currentUser,
+  tell,
+  onUsersChange,
+}: {
+  currentUser: CurrentUser;
+  tell: (message: string) => void;
+  onUsersChange: (users: ManagedUser[]) => void;
+}) {
+  type AdminSection = "users" | "audit" | "backup";
+  const [section, setSection] = useState<AdminSection>("users");
+  const isMaster = currentUser.role === "master";
+  return (
+    <>
+      <PageHead
+        eyebrow="ADMINISTRAÇÃO E SEGURANÇA"
+        title="Administração"
+        text="Gerencie acessos, acompanhe atividades e proteja a base do VOTO FORTE em um único lugar."
+      />
+      <div className="management-filter" role="tablist" aria-label="Seções administrativas">
+        <button
+          role="tab"
+          aria-selected={section === "users"}
+          className={section === "users" ? "active" : ""}
+          onClick={() => setSection("users")}
+        >
+          Usuários e acessos
+        </button>
+        <button
+          role="tab"
+          aria-selected={section === "audit"}
+          className={section === "audit" ? "active" : ""}
+          onClick={() => setSection("audit")}
+        >
+          Atividades / Auditoria
+        </button>
+        {isMaster && (
+          <button
+            role="tab"
+            aria-selected={section === "backup"}
+            className={section === "backup" ? "active" : ""}
+            onClick={() => setSection("backup")}
+          >
+            Banco de Dados e Backup
+          </button>
+        )}
+      </div>
+      {section === "backup" && isMaster ? (
+        <BackupCenter tell={tell} embedded />
+      ) : (
+        <Users
+          currentUser={currentUser}
+          tell={tell}
+          onUsersChange={onUsersChange}
+          section={section === "audit" ? "audit" : "users"}
+          embedded
+        />
+      )}
+    </>
+  );
+}
+
 type BackupItem = {
   id: number;
   created_at: string;
@@ -2094,7 +2146,7 @@ type BackupItem = {
   checksum: string;
   item_count: number;
 };
-function BackupCenter({ tell }: { tell: (message: string) => void }) {
+function BackupCenter({ tell, embedded = false }: { tell: (message: string) => void; embedded?: boolean }) {
   const [backups, setBackups] = useState<BackupItem[]>([]),
     [busy, setBusy] = useState(false),
     [selected, setSelected] = useState<File | null>(null),
@@ -2198,11 +2250,13 @@ function BackupCenter({ tell }: { tell: (message: string) => void }) {
   }
   return (
     <>
-      <PageHead
-        eyebrow="PROTEÇÃO E RECUPERAÇÃO"
-        title="Banco de Dados e Backup"
-        text="Cópias completas, verificadas e acessíveis somente pelo Administrador Master."
-      />
+      {!embedded && (
+        <PageHead
+          eyebrow="PROTEÇÃO E RECUPERAÇÃO"
+          title="Banco de Dados e Backup"
+          text="Cópias completas, verificadas e acessíveis somente pelo Administrador Master."
+        />
+      )}
       <div className="backup-status-grid">
         <article>
           <span>✓</span>
@@ -2363,10 +2417,14 @@ function Users({
   currentUser,
   tell,
   onUsersChange,
+  section = "users",
+  embedded = false,
 }: {
   currentUser: CurrentUser;
   tell: (message: string) => void;
   onUsersChange: (users: ManagedUser[]) => void;
+  section?: "users" | "audit";
+  embedded?: boolean;
 }) {
   const [usersList, setUsersList] = useState<ManagedUser[]>([]);
   const [logs, setLogs] = useState<AuditItem[]>([]);
@@ -2437,11 +2495,15 @@ function Users({
   }
   return (
     <>
-      <PageHead
-        eyebrow="SEGURANÇA, PRIVACIDADE E AUDITORIA"
-        title="Central de usuários"
-        text="Administradores acompanham toda a operação; cada usuário acessa somente o próprio ambiente."
-      />
+      {!embedded && (
+        <PageHead
+          eyebrow="SEGURANÇA, PRIVACIDADE E AUDITORIA"
+          title="Central de usuários"
+          text="Administradores acompanham toda a operação; cada usuário acessa somente o próprio ambiente."
+        />
+      )}
+      {section === "users" ? (
+        <>
       <div className="admin-kpis">
         <article>
           <small>ADMINISTRADORES</small>
@@ -2615,6 +2677,9 @@ function Users({
           </div>
         </article>
       </div>
+        </>
+      ) : (
+        <>
       <article className="panel audit-panel">
         <PanelTitle
           title="Atividade de todos os usuários"
@@ -2642,6 +2707,8 @@ function Users({
           )}
         </div>
       </article>
+        </>
+      )}
     </>
   );
 }
