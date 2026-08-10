@@ -86,6 +86,7 @@ function installStyles() {
     .vf-district-point-dot{display:block;width:13px;height:13px;border-radius:50%;background:#2563a8;border:3px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 6px rgba(22,66,108,.24)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 5px rgba(37,99,168,.18),0 0 0 1px rgba(24,74,124,.42),0 3px 8px rgba(22,66,108,.3)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-count{border-color:rgba(37,99,168,.55);box-shadow:0 3px 10px rgba(37,99,168,.24)}
+    .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
     .vf-district-area-popup{min-width:210px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}.vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}.vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}.vf-district-open-contacts{background:#173f75;color:#fff}.vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}.vf-district-save{background:#1f7a4c;color:#fff}.vf-district-cancel{background:#f3f4f6;color:#475569}.vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
     @media(max-width:760px){
       .full-map{height:72vh!important;min-height:520px!important}
@@ -142,6 +143,9 @@ export default function MapTerritoryEnhancer() {
       }
 
       const pointLayer = L.layerGroup().addTo(map);
+      const overviewLayer = L.layerGroup().addTo(map);
+      let overviewMarker: any = null;
+      let overviewTotal = 0;
       const districtCenters = new Map<string, CenterPoint>();
       const districtMarkers = new Map<string, DistrictMarkerVisual>();
       let requestId = 0;
@@ -237,51 +241,91 @@ export default function MapTerritoryEnhancer() {
       const updateVisiblePoints = () => {
         if (!map?._container) return;
         const zoom = Math.round(Number(map.getZoom?.() ?? 13));
+        const isOverviewZoom = zoom <= 12;
         const config = visibilityForZoom(zoom);
-        const selected: Array<{ x: number; y: number }> = [];
-        const nextVisible = new Set<string>();
 
-        for (const item of rankingItems) {
-          if (nextVisible.size >= config.limit) break;
-          const visual = districtMarkers.get(item.key);
-          if (!visual) continue;
-          const point = map.latLngToContainerPoint?.([
-            visual.center.latitude,
-            visual.center.longitude,
-          ]);
-          if (!point) continue;
-          if (
-            config.minDistance > 0 &&
-            selected.some((candidate) => {
-              const dx = candidate.x - point.x;
-              const dy = candidate.y - point.y;
-              return Math.sqrt(dx * dx + dy * dy) < config.minDistance;
-            })
-          ) {
-            continue;
+        if (isOverviewZoom) {
+          for (const [, visual] of districtMarkers) {
+            if (pointLayer.hasLayer?.(visual.marker)) pointLayer.removeLayer(visual.marker);
           }
-          nextVisible.add(item.key);
-          selected.push({ x: point.x, y: point.y });
+          visibleKeys = new Set<string>();
+          if (overviewTotal > 0) {
+            if (!overviewMarker) {
+              overviewMarker = L.marker(map.getCenter(), {
+                interactive: false,
+                keyboard: false,
+                zIndexOffset: 450,
+                icon: L.divIcon({
+                  className: "vf-district-overview-total",
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
+                  iconSize: [1, 1],
+                  iconAnchor: [0, 0],
+                }),
+              });
+            } else {
+              overviewMarker.setIcon(
+                L.divIcon({
+                  className: "vf-district-overview-total",
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
+                  iconSize: [1, 1],
+                  iconAnchor: [0, 0],
+                }),
+              );
+            }
+            overviewMarker.setLatLng(map.getCenter());
+            if (!overviewLayer.hasLayer?.(overviewMarker)) overviewMarker.addTo(overviewLayer);
+          } else {
+            overviewLayer.clearLayers();
+          }
+        } else {
+          overviewLayer.clearLayers();
+          const selected: Array<{ x: number; y: number }> = [];
+          const nextVisible = new Set<string>();
+
+          for (const item of rankingItems) {
+            if (nextVisible.size >= config.limit) break;
+            const visual = districtMarkers.get(item.key);
+            if (!visual) continue;
+            const point = map.latLngToContainerPoint?.([
+              visual.center.latitude,
+              visual.center.longitude,
+            ]);
+            if (!point) continue;
+            if (
+              config.minDistance > 0 &&
+              selected.some((candidate) => {
+                const dx = candidate.x - point.x;
+                const dy = candidate.y - point.y;
+                return Math.sqrt(dx * dx + dy * dy) < config.minDistance;
+              })
+            ) {
+              continue;
+            }
+            nextVisible.add(item.key);
+            selected.push({ x: point.x, y: point.y });
+          }
+
+          if (selectedKey && mappedKeys.has(selectedKey)) nextVisible.add(selectedKey);
+
+          for (const [key, visual] of districtMarkers) {
+            const shouldShow = nextVisible.has(key);
+            const isShown = pointLayer.hasLayer?.(visual.marker);
+            if (shouldShow && !isShown) visual.marker.addTo(pointLayer);
+            if (!shouldShow && isShown) pointLayer.removeLayer(visual.marker);
+          }
+          visibleKeys = nextVisible;
         }
 
-        if (selectedKey && mappedKeys.has(selectedKey)) nextVisible.add(selectedKey);
-
-        for (const [key, visual] of districtMarkers) {
-          const shouldShow = nextVisible.has(key);
-          const isShown = pointLayer.hasLayer?.(visual.marker);
-          if (shouldShow && !isShown) visual.marker.addTo(pointLayer);
-          if (!shouldShow && isShown) pointLayer.removeLayer(visual.marker);
-        }
-
-        visibleKeys = nextVisible;
         map._vfDistrictVisiblePointCount = visibleKeys.size;
         map._vfDistrictPointCount = mappedKeys.size;
 
         const message = document.querySelector<HTMLElement>(".real-map-toolbar strong");
         if (message) {
-          message.textContent = mappedKeys.size
-            ? `${visibleKeys.size} ponto(s) de bairro visíveis · ${mappedKeys.size} bairros com referência · ${config.detail}`
-            : "Ranking territorial ativo · sem referências territoriais para desenhar pontos";
+          message.textContent = isOverviewZoom && overviewTotal > 0
+            ? `${NUMBER.format(overviewTotal)} contatos no escopo · visão geral`
+            : mappedKeys.size
+              ? `${visibleKeys.size} ponto(s) de bairro visíveis · ${mappedKeys.size} bairros com referência · ${config.detail}`
+              : "Ranking territorial ativo · sem referências territoriais para desenhar pontos";
         }
         renderRanking();
       };
@@ -304,12 +348,14 @@ export default function MapTerritoryEnhancer() {
             ).catch(() => null),
           ]);
           const summaryPayload = (await summaryResponse.json()) as {
+            total?: number | string;
             districts?: DistrictSummaryItem[];
             error?: string;
           };
           if (!summaryResponse.ok)
             throw new Error(summaryPayload.error || "Falha ao carregar totais dos bairros");
           if (cancelled || id !== requestId || !map._container) return;
+          overviewTotal = Math.max(0, Number(summaryPayload.total || 0));
 
           rankingItems = (Array.isArray(summaryPayload.districts)
             ? summaryPayload.districts
@@ -344,6 +390,8 @@ export default function MapTerritoryEnhancer() {
           }
 
           pointLayer.clearLayers();
+          overviewLayer.clearLayers();
+          overviewMarker = null;
           districtMarkers.clear();
           mappedKeys = new Set<string>();
           visibleKeys = new Set<string>();
@@ -500,6 +548,7 @@ export default function MapTerritoryEnhancer() {
         map.off?.("moveend", handleMoveEnd);
         try {
           map.removeLayer(pointLayer);
+          map.removeLayer(overviewLayer);
           map.removeControl(control);
         } catch {
           // O mapa pode ter sido destruído durante a navegação.
