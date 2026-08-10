@@ -1,0 +1,44 @@
+name: Acoes dos pontos de bairro
+
+on:
+  push:
+    paths:
+      - ".github/scripts/add-district-map-actions.py"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar atalhos e ajuste territorial
+        run: python3 .github/scripts/add-district-map-actions.py
+      - name: Validar integracao
+        shell: bash
+        run: |
+          grep -q 'voto-forte:open-district-contacts' app/dashboard-client.tsx
+          grep -q 'contactDistrictFilter' app/dashboard-client.tsx
+          grep -q 'districtFilter={contactDistrictFilter}' app/dashboard-client.tsx
+          grep -q 'voto-forte:open-district-contacts' app/map-territory-enhancer.tsx
+          grep -q 'Ajustar posição' app/map-territory-enhancer.tsx
+          grep -q 'Salvar posição' app/map-territory-enhancer.tsx
+          grep -q 'referenceDistrict' app/map-territory-enhancer.tsx
+          grep -q 'draggable: canManageReferences' app/map-territory-enhancer.tsx
+          grep -q 'className: "vf-district-point-icon"' app/map-territory-enhancer.tsx
+          grep -q 'voto-forte:electoral-map-ready' app/map-territory-enhancer.tsx
+          ! grep -q 'className="panel territorial"' app/dashboard-client.tsx
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/add-district-map-actions.py
+          rm -f .github/workflows/run-district-map-actions.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx app/map-territory-enhancer.tsx .github/scripts/add-district-map-actions.py .github/workflows/run-district-map-actions.yml
+          git diff --cached --check
+          git commit -m "adiciona acoes aos pontos territoriais de bairro"
+          git push origin HEAD:main
