@@ -95,7 +95,6 @@ text = text.replace(marker, helper + marker, 1)
 
 text = text.replace(old_loader, '      const L = await ensureLeaflet();', 2)
 
-# The two map starters previously declared L again after the loader. Remove only those exact redeclarations.
 text = text.replace('      const L = (window as any).L;\n      map.current = L.map(element.current).setView([latitude, longitude], 17);', '      map.current = L.map(element.current).setView([latitude, longitude], 17);', 1)
 text = text.replace('      const L = (window as any).L;\n      const map = L.map(mapElement.current, {', '      const map = L.map(mapElement.current, {', 1)
 
@@ -120,3 +119,5 @@ if text == original:
 
 path.write_text(text, encoding="utf-8")
 print("Carregamento independente do Leaflet corrigido sem alterar o Mapa Eleitoral.")
+
+# trigger workflow after registration
