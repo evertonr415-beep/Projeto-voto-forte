@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiFetch, supabase } from "./supabase-client";
+import { apiFetch } from "./supabase-client";
 import "./optimized-dashboard.css";
 
 type CurrentAccount = {
@@ -362,12 +362,6 @@ export default function NeutralDashboardClient({
               <b>{scopeName}</b>
             </div>
           )}
-          <button
-            className="optimized-logout"
-            onClick={() => void supabase.auth.signOut()}
-          >
-            Sair
-          </button>
         </div>
       </header>
 
