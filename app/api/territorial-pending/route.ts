@@ -291,13 +291,6 @@ export async function PATCH(request: Request) {
         { status: 403 },
       );
 
-    const canonical = await canonicalDistrict(account, body.referenceDistrict);
-    if (!canonical)
-      return Response.json(
-        { error: "Bairro territorial não reconhecido" },
-        { status: 400 },
-      );
-
     const latitude = Number(body.latitude);
     const longitude = Number(body.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
@@ -316,46 +309,18 @@ export async function PATCH(request: Request) {
         { status: 400 },
       );
 
-    const now = new Date().toISOString();
-    const { error: geocodeError } = await account.supabase
-      .from("vf_arapongas_district_geocodes")
-      .upsert(
-        {
-          canonical_name: canonical,
-          latitude,
-          longitude,
-          source: "Referência territorial validada manualmente no Mapa Eleitoral",
-          matched_neighborhood: canonical,
-          confidence: "manual_reference",
-          reference_cep: null,
-          reference_street: null,
-          geocode_attempted_at: now,
-          geocode_error: null,
-          updated_at: now,
-        },
-        { onConflict: "canonical_name" },
-      );
-    if (geocodeError)
-      return Response.json({ error: geocodeError.message }, { status: 400 });
+    const { data: referenceResult, error: referenceError } = await account.supabase.rpc(
+      "vf_set_district_territorial_reference",
+      {
+        p_district: body.referenceDistrict,
+        p_latitude: latitude,
+        p_longitude: longitude,
+      },
+    );
+    if (referenceError)
+      return Response.json({ error: referenceError.message }, { status: 400 });
 
-    const { error: auditError } = await account.supabase.from("vf_audit_logs").insert({
-      actor_id: account.auth_user_id,
-      actor_email: account.email,
-      action: "Referência territorial definida",
-      detail: `${canonical} · ponto territorial manual validado no Mapa Eleitoral`,
-    });
-    if (auditError) {
-      console.error("Failed to audit district territorial reference", auditError);
-      return Response.json(
-        {
-          error:
-            "A referência foi salva, mas não foi possível registrar a auditoria. Recarregue a tela antes de tentar novamente.",
-        },
-        { status: 409 },
-      );
-    }
-
-    return Response.json({ ok: true, district: canonical, latitude, longitude });
+    return Response.json(referenceResult ?? { ok: true });
   }
 
   const recordId = Number(body.recordId);
