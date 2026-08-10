@@ -1,5 +1,14 @@
 import AuthClient from "../auth-client";
 
 export default function FullSystemPage() {
-  return <AuthClient />;
+  return (
+    <>
+      <style>{`
+        .dashboard-grid > .panel.territorial {
+          display: none !important;
+        }
+      `}</style>
+      <AuthClient />
+    </>
+  );
 }
