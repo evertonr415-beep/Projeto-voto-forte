@@ -1,0 +1,43 @@
+name: Reorganizar Administracao
+
+on:
+  push:
+    paths:
+      - ".github/scripts/reorganize-administration.py"
+      - ".github/workflows/run-reorganize-administration.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Aplicar reorganizacao
+        run: python3 .github/scripts/reorganize-administration.py
+
+      - name: Verificar referencias
+        shell: bash
+        run: |
+          ! grep -q '{ label: "Usuários"' app/dashboard-client.tsx
+          ! grep -q '{ label: "Banco de Dados e Backup"' app/dashboard-client.tsx
+          grep -q '{ label: "Administração", icon: "♙" }' app/dashboard-client.tsx
+          grep -q 'view === "Administração" && isAdmin' app/dashboard-client.tsx
+          grep -q 'Abrir backup' app/dashboard-client.tsx
+          grep -q 'Voltar à Administração' app/dashboard-client.tsx
+
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/reorganize-administration.py
+          rm -f .github/workflows/run-reorganize-administration.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx .github/scripts/reorganize-administration.py .github/workflows/run-reorganize-administration.yml
+          git diff --cached --check
+          git commit -m "reorganiza central de administracao"
+          git push origin HEAD:main
