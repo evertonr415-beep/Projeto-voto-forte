@@ -4,7 +4,6 @@ import { useLayoutEffect } from "react";
 
 const STYLE_ID = "vf-mobile-map-controls-style";
 const MAP_LAYOUT_QUERY = "(min-width: 0px)";
-const DESKTOP_QUERY = "(min-width: 761px)";
 
 function installStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -18,9 +17,6 @@ function installStyles() {
     }
     .vf-map-pin.voter i {
       font-size: 9px !important;
-    }
-    .vf-district-panel-toggle {
-      display: none;
     }
     @media (min-width: 0px) {
       .full-map.vf-mobile-map-ui .real-map-toolbar {
@@ -121,36 +117,38 @@ function installStyles() {
       }
     }
     @media (min-width: 761px) {
-      .vf-mobile-district-host {
-        display: none;
+      .full-map.vf-mobile-map-ui .real-map-toolbar > div {
+        display: none !important;
       }
-      .vf-mobile-district-host.vf-desktop-district-open {
-        display: block;
+      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1) {
+        top: 8px !important;
       }
-      .vf-district-panel-toggle {
-        display: grid;
-        position: absolute;
-        left: 10px;
-        top: 166px;
-        z-index: 1201;
-        width: 48px;
-        height: 48px;
-        place-items: center;
-        border: 1px solid rgba(15, 47, 89, .18);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, .96);
-        color: #102f59;
-        box-shadow: 0 6px 18px rgba(7, 26, 51, .20);
-        font: 850 28px/1 Arial, sans-serif;
-        cursor: pointer;
-        backdrop-filter: blur(8px);
+      .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
+        top: 55px !important;
       }
-      .vf-district-panel-toggle:hover {
-        background: #fff;
+      .full-map.vf-mobile-map-ui .leaflet-control-zoom {
+        display: none !important;
       }
-      .vf-district-panel-toggle[aria-expanded="true"] {
-        background: #102f59;
-        color: #fff;
+      .vf-mobile-district-host .vf-district-map-control header {
+        padding: 8px 9px !important;
+        border-bottom: 0 !important;
+        align-items: center !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control header strong {
+        font-size: 12px !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control header small {
+        font-size: 8px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .vf-mobile-district-host .vf-district-map-toggle {
+        display: block !important;
+      }
+      .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,
+      .vf-mobile-district-host .vf-district-map-control[data-collapsed="true"] .vf-district-map-scale {
+        display: none !important;
       }
     }
   `;
@@ -168,7 +166,6 @@ export default function MobileMapControls() {
   useLayoutEffect(() => {
     installStyles();
     const media = window.matchMedia(MAP_LAYOUT_QUERY);
-    const desktopMedia = window.matchMedia(DESKTOP_QUERY);
     let cleanupCurrent: (() => void) | null = null;
     let currentAttachmentHealthy: (() => boolean) | null = null;
     let activeMap: HTMLElement | null = null;
@@ -299,37 +296,21 @@ export default function MobileMapControls() {
 
       const originalDistrictParent = districtPanel.parentNode;
       const originalDistrictNextSibling = districtPanel.nextSibling;
+      const originalDistrictCollapsed = districtPanel.getAttribute("data-collapsed");
       const districtHost = document.createElement("div");
       districtHost.className = "vf-mobile-district-host";
       contactsHost.insertAdjacentElement("afterend", districtHost);
       districtHost.appendChild(districtPanel);
 
-      const districtToggle = document.createElement("button");
-      districtToggle.type = "button";
-      districtToggle.className = "vf-district-panel-toggle";
-      districtToggle.textContent = "+";
-      districtToggle.title = "Abrir contatos por bairro";
-      districtToggle.setAttribute("aria-label", "Abrir contatos por bairro");
-      districtToggle.setAttribute("aria-expanded", "false");
-      fullMap.appendChild(districtToggle);
-
-      const setDistrictOpen = (open: boolean) => {
-        districtHost.classList.toggle("vf-desktop-district-open", open);
-        districtToggle.textContent = open ? "−" : "+";
-        districtToggle.title = open
-          ? "Fechar contatos por bairro"
-          : "Abrir contatos por bairro";
-        districtToggle.setAttribute("aria-label", districtToggle.title);
-        districtToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      };
-
-      const handleDistrictToggle = (event: Event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setDistrictOpen(!districtHost.classList.contains("vf-desktop-district-open"));
-      };
-      districtToggle.addEventListener("click", handleDistrictToggle);
-      if (!desktopMedia.matches) districtHost.classList.remove("vf-desktop-district-open");
+      const districtToggle = districtPanel.querySelector<HTMLButtonElement>(
+        ".vf-district-map-toggle",
+      );
+      districtPanel.dataset.collapsed = "true";
+      if (districtToggle) {
+        districtToggle.textContent = "+";
+        districtToggle.setAttribute("aria-expanded", "false");
+        districtToggle.setAttribute("aria-label", "Abrir contatos por bairro");
+      }
 
       const originalActionText = pageAction.textContent || "Filtros do mapa";
       const originalActionTitle = pageAction.getAttribute("title");
@@ -393,7 +374,6 @@ export default function MobileMapControls() {
         fullMap.isConnected &&
         contactsHost.isConnected &&
         districtHost.isConnected &&
-        districtToggle.isConnected &&
         contactPanel.parentElement === contactsHost &&
         districtPanel.parentElement === districtHost &&
         pageAction.isConnected &&
@@ -401,8 +381,6 @@ export default function MobileMapControls() {
 
       cleanupCurrent = () => {
         statusObserver.disconnect();
-        districtToggle.removeEventListener("click", handleDistrictToggle);
-        districtToggle.remove();
         pageAction.removeEventListener("click", handleContactsToggle, true);
         pageAction.classList.remove("vf-mobile-page-contacts-toggle");
         pageAction.textContent = originalActionText;
@@ -417,6 +395,9 @@ export default function MobileMapControls() {
         else homeButton.setAttribute("aria-hidden", originalHomeAriaHidden);
         if (originalHomeTabIndex === null) homeButton.removeAttribute("tabindex");
         else homeButton.setAttribute("tabindex", originalHomeTabIndex);
+
+        if (originalDistrictCollapsed === null) districtPanel.removeAttribute("data-collapsed");
+        else districtPanel.setAttribute("data-collapsed", originalDistrictCollapsed);
 
         if (originalDistrictParent) {
           if (
@@ -479,14 +460,12 @@ export default function MobileMapControls() {
     const lifecycleObserver = new MutationObserver(scheduleSync);
     lifecycleObserver.observe(document.body, { childList: true, subtree: true });
     media.addEventListener("change", scheduleSync);
-    desktopMedia.addEventListener("change", scheduleSync);
     window.addEventListener("pageshow", restoreAfterResume);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     attach();
 
     return () => {
       media.removeEventListener("change", scheduleSync);
-      desktopMedia.removeEventListener("change", scheduleSync);
       window.removeEventListener("pageshow", restoreAfterResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       lifecycleObserver.disconnect();
