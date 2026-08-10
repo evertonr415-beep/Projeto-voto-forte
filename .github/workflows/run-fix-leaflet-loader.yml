@@ -1,0 +1,40 @@
+name: Corrigir carregamento do Leaflet
+
+on:
+  push:
+    paths:
+      - ".github/scripts/fix-leaflet-loader.py"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar correcao isolada
+        run: python3 .github/scripts/fix-leaflet-loader.py
+      - name: Validar preservacao do mapa eleitoral
+        shell: bash
+        run: |
+          grep -q 'function ensureLeaflet' app/dashboard-client.tsx
+          test "$(grep -c 'const L = await ensureLeaflet();' app/dashboard-client.tsx)" -eq 2
+          test "$(grep -c '<CityMap contacts={contacts} />' app/dashboard-client.tsx)" -eq 1
+          grep -q 'function MapPage' app/dashboard-client.tsx
+          grep -q 'className="contact-pin"' app/dashboard-client.tsx
+          grep -q 'Centralizar alfinetes' app/dashboard-client.tsx
+          ! grep -q 'className="panel territorial"' app/dashboard-client.tsx
+      - name: Publicar e limpar rotina temporaria
+        shell: bash
+        run: |
+          rm -f .github/scripts/fix-leaflet-loader.py
+          rm -f .github/workflows/run-fix-leaflet-loader.yml
+          git config user.name "Voto Forte Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/dashboard-client.tsx .github/scripts/fix-leaflet-loader.py .github/workflows/run-fix-leaflet-loader.yml
+          git diff --cached --check
+          git commit -m "corrige inicializacao independente do mapa eleitoral"
+          git push origin HEAD:main
