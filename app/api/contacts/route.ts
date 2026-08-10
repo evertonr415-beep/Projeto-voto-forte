@@ -32,6 +32,17 @@ type ContactRow = {
   updated_at: string;
 };
 
+type DistrictContactsPayload = {
+  district?: string;
+  total?: number;
+  contacts?: Array<ContactPayload & {
+    id: number;
+    ownerEmail: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
+};
+
 function mapContact(row: ContactRow) {
   return {
     id: row.id,
@@ -126,11 +137,49 @@ export async function GET(request: Request) {
     );
     const queryText = safeSearch(url.searchParams.get("q") ?? "");
     const profile = url.searchParams.get("profile");
+    const district = (url.searchParams.get("district") ?? "").trim();
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    if (district) {
+      const ownerEmails = scope === "all" ? emails : [scope];
+      const { data, error } = await account.supabase.rpc(
+        "vf_contacts_for_district",
+        {
+          p_owner_emails: ownerEmails,
+          p_district: district,
+          p_profile:
+            profile === "Eleitor" || profile === "Liderança" ? profile : null,
+          p_search: queryText || null,
+          p_limit: pageSize,
+          p_offset: from,
+        },
+      );
+      if (error) throw new Error(error.message);
+      const payload = (data ?? {}) as DistrictContactsPayload;
+      const total = Number(payload.total ?? 0);
+
+      return Response.json(
+        {
+          scope,
+          page,
+          pageSize,
+          district: String(payload.district || district),
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+          contacts: Array.isArray(payload.contacts) ? payload.contacts : [],
+        },
+        {
+          headers: {
+            "Cache-Control": "private, no-store, max-age=0",
+          },
+        },
+      );
+    }
+
     const hasFilters = Boolean(
       queryText || profile === "Eleitor" || profile === "Liderança",
     );
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
 
     let query = account.supabase
       .from("vf_owned_records")
