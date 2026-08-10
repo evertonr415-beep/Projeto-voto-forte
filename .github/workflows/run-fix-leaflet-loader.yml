@@ -24,7 +24,7 @@ jobs:
           test "$(grep -c 'const L = await ensureLeaflet();' app/dashboard-client.tsx)" -eq 2
           test "$(grep -c '<CityMap contacts={contacts} />' app/dashboard-client.tsx)" -eq 1
           grep -q 'function MapPage' app/dashboard-client.tsx
-          grep -q 'className="contact-pin"' app/dashboard-client.tsx
+          grep -q 'className: "contact-pin"' app/dashboard-client.tsx
           grep -q 'Centralizar alfinetes' app/dashboard-client.tsx
           ! grep -q 'className="panel territorial"' app/dashboard-client.tsx
       - name: Publicar e limpar rotina temporaria
