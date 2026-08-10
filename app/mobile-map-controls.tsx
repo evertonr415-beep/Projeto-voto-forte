@@ -3,7 +3,7 @@
 import { useLayoutEffect } from "react";
 
 const STYLE_ID = "vf-mobile-map-controls-style";
-const MOBILE_QUERY = "(max-width: 760px)";
+const MAP_LAYOUT_QUERY = "(min-width: 0px)";
 
 function installStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -18,7 +18,7 @@ function installStyles() {
     .vf-map-pin.voter i {
       font-size: 9px !important;
     }
-    @media (max-width: 760px) {
+    @media (min-width: 0px) {
       .full-map.vf-mobile-map-ui .real-map-toolbar {
         top: 8px !important;
         left: 8px !important;
@@ -130,7 +130,7 @@ function shortStatus(text: string) {
 export default function MobileMapControls() {
   useLayoutEffect(() => {
     installStyles();
-    const media = window.matchMedia(MOBILE_QUERY);
+    const media = window.matchMedia(MAP_LAYOUT_QUERY);
     let cleanupCurrent: (() => void) | null = null;
     let currentAttachmentHealthy: (() => boolean) | null = null;
     let activeMap: HTMLElement | null = null;
