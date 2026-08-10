@@ -25,7 +25,6 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
   { label: "WhatsApp", icon: "◉" },
-  { label: "Administração", icon: "⚙" },
 ];
 
 function Brand() {
@@ -397,6 +396,26 @@ export default function DashboardClient({
               {item.badge && <em>{item.badge}</em>}
             </button>
           ))}
+          {isAdmin && (
+            <button
+              className={`${view === "Administração" ? "active " : ""}administration-nav-item`}
+              onClick={() => {
+                navigateTo("Administração");
+                apiFetch("/api/audit", {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({
+                    action: "Navegação",
+                    detail: "Administração",
+                  }),
+                }).catch(() => undefined);
+              }}
+              title="Administração"
+            >
+              <span className="nav-icon">⚙</span>
+              <span className="nav-name">Administração</span>
+            </button>
+          )}
         </nav>
         <div className="sidebar-message">
           <span>🇧🇷</span>
