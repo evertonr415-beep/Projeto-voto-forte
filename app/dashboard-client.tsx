@@ -140,14 +140,41 @@ export default function DashboardClient({
   const [contactFilter, setContactFilter] = useState<Contact["kind"] | "Todos">(
     "Todos",
   );
+  const [contactDistrictFilter, setContactDistrictFilter] = useState("");
 
   const closeMapPopup = () => {
     window.dispatchEvent(new CustomEvent("voto-forte:close-map-popup"));
   };
 
+  useEffect(() => {
+    const openDistrictContacts = (event: Event) => {
+      const district = String(
+        (event as CustomEvent<{ district?: string }>).detail?.district || "",
+      ).trim();
+      if (!district) return;
+      closeMapPopup();
+      setContactFilter("Todos");
+      setContactDistrictFilter(district);
+      setView("Contatos");
+      if (window.matchMedia("(max-width: 900px)").matches) setCollapsed(false);
+    };
+    window.addEventListener(
+      "voto-forte:open-district-contacts",
+      openDistrictContacts,
+    );
+    return () =>
+      window.removeEventListener(
+        "voto-forte:open-district-contacts",
+        openDistrictContacts,
+      );
+  }, []);
+
  const navigateTo = (nextView: View) => {
   closeMapPopup();
-  if (nextView === "Contatos") setContactFilter("Todos");
+  if (nextView === "Contatos") {
+    setContactFilter("Todos");
+    setContactDistrictFilter("");
+  }
   setView(nextView);
 
   if (window.matchMedia("(max-width: 900px)").matches) {
@@ -320,6 +347,8 @@ export default function DashboardClient({
       open={setModal}
       filter={contactFilter}
       setFilter={setContactFilter}
+      districtFilter={contactDistrictFilter}
+      setDistrictFilter={setContactDistrictFilter}
       tell={setNotice}
       importContact={(payload) => createRecord("contact", payload)}
       updateContact={updateContact}
@@ -1220,6 +1249,8 @@ function ContactManager({
   open,
   filter,
   setFilter,
+  districtFilter,
+  setDistrictFilter,
   tell,
   importContact,
   updateContact,
@@ -1230,6 +1261,8 @@ function ContactManager({
   open: (m: Modal) => void;
   filter: Contact["kind"] | "Todos";
   setFilter: (filter: Contact["kind"] | "Todos") => void;
+  districtFilter: string;
+  setDistrictFilter: (district: string) => void;
   tell: (s: string) => void;
   importContact: (c: Contact) => Promise<boolean>;
   updateContact: (id: number, c: Contact) => Promise<boolean>;
@@ -1242,8 +1275,13 @@ function ContactManager({
     [editing, setEditing] = useState<
       (Contact & { id: number; ownerEmail: string }) | null
     >(null);
-  const filteredContacts =
+  const profileContacts =
     filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter);
+  const filteredContacts = districtFilter
+    ? profileContacts.filter(
+        (c) => c.district.trim().toLocaleLowerCase("pt-BR") === districtFilter.trim().toLocaleLowerCase("pt-BR"),
+      )
+    : profileContacts;
   const list = filteredContacts.filter((c) =>
     `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
       .toLowerCase()
@@ -1396,6 +1434,16 @@ function ContactManager({
           Lideranças
         </button>
       </div>
+      {districtFilter && (
+        <div className="district-contact-filter" role="status">
+          <span>
+            Bairro selecionado: <b>{districtFilter}</b> · {filteredContacts.length} contato(s)
+          </span>
+          <button type="button" onClick={() => setDistrictFilter("")}>
+            Limpar bairro
+          </button>
+        </div>
+      )}
       <div className="summary-strip">
         <span>
           <b>{contacts.length}</b>Total de contatos

@@ -86,7 +86,7 @@ function installStyles() {
     .vf-district-point-dot{display:block;width:13px;height:13px;border-radius:50%;background:#2563a8;border:3px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 6px rgba(22,66,108,.24)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 5px rgba(37,99,168,.18),0 0 0 1px rgba(24,74,124,.42),0 3px 8px rgba(22,66,108,.3)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-count{border-color:rgba(37,99,168,.55);box-shadow:0 3px 10px rgba(37,99,168,.24)}
-    .vf-district-area-popup{min-width:195px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}
+    .vf-district-area-popup{min-width:210px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}.vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}.vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}.vf-district-open-contacts{background:#173f75;color:#fff}.vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}.vf-district-save{background:#1f7a4c;color:#fff}.vf-district-cancel{background:#f3f4f6;color:#475569}.vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
     @media(max-width:760px){
       .full-map{height:72vh!important;min-height:520px!important}
       .full-map .real-map-toolbar{top:8px!important;left:8px!important;right:8px!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;align-items:stretch!important}
@@ -116,6 +116,13 @@ export default function MapTerritoryEnhancer() {
     let retryTimer: number | null = null;
     let retryTimeout: number | null = null;
     let cleanupActiveMap: (() => void) | null = null;
+    let canManageReferences = false;
+    void apiFetch("/api/session")
+      .then(async (response) => ({ response, data: await response.json() }))
+      .then(({ response, data }) => {
+        if (response.ok) canManageReferences = data?.user?.role === "master";
+      })
+      .catch(() => undefined);
 
     const setupMap = (map: any) => {
       const container = map?.getContainer?.() as HTMLElement | undefined;
@@ -355,18 +362,102 @@ export default function MapTerritoryEnhancer() {
               iconAnchor: [17, 35],
               popupAnchor: [0, -34],
             });
-            const options: Record<string, unknown> = { icon, keyboard: true };
+            const options: Record<string, unknown> = {
+              icon,
+              keyboard: true,
+              draggable: canManageReferences,
+            };
             if (pane) options.pane = pane;
             const marker = L.marker([center.latitude, center.longitude], options);
+            let editingPosition = false;
+            const originalPosition = { ...center };
+
+            const popupHtml = (editing = false) => `
+              <div class="vf-district-area-popup">
+                <strong>${escapeHtml(item.district)}</strong>
+                <b>Referência territorial do bairro</b>
+                <p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é uma referência territorial do bairro e não altera a localização individual dos contatos."}</small>
+                <div class="vf-district-popup-actions">
+                  <button type="button" class="vf-district-open-contacts">Ver contatos deste bairro →</button>
+                  ${canManageReferences ? editing
+                    ? '<button type="button" class="vf-district-save">Salvar posição</button><button type="button" class="vf-district-cancel">Cancelar ajuste</button>'
+                    : '<button type="button" class="vf-district-adjust">Ajustar posição</button>' : ""}
+                </div>
+              </div>`;
+
+            const bindActions = () => {
+              const popup = marker.getPopup?.()?.getElement?.() as HTMLElement | null;
+              if (!popup) return;
+              popup.querySelector<HTMLButtonElement>(".vf-district-open-contacts")?.addEventListener("click", () => {
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:open-district-contacts", {
+                    detail: { district: item.district },
+                  }),
+                );
+              });
+              popup.querySelector<HTMLButtonElement>(".vf-district-adjust")?.addEventListener("click", () => {
+                editingPosition = true;
+                marker.dragging?.enable?.();
+                marker.getElement?.()?.classList?.add("vf-district-dragging");
+                marker.setPopupContent(popupHtml(true));
+                marker.openPopup();
+              });
+              popup.querySelector<HTMLButtonElement>(".vf-district-cancel")?.addEventListener("click", () => {
+                editingPosition = false;
+                marker.setLatLng([originalPosition.latitude, originalPosition.longitude]);
+                marker.dragging?.disable?.();
+                marker.getElement?.()?.classList?.remove("vf-district-dragging");
+                marker.setPopupContent(popupHtml(false));
+                marker.openPopup();
+              });
+              popup.querySelector<HTMLButtonElement>(".vf-district-save")?.addEventListener("click", async () => {
+                const latLng = marker.getLatLng?.();
+                if (!latLng) return;
+                const button = popup.querySelector<HTMLButtonElement>(".vf-district-save");
+                if (button) { button.disabled = true; button.textContent = "Salvando…"; }
+                try {
+                  const response = await apiFetch("/api/territorial-pending", {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                      referenceDistrict: item.district,
+                      latitude: Number(latLng.lat),
+                      longitude: Number(latLng.lng),
+                    }),
+                  });
+                  const payload = await response.json().catch(() => ({}));
+                  if (!response.ok) throw new Error(payload?.error || "Não foi possível salvar a posição");
+                  center.latitude = Number(latLng.lat);
+                  center.longitude = Number(latLng.lng);
+                  originalPosition.latitude = center.latitude;
+                  originalPosition.longitude = center.longitude;
+                  editingPosition = false;
+                  marker.dragging?.disable?.();
+                  marker.getElement?.()?.classList?.remove("vf-district-dragging");
+                  marker.setPopupContent(popupHtml(false));
+                  marker.openPopup();
+                  window.dispatchEvent(new CustomEvent("voto-forte:geocoding-complete"));
+                } catch (error) {
+                  window.alert(error instanceof Error ? error.message : "Não foi possível salvar a posição");
+                  if (button) { button.disabled = false; button.textContent = "Salvar posição"; }
+                }
+              });
+            };
+
             marker.bindTooltip(
               `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
-            marker.bindPopup(
-              `<div class="vf-district-area-popup"><strong>${escapeHtml(item.district)}</strong><b>Referência territorial do bairro</b><p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p><small>O ponto azul marca uma referência territorial validada do bairro e não representa endereço individual nem limite geográfico oficial. Os pinos verdes e o L vermelho continuam mostrando somente contatos com coordenada exata.</small></div>`,
-              { maxWidth: 310, closeButton: true },
-            );
+            marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
+            marker.on("popupopen", bindActions);
+            marker.on("dragstart", () => {
+              if (!canManageReferences || !editingPosition) { marker.dragging?.disable?.(); return; }
+              marker.getElement?.()?.classList?.add("vf-district-dragging");
+            });
+            marker.on("dragend", () => marker.openPopup());
             marker.on("click", () => setSelectedMarker(item.key));
+            if (canManageReferences) marker.dragging?.disable?.();
             districtMarkers.set(item.key, { marker, item, center });
             mappedKeys.add(item.key);
           }
