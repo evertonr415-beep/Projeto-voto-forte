@@ -216,6 +216,15 @@ export default function ContactDistrictRanking() {
   const maxTotal = Math.max(1, ranked[0]?.total || 0);
   const reached = districts.filter((item) => item.total > 0).length;
 
+  const openDistrict = (district: string) => {
+    window.dispatchEvent(
+      new CustomEvent("voto-forte:filter-district-contacts", {
+        detail: { district },
+      }),
+    );
+    switchMobileSection("contacts");
+  };
+
   const mobileSwitch = (
     <nav className="contact-mobile-switch" aria-label="Visualização do painel de contatos">
       <button
@@ -284,17 +293,25 @@ export default function ContactDistrictRanking() {
           <ol>
             {visibleRows.map((item) => (
               <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
-                <span className="district-name">
-                  <span>{item.district}</span>
-                  <span className="district-bar" aria-hidden="true">
-                    <i
-                      style={{
-                        width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
-                      }}
-                    />
+                <button
+                  type="button"
+                  className="district-row-button"
+                  disabled={item.total <= 0}
+                  onClick={() => openDistrict(item.district)}
+                  title={`Abrir contatos de ${item.district}`}
+                >
+                  <span className="district-name">
+                    <span>{item.district}</span>
+                    <span className="district-bar" aria-hidden="true">
+                      <i
+                        style={{
+                          width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
+                        }}
+                      />
+                    </span>
                   </span>
-                </span>
-                <b>{item.total.toLocaleString("pt-BR")}</b>
+                  <b>{item.total.toLocaleString("pt-BR")}</b>
+                </button>
               </li>
             ))}
           </ol>

@@ -101,6 +101,7 @@ export default function NeutralDashboardClient({
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [profile, setProfile] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [message, setMessage] = useState("");
@@ -166,6 +167,7 @@ export default function NeutralDashboardClient({
       });
       if (query) params.set("q", query);
       if (profile) params.set("profile", profile);
+      if (districtFilter) params.set("district", districtFilter);
 
       const response = await apiFetch(`/api/contacts?${params.toString()}`, {
         cache: "no-store",
@@ -189,7 +191,7 @@ export default function NeutralDashboardClient({
     } finally {
       if (version === contactsVersion.current) setLoadingContacts(false);
     }
-  }, [page, profile, query, scope]);
+  }, [districtFilter, page, profile, query, scope]);
 
   useEffect(() => {
     void loadSummary();
@@ -198,6 +200,35 @@ export default function NeutralDashboardClient({
   useEffect(() => {
     void loadContacts();
   }, [loadContacts]);
+
+  useEffect(() => {
+    const handleDistrictFilter = (event: Event) => {
+      const district = String(
+        (event as CustomEvent<{ district?: string }>).detail?.district || "",
+      ).trim();
+      if (!district) return;
+      setPage(1);
+      setQueryInput("");
+      setQuery("");
+      setProfile("");
+      setDistrictFilter(district);
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(".contacts-panel")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    };
+    window.addEventListener(
+      "voto-forte:filter-district-contacts",
+      handleDistrictFilter,
+    );
+    return () =>
+      window.removeEventListener(
+        "voto-forte:filter-district-contacts",
+        handleDistrictFilter,
+      );
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -227,7 +258,9 @@ export default function NeutralDashboardClient({
     pageData.page * pageData.pageSize,
     pageData.total,
   );
-  const hasFilters = Boolean(queryInput.trim() || query || profile);
+  const hasFilters = Boolean(
+    queryInput.trim() || query || profile || districtFilter,
+  );
 
   async function deleteContact(contact: Contact) {
     if (!window.confirm(`Excluir o contato ${contact.name || "selecionado"}?`)) return;
@@ -289,6 +322,7 @@ export default function NeutralDashboardClient({
     setQueryInput("");
     setQuery("");
     setProfile("");
+    setDistrictFilter("");
     setPage(1);
   }
 
@@ -427,6 +461,15 @@ export default function NeutralDashboardClient({
               </p>
             </div>
           </div>
+
+          {districtFilter && (
+            <div className="optimized-active-district" role="status">
+              <span>Bairro: <b>{districtFilter}</b></span>
+              <button type="button" onClick={() => { setDistrictFilter(""); setPage(1); }}>
+                Ver todos os bairros
+              </button>
+            </div>
+          )}
 
           <div className="optimized-filters is-open">
             <label className="optimized-search-field">
