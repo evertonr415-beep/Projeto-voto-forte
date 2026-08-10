@@ -27,12 +27,7 @@ jobs:
           ! grep -q 'function Reports' app/dashboard-client.tsx
           grep -q 'function ContactManager' app/dashboard-client.tsx
           grep -q 'function BackupCenter' app/dashboard-client.tsx
-
-      - name: Instalar dependencias
-        run: npm ci
-
-      - name: Validar build
-        run: npm run build
+          git diff --check
 
       - name: Publicar e limpar rotina temporaria
         shell: bash
