@@ -26,7 +26,7 @@ function backupAgeHours(createdAt: string | null) {
 export async function GET() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
-  if (account.role !== "adm") return Response.json({ error: "A Inteligência do Sistema é exclusiva do ADM." }, { status: 403 });
+  if (account.accessRole !== "adm") return Response.json({ error: "A Inteligência do Sistema é exclusiva do ADM." }, { status: 403 });
 
   const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
   const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
