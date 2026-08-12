@@ -2,6 +2,7 @@ import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
 export type UserRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
+export type UiRole = "master" | "admin" | "user";
 
 export type HierarchyUser = {
   id: number;
@@ -15,6 +16,12 @@ export type HierarchyUser = {
   last_seen_at?: string | null;
   created_at?: string;
 };
+
+function uiRoleFor(accessRole: UserRole): UiRole {
+  if (accessRole === "adm") return "master";
+  if (accessRole === "eleitor") return "user";
+  return "admin";
+}
 
 export async function getAccount() {
   const supabase = await getServerSupabase();
@@ -54,17 +61,17 @@ export async function getAccount() {
   const accessRole = account.access_role as UserRole;
   return {
     ...account,
-    role: accessRole,
+    role: uiRoleFor(accessRole),
     accessRole,
     supabase,
   };
 }
 
 export function isAdministrator(role: string) {
-  return role !== "eleitor";
+  return role === "master" || role === "admin";
 }
 
-export function canManageHierarchy(role: string) {
+export function canManageHierarchy(role: UserRole) {
   return role !== "eleitor";
 }
 
@@ -101,9 +108,9 @@ export async function canManageUser(
   const visible = await getVisibleUsers(account);
   const target = visible.find((user) => Number(user.id) === targetId);
   if (!target || target.access_role === "adm") return false;
-  if (account.role === "adm") return true;
+  if (account.accessRole === "adm") return true;
   return (
     Number(target.parent_user_id) === Number(account.id) &&
-    childRoleFor(account.role) === target.access_role
+    childRoleFor(account.accessRole) === target.access_role
   );
 }
