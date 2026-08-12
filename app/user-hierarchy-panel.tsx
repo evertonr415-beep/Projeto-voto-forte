@@ -1,215 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
-type Role = "master" | "gestor" | "lider" | "liderado";
+type Role = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
 type Status = "active" | "blocked";
-type User = {
-  id: number;
-  email: string;
-  name: string;
-  role: Role;
-  status: Status;
-  parentUserId: number | null;
-  lastSeenAt: string | null;
-};
-type Hierarchy = {
-  currentUserId: number;
-  currentRole: Role;
-  masterCount: number;
-  canCreate: Record<Role, boolean>;
-};
+type User = { id:number; email:string; name:string; role:Role; accessRole:Role; status:Status; parentUserId:number|null; lastSeenAt:string|null };
+type Invitation = { id:number; email:string; name:string; accessRole:Role; parentUserId:number; status:string; expiresAt:string };
+type Hierarchy = { currentUserId:number; currentRole:Role };
+const labels:Record<Role,string>={adm:"ADM",master:"Master",lideranca:"Liderança",liderado:"Liderado",eleitor:"Eleitor"};
+const childRole:Record<Role,Role|null>={adm:"master",master:"lideranca",lideranca:"liderado",liderado:"eleitor",eleitor:null};
 
-const labels: Record<Role, string> = {
-  master: "Master",
-  gestor: "Gestor",
-  lider: "Líder",
-  liderado: "Liderado",
-};
-
-const allowedParents: Record<Role, Role[]> = {
-  master: [],
-  gestor: ["master"],
-  lider: ["master", "gestor"],
-  liderado: ["master", "gestor", "lider"],
-};
-
-export default function UserHierarchyPanel() {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [hierarchy, setHierarchy] = useState<Hierarchy | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await apiFetch("/api/users");
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Falha ao carregar equipe");
-      setUsers(data.users || []);
-      setHierarchy(data.hierarchy || null);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível carregar a equipe.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let observer: MutationObserver | null = null;
-    let loaded = false;
-
-    const detect = () => {
-      const node = document.querySelector<HTMLElement>(".users-admin-grid");
-      if (!node) return false;
-
-      node.dataset.vfHierarchyReplaced = "true";
-      setTarget(node);
-      observer?.disconnect();
-
-      if (!loaded) {
-        loaded = true;
-        void load();
-      }
-      return true;
-    };
-
-    if (!detect()) {
-      observer = new MutationObserver(() => {
-        detect();
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    return () => observer?.disconnect();
-  }, [load]);
-
-  const childrenByParent = useMemo(() => {
-    const map = new Map<number | null, User[]>();
-    for (const user of users) {
-      const key = user.parentUserId;
-      map.set(key, [...(map.get(key) || []), user]);
-    }
-    for (const list of map.values()) list.sort((a, b) => a.name.localeCompare(b.name));
-    return map;
-  }, [users]);
-
-  async function updateUser(user: User, changes: Partial<Pick<User, "role" | "status" | "parentUserId">>) {
-    setMessage("");
-    const response = await apiFetch("/api/users", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id: user.id, ...changes }),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setMessage(data.error || "Não foi possível atualizar o usuário.");
-      return;
-    }
-    setMessage("Hierarquia atualizada com sucesso.");
-    await load();
-  }
-
-  function renderBranch(parentId: number | null, depth = 0): React.ReactNode {
-    return (childrenByParent.get(parentId) || []).map((user) => {
-      const canEdit = hierarchy && user.id !== hierarchy.currentUserId && user.role !== "master";
-      const parentOptions = users.filter(
-        (candidate) =>
-          candidate.id !== user.id &&
-          candidate.status === "active" &&
-          allowedParents[user.role].includes(candidate.role),
-      );
-      return (
-        <div className="vf-hierarchy-branch" key={user.id} style={{ "--depth": depth } as React.CSSProperties}>
-          <article className={`vf-hierarchy-user role-${user.role}`}>
-            <div className="vf-hierarchy-avatar">{user.name.split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase()}</div>
-            <div className="vf-hierarchy-main">
-              <strong>{user.name}</strong>
-              <small>{user.email}</small>
-              <div className="vf-hierarchy-tags">
-                <span>{labels[user.role]}</span>
-                <i className={user.status === "active" ? "active" : "blocked"}>{user.status === "active" ? "Ativo" : "Bloqueado"}</i>
-              </div>
-            </div>
-            {canEdit && (
-              <div className="vf-hierarchy-actions">
-                <label>
-                  Função
-                  <select
-                    value={user.role}
-                    onChange={(event) => void updateUser(user, { role: event.target.value as Role })}
-                  >
-                    {hierarchy?.canCreate.master && <option value="master">Master</option>}
-                    {hierarchy?.canCreate.gestor && <option value="gestor">Gestor</option>}
-                    {hierarchy?.canCreate.lider && <option value="lider">Líder</option>}
-                    {hierarchy?.canCreate.liderado && <option value="liderado">Liderado</option>}
-                  </select>
-                </label>
-                {user.role !== "master" && (
-                  <label>
-                    Superior
-                    <select
-                      value={user.parentUserId || ""}
-                      onChange={(event) => void updateUser(user, { parentUserId: Number(event.target.value) })}
-                    >
-                      <option value="">Selecione</option>
-                      {parentOptions.map((parent) => (
-                        <option value={parent.id} key={parent.id}>{parent.name} — {labels[parent.role]}</option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void updateUser(user, { status: user.status === "active" ? "blocked" : "active" })}
-                >
-                  {user.status === "active" ? "Bloquear" : "Reativar"}
-                </button>
-              </div>
-            )}
-          </article>
-          {renderBranch(user.id, depth + 1)}
-        </div>
-      );
-    });
-  }
-
-  if (!target) return null;
-
-  return createPortal(
-    <section className="vf-hierarchy-panel">
-      <header>
-        <div>
-          <small>ESTRUTURA DE ACESSO</small>
-          <h3>Equipe e hierarquia</h3>
-          <p>Organize quem responde a quem e controle os níveis de acesso.</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading}>
-          {loading ? "Atualizando..." : "Atualizar"}
-        </button>
-      </header>
-
-      <div className="vf-hierarchy-summary">
-        {(["master", "gestor", "lider", "liderado"] as Role[]).map((role) => (
-          <article key={role}>
-            <small>{labels[role].toUpperCase()}</small>
-            <b>{users.filter((user) => user.role === role && user.status === "active").length}</b>
-          </article>
-        ))}
-      </div>
-
-      <div className="vf-hierarchy-help">
-        <b>Como incluir uma pessoa:</b> ela cria a própria conta na tela de acesso. Depois, um Master, Gestor ou Líder autorizado define a função e o superior nesta tela.
-      </div>
-
-      {message && <div className="vf-hierarchy-message">{message}</div>}
-      <div className="vf-hierarchy-tree">
-        {users.length ? renderBranch(null) : !loading && <p>Nenhum usuário encontrado.</p>}
-      </div>
-    </section>,
-    target,
-  );
+export default function UserHierarchyPanel(){
+  const [target,setTarget]=useState<HTMLElement|null>(null); const [users,setUsers]=useState<User[]>([]); const [invitations,setInvitations]=useState<Invitation[]>([]); const [hierarchy,setHierarchy]=useState<Hierarchy|null>(null); const [loading,setLoading]=useState(false); const [message,setMessage]=useState(""); const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [role,setRole]=useState<Role>("master"); const [parentUserId,setParentUserId]=useState<number|null>(null);
+  const load=useCallback(async()=>{setLoading(true);try{const response=await apiFetch("/api/users");const data=await response.json();if(!response.ok)throw new Error(data.error||"Falha ao carregar equipe");setUsers(data.users||[]);setInvitations(data.invitations||[]);setHierarchy(data.hierarchy||null);}catch(error){setMessage(error instanceof Error?error.message:"Não foi possível carregar a equipe.");}finally{setLoading(false);}},[]);
+  useEffect(()=>{let observer:MutationObserver|null=null;let loaded=false;const detect=()=>{const node=document.querySelector<HTMLElement>(".users-admin-grid");if(!node)return false;node.dataset.vfHierarchyReplaced="true";setTarget(node);observer?.disconnect();if(!loaded){loaded=true;void load();}return true;};if(!detect()){observer=new MutationObserver(detect);observer.observe(document.body,{childList:true,subtree:true});}return()=>observer?.disconnect();},[load]);
+  useEffect(()=>{if(!hierarchy)return;const next=childRole[hierarchy.currentRole];if(next)setRole(next);setParentUserId(hierarchy.currentRole==="adm"?hierarchy.currentUserId:null);},[hierarchy]);
+  const childrenByParent=useMemo(()=>{const map=new Map<number|null,User[]>();for(const user of users){const key=user.parentUserId;map.set(key,[...(map.get(key)||[]),user]);}for(const list of map.values())list.sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));return map;},[users]);
+  async function setStatus(user:User){const response=await apiFetch("/api/users",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:user.id,status:user.status==="active"?"blocked":"active"})});const data=await response.json();if(!response.ok){setMessage(data.error||"Não foi possível atualizar o usuário.");return;}setMessage("Status atualizado com segurança.");await load();}
+  async function invite(event:FormEvent){event.preventDefault();const response=await apiFetch("/api/users",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name,email,accessRole:role,parentUserId})});const data=await response.json();if(!response.ok){setMessage(data.error||"Não foi possível criar o convite.");return;}setName("");setEmail("");setMessage("Convite autorizado. A pessoa pode criar a conta com exatamente esse e-mail e confirmar o endereço.");await load();}
+  async function revoke(id:number){const response=await apiFetch(`/api/users?invitationId=${id}`,{method:"DELETE"});const data=await response.json();if(!response.ok){setMessage(data.error||"Não foi possível revogar o convite.");return;}setMessage("Convite revogado.");await load();}
+  const roleOptions:Role[]=hierarchy?.currentRole==="adm"?["master","lideranca","liderado","eleitor"]:childRole[hierarchy?.currentRole??"eleitor"]?[childRole[hierarchy!.currentRole] as Role]:[];
+  const expectedParent:Record<Role,Role|null>={adm:null,master:"adm",lideranca:"master",liderado:"lideranca",eleitor:"liderado"}; const parents=users.filter(u=>u.status==="active"&&u.role===expectedParent[role]);
+  function renderBranch(parentId:number|null,depth=0):React.ReactNode{return(childrenByParent.get(parentId)||[]).map(user=>{const current=hierarchy?.currentUserId===user.id;const canToggle=!current&&user.role!=="adm"&&(hierarchy?.currentRole==="adm"||user.parentUserId===hierarchy?.currentUserId);return <div className="vf-hierarchy-branch" key={user.id} style={{"--depth":depth} as React.CSSProperties}><article className={`vf-hierarchy-user role-${user.role}`}><div className="vf-hierarchy-avatar">{user.name.split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase()}</div><div className="vf-hierarchy-main"><strong>{user.name}</strong><small>{user.email}</small><div className="vf-hierarchy-tags"><span>{labels[user.role]}</span><i className={user.status}>{user.status==="active"?"Ativo":"Bloqueado"}</i></div></div>{canToggle&&<div className="vf-hierarchy-actions"><button type="button" onClick={()=>void setStatus(user)}>{user.status==="active"?"Bloquear":"Reativar"}</button></div>}</article>{renderBranch(user.id,depth+1)}</div>;});}
+  if(!target)return null;
+  return createPortal(<section className="vf-hierarchy-panel"><header><div><small>ESTRUTURA DE ACESSO</small><h3>Equipe e hierarquia</h3><p>ADM → Master → Liderança → Liderado → Eleitor. Cada nível enxerga somente sua árvore.</p></div><button type="button" onClick={()=>void load()} disabled={loading}>{loading?"Atualizando...":"Atualizar"}</button></header>{roleOptions.length>0&&<form className="vf-hierarchy-help" onSubmit={invite}><b>Autorizar nova conta</b><input required placeholder="Nome completo" value={name} onChange={e=>setName(e.target.value)}/><input required type="email" placeholder="E-mail" value={email} onChange={e=>setEmail(e.target.value)}/><select value={role} onChange={e=>{const next=e.target.value as Role;setRole(next);setParentUserId(next==="master"&&hierarchy?.currentRole==="adm"?hierarchy.currentUserId:null);}}>{roleOptions.map(item=><option value={item} key={item}>{labels[item]}</option>)}</select>{role!=="master"&&<select required value={parentUserId??""} onChange={e=>setParentUserId(Number(e.target.value)||null)}><option value="">Selecione o superior</option>{parents.map(parent=><option value={parent.id} key={parent.id}>{parent.name} — {labels[parent.role]}</option>)}</select>}<button type="submit">Criar autorização</button></form>}{message&&<div className="vf-hierarchy-message">{message}</div>}{invitations.length>0&&<div className="vf-hierarchy-help"><b>Convites pendentes</b>{invitations.map(inv=><div key={inv.id}>{inv.name} · {inv.email} · {labels[inv.accessRole]} <button type="button" onClick={()=>void revoke(inv.id)}>Revogar</button></div>)}</div>}<div className="vf-hierarchy-tree">{users.length?renderBranch(hierarchy?.currentRole==="adm"?null:hierarchy?.currentUserId??null):!loading&&<p>Nenhum usuário encontrado.</p>}</div></section>,target);
 }
