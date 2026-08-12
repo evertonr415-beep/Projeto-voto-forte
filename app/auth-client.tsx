@@ -218,7 +218,7 @@ export default function AuthClient({
               : mode === "recovery"
                 ? "Digite uma nova senha segura para sua conta."
                 : mode === "signup"
-                  ? "Cadastre-se diretamente e confirme seu e-mail para acessar seu ambiente."
+                  ? "Use exatamente o e-mail que recebeu acesso pela Administração e confirme-o para ativar seu vínculo no VOTO FORTE."
                   : "Acesse com seu e-mail e senha."}
           </p>
           {mode === "signup" && (

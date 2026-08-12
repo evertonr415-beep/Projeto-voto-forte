@@ -2,6 +2,7 @@ import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
+export type AccessRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
 
 export type HierarchyUser = {
   id: number;
@@ -9,11 +10,26 @@ export type HierarchyUser = {
   email: string;
   name: string;
   role: UserRole;
+  access_role?: AccessRole;
   status: "active" | "blocked";
   parent_user_id: number | null;
   last_seen_at?: string | null;
   created_at?: string;
 };
+
+function legacyAccessRole(role: unknown, email: string): AccessRole {
+  if (email === OWNER_EMAIL) return "adm";
+  if (role === "master") return "master";
+  if (role === "gestor" || role === "lider") return "lideranca";
+  return "liderado";
+}
+
+function normalizeAccessRole(value: unknown, role: unknown, email: string): AccessRole {
+  if (["adm", "master", "lideranca", "liderado", "eleitor"].includes(String(value))) {
+    return value as AccessRole;
+  }
+  return legacyAccessRole(role, email);
+}
 
 export async function getAccount() {
   const supabase = await getServerSupabase();
@@ -25,10 +41,6 @@ export async function getAccount() {
   const email = user?.email?.trim().toLowerCase();
   if (!user || !email) return null;
 
-  const name =
-    String(user.user_metadata?.name ?? "").trim() ||
-    (email === OWNER_EMAIL ? "Everton Moreira" : email);
-
   const { data: existing } = await supabase
     .from("vf_users")
     .select("*")
@@ -36,19 +48,8 @@ export async function getAccount() {
     .maybeSingle();
 
   if (!existing) {
-    const { data: owner } = await supabase
-      .from("vf_users")
-      .select("id")
-      .eq("email", OWNER_EMAIL)
-      .maybeSingle();
-
-    await supabase.from("vf_users").insert({
-      auth_user_id: user.id,
-      email,
-      name,
-      role: email === OWNER_EMAIL ? "master" : "liderado",
-      parent_user_id: email === OWNER_EMAIL ? null : owner?.id ?? null,
-    });
+    const { error: claimError } = await supabase.rpc("vf_claim_user_invitation");
+    if (claimError) return null;
   }
 
   const { data: account } = await supabase
@@ -64,7 +65,12 @@ export async function getAccount() {
     .update({ last_seen_at: new Date().toISOString() })
     .eq("auth_user_id", user.id);
 
-  return { ...account, role: account.role as UserRole, supabase };
+  return {
+    ...account,
+    role: account.role as UserRole,
+    accessRole: normalizeAccessRole(account.access_role, account.role, email),
+    supabase,
+  };
 }
 
 export function isAdministrator(role: string) {
@@ -90,7 +96,7 @@ export async function getVisibleUsers(
     .order("name");
   const users = (data ?? []) as HierarchyUser[];
 
-  if (account.role === "master") return users;
+  if (account.accessRole === "adm" || account.role === "master") return users;
 
   const visibleIds = new Set<number>([Number(account.id)]);
   let changed = true;
@@ -116,7 +122,7 @@ export async function canManageUser(
   targetId: number,
 ) {
   if (!account) return false;
-  if (account.role === "master") return Number(account.id) !== targetId;
+  if (account.accessRole === "adm") return Number(account.id) !== targetId;
   const visible = await getVisibleUsers(account);
   return visible.some(
     (user) => Number(user.id) === targetId && Number(user.id) !== Number(account.id),
