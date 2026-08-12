@@ -44,7 +44,7 @@ export async function GET() {
     mapUser(user as unknown as Record<string, unknown>),
   );
 
-  const { data: invitations } = canManageHierarchy(account.role)
+  const { data: invitations } = canManageHierarchy(account.accessRole)
     ? await account.supabase.rpc("vf_list_user_invitations")
     : { data: [] };
 
@@ -53,14 +53,14 @@ export async function GET() {
     invitations: invitations ?? [],
     hierarchy: {
       currentUserId: Number(account.id),
-      currentRole: account.role,
+      currentRole: account.accessRole,
     },
   });
 }
 
 export async function PATCH(request: Request) {
   const account = await getAccount();
-  if (!account || !canManageHierarchy(account.role))
+  if (!account || !canManageHierarchy(account.accessRole))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const body = (await request.json()) as UserUpdateBody;
@@ -79,7 +79,7 @@ export async function PATCH(request: Request) {
 
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account || !canManageHierarchy(account.role))
+  if (!account || !canManageHierarchy(account.accessRole))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const body = (await request.json()) as InviteBody;
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const account = await getAccount();
-  if (!account || !canManageHierarchy(account.role))
+  if (!account || !canManageHierarchy(account.accessRole))
     return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const invitationId = Number(new URL(request.url).searchParams.get("invitationId"));
