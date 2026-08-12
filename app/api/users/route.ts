@@ -5,7 +5,7 @@ type UserStatus = "active" | "blocked";
 type CreateAccessBody = {
   name?: string;
   email?: string;
-  accessRole?: Exclude<AccessRole, "adm">;
+  accessRole?: AccessRole;
   parentUserId?: number | null;
 };
 
