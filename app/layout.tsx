@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapToolsGate from "./map-tools-gate";
-import UserHierarchyPanel from "./user-hierarchy-panel";
+import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
@@ -66,7 +66,7 @@ export default function RootLayout({
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MapToolsGate />
-        <UserHierarchyPanel />
+        <UserHierarchyRemountGuard />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
         <ContactNavigationInterceptor />
