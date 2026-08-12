@@ -1,14 +1,15 @@
 import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
-export type UserRole = "master" | "gestor" | "lider" | "liderado";
+export type UserRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
 
 export type HierarchyUser = {
   id: number;
   auth_user_id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: string;
+  access_role: UserRole;
   status: "active" | "blocked";
   parent_user_id: number | null;
   last_seen_at?: string | null;
@@ -25,37 +26,23 @@ export async function getAccount() {
   const email = user?.email?.trim().toLowerCase();
   if (!user || !email) return null;
 
-  const name =
-    String(user.user_metadata?.name ?? "").trim() ||
-    (email === OWNER_EMAIL ? "Everton Moreira" : email);
-
-  const { data: existing } = await supabase
+  let { data: account } = await supabase
     .from("vf_users")
     .select("*")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!existing) {
-    const { data: owner } = await supabase
+  if (!account) {
+    const claim = await supabase.rpc("vf_claim_user_invitation");
+    if (claim.error) return null;
+
+    const result = await supabase
       .from("vf_users")
-      .select("id")
-      .eq("email", OWNER_EMAIL)
+      .select("*")
+      .eq("auth_user_id", user.id)
       .maybeSingle();
-
-    await supabase.from("vf_users").insert({
-      auth_user_id: user.id,
-      email,
-      name,
-      role: email === OWNER_EMAIL ? "master" : "liderado",
-      parent_user_id: email === OWNER_EMAIL ? null : owner?.id ?? null,
-    });
+    account = result.data;
   }
-
-  const { data: account } = await supabase
-    .from("vf_users")
-    .select("*")
-    .eq("auth_user_id", user.id)
-    .single();
 
   if (!account || account.status === "blocked") return null;
 
@@ -64,19 +51,34 @@ export async function getAccount() {
     .update({ last_seen_at: new Date().toISOString() })
     .eq("auth_user_id", user.id);
 
-  return { ...account, role: account.role as UserRole, supabase };
+  const accessRole = account.access_role as UserRole;
+  return {
+    ...account,
+    role: accessRole,
+    accessRole,
+    supabase,
+  };
 }
 
 export function isAdministrator(role: string) {
-  return role === "master" || role === "gestor" || role === "lider";
+  return role !== "eleitor";
+}
+
+export function canManageHierarchy(role: string) {
+  return role !== "eleitor";
+}
+
+export function childRoleFor(role: UserRole): UserRole | null {
+  if (role === "adm") return "master";
+  if (role === "master") return "lideranca";
+  if (role === "lideranca") return "liderado";
+  if (role === "liderado") return "eleitor";
+  return null;
 }
 
 export function canCreateRole(actorRole: UserRole, targetRole: UserRole) {
-  if (actorRole === "master") return true;
-  if (actorRole === "gestor")
-    return targetRole === "lider" || targetRole === "liderado";
-  if (actorRole === "lider") return targetRole === "liderado";
-  return false;
+  if (actorRole === "adm") return targetRole !== "adm";
+  return childRoleFor(actorRole) === targetRole;
 }
 
 export async function getVisibleUsers(
@@ -86,39 +88,22 @@ export async function getVisibleUsers(
 
   const { data } = await account.supabase
     .from("vf_users")
-    .select("*")
+    .select("id,auth_user_id,email,name,role,access_role,status,parent_user_id,last_seen_at,created_at")
     .order("name");
-  const users = (data ?? []) as HierarchyUser[];
-
-  if (account.role === "master") return users;
-
-  const visibleIds = new Set<number>([Number(account.id)]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const user of users) {
-      if (
-        user.parent_user_id &&
-        visibleIds.has(Number(user.parent_user_id)) &&
-        !visibleIds.has(Number(user.id))
-      ) {
-        visibleIds.add(Number(user.id));
-        changed = true;
-      }
-    }
-  }
-
-  return users.filter((user) => visibleIds.has(Number(user.id)));
+  return (data ?? []) as HierarchyUser[];
 }
 
 export async function canManageUser(
   account: Awaited<ReturnType<typeof getAccount>>,
   targetId: number,
 ) {
-  if (!account) return false;
-  if (account.role === "master") return Number(account.id) !== targetId;
+  if (!account || Number(account.id) === targetId) return false;
   const visible = await getVisibleUsers(account);
-  return visible.some(
-    (user) => Number(user.id) === targetId && Number(user.id) !== Number(account.id),
+  const target = visible.find((user) => Number(user.id) === targetId);
+  if (!target || target.access_role === "adm") return false;
+  if (account.role === "adm") return true;
+  return (
+    Number(target.parent_user_id) === Number(account.id) &&
+    childRoleFor(account.role) === target.access_role
   );
 }
