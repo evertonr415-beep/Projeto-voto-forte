@@ -1,12 +1,12 @@
 import { getAccount } from "../../server-identity";
 
-const MAX_BACKUP_BYTES = 12 * 1024 * 1024;
+const MAX_BACKUP_BYTES = 64 * 1024 * 1024;
 
-function isMaster(role: string) { return role === "master"; }
+function isAdm(accessRole: string) { return accessRole === "adm"; }
 
 export async function GET(request: Request) {
   const account = await getAccount();
-  if (!account || !isMaster(account.role)) return Response.json({ error: "Acesso exclusivo do Administrador Master" }, { status: 403 });
+  if (!account || !isAdm(account.accessRole)) return Response.json({ error: "Acesso exclusivo do ADM" }, { status: 403 });
   const id = Number(new URL(request.url).searchParams.get("download"));
   if (Number.isInteger(id) && id > 0) {
     const { data, error } = await account.supabase.from("vf_backup_snapshots").select("data,created_at,checksum").eq("id", id).single();
@@ -25,10 +25,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account || !isMaster(account.role)) return Response.json({ error: "Acesso exclusivo do Administrador Master" }, { status: 403 });
+  if (!account || !isAdm(account.accessRole)) return Response.json({ error: "Acesso exclusivo do ADM" }, { status: 403 });
   const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > MAX_BACKUP_BYTES) return Response.json({ error: "O arquivo excede o limite de 12 MB" }, { status: 413 });
-  const body = JSON.parse(text || "{}") as { action?: string; backup?: unknown };
+  if (new TextEncoder().encode(text).byteLength > MAX_BACKUP_BYTES) return Response.json({ error: "O arquivo excede o limite de 64 MB" }, { status: 413 });
+  let body: { action?: string; backup?: unknown };
+  try { body = JSON.parse(text || "{}"); }
+  catch { return Response.json({ error: "Arquivo JSON inválido" }, { status: 400 }); }
   if (body.action === "create") {
     const { data, error } = await account.supabase.rpc("vf_create_manual_backup");
     if (error) return Response.json({ error: error.message }, { status: 400 });
@@ -37,11 +39,11 @@ export async function POST(request: Request) {
   }
   if (body.action === "restore") {
     const backup = body.backup as Record<string, unknown> | null;
-    if (!backup || backup.format !== "voto-forte-backup" || backup.version !== 1) return Response.json({ error: "Arquivo de backup inválido ou incompatível" }, { status: 400 });
+    const version = Number(backup?.version ?? 0);
+    if (!backup || backup.format !== "voto-forte-backup" || ![1, 2].includes(version)) return Response.json({ error: "Arquivo de backup inválido ou incompatível" }, { status: 400 });
     const { data, error } = await account.supabase.rpc("vf_restore_backup", { payload: backup });
     if (error) return Response.json({ error: error.message }, { status: 400 });
     return Response.json({ restored: data });
   }
   return Response.json({ error: "Operação de backup inválida" }, { status: 400 });
 }
-
