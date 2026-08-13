@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
+import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
 import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
@@ -65,6 +66,7 @@ export default function RootLayout({
       >
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
+        <MapInstantContactBootstrap />
         <MapToolsGate />
         <UserHierarchyRemountGuard />
         <AccountSettingsEnhancer />
