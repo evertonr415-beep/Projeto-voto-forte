@@ -188,6 +188,24 @@ function shortStatus(text: string) {
   return text;
 }
 
+function containsMapLifecycleNode(node: Node) {
+  if (!(node instanceof HTMLElement)) return false;
+  return Boolean(
+    node.matches(".full-map,.page-head,.real-map-toolbar,.vf-map-contact-control,.vf-district-map-control") ||
+      node.querySelector(
+        ".full-map,.page-head,.real-map-toolbar,.vf-map-contact-control,.vf-district-map-control",
+      ),
+  );
+}
+
+function shouldSyncForMutations(mutations: MutationRecord[]) {
+  return mutations.some((mutation) => {
+    const target = mutation.target instanceof HTMLElement ? mutation.target : null;
+    if (target?.closest(".leaflet-container")) return false;
+    return [...mutation.addedNodes, ...mutation.removedNodes].some(containsMapLifecycleNode);
+  });
+}
+
 export default function MobileMapControls() {
   useLayoutEffect(() => {
     installStyles();
@@ -507,17 +525,21 @@ export default function MobileMapControls() {
       if (document.visibilityState === "visible") restoreAfterResume();
     };
 
-    const lifecycleObserver = new MutationObserver(scheduleSync);
+    const lifecycleObserver = new MutationObserver((mutations) => {
+      if (shouldSyncForMutations(mutations)) scheduleSync();
+    });
     lifecycleObserver.observe(document.body, { childList: true, subtree: true });
     media.addEventListener("change", scheduleSync);
     window.addEventListener("pageshow", restoreAfterResume);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("voto-forte:electoral-map-ready", scheduleSync);
     attach();
 
     return () => {
       media.removeEventListener("change", scheduleSync);
       window.removeEventListener("pageshow", restoreAfterResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("voto-forte:electoral-map-ready", scheduleSync);
       lifecycleObserver.disconnect();
       if (lifecycleFrame !== null) window.cancelAnimationFrame(lifecycleFrame);
       if (resumeTimer !== null) window.clearTimeout(resumeTimer);
