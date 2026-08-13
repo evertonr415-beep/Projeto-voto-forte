@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const requestedOwner = url.searchParams.get("owner")?.trim().toLowerCase();
   const requestedProfile = url.searchParams.get("profile")?.trim() || "";
-  const includeStats = url.searchParams.get("stats") === "1";
+  const statsOnly = url.searchParams.get("statsOnly") === "1";
+  const includeStats = statsOnly || url.searchParams.get("stats") === "1";
 
   const allVisibleEmails = await visibleEmails(account);
   let scopeEmails = [account.email];
@@ -46,10 +47,12 @@ export async function GET(request: Request) {
 
   const profile = PROFILES.has(requestedProfile) ? requestedProfile : "";
 
-  const exactPromise = account.supabase.rpc("vf_map_exact_contact_points", {
-    p_owner_emails: scopeEmails,
-    p_profile: profile || null,
-  });
+  const exactPromise = statsOnly
+    ? Promise.resolve({ data: [], error: null })
+    : account.supabase.rpc("vf_map_exact_contact_points", {
+        p_owner_emails: scopeEmails,
+        p_profile: profile || null,
+      });
 
   const statsPromise = includeStats
     ? account.supabase.rpc("vf_map_scope_stats", {
