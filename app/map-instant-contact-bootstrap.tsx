@@ -31,6 +31,18 @@ export default function MapInstantContactBootstrap() {
     let bootstrapLayer: any = null;
     let observer: MutationObserver | null = null;
     let frame: number | null = null;
+    let restoreTimer: number | null = null;
+    let originalMarkerFactory: any = null;
+
+    const restoreMarkerFactory = () => {
+      if (restoreTimer !== null) window.clearTimeout(restoreTimer);
+      restoreTimer = null;
+      const L = (window as any).L;
+      if (L?.marker && originalMarkerFactory && L.marker.__vfBootstrapWrapped) {
+        L.marker = originalMarkerFactory;
+      }
+      originalMarkerFactory = null;
+    };
 
     const clearBootstrap = () => {
       observer?.disconnect();
@@ -56,61 +68,99 @@ export default function MapInstantContactBootstrap() {
       );
     };
 
-    const copyLegacyPins = (map: any) => {
+    const watchModernPins = (map: any) => {
+      if (observer || !bootstrapLayer) return;
+      const container = map?.getContainer?.() as HTMLElement | undefined;
+      if (!container) return;
+      observer = new MutationObserver(() => {
+        if (hasModernPins(map)) clearBootstrap();
+      });
+      observer.observe(container, { childList: true, subtree: true });
+      if (hasModernPins(map)) clearBootstrap();
+    };
+
+    const addBootstrapMarker = (
+      map: any,
+      L: any,
+      pointValue: any,
+      popupContent: string,
+    ) => {
+      if (cancelled || !map?._container) return;
+      const point = Array.isArray(pointValue)
+        ? { lat: Number(pointValue[0]), lng: Number(pointValue[1]) }
+        : { lat: Number(pointValue?.lat), lng: Number(pointValue?.lng) };
+      if (!Number.isFinite(point.lat) || !Number.isFinite(point.lng)) return;
+
+      if (!bootstrapLayer) bootstrapLayer = L.layerGroup().addTo(map);
+      const isLeader = popupContent.toLocaleLowerCase("pt-BR").includes("liderança");
+      const marker = L.marker([point.lat, point.lng], {
+        icon: L.divIcon({
+          className: "vf-map-person vf-map-bootstrap-person",
+          html: `<span class="vf-map-pin ${isLeader ? "leader" : "voter"}"><i>${isLeader ? "L" : "•"}</i></span>`,
+          iconSize: [32, 36],
+          iconAnchor: [15, 32],
+          popupAnchor: [0, -30],
+        }),
+      });
+      if (popupContent) marker.bindPopup(popupContent, { closeButton: true });
+      marker.addTo(bootstrapLayer);
+      watchModernPins(map);
+    };
+
+    const patchMarkerFactory = (map: any) => {
+      const L = (window as any).L;
+      if (!L?.marker || L.marker.__vfBootstrapWrapped) return false;
+      originalMarkerFactory = L.marker;
+      const original = originalMarkerFactory;
+      const wrapped = function (this: unknown, ...args: any[]) {
+        const marker = original.apply(this, args);
+        const className = String(args[1]?.icon?.options?.className || "");
+        if (className.includes("contact-pin") && marker?.bindPopup) {
+          const originalBindPopup = marker.bindPopup.bind(marker);
+          marker.bindPopup = (content: unknown, ...rest: any[]) => {
+            const result = originalBindPopup(content, ...rest);
+            addBootstrapMarker(map, L, args[0], String(content ?? ""));
+            return result;
+          };
+        }
+        return marker;
+      };
+      Object.assign(wrapped, original);
+      wrapped.__vfBootstrapWrapped = true;
+      L.marker = wrapped;
+      restoreTimer = window.setTimeout(restoreMarkerFactory, 0);
+      return true;
+    };
+
+    const copyExistingLegacyPins = (map: any) => {
       if (cancelled || bootstrapLayer || !map?._container) return false;
       const L = (window as any).L;
       if (!L?.layerGroup || !L?.marker || !L?.divIcon) return false;
 
-      const sourceLayers: any[] = [];
+      let copied = 0;
       map.eachLayer?.((layer: any) => {
         const className = String(layer?.options?.icon?.options?.className || "");
-        if (className.includes("contact-pin")) sourceLayers.push(layer);
+        if (!className.includes("contact-pin")) return;
+        const point = layer?.getLatLng?.();
+        const popupContent = String(layer?.getPopup?.()?.getContent?.() ?? "");
+        addBootstrapMarker(map, L, point, popupContent);
+        copied += 1;
       });
-      if (!sourceLayers.length) return false;
-
-      const nextLayer = L.layerGroup().addTo(map);
-      for (const source of sourceLayers) {
-        const point = source?.getLatLng?.();
-        if (!point || !Number.isFinite(Number(point.lat)) || !Number.isFinite(Number(point.lng))) {
-          continue;
-        }
-        const popupContent = String(source?.getPopup?.()?.getContent?.() ?? "");
-        const isLeader = popupContent.toLocaleLowerCase("pt-BR").includes("liderança");
-        const marker = L.marker([Number(point.lat), Number(point.lng)], {
-          icon: L.divIcon({
-            className: "vf-map-person vf-map-bootstrap-person",
-            html: `<span class="vf-map-pin ${isLeader ? "leader" : "voter"}"><i>${isLeader ? "L" : "•"}</i></span>`,
-            iconSize: [32, 36],
-            iconAnchor: [15, 32],
-            popupAnchor: [0, -30],
-          }),
-        });
-        if (popupContent) marker.bindPopup(popupContent, { closeButton: true });
-        marker.addTo(nextLayer);
-      }
-
-      bootstrapLayer = nextLayer;
-      const container = map.getContainer?.() as HTMLElement | undefined;
-      if (container) {
-        observer = new MutationObserver(() => {
-          if (hasModernPins(map)) clearBootstrap();
-        });
-        observer.observe(container, { childList: true, subtree: true });
-      }
-      if (hasModernPins(map)) clearBootstrap();
-      return true;
+      return copied > 0;
     };
 
     const attach = (map: any) => {
       if (cancelled || !map?._container) return;
       clearBootstrap();
+      restoreMarkerFactory();
       activeMap = map;
+      patchMarkerFactory(map);
 
       let attempts = 0;
       const seek = () => {
         frame = null;
-        if (cancelled || activeMap !== map || !map?._container) return;
-        if (copyLegacyPins(map)) return;
+        if (cancelled || activeMap !== map || !map?._container || bootstrapLayer) return;
+        if (copyExistingLegacyPins(map)) return;
         attempts += 1;
         if (attempts < 30) frame = window.requestAnimationFrame(seek);
       };
@@ -137,6 +187,7 @@ export default function MapInstantContactBootstrap() {
     return () => {
       cancelled = true;
       clearBootstrap();
+      restoreMarkerFactory();
       window.removeEventListener("voto-forte:base-electoral-map-ready", handleBaseReady);
       document.removeEventListener("click", handleFilterChange, true);
       document.removeEventListener("change", handleFilterChange, true);
