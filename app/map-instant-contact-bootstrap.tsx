@@ -2,9 +2,30 @@
 
 import { useLayoutEffect } from "react";
 
+const STYLE_ID = "vf-map-initial-render-fix";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function MapInstantContactBootstrap() {
   useLayoutEffect(() => {
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = STYLE_ID;
+      style.textContent = `
+        html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .real-map-toolbar,
+        html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .leaflet-control-zoom,
+        html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .map-legend {
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+        .full-map .vf-map-bootstrap-person {
+          background: transparent !important;
+          border: 0 !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     let cancelled = false;
     let activeMap: any = null;
     let bootstrapLayer: any = null;
