@@ -60,7 +60,7 @@ export default function MapMappedTotalFix() {
     installStyles();
     let cancelled = false;
     let map: any = null;
-    let observer: MutationObserver | null = null;
+    let applyFrame: number | null = null;
     let hud: HTMLDivElement | null = null;
     let mappedTotal = 0;
     let overviewCenter: OverviewCenter | null = null;
@@ -136,21 +136,28 @@ export default function MapMappedTotalFix() {
         toolbar.textContent = toolbarText;
     };
 
+    const scheduleApplyMappedTotal = () => {
+      if (applyFrame !== null) return;
+      applyFrame = window.requestAnimationFrame(() => {
+        applyFrame = null;
+        applyMappedTotal();
+      });
+    };
+
     const handleZoomEnd = () => {
       const zoom = Number(map?.getZoom?.() ?? 13);
       const enteredOverview = zoom <= 12 && lastZoom > 12;
       if (zoom > 12) centeredForOverview = false;
-      applyMappedTotal();
+      scheduleApplyMappedTotal();
       if (enteredOverview) maybeCenterOverview(true);
       lastZoom = zoom;
     };
 
-    const handleMoveEnd = () => applyMappedTotal();
+    const handleMoveEnd = () => scheduleApplyMappedTotal();
 
     const attachMap = (nextMap: any) => {
       const container = nextMap?.getContainer?.() as HTMLElement | undefined;
       if (!nextMap?._container || !container || map === nextMap) return;
-      observer?.disconnect();
       if (map) {
         map.off?.("zoomend", handleZoomEnd);
         map.off?.("moveend", handleMoveEnd);
@@ -164,13 +171,7 @@ export default function MapMappedTotalFix() {
       centeredForOverview = false;
       map.on?.("zoomend", handleZoomEnd);
       map.on?.("moveend", handleMoveEnd);
-      observer = new MutationObserver(applyMappedTotal);
-      observer.observe(container, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-      applyMappedTotal();
+      scheduleApplyMappedTotal();
     };
 
     const loadMappedTotal = async () => {
@@ -237,7 +238,7 @@ export default function MapMappedTotalFix() {
             : null;
 
         centeredForOverview = false;
-        applyMappedTotal();
+        scheduleApplyMappedTotal();
         maybeCenterOverview();
       } catch {
         // Mantém o comportamento original se a conferência territorial falhar.
@@ -270,7 +271,7 @@ export default function MapMappedTotalFix() {
     return () => {
       cancelled = true;
       requestId += 1;
-      observer?.disconnect();
+      if (applyFrame !== null) window.cancelAnimationFrame(applyFrame);
       if (map) {
         map.off?.("zoomend", handleZoomEnd);
         map.off?.("moveend", handleMoveEnd);
