@@ -11,12 +11,24 @@ export default function TeamIntelligencePage() {
   useEffect(() => {
     let active = true;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) setSessionReady(true);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) setSessionReady(true);
+      if (event === "INITIAL_SESSION") {
+        if (session) {
+          setSessionReady(true);
+        } else {
+          window.location.replace("/contatos");
+        }
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        window.location.replace("/contatos");
+        return;
+      }
+
+      if (session) setSessionReady(true);
     });
 
     return () => {
