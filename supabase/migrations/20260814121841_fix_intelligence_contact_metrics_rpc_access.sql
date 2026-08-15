@@ -20,8 +20,7 @@ as $function$
   visible_users as (
     select lower(trim(u.email)) as owner_email
     from public.vf_users u
-    where u.status = 'active'
-      and exists (select 1 from current_profile)
+    where exists (select 1 from current_profile)
       and u.id in (select v.user_id from private.vf_visible_user_ids() v)
   )
   select
