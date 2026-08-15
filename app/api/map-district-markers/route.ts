@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   }
 
   const [summaryResult, geocodeResult] = await Promise.all([
-    account.supabase.rpc("vf_contact_dashboard_summary", {
+    account.supabase.rpc("vf_map_district_summary", {
       p_owner_emails: scopeEmails,
     }),
     account.supabase
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
   ]);
 
   if (summaryResult.error) {
-    console.error("Failed to load district dashboard summary", summaryResult.error);
+    console.error("Failed to load cached district map summary", summaryResult.error);
     return Response.json(
       { error: "Não foi possível carregar os totais dos bairros agora." },
       { status: 500 },
@@ -94,12 +94,12 @@ export async function GET(request: Request) {
     );
   }
 
-  const summary = (summaryResult.data ?? {}) as {
-    districts?: DistrictSummaryItem[];
-  };
+  const summaryRows = Array.isArray(summaryResult.data)
+    ? (summaryResult.data as DistrictSummaryItem[])
+    : [];
   const totals = new Map<string, { district: string; total: number }>();
 
-  for (const item of Array.isArray(summary.districts) ? summary.districts : []) {
+  for (const item of summaryRows) {
     const district = String(item.district || "").trim();
     const key = normalizeDistrict(district);
     if (!district || !key) continue;
