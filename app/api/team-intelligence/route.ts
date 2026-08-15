@@ -40,6 +40,30 @@ type AuditRow = {
   created_at: string;
 };
 
+type ContactMetricRow = {
+  owner_email: string;
+  total_contacts: number | string | null;
+  voter_contacts: number | string | null;
+  contacts_last_7_days: number | string | null;
+  contacts_last_30_days: number | string | null;
+  voters_last_7_days: number | string | null;
+  last_voter_created_at: string | null;
+};
+
+type ContactMetric = {
+  totalContacts: number;
+  voterContacts: number;
+  votersLast7Days: number;
+  lastVoterCreatedAt: string | null;
+};
+
+const EMPTY_CONTACT_METRIC: ContactMetric = {
+  totalContacts: 0,
+  voterContacts: 0,
+  votersLast7Days: 0,
+  lastVoterCreatedAt: null,
+};
+
 function parseImportedContacts(detail: unknown) {
   const match = String(detail ?? "").match(/([\d.]+)\s+inseridos/i);
   if (!match) return 0;
@@ -92,44 +116,22 @@ async function countImportedContacts(account: Account, actorId: string) {
 async function buildUserMetric(
   account: Account,
   user: HierarchyUser,
-  sevenDaysAgo: string,
+  contactMetrics: ReadonlyMap<string, ContactMetric>,
 ) {
   const actorId = String(user.auth_user_id);
   const ownerEmail = String(user.email).trim().toLowerCase();
+  const contactMetric = contactMetrics.get(ownerEmail) ?? EMPTY_CONTACT_METRIC;
 
   const [
     manualCreatedContacts,
     importedContacts,
     updatedContacts,
-    contactCountResult,
-    voterBaseResult,
-    recentVoterResult,
     pendingCountResult,
     recentResult,
   ] = await Promise.all([
     countAuditActions(account, actorId, ["Cadastro criado"]),
     countImportedContacts(account, actorId),
     countAuditActions(account, actorId, UPDATE_ACTIONS),
-    account.supabase
-      .from("vf_owned_records")
-      .select("id", { count: "exact", head: true })
-      .eq("kind", "contact")
-      .eq("owner_email", ownerEmail),
-    account.supabase
-      .from("vf_owned_records")
-      .select("created_at", { count: "exact" })
-      .eq("kind", "contact")
-      .eq("owner_email", ownerEmail)
-      .eq("payload->>kind", "Eleitor")
-      .order("created_at", { ascending: false })
-      .limit(1),
-    account.supabase
-      .from("vf_owned_records")
-      .select("id", { count: "exact", head: true })
-      .eq("kind", "contact")
-      .eq("owner_email", ownerEmail)
-      .eq("payload->>kind", "Eleitor")
-      .gte("created_at", sevenDaysAgo),
     account.supabase
       .from("vf_contact_quality")
       .select("record_id", { count: "exact", head: true })
@@ -143,9 +145,6 @@ async function buildUserMetric(
       .limit(10),
   ]);
 
-  if (contactCountResult.error) throw new Error(contactCountResult.error.message);
-  if (voterBaseResult.error) throw new Error(voterBaseResult.error.message);
-  if (recentVoterResult.error) throw new Error(recentVoterResult.error.message);
   if (pendingCountResult.error) throw new Error(pendingCountResult.error.message);
   if (recentResult.error) throw new Error(recentResult.error.message);
 
@@ -158,9 +157,6 @@ async function buildUserMetric(
     recentActions.find((item) => !NON_OPERATIONAL_ACTIONS.has(item.action)) ??
     recentActions[0] ??
     null;
-  const lastVoterRow = (voterBaseResult.data?.[0] ?? null) as {
-    created_at?: string | null;
-  } | null;
 
   return {
     id: Number(user.id),
@@ -173,10 +169,10 @@ async function buildUserMetric(
     manualCreatedContacts,
     importedContacts,
     updatedContacts,
-    totalContacts: contactCountResult.count ?? 0,
-    voterContacts: voterBaseResult.count ?? 0,
-    votersLast7Days: recentVoterResult.count ?? 0,
-    lastVoterCreatedAt: lastVoterRow?.created_at ?? null,
+    totalContacts: contactMetric.totalContacts,
+    voterContacts: contactMetric.voterContacts,
+    votersLast7Days: contactMetric.votersLast7Days,
+    lastVoterCreatedAt: contactMetric.lastVoterCreatedAt,
     pendingContacts: pendingCountResult.count ?? 0,
     lastAction,
     recentActions,
@@ -193,7 +189,25 @@ export async function GET() {
     );
 
   try {
-    const visibleUsers = await getVisibleUsers(account);
+    const [visibleUsers, contactMetricsResult] = await Promise.all([
+      getVisibleUsers(account),
+      account.supabase.rpc("vf_intelligence_contact_metrics"),
+    ]);
+
+    if (contactMetricsResult.error) throw new Error(contactMetricsResult.error.message);
+
+    const contactMetrics = new Map<string, ContactMetric>();
+    for (const rawRow of (contactMetricsResult.data ?? []) as ContactMetricRow[]) {
+      const ownerEmail = String(rawRow.owner_email ?? "").trim().toLowerCase();
+      if (!ownerEmail) continue;
+      contactMetrics.set(ownerEmail, {
+        totalContacts: Number(rawRow.total_contacts ?? 0),
+        voterContacts: Number(rawRow.voter_contacts ?? 0),
+        votersLast7Days: Number(rawRow.voters_last_7_days ?? 0),
+        lastVoterCreatedAt: rawRow.last_voter_created_at ?? null,
+      });
+    }
+
     const users: Awaited<ReturnType<typeof buildUserMetric>>[] = [];
     const batchSize = 8;
     const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
@@ -202,7 +216,7 @@ export async function GET() {
       const batch = await Promise.all(
         visibleUsers
           .slice(index, index + batchSize)
-          .map((user) => buildUserMetric(account, user, sevenDaysAgo)),
+          .map((user) => buildUserMetric(account, user, contactMetrics)),
       );
       users.push(...batch);
     }
