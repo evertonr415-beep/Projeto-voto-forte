@@ -25,8 +25,10 @@ type AuthAccount = {
   can_reconcile: boolean;
 };
 
+type ReconciliableAccessRole = Exclude<AccessRole, "adm">;
+
 type ParentOption = {
-  forRole: Exclude<AccessRole, "adm">;
+  forRole: ReconciliableAccessRole;
   id: number;
   name: string;
   email: string;
@@ -41,11 +43,11 @@ type AdministrationOptions = {
 type ReconcileForm = {
   authUserId: string;
   name: string;
-  accessRole: Exclude<AccessRole, "adm">;
+  accessRole: ReconciliableAccessRole | "";
   parentUserId: number | "";
 };
 
-const roleLabels: Record<Exclude<AccessRole, "adm">, string> = {
+const roleLabels: Record<ReconciliableAccessRole, string> = {
   master: "Master",
   lideranca: "Liderança",
   liderado: "Liderado",
@@ -75,19 +77,19 @@ export default function AuthReconciliationEnhancer() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let observer: MutationObserver | null = null;
-    const detect = () => {
-      const node = document.querySelector<HTMLElement>(".vf-hierarchy-panel");
-      if (!node) return false;
-      setTarget(node);
-      observer?.disconnect();
-      return true;
+    let currentTarget: HTMLElement | null = null;
+
+    const syncTarget = () => {
+      const nextTarget = document.querySelector<HTMLElement>(".vf-hierarchy-panel");
+      if (nextTarget === currentTarget) return;
+      currentTarget = nextTarget;
+      setTarget(nextTarget);
     };
-    if (!detect()) {
-      observer = new MutationObserver(detect);
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-    return () => observer?.disconnect();
+
+    syncTarget();
+    const observer = new MutationObserver(syncTarget);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   async function load() {
@@ -117,23 +119,22 @@ export default function AuthReconciliationEnhancer() {
   const selectedAccount = form
     ? pending.find((account) => account.auth_user_id === form.authUserId) || null
     : null;
-  const validParents = form
+  const validParents = form?.accessRole
     ? options?.parentOptions.filter((parent) => parent.forRole === form.accessRole) || []
     : [];
 
   function beginReview(account: AuthAccount) {
     if (!account.can_reconcile) return;
-    const accessRole: ReconcileForm["accessRole"] = "master";
     setForm({
       authUserId: account.auth_user_id,
       name: account.display_name?.trim() || "",
-      accessRole,
+      accessRole: "",
       parentUserId: "",
     });
     setMessage("");
   }
 
-  function changeRole(accessRole: ReconcileForm["accessRole"]) {
+  function changeRole(accessRole: ReconciliableAccessRole) {
     const parents = options?.parentOptions.filter((parent) => parent.forRole === accessRole) || [];
     setForm((current) =>
       current
@@ -149,6 +150,10 @@ export default function AuthReconciliationEnhancer() {
   async function confirmReconciliation(event: React.FormEvent) {
     event.preventDefault();
     if (!form || !selectedAccount) return;
+    if (!form.accessRole) {
+      setMessage("Selecione explicitamente o nível de acesso antes de confirmar.");
+      return;
+    }
     if (form.accessRole !== "master" && !form.parentUserId) {
       setMessage("Selecione o superior imediato antes de confirmar.");
       return;
@@ -251,7 +256,12 @@ export default function AuthReconciliationEnhancer() {
           </label>
           <label>
             Nível de acesso
-            <select value={form.accessRole} onChange={(event) => changeRole(event.target.value as ReconcileForm["accessRole"])}>
+            <select
+              required
+              value={form.accessRole}
+              onChange={(event) => changeRole(event.target.value as ReconciliableAccessRole)}
+            >
+              <option value="" disabled>Selecione o nível</option>
               {Object.entries(roleLabels).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
@@ -262,7 +272,7 @@ export default function AuthReconciliationEnhancer() {
               <span>Superior imediato</span>
               <b>{options.currentUser.name} — ADM</b>
             </div>
-          ) : (
+          ) : form.accessRole ? (
             <label>
               Superior imediato
               <select required value={form.parentUserId} onChange={(event) => setForm({ ...form, parentUserId: Number(event.target.value) || "" })}>
@@ -272,10 +282,18 @@ export default function AuthReconciliationEnhancer() {
                 ))}
               </select>
             </label>
-          )}
+          ) : null}
           <div className="vf-auth-reconcile-actions">
             <button type="button" onClick={() => setForm(null)} disabled={saving}>Cancelar</button>
-            <button type="submit" disabled={saving || !form.name.trim() || (form.accessRole !== "master" && !form.parentUserId)}>
+            <button
+              type="submit"
+              disabled={
+                saving ||
+                !form.name.trim() ||
+                !form.accessRole ||
+                (form.accessRole !== "master" && !form.parentUserId)
+              }
+            >
               {saving ? "Habilitando…" : "Confirmar habilitação"}
             </button>
           </div>
