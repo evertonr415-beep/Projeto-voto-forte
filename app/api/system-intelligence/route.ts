@@ -2,7 +2,6 @@ import { getAccount } from "../../server-identity";
 import { analyzeSystemSignals, type SystemSignals } from "./analysis";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const AUDIT_LIMIT = 10_000;
 
 const ESSENTIAL_QUALITY_ISSUES = [
@@ -30,6 +29,13 @@ type BackupSignalRow = {
   created_at: string;
   created_by: string | null;
   item_count: number | null;
+};
+
+type ContactMetricRow = {
+  owner_email: string;
+  total_contacts: number | string | null;
+  contacts_last_7_days: number | string | null;
+  contacts_last_30_days: number | string | null;
 };
 
 function parseImportDetail(detail: unknown) {
@@ -61,36 +67,20 @@ export async function GET() {
   }
 
   const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
-  const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
 
   try {
     const [
-      totalContacts,
+      contactMetricsResult,
       pendingContacts,
-      newContacts7Days,
-      newContacts30Days,
       usersResult,
       backupResult,
       auditResult,
     ] = await Promise.all([
-      account.supabase
-        .from("vf_owned_records")
-        .select("id", { count: "exact", head: true })
-        .eq("kind", "contact"),
+      account.supabase.rpc("vf_intelligence_contact_metrics"),
       account.supabase
         .from("vf_contact_quality")
         .select("record_id", { count: "exact", head: true })
         .overlaps("issue_codes", [...ESSENTIAL_QUALITY_ISSUES]),
-      account.supabase
-        .from("vf_owned_records")
-        .select("id", { count: "exact", head: true })
-        .eq("kind", "contact")
-        .gte("created_at", sevenDaysAgo),
-      account.supabase
-        .from("vf_owned_records")
-        .select("id", { count: "exact", head: true })
-        .eq("kind", "contact")
-        .gte("created_at", thirtyDaysAgo),
       account.supabase
         .from("vf_users")
         .select("id,role,status,last_seen_at"),
@@ -109,16 +99,28 @@ export async function GET() {
     ]);
 
     for (const result of [
-      totalContacts,
+      contactMetricsResult,
       pendingContacts,
-      newContacts7Days,
-      newContacts30Days,
       usersResult,
       backupResult,
       auditResult,
     ]) {
       if (result.error) throw new Error(result.error.message);
     }
+
+    const contactMetrics = (contactMetricsResult.data ?? []) as ContactMetricRow[];
+    const totalContacts = contactMetrics.reduce(
+      (sum, row) => sum + Number(row.total_contacts ?? 0),
+      0,
+    );
+    const newContacts7Days = contactMetrics.reduce(
+      (sum, row) => sum + Number(row.contacts_last_7_days ?? 0),
+      0,
+    );
+    const newContacts30Days = contactMetrics.reduce(
+      (sum, row) => sum + Number(row.contacts_last_30_days ?? 0),
+      0,
+    );
 
     const users = (usersResult.data ?? []) as UserSignalRow[];
     const activeUsers = users.filter((user) => user.status === "active");
@@ -173,10 +175,10 @@ export async function GET() {
     const backup = (backupResult.data ?? null) as BackupSignalRow | null;
     const signals: SystemSignals = {
       generatedAt: new Date().toISOString(),
-      totalContacts: totalContacts.count ?? 0,
+      totalContacts,
       pendingContacts: pendingContacts.count ?? 0,
-      newContacts7Days: newContacts7Days.count ?? 0,
-      newContacts30Days: newContacts30Days.count ?? 0,
+      newContacts7Days,
+      newContacts30Days,
       activeUsers: activeUsers.length,
       blockedUsers: blockedUsers.length,
       inactiveUsers30Days,
