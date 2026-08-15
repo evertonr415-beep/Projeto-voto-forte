@@ -5,6 +5,7 @@ import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
 import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
+import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
@@ -27,6 +28,7 @@ import "./map-strategy-insights.css";
 import "./executive-dashboard.css";
 import "./data-quality-panel.css";
 import "./user-hierarchy.css";
+import "./auth-reconciliation.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
 import "./sidebar-scroll-fix.css";
@@ -69,6 +71,7 @@ export default function RootLayout({
         <MapInstantContactBootstrap />
         <MapToolsGate />
         <UserHierarchyRemountGuard />
+        <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
         <ReportsSimplifier />
         <ContactNavigationInterceptor />
