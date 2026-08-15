@@ -135,13 +135,12 @@ export default function AuthReconciliationEnhancer() {
   }
 
   function changeRole(accessRole: ReconciliableAccessRole) {
-    const parents = options?.parentOptions.filter((parent) => parent.forRole === accessRole) || [];
     setForm((current) =>
       current
         ? {
             ...current,
             accessRole,
-            parentUserId: accessRole === "master" ? "" : parents[0]?.id ?? "",
+            parentUserId: "",
           }
         : current,
     );
