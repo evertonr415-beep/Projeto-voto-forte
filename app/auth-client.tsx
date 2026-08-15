@@ -8,6 +8,28 @@ import { apiFetch, supabase } from "./supabase-client";
 
 type Mode = "login" | "signup" | "forgot" | "recovery";
 type DashboardMode = "full" | "neutral";
+type SessionAccessState =
+  | "active"
+  | "profile_inactive"
+  | "email_unconfirmed"
+  | "invitation_ready"
+  | "awaiting_adm_activation";
+type SessionAccessStatus = {
+  state: SessionAccessState;
+  message: string;
+  suggestedAction?: string;
+  canEnterApplication?: boolean;
+  canClaimInvitation?: boolean;
+  requiresAdmReview?: boolean;
+  email?: string;
+  emailConfirmed?: boolean;
+};
+
+type SessionResponse = {
+  access?: SessionAccessStatus;
+  user?: CurrentUser;
+  error?: string;
+};
 
 const DashboardClient = dynamic(() => import("./dashboard-client"), {
   ssr: false,
@@ -37,6 +59,9 @@ export default function AuthClient({
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [account, setAccount] = useState<CurrentUser | null>(null);
+  const [accessStatus, setAccessStatus] = useState<SessionAccessStatus | null>(
+    null,
+  );
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,7 +96,11 @@ export default function AuthClient({
       setSession(next);
       if (!next) {
         setAccount(null);
+        setAccessStatus(null);
         setBusy(false);
+      } else {
+        setAccount(null);
+        setAccessStatus(null);
       }
       if (event === "PASSWORD_RECOVERY") setMode("recovery");
     });
@@ -80,24 +109,81 @@ export default function AuthClient({
 
   useEffect(() => {
     if (!session) return;
+    let cancelled = false;
     setBusy(true);
     apiFetch("/api/session")
-      .then(async (response) => ({ response, data: await response.json() }))
+      .then(async (response) => ({
+        response,
+        data: (await response.json()) as SessionResponse,
+      }))
       .then(({ response, data }) => {
-        if (response.ok) setAccount(data.user);
-        else {
-          setMessage(data.error || "Não foi possível validar esta conta.");
+        if (cancelled) return;
+        if (response.status === 401) {
+          setMessage(data.error || "Sua sessão expirou. Entre novamente.");
           void supabase.auth.signOut();
+          return;
         }
+        if (!response.ok) {
+          setMessage(data.error || "Não foi possível validar esta conta agora.");
+          return;
+        }
+        if (data.access?.state === "active" && data.user) {
+          setAccessStatus(data.access);
+          setAccount(data.user);
+          setMessage("");
+          return;
+        }
+        setAccount(null);
+        setAccessStatus(data.access || null);
+        setMessage(data.access?.message || "Não foi possível liberar este acesso.");
       })
-      .catch(() => setMessage("Não foi possível validar seu acesso agora."))
-      .finally(() => setBusy(false));
+      .catch(() => {
+        if (!cancelled) setMessage("Não foi possível validar seu acesso agora.");
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [session]);
+
+  async function activateInvitation() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const response = await apiFetch("/api/session", { method: "POST" });
+      const data = (await response.json()) as SessionResponse;
+      if (response.status === 401) {
+        setMessage(data.error || "Sua sessão expirou. Entre novamente.");
+        await supabase.auth.signOut();
+        return;
+      }
+      if (!response.ok) {
+        if (data.access) setAccessStatus(data.access);
+        setMessage(data.error || data.access?.message || "Não foi possível ativar o acesso.");
+        return;
+      }
+      if (data.access?.state === "active" && data.user) {
+        setAccessStatus(data.access);
+        setAccount(data.user);
+        setMessage("");
+        return;
+      }
+      setAccessStatus(data.access || null);
+      setMessage(data.access?.message || "O acesso ainda não foi liberado.");
+    } catch {
+      setMessage("Não foi possível ativar seu acesso agora.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     setMessage("");
+    setAccessStatus(null);
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -160,6 +246,64 @@ export default function AuthClient({
       <NeutralDashboardClient currentUser={account} />
     ) : (
       <DashboardClient currentUser={account} />
+    );
+  }
+
+  if (session && accessStatus && accessStatus.state !== "active") {
+    const accessTitle =
+      accessStatus.state === "invitation_ready"
+        ? "Acesso pronto para ativação"
+        : accessStatus.state === "profile_inactive"
+          ? "Acesso temporariamente inativo"
+          : accessStatus.state === "email_unconfirmed"
+            ? "Confirme seu e-mail"
+            : "Aguardando habilitação do ADM";
+
+    return (
+      <main className="auth-page">
+        <section className="auth-hero">
+          <img src="/parana-icon-small.jpg" alt="Mapa do Paraná" />
+          <div>
+            <small>VOTO FORTE PARANÁ</small>
+            <h1>Seu login foi autenticado.</h1>
+            <p>O acesso ao ambiente segue o vínculo e as permissões definidos no VOTO FORTE.</p>
+          </div>
+        </section>
+        <section className="auth-panel">
+          <div className="auth-card">
+            <small>STATUS DO ACESSO</small>
+            <h2>{accessTitle}</h2>
+            <p>{accessStatus.message}</p>
+            {accessStatus.email && (
+              <div className="auth-message" role="status">
+                Conta autenticada: {accessStatus.email}
+              </div>
+            )}
+            {message && message !== accessStatus.message && (
+              <div className="auth-message" role="status">
+                {message}
+              </div>
+            )}
+            {accessStatus.state === "invitation_ready" && (
+              <button
+                type="button"
+                className="auth-submit"
+                disabled={busy}
+                onClick={() => void activateInvitation()}
+              >
+                {busy ? "Ativando…" : "Ativar meu acesso"}
+              </button>
+            )}
+            <button
+              type="button"
+              className="auth-link"
+              onClick={() => void supabase.auth.signOut()}
+            >
+              Sair desta conta
+            </button>
+          </div>
+        </section>
+      </main>
     );
   }
 
