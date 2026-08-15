@@ -41,29 +41,13 @@ export async function getAccount() {
   const email = user?.email?.trim().toLowerCase();
   if (!user || !email) return null;
 
-  const { data: existing } = await supabase
+  const { data: account } = await supabase
     .from("vf_users")
     .select("*")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!existing) {
-    const { error: claimError } = await supabase.rpc("vf_claim_user_invitation");
-    if (claimError) return null;
-  }
-
-  const { data: account } = await supabase
-    .from("vf_users")
-    .select("*")
-    .eq("auth_user_id", user.id)
-    .single();
-
   if (!account || account.status === "blocked") return null;
-
-  await supabase
-    .from("vf_users")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("auth_user_id", user.id);
 
   return {
     ...account,
