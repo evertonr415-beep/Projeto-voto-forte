@@ -74,11 +74,18 @@ export async function GET() {
       account.supabase.rpc("vf_list_user_invitations"),
     ]);
 
+  let authAccounts: unknown[] = [];
+  if (account.accessRole === "adm") {
+    const { data, error } = await account.supabase.rpc("vf_auth_profile_reconciliation");
+    if (!error && Array.isArray(data)) authAccounts = data;
+  }
+
   return Response.json({
     users: mappedUsers,
     logs: mappedLogs,
     administrationOptions: optionsError ? null : administrationOptions,
     invitations: invitationsError ? [] : invitations ?? [],
+    authAccounts,
     adminCount: mappedUsers.filter((user) => user.status === "active" && user.accessRole === "adm").length,
   });
 }
