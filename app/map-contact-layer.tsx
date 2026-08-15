@@ -433,7 +433,7 @@ export default function MapContactLayer() {
         if (moveTimer !== null) window.clearTimeout(moveTimer);
         moveTimer = window.setTimeout(() => {
           moveTimer = null;
-          void refresh(false);
+          draw();
         }, 160);
       };
 
