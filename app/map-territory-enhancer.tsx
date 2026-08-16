@@ -334,33 +334,26 @@ export default function MapTerritoryEnhancer() {
         const id = ++requestId;
         const scope = currentScope();
         lastScope = scope;
-        const params = new URLSearchParams({ mode: "summary" });
-        if (scope) params.set("owner", scope);
         const markerParams = new URLSearchParams();
         if (scope) markerParams.set("owner", scope);
 
         try {
-          const [summaryResponse, centersResponse] = await Promise.all([
-            apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" }),
-            apiFetch(
-              `/api/map-district-markers${markerParams.toString() ? `?${markerParams.toString()}` : ""}`,
-              { cache: "no-store" },
-            ).catch(() => null),
-          ]);
-          const summaryPayload = (await summaryResponse.json()) as {
-            total?: number | string;
+          const response = await apiFetch(
+            `/api/map-district-markers${markerParams.toString() ? `?${markerParams.toString()}` : ""}`,
+            { cache: "no-store" },
+          );
+          const payload = (await response.json()) as {
+            totalContacts?: number | string;
             districts?: DistrictSummaryItem[];
+            markers?: DistrictCenter[];
             error?: string;
           };
-          if (!summaryResponse.ok)
-            throw new Error(summaryPayload.error || "Falha ao carregar totais dos bairros");
+          if (!response.ok)
+            throw new Error(payload.error || "Falha ao carregar totais dos bairros");
           if (cancelled || id !== requestId || !map._container) return;
-          overviewTotal = Math.max(0, Number(summaryPayload.total || 0));
+          overviewTotal = Math.max(0, Number(payload.totalContacts || 0));
 
-          rankingItems = (Array.isArray(summaryPayload.districts)
-            ? summaryPayload.districts
-            : []
-          )
+          rankingItems = (Array.isArray(payload.districts) ? payload.districts : [])
             .map((item) => ({
               district: String(item.district || "").trim(),
               total: Math.max(0, Number(item.total || 0)),
@@ -374,19 +367,12 @@ export default function MapTerritoryEnhancer() {
             );
 
           districtCenters.clear();
-          if (centersResponse?.ok) {
-            const centersPayload = (await centersResponse.json()) as {
-              markers?: DistrictCenter[];
-            };
-            for (const item of Array.isArray(centersPayload.markers)
-              ? centersPayload.markers
-              : []) {
-              const key = normalize(item.district);
-              const latitude = Number(item.latitude);
-              const longitude = Number(item.longitude);
-              if (key && Number.isFinite(latitude) && Number.isFinite(longitude))
-                districtCenters.set(key, { latitude, longitude });
-            }
+          for (const item of Array.isArray(payload.markers) ? payload.markers : []) {
+            const key = normalize(item.district);
+            const latitude = Number(item.latitude);
+            const longitude = Number(item.longitude);
+            if (key && Number.isFinite(latitude) && Number.isFinite(longitude))
+              districtCenters.set(key, { latitude, longitude });
           }
 
           pointLayer.clearLayers();
