@@ -2,10 +2,14 @@ import { getAccount } from "../../server-identity";
 
 type ApplicationAction = "approve" | "reject";
 
+function canReview(accessRole: string) {
+  return accessRole === "adm" || accessRole === "master";
+}
+
 export async function GET() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
-  if (account.accessRole !== "adm") return Response.json({ error: "Acesso negado" }, { status: 403 });
+  if (!canReview(account.accessRole)) return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const { data, error } = await account.supabase.rpc("vf_list_signup_requests");
   if (error) return Response.json({ error: error.message }, { status: 400 });
@@ -15,7 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
-  if (account.accessRole !== "adm") return Response.json({ error: "Acesso negado" }, { status: 403 });
+  if (!canReview(account.accessRole)) return Response.json({ error: "Acesso negado" }, { status: 403 });
 
   const body = (await request.json()) as {
     action?: ApplicationAction;
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
     return Response.json({ request: data });
   }
 
-  const accessRole = body.accessRole || "master";
+  const accessRole = account.accessRole === "master" ? "lideranca" : body.accessRole || "master";
   const { data, error } = await account.supabase.rpc("vf_approve_signup_request", {
     p_request_id: body.requestId,
     p_access_role: accessRole,
