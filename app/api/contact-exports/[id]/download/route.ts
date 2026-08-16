@@ -125,8 +125,11 @@ export async function GET(
       XLSX.utils.aoa_to_sheet([HEADERS, ...rows]),
       "Contatos",
     );
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-    return new Response(buffer, {
+    const arrayBuffer = XLSX.write(workbook, {
+      type: "array",
+      bookType: "xlsx",
+    }) as ArrayBuffer;
+    return new Response(arrayBuffer, {
       headers: {
         ...commonHeaders,
         "Content-Type":
