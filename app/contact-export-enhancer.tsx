@@ -37,6 +37,37 @@ function downloadBlob(response: Response, blob: Blob, fallback: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function ensureHistoryNavigation(router: ReturnType<typeof useRouter>) {
+  const adminButton = document.querySelector<HTMLButtonElement>(
+    ".administration-nav-item",
+  );
+  const nav = adminButton?.closest("nav");
+  if (
+    !adminButton ||
+    !nav ||
+    nav.querySelector("[data-vf-export-history-nav]")
+  )
+    return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "vf-export-history-nav-item";
+  button.setAttribute("data-vf-export-history-nav", "true");
+  button.title = "Histórico de exportações";
+
+  const icon = document.createElement("span");
+  icon.className = "nav-icon";
+  icon.textContent = "⇩";
+
+  const label = document.createElement("span");
+  label.className = "nav-name";
+  label.textContent = "Histórico de exportações";
+
+  button.append(icon, label);
+  button.addEventListener("click", () => router.push(HISTORY_ROUTE));
+  nav.insertBefore(button, adminButton);
+}
+
 function ensureHistoryLink(router: ReturnType<typeof useRouter>) {
   const card = document.querySelector<HTMLElement>(".export-contacts");
   if (!card || card.querySelector("[data-vf-export-history-link]")) return;
@@ -76,10 +107,12 @@ export default function ContactExportEnhancer() {
 
   useEffect(() => {
     router.prefetch(HISTORY_ROUTE);
+    ensureHistoryNavigation(router);
     ensureHistoryLink(router);
     markAuditRows();
 
     const observer = new MutationObserver(() => {
+      ensureHistoryNavigation(router);
       ensureHistoryLink(router);
       markAuditRows();
     });
