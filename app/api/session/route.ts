@@ -1,4 +1,5 @@
-import { getAccount } from "../../server-identity";
+import { after } from "next/server";
+import { getAccountForAuthenticatedUser } from "../../server-identity";
 import { getServerSupabase } from "../../supabase-server";
 
 type SessionAccessState =
@@ -7,7 +8,6 @@ type SessionAccessState =
   | "email_unconfirmed"
   | "invitation_ready"
   | "awaiting_adm_activation";
-
 type SessionAccessStatus = {
   state: SessionAccessState;
   message: string;
@@ -42,9 +42,12 @@ async function getAccessStatus(
 
 async function activeSessionResponse(
   access: SessionAccessStatus,
-  authUserId: string,
+  context: NonNullable<Awaited<ReturnType<typeof getAuthenticatedContext>>>,
 ) {
-  const account = await getAccount();
+  const account = await getAccountForAuthenticatedUser(
+    context.supabase,
+    context.user,
+  );
   if (!account) {
     return Response.json(
       {
@@ -60,10 +63,12 @@ async function activeSessionResponse(
     );
   }
 
-  await account.supabase
-    .from("vf_users")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("auth_user_id", authUserId);
+  after(async () => {
+    await context.supabase
+      .from("vf_users")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("auth_user_id", context.user.id);
+  });
 
   return Response.json({
     access,
@@ -94,7 +99,7 @@ export async function GET() {
   }
 
   if (access.state !== "active") return Response.json({ access });
-  return activeSessionResponse(access, context.user.id);
+  return activeSessionResponse(access, context);
 }
 
 export async function POST() {
@@ -143,5 +148,5 @@ export async function POST() {
   }
 
   if (access.state !== "active") return Response.json({ access });
-  return activeSessionResponse(access, context.user.id);
+  return activeSessionResponse(access, context);
 }
