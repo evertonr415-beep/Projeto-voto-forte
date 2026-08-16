@@ -4,15 +4,45 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const CONTACTS_ROUTE = "/contatos";
+const QUICK_ACTION_ROUTES = new Set([
+  "/importar-contatos",
+  "/pendencias-localizacao",
+  "/sistema-completo",
+]);
 
 export default function ContactNavigationInterceptor() {
   const router = useRouter();
 
   useEffect(() => {
     router.prefetch(CONTACTS_ROUTE);
+    for (const route of QUICK_ACTION_ROUTES) router.prefetch(route);
 
     function handleClick(event: MouseEvent) {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+
       const target = event.target as HTMLElement | null;
+      const link = target?.closest<HTMLAnchorElement>("a[href]");
+      const quickActionRoute = link?.getAttribute("href") || "";
+      const interceptQuickAction =
+        Boolean(link) &&
+        QUICK_ACTION_ROUTES.has(quickActionRoute) &&
+        (!link?.target || link.target === "_self");
+
+      if (interceptQuickAction) {
+        event.preventDefault();
+        event.stopPropagation();
+        router.push(quickActionRoute);
+        return;
+      }
+
       const button = target?.closest("button");
       if (!button) return;
 
