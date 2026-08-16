@@ -43,6 +43,15 @@ type DistrictContactsPayload = {
   }>;
 };
 
+type DistrictSummaryItem = {
+  district?: string;
+  total?: number | string;
+};
+
+type MapScopeStatsRow = {
+  total_contacts?: number | string;
+};
+
 function mapContact(row: ContactRow) {
   return {
     id: row.id,
@@ -96,6 +105,13 @@ function applyScope<T>(query: T, scope: string, emails: string[]) {
     : scoped.eq("owner_email", scope);
 }
 
+function scopeTotal(data: unknown) {
+  const row = Array.isArray(data)
+    ? (data[0] as MapScopeStatsRow | undefined)
+    : undefined;
+  return Math.max(0, Number(row?.total_contacts ?? 0));
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -114,14 +130,76 @@ export async function GET(request: Request) {
   try {
     if (mode === "summary") {
       const ownerEmails = scope === "all" ? emails : [scope];
-      const { data, error } = await account.supabase.rpc(
-        "vf_contact_dashboard_summary",
-        { p_owner_emails: ownerEmails },
-      );
-      if (error) throw new Error(error.message);
+      let meetingsQuery = account.supabase
+        .from("vf_owned_records")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "meeting");
+      meetingsQuery = applyScope(meetingsQuery, scope, emails);
+
+      const [totalResult, voterResult, leaderResult, districtResult, meetingsResult] =
+        await Promise.all([
+          account.supabase.rpc("vf_map_scope_stats", {
+            p_owner_emails: ownerEmails,
+            p_profile: null,
+          }),
+          account.supabase.rpc("vf_map_scope_stats", {
+            p_owner_emails: ownerEmails,
+            p_profile: "Eleitor",
+          }),
+          account.supabase.rpc("vf_map_scope_stats", {
+            p_owner_emails: ownerEmails,
+            p_profile: "Liderança",
+          }),
+          account.supabase.rpc("vf_map_district_summary", {
+            p_owner_emails: ownerEmails,
+          }),
+          meetingsQuery,
+        ]);
+
+      if (totalResult.error) throw new Error(totalResult.error.message);
+      if (voterResult.error) throw new Error(voterResult.error.message);
+      if (leaderResult.error) throw new Error(leaderResult.error.message);
+      if (districtResult.error) throw new Error(districtResult.error.message);
+      if (meetingsResult.error) throw new Error(meetingsResult.error.message);
+
+      const districts = (Array.isArray(districtResult.data)
+        ? (districtResult.data as DistrictSummaryItem[])
+        : []
+      )
+        .map((item) => ({
+          district: String(item.district || "").trim(),
+          total: Math.max(0, Number(item.total || 0)),
+        }))
+        .filter((item) => item.district)
+        .sort((left, right) => {
+          const leftRural = left.district === "Zona rural" ? 0 : 1;
+          const rightRural = right.district === "Zona rural" ? 0 : 1;
+          if (leftRural !== rightRural) return leftRural - rightRural;
+          if ((left.total > 0) !== (right.total > 0))
+            return left.total > 0 ? -1 : 1;
+          return (
+            right.total - left.total ||
+            left.district.localeCompare(right.district, "pt-BR")
+          );
+        });
+
+      const ruralContacts =
+        districts.find((item) => item.district === "Zona rural")?.total ?? 0;
+      const districtsReached = districts.filter(
+        (item) => item.district !== "Zona rural" && item.total > 0,
+      ).length;
 
       return Response.json(
-        { scope, ...(data as Record<string, unknown>) },
+        {
+          scope,
+          total: scopeTotal(totalResult.data),
+          voters: scopeTotal(voterResult.data),
+          leaders: scopeTotal(leaderResult.data),
+          meetings: meetingsResult.count ?? 0,
+          ruralContacts,
+          districtsReached,
+          districts,
+        },
         {
           headers: {
             "Cache-Control": "private, max-age=30, stale-while-revalidate=120",
@@ -216,14 +294,12 @@ export async function GET(request: Request) {
     const totalPromise: Promise<number | null> = hasFilters
       ? Promise.resolve(null)
       : (async () => {
-          const result = await account.supabase.rpc(
-            "vf_contact_dashboard_summary",
-            { p_owner_emails: scope === "all" ? emails : [scope] },
-          );
+          const result = await account.supabase.rpc("vf_map_scope_stats", {
+            p_owner_emails: scope === "all" ? emails : [scope],
+            p_profile: null,
+          });
           if (result.error) throw new Error(result.error.message);
-          return Number(
-            (result.data as { total?: number } | null)?.total ?? 0,
-          );
+          return scopeTotal(result.data);
         })();
 
     const [{ data, count, error }, cachedTotal] = await Promise.all([
