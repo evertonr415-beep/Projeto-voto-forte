@@ -22,6 +22,10 @@ type OwnedRecord = {
   updated_at: string;
 };
 
+type MapScopeStatsRow = {
+  mapped_contacts?: number | string;
+};
+
 function mapRecord(record: OwnedRecord) {
   return {
     id: record.id,
@@ -135,17 +139,6 @@ export async function GET(request: Request) {
       return query;
     };
 
-    const makeScopedCountQuery = (recordKind: AllowedKind) => {
-      let query = account.supabase
-        .from("vf_owned_records")
-        .select("id", { count: "exact", head: true })
-        .eq("kind", recordKind);
-
-      if (scope === "all") query = query.in("owner_email", emails);
-      else query = query.eq("owner_email", scope);
-      return query;
-    };
-
     const mappedContactsQuery = makeScopedQuery(
       "contact",
       DASHBOARD_MAPPED_CONTACT_LIMIT,
@@ -155,35 +148,38 @@ export async function GET(request: Request) {
       .neq("payload->>latitude", "")
       .neq("payload->>longitude", "");
 
-    const mappedContactsCountQuery = makeScopedCountQuery("contact")
-      .not("payload->>latitude", "is", null)
-      .not("payload->>longitude", "is", null)
-      .neq("payload->>latitude", "")
-      .neq("payload->>longitude", "");
+    const mappedContactsStatsQuery = account.supabase.rpc("vf_map_scope_stats", {
+      p_owner_emails: scope === "all" ? emails : [scope],
+      p_profile: null,
+    });
 
     const [
       mappedContactsResult,
-      mappedContactsCountResult,
+      mappedContactsStatsResult,
       meetingsResult,
       draftsResult,
     ] = await Promise.all([
       mappedContactsQuery,
-      mappedContactsCountQuery,
+      mappedContactsStatsQuery,
       makeScopedQuery("meeting", DASHBOARD_MEETING_LIMIT),
       makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT),
     ]);
 
     const error =
       mappedContactsResult.error ||
-      mappedContactsCountResult.error ||
+      mappedContactsStatsResult.error ||
       meetingsResult.error ||
       draftsResult.error;
     if (error)
       return Response.json({ error: error.message }, { status: 400 });
 
     const mappedContacts = (mappedContactsResult.data ?? []) as OwnedRecord[];
-    const mappedContactsTotal = Number(
-      mappedContactsCountResult.count ?? mappedContacts.length,
+    const statsRow = Array.isArray(mappedContactsStatsResult.data)
+      ? (mappedContactsStatsResult.data[0] as MapScopeStatsRow | undefined)
+      : undefined;
+    const mappedContactsTotal = Math.max(
+      0,
+      Number(statsRow?.mapped_contacts ?? mappedContacts.length),
     );
     const meetings = (meetingsResult.data ?? []) as OwnedRecord[];
     const drafts = (draftsResult.data ?? []) as OwnedRecord[];
