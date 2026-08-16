@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
@@ -34,11 +35,18 @@ function ensureLegacySlot(nav: HTMLElement) {
 }
 
 export default function TeamIntelligenceNavigation() {
+  const pathname = usePathname();
+  const hideFromContacts = pathname.startsWith("/contatos");
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [mode, setMode] = useState<NavigationMode | null>(null);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    if (hideFromContacts) {
+      setAllowed(false);
+      return;
+    }
+
     let active = true;
 
     void apiFetch("/api/session")
@@ -55,12 +63,13 @@ export default function TeamIntelligenceNavigation() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [hideFromContacts]);
 
   useEffect(() => {
     if (
+      hideFromContacts ||
       !allowed ||
-      window.location.pathname.startsWith("/inteligencia-equipe")
+      pathname.startsWith("/inteligencia-equipe")
     )
       return;
 
@@ -99,9 +108,9 @@ export default function TeamIntelligenceNavigation() {
       setTarget(null);
       setMode(null);
     };
-  }, [allowed]);
+  }, [allowed, hideFromContacts, pathname]);
 
-  if (!allowed || !target || !mode) return null;
+  if (hideFromContacts || !allowed || !target || !mode) return null;
 
   if (mode === "optimized") {
     return createPortal(
