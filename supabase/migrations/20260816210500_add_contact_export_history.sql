@@ -29,6 +29,7 @@ alter table public.vf_contact_export_items enable row level security;
 revoke all on public.vf_contact_exports from anon, authenticated;
 revoke all on public.vf_contact_export_items from anon, authenticated;
 grant select, insert on public.vf_contact_exports to authenticated;
+grant update (item_count) on public.vf_contact_exports to authenticated;
 grant select, insert on public.vf_contact_export_items to authenticated;
 grant usage, select on sequence public.vf_contact_export_items_id_seq to authenticated;
 
@@ -48,6 +49,14 @@ create policy vf_contact_exports_insert
 on public.vf_contact_exports
 for insert
 to authenticated
+with check (actor_id = (select auth.uid()));
+
+drop policy if exists vf_contact_exports_update_count on public.vf_contact_exports;
+create policy vf_contact_exports_update_count
+on public.vf_contact_exports
+for update
+to authenticated
+using (actor_id = (select auth.uid()))
 with check (actor_id = (select auth.uid()));
 
 drop policy if exists vf_contact_export_items_select on public.vf_contact_export_items;
