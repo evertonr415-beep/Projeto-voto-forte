@@ -1,8 +1,11 @@
+import type { User } from "@supabase/supabase-js";
 import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
 export type AccessRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
+
+type ServerSupabase = NonNullable<Awaited<ReturnType<typeof getServerSupabase>>>;
 
 export type HierarchyUser = {
   id: number;
@@ -31,15 +34,12 @@ function normalizeAccessRole(value: unknown, role: unknown, email: string): Acce
   return legacyAccessRole(role, email);
 }
 
-export async function getAccount() {
-  const supabase = await getServerSupabase();
-  if (!supabase) return null;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const email = user?.email?.trim().toLowerCase();
-  if (!user || !email) return null;
+export async function getAccountForAuthenticatedUser(
+  supabase: ServerSupabase,
+  user: Pick<User, "id" | "email">,
+) {
+  const email = user.email?.trim().toLowerCase();
+  if (!email) return null;
 
   const { data: account } = await supabase
     .from("vf_users")
@@ -55,6 +55,19 @@ export async function getAccount() {
     accessRole: normalizeAccessRole(account.access_role, account.role, email),
     supabase,
   };
+}
+
+export async function getAccount() {
+  const supabase = await getServerSupabase();
+  if (!supabase) return null;
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) return null;
+
+  return getAccountForAuthenticatedUser(supabase, user);
 }
 
 export function isAdministrator(role: string) {
