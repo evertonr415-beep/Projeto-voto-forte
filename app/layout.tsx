@@ -10,6 +10,7 @@ import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
+import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import OverviewLoadingEnhancer from "./overview-loading-enhancer";
 import ExactLegacyMetrics from "./exact-legacy-metrics";
@@ -33,6 +34,7 @@ import "./account-settings.css";
 import "./reports-simplifier.css";
 import "./sidebar-scroll-fix.css";
 import "./overview-loading-enhancer.css";
+import "./contact-export-history.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,6 +79,7 @@ export default function RootLayout({
         <ReportsSimplifier />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
+        <ContactExportEnhancer />
         <IntelligenceNavigation />
         <OverviewLoadingEnhancer />
         <ExactLegacyMetrics />
