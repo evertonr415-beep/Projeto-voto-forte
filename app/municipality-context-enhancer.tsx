@@ -15,6 +15,7 @@ type Context = {
   currentMunicipalityId: number;
   municipalities: Municipality[];
   isGeneralAdm: boolean;
+  canSwitchMunicipality?: boolean;
 };
 
 type Overview = {
@@ -38,7 +39,7 @@ export default function MunicipalityContextEnhancer() {
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (cancelled || response.status === 401) return;
-        if (!response.ok) throw new Error(data.error || "Não foi possível carregar os municípios.");
+        if (!response.ok) throw new Error(data.error || "Não foi possível carregar o município.");
         setContext(data.context || null);
         setOverview(Array.isArray(data.overview) ? data.overview : []);
       })
@@ -52,8 +53,9 @@ export default function MunicipalityContextEnhancer() {
   );
 
   async function switchMunicipality(value: string) {
+    if (!context?.isGeneralAdm || context.canSwitchMunicipality === false) return;
     const municipalityId = Number(value);
-    if (!Number.isInteger(municipalityId) || municipalityId === Number(context?.currentMunicipalityId)) return;
+    if (!Number.isInteger(municipalityId) || municipalityId === Number(context.currentMunicipalityId)) return;
     setBusy(true);
     setMessage("Trocando município…");
     try {
@@ -76,9 +78,9 @@ export default function MunicipalityContextEnhancer() {
   return (
     <aside className="vf-municipality-context" aria-label="Contexto municipal">
       <div className="vf-municipality-current">
-        <small>{context.isGeneralAdm ? "CENTRAL VOTO FORTE" : "MUNICÍPIO ATIVO"}</small>
+        <small>{context.isGeneralAdm ? "CENTRAL VOTO FORTE" : "MUNICÍPIO"}</small>
         <strong>{current.name} - {current.state}</strong>
-        {context.municipalities.length > 1 && (
+        {context.isGeneralAdm && context.municipalities.length > 1 && (
           <select
             aria-label="Trocar município"
             disabled={busy}
