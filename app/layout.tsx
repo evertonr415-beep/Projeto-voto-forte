@@ -10,8 +10,7 @@ import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
-import TeamIntelligenceNavigation from "./team-intelligence-navigation";
-import SystemIntelligenceNavigation from "./system-intelligence-navigation";
+import IntelligenceNavigation from "./intelligence-navigation";
 import OverviewLoadingEnhancer from "./overview-loading-enhancer";
 import ExactLegacyMetrics from "./exact-legacy-metrics";
 import "./globals.css";
@@ -78,8 +77,7 @@ export default function RootLayout({
         <ReportsSimplifier />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
-        <TeamIntelligenceNavigation />
-        <SystemIntelligenceNavigation />
+        <IntelligenceNavigation />
         <OverviewLoadingEnhancer />
         <ExactLegacyMetrics />
         {children}
