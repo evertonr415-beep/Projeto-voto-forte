@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const CONTACTS_ROUTE = "/contatos";
 
 export default function ContactNavigationInterceptor() {
+  const router = useRouter();
+
   useEffect(() => {
+    router.prefetch(CONTACTS_ROUTE);
+
     function handleClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
       const button = target?.closest("button");
@@ -22,12 +29,12 @@ export default function ContactNavigationInterceptor() {
 
       event.preventDefault();
       event.stopPropagation();
-      window.location.assign("/contatos");
+      router.push(CONTACTS_ROUTE);
     }
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, []);
+  }, [router]);
 
   return null;
 }
