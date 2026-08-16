@@ -15,6 +15,10 @@ type DistrictGeocodeItem = {
   longitude?: number | string | null;
 };
 
+type ScopeStatsItem = {
+  total_contacts?: number | string;
+};
+
 type DistrictMarker = {
   district: string;
   total: number;
@@ -67,7 +71,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const [summaryResult, geocodeResult] = await Promise.all([
+  const [summaryResult, geocodeResult, statsResult] = await Promise.all([
     account.supabase.rpc("vf_map_district_summary", {
       p_owner_emails: scopeEmails,
     }),
@@ -76,6 +80,10 @@ export async function GET(request: Request) {
       .select("canonical_name, latitude, longitude")
       .not("latitude", "is", null)
       .not("longitude", "is", null),
+    account.supabase.rpc("vf_map_scope_stats", {
+      p_owner_emails: scopeEmails,
+      p_profile: null,
+    }),
   ]);
 
   if (summaryResult.error) {
@@ -94,19 +102,27 @@ export async function GET(request: Request) {
     );
   }
 
+  if (statsResult.error) {
+    console.error("Failed to load map scope totals", statsResult.error);
+    return Response.json(
+      { error: "Não foi possível carregar o total de contatos agora." },
+      { status: 500 },
+    );
+  }
+
   const summaryRows = Array.isArray(summaryResult.data)
     ? (summaryResult.data as DistrictSummaryItem[])
     : [];
+  const districts = summaryRows
+    .map((item) => ({
+      district: String(item.district || "").trim(),
+      total: Math.max(0, Number(item.total || 0)),
+    }))
+    .filter((item) => item.district && normalizeDistrict(item.district));
   const totals = new Map<string, { district: string; total: number }>();
 
-  for (const item of summaryRows) {
-    const district = String(item.district || "").trim();
-    const key = normalizeDistrict(district);
-    if (!district || !key) continue;
-    totals.set(key, {
-      district,
-      total: Math.max(0, Number(item.total || 0)),
-    });
+  for (const item of districts) {
+    totals.set(normalizeDistrict(item.district), item);
   }
 
   const markers: DistrictMarker[] = [];
@@ -142,9 +158,16 @@ export async function GET(request: Request) {
       left.district.localeCompare(right.district, "pt-BR"),
   );
 
+  const statsRow = Array.isArray(statsResult.data)
+    ? (statsResult.data[0] as ScopeStatsItem | undefined)
+    : undefined;
+  const totalContacts = Math.max(0, Number(statsRow?.total_contacts || 0));
+
   return Response.json(
     {
       scope,
+      totalContacts,
+      districts,
       markers,
       resolvedDistricts: markers.length,
       representedContacts: markers.reduce(
