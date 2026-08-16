@@ -12,6 +12,7 @@ import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import TeamIntelligenceNavigation from "./team-intelligence-navigation";
 import SystemIntelligenceNavigation from "./system-intelligence-navigation";
+import OverviewLoadingEnhancer from "./overview-loading-enhancer";
 import ExactLegacyMetrics from "./exact-legacy-metrics";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
@@ -32,6 +33,7 @@ import "./auth-reconciliation.css";
 import "./account-settings.css";
 import "./reports-simplifier.css";
 import "./sidebar-scroll-fix.css";
+import "./overview-loading-enhancer.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,6 +80,7 @@ export default function RootLayout({
         <ImportCompletionEnhancer />
         <TeamIntelligenceNavigation />
         <SystemIntelligenceNavigation />
+        <OverviewLoadingEnhancer />
         <ExactLegacyMetrics />
         {children}
       </body>
