@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
+import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
+import MunicipalityContextEnhancer from "./municipality-context-enhancer";
+import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
@@ -35,6 +38,7 @@ import "./reports-simplifier.css";
 import "./sidebar-scroll-fix.css";
 import "./overview-loading-enhancer.css";
 import "./contact-export-history.css";
+import "./municipality-multitenant.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,9 +70,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <SignupMunicipalityEnhancer />
+        <MunicipalityContextEnhancer />
+        <MunicipalityAdministrationEnhancer />
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MapInstantContactBootstrap />
