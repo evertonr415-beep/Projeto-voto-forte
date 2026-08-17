@@ -1,6 +1,9 @@
 import { getAccount } from "../../server-identity";
 
-async function getGeneralAdm() {
+type Account = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
+type GeneralAdmResult = { account: Account } | { response: Response };
+
+async function getGeneralAdm(): Promise<GeneralAdmResult> {
   const account = await getAccount();
   if (!account) return { response: Response.json({ error: "Não autenticado" }, { status: 401 }) };
   if (account.accessRole !== "adm") {
@@ -9,7 +12,7 @@ async function getGeneralAdm() {
   return { account };
 }
 
-async function listMunicipalities(account: NonNullable<Awaited<ReturnType<typeof getAccount>>>) {
+async function listMunicipalities(account: Account) {
   const { data, error } = await account.supabase.rpc("vf_admin_municipalities");
   if (error) throw new Error(error.message);
   return Array.isArray(data) ? data : [];
@@ -17,10 +20,10 @@ async function listMunicipalities(account: NonNullable<Awaited<ReturnType<typeof
 
 export async function GET() {
   const auth = await getGeneralAdm();
-  if (auth.response) return auth.response;
+  if ("response" in auth) return auth.response;
 
   try {
-    return Response.json({ municipalities: await listMunicipalities(auth.account!) });
+    return Response.json({ municipalities: await listMunicipalities(auth.account) });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "Não foi possível carregar os municípios." },
@@ -31,8 +34,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const auth = await getGeneralAdm();
-  if (auth.response) return auth.response;
-  const account = auth.account!;
+  if ("response" in auth) return auth.response;
+  const account = auth.account;
 
   const body = (await request.json()) as {
     action?: "invite_master" | "activate";
