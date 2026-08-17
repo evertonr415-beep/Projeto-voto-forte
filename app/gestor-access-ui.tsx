@@ -26,9 +26,15 @@ type GestorUser = {
   municipalityIds?: number[];
 };
 
+type Invitation = {
+  email?: string;
+  accessRole?: string;
+};
+
 type UsersPayload = {
   users?: GestorUser[];
   municipalities?: Municipality[];
+  invitations?: Invitation[];
 };
 
 export default function GestorAccessUi() {
@@ -36,6 +42,7 @@ export default function GestorAccessUi() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [users, setUsers] = useState<GestorUser[]>([]);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
+  const [gestorInvitationEmails, setGestorInvitationEmails] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<Record<number, number[]>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
@@ -44,18 +51,29 @@ export default function GestorAccessUi() {
     if (accessRole !== "adm") return;
     const response = await apiFetch("/api/users", { cache: "no-store" });
     const data = (await response.json()) as UsersPayload & { error?: string };
-    if (!response.ok) throw new Error(data.error || "Não foi possível carregar os Gestores.");
+    if (!response.ok)
+      throw new Error(data.error || "Não foi possível carregar os Gestores.");
 
     const gestores = (data.users || []).filter(
       (user) => user.accessRole === "gestor" && user.status === "active",
     );
     setUsers(gestores);
-    setMunicipalities((data.municipalities || []).filter((item) => item.status === "active"));
+    setMunicipalities(
+      (data.municipalities || []).filter((item) => item.status === "active"),
+    );
+    setGestorInvitationEmails(
+      (data.invitations || [])
+        .filter((item) => item.accessRole === "gestor")
+        .map((item) => String(item.email || "").toLowerCase())
+        .filter(Boolean),
+    );
     setDrafts(
       Object.fromEntries(
         gestores.map((user) => [
           user.id,
-          Array.from(new Set((user.municipalityIds || []).map(Number))).filter(Boolean),
+          Array.from(new Set((user.municipalityIds || []).map(Number))).filter(
+            Boolean,
+          ),
         ]),
       ),
     );
@@ -64,7 +82,10 @@ export default function GestorAccessUi() {
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/session", { cache: "no-store" })
-      .then(async (response) => ({ response, data: (await response.json()) as SessionPayload }))
+      .then(async (response) => ({
+        response,
+        data: (await response.json()) as SessionPayload,
+      }))
       .then(({ response, data }) => {
         if (cancelled || !response.ok) return;
         setAccessRole(String(data.user?.accessRole || ""));
@@ -78,30 +99,97 @@ export default function GestorAccessUi() {
   useEffect(() => {
     if (!accessRole) return;
 
-    const decorate = () => {
-      if (accessRole === "gestor") {
-        document.querySelectorAll<HTMLElement>(".profile small").forEach((node) => {
-          if (node.textContent !== "Gestor Multimunicipal") node.textContent = "Gestor Multimunicipal";
-        });
-        document.querySelectorAll<HTMLButtonElement>(".management-filter button").forEach((button) => {
-          if (button.textContent?.includes("Banco de Dados e Backup")) button.hidden = true;
-        });
-        document.querySelectorAll<HTMLElement>(".vf-hierarchy-user.role-gestor").forEach((card) => {
-          const role = card.querySelector<HTMLElement>(".vf-hierarchy-tags span");
+    const decorateHierarchy = () => {
+      const hierarchyDescription = document.querySelector<HTMLElement>(
+        ".vf-hierarchy-panel > header p",
+      );
+      if (
+        hierarchyDescription &&
+        hierarchyDescription.textContent !==
+          "ADM → Gestor → Master → Liderança → Liderado → Eleitor."
+      ) {
+        hierarchyDescription.textContent =
+          "ADM → Gestor → Master → Liderança → Liderado → Eleitor.";
+      }
+
+      document
+        .querySelectorAll<HTMLElement>(".vf-hierarchy-user.role-gestor")
+        .forEach((card) => {
+          const role = card.querySelector<HTMLElement>(
+            ".vf-hierarchy-tags span",
+          );
           if (role && role.textContent !== "Gestor") role.textContent = "Gestor";
-          card.querySelector<HTMLButtonElement>(".vf-access-status-button")?.setAttribute("hidden", "true");
+          if (accessRole === "gestor") {
+            card
+              .querySelector<HTMLButtonElement>(".vf-access-status-button")
+              ?.setAttribute("hidden", "true");
+          }
         });
+
+      document
+        .querySelectorAll<HTMLOptionElement>(
+          ".vf-access-create-card select option",
+        )
+        .forEach((option) => {
+          if (option.textContent?.trim().endsWith("—")) {
+            option.textContent = `${option.textContent.trim()} Gestor`;
+          }
+        });
+
+      const summary = document.querySelector<HTMLElement>(
+        ".vf-hierarchy-summary",
+      );
+      if (summary && !summary.querySelector("[data-vf-gestor-summary]")) {
+        const article = document.createElement("article");
+        article.dataset.vfGestorSummary = "true";
+        const count = document.querySelectorAll(
+          ".vf-hierarchy-user.role-gestor .vf-hierarchy-tags .active",
+        ).length;
+        article.innerHTML = `<small>GESTOR</small><b>${count}</b>`;
+        const admCard = summary.firstElementChild;
+        if (admCard) admCard.insertAdjacentElement("afterend", article);
+        else summary.appendChild(article);
+      }
+
+      if (gestorInvitationEmails.length) {
+        document
+          .querySelectorAll<HTMLElement>(".vf-access-invitations > div")
+          .forEach((row) => {
+            const text = row.textContent?.toLowerCase() || "";
+            if (!gestorInvitationEmails.some((email) => text.includes(email)))
+              return;
+            const role = row.querySelector<HTMLElement>(":scope > span");
+            if (role && role.textContent !== "Gestor") role.textContent = "Gestor";
+          });
+      }
+    };
+
+    const decorate = () => {
+      decorateHierarchy();
+
+      if (accessRole === "gestor") {
+        document
+          .querySelectorAll<HTMLElement>(".profile small")
+          .forEach((node) => {
+            if (node.textContent !== "Gestor Multimunicipal")
+              node.textContent = "Gestor Multimunicipal";
+          });
+        document
+          .querySelectorAll<HTMLButtonElement>(".management-filter button")
+          .forEach((button) => {
+            if (button.textContent?.includes("Banco de Dados e Backup"))
+              button.hidden = true;
+          });
       }
 
       if (accessRole === "adm") {
-        document.querySelectorAll<HTMLElement>(".vf-hierarchy-user.role-gestor").forEach((card) => {
-          const role = card.querySelector<HTMLElement>(".vf-hierarchy-tags span");
-          if (role && role.textContent !== "Gestor") role.textContent = "Gestor";
-        });
-
-        const panel = document.querySelector<HTMLElement>(".vf-hierarchy-panel");
+        const panel = document.querySelector<HTMLElement>(
+          ".vf-hierarchy-panel",
+        );
         if (panel) {
-          let node = panel.querySelector<HTMLElement>(":scope > [data-vf-gestor-municipalities-host]");
+          let node = panel.querySelector<HTMLElement>(
+            ":scope > [data-vf-gestor-municipalities-host]",
+          );
           if (!node) {
             node = document.createElement("div");
             node.dataset.vfGestorMunicipalitiesHost = "true";
@@ -117,17 +205,24 @@ export default function GestorAccessUi() {
     const observer = new MutationObserver(decorate);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [accessRole]);
+  }, [accessRole, gestorInvitationEmails]);
 
   useEffect(() => {
     if (accessRole !== "adm") return;
     void loadAdministration().catch((error) =>
-      setMessage(error instanceof Error ? error.message : "Não foi possível carregar os Gestores."),
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar os Gestores.",
+      ),
     );
   }, [accessRole, loadAdministration]);
 
   const activeMunicipalities = useMemo(
-    () => municipalities.slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    () =>
+      municipalities
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
     [municipalities],
   );
 
@@ -156,11 +251,16 @@ export default function GestorAccessUi() {
         body: JSON.stringify({ id: user.id, municipalityIds }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível salvar os municípios.");
+      if (!response.ok)
+        throw new Error(data.error || "Não foi possível salvar os municípios.");
       setMessage(`Municípios de ${user.name} atualizados.`);
       await loadAdministration();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível salvar os municípios.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar os municípios.",
+      );
     } finally {
       setBusyId(null);
     }
@@ -169,17 +269,28 @@ export default function GestorAccessUi() {
   if (accessRole !== "adm" || !host) return null;
 
   return createPortal(
-    <section className="vf-gestor-municipality-admin" aria-label="Gestores multimunicipais">
+    <section
+      className="vf-gestor-municipality-admin"
+      aria-label="Gestores multimunicipais"
+    >
       <header>
         <div>
           <small>GESTÃO DE CONFIANÇA</small>
           <h4>Gestores multimunicipais</h4>
-          <p>Defina exatamente quais municípios cada Gestor pode visualizar e alternar. O Gestor nunca recebe acesso a contas ADM, backup ou segurança global.</p>
+          <p>
+            Defina exatamente quais municípios cada Gestor pode visualizar e
+            alternar. O Gestor nunca recebe acesso a contas ADM, backup ou
+            segurança global.
+          </p>
         </div>
         <span>{users.length}</span>
       </header>
 
-      {message && <div className="vf-gestor-municipality-message" role="status">{message}</div>}
+      {message && (
+        <div className="vf-gestor-municipality-message" role="status">
+          {message}
+        </div>
+      )}
 
       {users.length ? (
         <div className="vf-gestor-municipality-list">
@@ -195,9 +306,13 @@ export default function GestorAccessUi() {
                     <input
                       type="checkbox"
                       checked={(drafts[user.id] || []).includes(municipality.id)}
-                      onChange={() => toggleMunicipality(user.id, municipality.id)}
+                      onChange={() =>
+                        toggleMunicipality(user.id, municipality.id)
+                      }
                     />
-                    <span>{municipality.name} - {municipality.state}</span>
+                    <span>
+                      {municipality.name} - {municipality.state}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -212,7 +327,10 @@ export default function GestorAccessUi() {
           ))}
         </div>
       ) : (
-        <p className="vf-gestor-empty">Nenhum Gestor ativo. Crie o primeiro acesso usando a opção “Gestor” em Cadastrar acesso.</p>
+        <p className="vf-gestor-empty">
+          Nenhum Gestor ativo. Crie o primeiro acesso usando a opção “Gestor” em
+          Cadastrar acesso.
+        </p>
       )}
     </section>,
     host,
