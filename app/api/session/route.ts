@@ -75,7 +75,9 @@ async function activeSessionResponse(
     user: {
       email: account.email,
       name: account.name,
-      role: account.role,
+      // O dashboard legado habilita a area administrativa pelo campo role.
+      // O accessRole continua sendo a fonte de verdade de autorizacao no servidor.
+      role: account.accessRole === "gestor" ? "master" : account.role,
       accessRole: account.accessRole,
     },
   });

@@ -3,7 +3,13 @@ import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
-export type AccessRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
+export type AccessRole =
+  | "adm"
+  | "gestor"
+  | "master"
+  | "lideranca"
+  | "liderado"
+  | "eleitor";
 
 type ServerSupabase = NonNullable<Awaited<ReturnType<typeof getServerSupabase>>>;
 
@@ -23,12 +29,21 @@ export type HierarchyUser = {
 function legacyAccessRole(role: unknown, email: string): AccessRole {
   if (email === OWNER_EMAIL) return "adm";
   if (role === "master") return "master";
-  if (role === "gestor" || role === "lider") return "lideranca";
+  if (role === "gestor") return "gestor";
+  if (role === "lider") return "lideranca";
   return "liderado";
 }
 
-function normalizeAccessRole(value: unknown, role: unknown, email: string): AccessRole {
-  if (["adm", "master", "lideranca", "liderado", "eleitor"].includes(String(value))) {
+function normalizeAccessRole(
+  value: unknown,
+  role: unknown,
+  email: string,
+): AccessRole {
+  if (
+    ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
+      String(value),
+    )
+  ) {
     return value as AccessRole;
   }
   return legacyAccessRole(role, email);
@@ -77,7 +92,11 @@ export function isAdministrator(role: string) {
 export function canCreateRole(actorRole: UserRole, targetRole: UserRole) {
   if (actorRole === "master") return true;
   if (actorRole === "gestor")
-    return targetRole === "lider" || targetRole === "liderado";
+    return (
+      targetRole === "master" ||
+      targetRole === "lider" ||
+      targetRole === "liderado"
+    );
   if (actorRole === "lider") return targetRole === "liderado";
   return false;
 }
@@ -93,7 +112,42 @@ export async function getVisibleUsers(
     .order("name");
   const users = (data ?? []) as HierarchyUser[];
 
-  if (account.accessRole === "adm" || account.role === "master") return users;
+  if (account.accessRole === "adm") return users;
+
+  if (account.accessRole === "gestor") {
+    const visiblePeople = users.filter(
+      (user) =>
+        normalizeAccessRole(user.access_role, user.role, user.email) !== "adm",
+    );
+
+    // Os registros historicos podem estar vinculados a um ADM como owner_email.
+    // O RPC devolve somente esses identificadores operacionais; a linha da conta
+    // ADM continua fora do RLS de vf_users e nunca entra na lista administrativa.
+    const { data: operationalOwners } = await account.supabase.rpc(
+      "vf_gestor_operational_owner_emails",
+    );
+    const knownEmails = new Set(
+      visiblePeople.map((user) => String(user.email).trim().toLowerCase()),
+    );
+    const syntheticOwners = (Array.isArray(operationalOwners)
+      ? operationalOwners
+      : []
+    )
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter((email) => email && !knownEmails.has(email))
+      .map<HierarchyUser>((email, index) => ({
+        id: -(index + 1),
+        auth_user_id: "",
+        email,
+        name: "Operação municipal",
+        role: "liderado",
+        access_role: "master",
+        status: "active",
+        parent_user_id: null,
+      }));
+
+    return [...visiblePeople, ...syntheticOwners];
+  }
 
   const visibleIds = new Set<number>([Number(account.id)]);
   let changed = true;
@@ -120,8 +174,19 @@ export async function canManageUser(
 ) {
   if (!account) return false;
   if (account.accessRole === "adm") return Number(account.id) !== targetId;
+
   const visible = await getVisibleUsers(account);
-  return visible.some(
-    (user) => Number(user.id) === targetId && Number(user.id) !== Number(account.id),
+  const target = visible.find((user) => Number(user.id) === targetId);
+  if (!target || Number(target.id) === Number(account.id) || Number(target.id) <= 0)
+    return false;
+
+  const targetAccessRole = normalizeAccessRole(
+    target.access_role,
+    target.role,
+    target.email,
   );
+  if (account.accessRole === "gestor")
+    return !["adm", "gestor"].includes(targetAccessRole);
+
+  return true;
 }

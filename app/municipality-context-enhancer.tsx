@@ -16,6 +16,7 @@ type Context = {
   currentMunicipalityId: number;
   municipalities: Municipality[];
   isGeneralAdm: boolean;
+  isGestor?: boolean;
   canSwitchMunicipality?: boolean;
 };
 
@@ -41,12 +42,15 @@ export default function MunicipalityContextEnhancer() {
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (cancelled || response.status === 401) return;
-        if (!response.ok) throw new Error(data.error || "Não foi possível carregar o município.");
+        if (!response.ok)
+          throw new Error(data.error || "Não foi possível carregar o município.");
         setContext(data.context || null);
         setOverview(Array.isArray(data.overview) ? data.overview : []);
       })
       .catch(() => undefined);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -60,7 +64,7 @@ export default function MunicipalityContextEnhancer() {
       const host = document.querySelector<HTMLElement>(
         ".top-actions, .optimized-hero-controls",
       );
-      setHeaderHost((current) => current === host ? current : host);
+      setHeaderHost((current) => (current === host ? current : host));
     };
 
     findHeaderHost();
@@ -75,7 +79,10 @@ export default function MunicipalityContextEnhancer() {
   }, []);
 
   const current = useMemo(
-    () => context?.municipalities.find((item) => Number(item.id) === Number(context.currentMunicipalityId)) || context?.municipalities[0],
+    () =>
+      context?.municipalities.find(
+        (item) => Number(item.id) === Number(context.currentMunicipalityId),
+      ) || context?.municipalities[0],
     [context],
   );
 
@@ -91,9 +98,13 @@ export default function MunicipalityContextEnhancer() {
   }, [context, overview]);
 
   async function switchMunicipality(value: string) {
-    if (!context?.isGeneralAdm || context.canSwitchMunicipality === false) return;
+    if (!context?.canSwitchMunicipality) return;
     const municipalityId = Number(value);
-    if (!Number.isInteger(municipalityId) || municipalityId === Number(context.currentMunicipalityId)) return;
+    if (
+      !Number.isInteger(municipalityId) ||
+      municipalityId === Number(context.currentMunicipalityId)
+    )
+      return;
     setBusy(true);
     setMessage("Trocando município…");
     try {
@@ -103,10 +114,15 @@ export default function MunicipalityContextEnhancer() {
         body: JSON.stringify({ municipalityId }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível trocar o município.");
+      if (!response.ok)
+        throw new Error(data.error || "Não foi possível trocar o município.");
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível trocar o município.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível trocar o município.",
+      );
       setBusy(false);
     }
   }
@@ -114,15 +130,23 @@ export default function MunicipalityContextEnhancer() {
   if (!context || !current) return null;
 
   if (headerHost) {
-    const headerControl = context.isGeneralAdm && desktopItems.length > 1 ? (
-      <details className="vf-municipality-header-menu">
-        <summary aria-label={`Município atual: ${current.name} - ${current.state}`}>
+    const canChooseMunicipality =
+      Boolean(context.canSwitchMunicipality) && desktopItems.length > 1;
+    const headerControl = canChooseMunicipality ? (
+      <details
+        className={`vf-municipality-header-menu${context.isGestor ? " gestor" : ""}`}
+      >
+        <summary
+          aria-label={`Município atual: ${current.name} - ${current.state}`}
+        >
           <span>{current.name} - {current.state}</span>
           <i aria-hidden="true">⌄</i>
         </summary>
         <div className="vf-municipality-header-popover">
           <header>
-            <small>VISÃO ESTADUAL</small>
+            <small>
+              {context.isGeneralAdm ? "VISÃO ESTADUAL" : "MUNICÍPIOS AUTORIZADOS"}
+            </small>
             <b>{desktopItems.length} município(s)</b>
           </header>
           <div className="vf-municipality-header-list">
@@ -130,17 +154,39 @@ export default function MunicipalityContextEnhancer() {
               <button
                 type="button"
                 key={item.id}
-                disabled={busy || Number(item.id) === Number(context.currentMunicipalityId)}
-                className={Number(item.id) === Number(context.currentMunicipalityId) ? "active" : ""}
+                disabled={
+                  busy ||
+                  Number(item.id) === Number(context.currentMunicipalityId)
+                }
+                className={
+                  Number(item.id) === Number(context.currentMunicipalityId)
+                    ? "active"
+                    : ""
+                }
                 onClick={() => void switchMunicipality(String(item.id))}
               >
-                <span><b>{item.name}</b><small>{item.state}</small></span>
-                <span><b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b><small>contatos</small></span>
-                <span><b>{Number(item.users || 0).toLocaleString("pt-BR")}</b><small>usuários</small></span>
+                <span>
+                  <b>{item.name}</b>
+                  <small>{item.state}</small>
+                </span>
+                {context.isGeneralAdm && (
+                  <>
+                    <span>
+                      <b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b>
+                      <small>contatos</small>
+                    </span>
+                    <span>
+                      <b>{Number(item.users || 0).toLocaleString("pt-BR")}</b>
+                      <small>usuários</small>
+                    </span>
+                  </>
+                )}
               </button>
             ))}
           </div>
-          {message && <small className="vf-municipality-header-message">{message}</small>}
+          {message && (
+            <small className="vf-municipality-header-message">{message}</small>
+          )}
         </div>
       </details>
     ) : (
@@ -155,9 +201,17 @@ export default function MunicipalityContextEnhancer() {
   return (
     <aside className="vf-municipality-context" aria-label="Contexto municipal">
       <div className="vf-municipality-current">
-        <small>{context.isGeneralAdm ? "CENTRAL VOTO FORTE" : "MUNICÍPIO"}</small>
-        <strong>{current.name} - {current.state}</strong>
-        {context.isGeneralAdm && context.municipalities.length > 1 && (
+        <small>
+          {context.isGeneralAdm
+            ? "CENTRAL VOTO FORTE"
+            : context.isGestor
+              ? "GESTÃO MULTIMUNICIPAL"
+              : "MUNICÍPIO"}
+        </small>
+        <strong>
+          {current.name} - {current.state}
+        </strong>
+        {context.canSwitchMunicipality && context.municipalities.length > 1 && (
           <select
             aria-label="Trocar município"
             disabled={busy}
@@ -165,7 +219,9 @@ export default function MunicipalityContextEnhancer() {
             onChange={(event) => void switchMunicipality(event.target.value)}
           >
             {context.municipalities.map((item) => (
-              <option key={item.id} value={item.id}>{item.name} - {item.state}</option>
+              <option key={item.id} value={item.id}>
+                {item.name} - {item.state}
+              </option>
             ))}
           </select>
         )}
@@ -179,18 +235,33 @@ export default function MunicipalityContextEnhancer() {
                 type="button"
                 key={item.id}
                 disabled={busy}
-                className={Number(item.id) === Number(context.currentMunicipalityId) ? "active" : ""}
+                className={
+                  Number(item.id) === Number(context.currentMunicipalityId)
+                    ? "active"
+                    : ""
+                }
                 onClick={() => void switchMunicipality(String(item.id))}
               >
-                <span><b>{item.name}</b><small>{item.state}</small></span>
-                <span><b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b><small>contatos</small></span>
-                <span><b>{Number(item.users || 0).toLocaleString("pt-BR")}</b><small>usuários</small></span>
+                <span>
+                  <b>{item.name}</b>
+                  <small>{item.state}</small>
+                </span>
+                <span>
+                  <b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b>
+                  <small>contatos</small>
+                </span>
+                <span>
+                  <b>{Number(item.users || 0).toLocaleString("pt-BR")}</b>
+                  <small>usuários</small>
+                </span>
               </button>
             ))}
           </div>
         </details>
       )}
-      {message && <small className="vf-municipality-context-message">{message}</small>}
+      {message && (
+        <small className="vf-municipality-context-message">{message}</small>
+      )}
     </aside>
   );
 }

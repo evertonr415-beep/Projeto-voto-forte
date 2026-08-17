@@ -20,6 +20,7 @@ import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import OverviewLoadingEnhancer from "./overview-loading-enhancer";
 import ExactLegacyMetrics from "./exact-legacy-metrics";
+import GestorAccessUi from "./gestor-access-ui";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -44,6 +45,7 @@ import "./overview-loading-enhancer.css";
 import "./contact-export-history.css";
 import "./municipality-multitenant.css";
 import "./municipality-management.css";
+import "./gestor-access-ui.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -86,6 +88,7 @@ export default function RootLayout({
         <MapInstantContactBootstrap />
         <MapToolsGate />
         <UserHierarchyRemountGuard />
+        <GestorAccessUi />
         <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
         <AccountSessionSecurity />
