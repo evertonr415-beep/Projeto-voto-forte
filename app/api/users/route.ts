@@ -1,4 +1,9 @@
-import { getAccount, getVisibleUsers, OWNER_EMAIL, type AccessRole } from "../../server-identity";
+import {
+  getAccount,
+  getVisibleUsers,
+  OWNER_EMAIL,
+  type AccessRole,
+} from "../../server-identity";
 
 type UserStatus = "active" | "blocked";
 
@@ -12,20 +17,26 @@ type CreateAccessBody = {
 type UserUpdateBody = {
   id?: number;
   status?: UserStatus;
+  municipalityIds?: number[];
 };
 
 function accessRoleOf(user: Record<string, unknown>): AccessRole {
   const value = String(user.access_role ?? "");
-  if (["adm", "master", "lideranca", "liderado", "eleitor"].includes(value)) {
+  if (
+    ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
+      value,
+    )
+  ) {
     return value as AccessRole;
   }
   if (String(user.email ?? "").toLowerCase() === OWNER_EMAIL) return "adm";
+  if (user.role === "gestor") return "gestor";
   if (user.role === "master") return "master";
-  if (user.role === "gestor" || user.role === "lider") return "lideranca";
+  if (user.role === "lider") return "lideranca";
   return "liderado";
 }
 
-function mapUser(user: Record<string, unknown>) {
+function mapUser(user: Record<string, unknown>, municipalityIds: number[] = []) {
   return {
     id: Number(user.id),
     email: String(user.email ?? ""),
@@ -33,19 +44,66 @@ function mapUser(user: Record<string, unknown>) {
     role: user.role,
     accessRole: accessRoleOf(user),
     status: user.status as UserStatus,
-    parentUserId: user.parent_user_id == null ? null : Number(user.parent_user_id),
+    parentUserId:
+      user.parent_user_id == null ? null : Number(user.parent_user_id),
     lastSeenAt: user.last_seen_at,
     createdAt: user.created_at,
+    municipalityIds,
   };
 }
 
 export async function GET() {
   const account = await getAccount();
-  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account)
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const visibleUsers = await getVisibleUsers(account);
-  const visibleAuthIds = visibleUsers.map((user) => String(user.auth_user_id)).filter(Boolean);
-  const mappedUsers = visibleUsers.map((user) => mapUser(user as Record<string, unknown>));
+  const visibleAuthIds = visibleUsers
+    .map((user) => String(user.auth_user_id))
+    .filter(Boolean);
+
+  const membershipMap = new Map<number, number[]>();
+  let municipalities: Array<{
+    id: number;
+    name: string;
+    state: string;
+    status: string;
+  }> = [];
+
+  if (account.accessRole === "adm") {
+    const [{ data: memberships }, { data: municipalityData }] = await Promise.all([
+      account.supabase
+        .from("vf_user_municipalities")
+        .select("user_id,municipality_id,status")
+        .eq("status", "active"),
+      account.supabase.rpc("vf_admin_municipalities"),
+    ]);
+
+    for (const membership of memberships ?? []) {
+      const userId = Number(membership.user_id);
+      const municipalityId = Number(membership.municipality_id);
+      membershipMap.set(userId, [
+        ...(membershipMap.get(userId) ?? []),
+        municipalityId,
+      ]);
+    }
+
+    municipalities = (Array.isArray(municipalityData) ? municipalityData : [])
+      .filter((item: Record<string, unknown>) => item.status === "active")
+      .map((item: Record<string, unknown>) => ({
+        id: Number(item.id),
+        name: String(item.name ?? ""),
+        state: String(item.state ?? ""),
+        status: String(item.status ?? ""),
+      }));
+  }
+
+  const mappedUsers = visibleUsers.map((user) =>
+    mapUser(
+      user as Record<string, unknown>,
+      membershipMap.get(Number(user.id)) ?? [],
+    ),
+  );
 
   let logsQuery = account.supabase
     .from("vf_audit_logs")
@@ -68,15 +126,19 @@ export async function GET() {
     createdAt: log.created_at,
   }));
 
-  const [{ data: administrationOptions, error: optionsError }, { data: invitations, error: invitationsError }] =
-    await Promise.all([
-      account.supabase.rpc("vf_access_administration_options"),
-      account.supabase.rpc("vf_list_user_invitations"),
-    ]);
+  const [
+    { data: administrationOptions, error: optionsError },
+    { data: invitations, error: invitationsError },
+  ] = await Promise.all([
+    account.supabase.rpc("vf_access_administration_options"),
+    account.supabase.rpc("vf_list_user_invitations"),
+  ]);
 
   let authAccounts: unknown[] = [];
   if (account.accessRole === "adm") {
-    const { data, error } = await account.supabase.rpc("vf_auth_profile_reconciliation");
+    const { data, error } = await account.supabase.rpc(
+      "vf_auth_profile_reconciliation",
+    );
     if (!error && Array.isArray(data)) authAccounts = data;
   }
 
@@ -86,13 +148,17 @@ export async function GET() {
     administrationOptions: optionsError ? null : administrationOptions,
     invitations: invitationsError ? [] : invitations ?? [],
     authAccounts,
-    adminCount: mappedUsers.filter((user) => user.status === "active" && user.accessRole === "adm").length,
+    municipalities,
+    adminCount: mappedUsers.filter(
+      (user) => user.status === "active" && user.accessRole === "adm",
+    ).length,
   });
 }
 
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account)
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = (await request.json()) as CreateAccessBody;
   const name = body.name?.trim() ?? "";
@@ -100,15 +166,21 @@ export async function POST(request: Request) {
   const accessRole = body.accessRole;
 
   if (!name || !email || !accessRole) {
-    return Response.json({ error: "Informe nome, e-mail e nível de acesso." }, { status: 400 });
+    return Response.json(
+      { error: "Informe nome, e-mail e nível de acesso." },
+      { status: 400 },
+    );
   }
 
-  const { data, error } = await account.supabase.rpc("vf_create_user_invitation", {
-    p_email: email,
-    p_name: name,
-    p_access_role: accessRole,
-    p_parent_user_id: body.parentUserId ?? null,
-  });
+  const { data, error } = await account.supabase.rpc(
+    "vf_create_user_invitation",
+    {
+      p_email: email,
+      p_name: name,
+      p_access_role: accessRole,
+      p_parent_user_id: body.parentUserId ?? null,
+    },
+  );
 
   if (error) return Response.json({ error: error.message }, { status: 400 });
   return Response.json({ invitation: data }, { status: 201 });
@@ -116,12 +188,51 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const account = await getAccount();
-  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account)
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = (await request.json()) as UserUpdateBody;
   const targetId = Number(body.id);
-  if (!Number.isInteger(targetId) || targetId <= 0 || !body.status) {
-    return Response.json({ error: "Usuário ou status inválido." }, { status: 400 });
+  if (!Number.isInteger(targetId) || targetId <= 0) {
+    return Response.json({ error: "Usuário inválido." }, { status: 400 });
+  }
+
+  if (Array.isArray(body.municipalityIds)) {
+    if (account.accessRole !== "adm") {
+      return Response.json(
+        { error: "Somente o ADM pode definir municípios de um Gestor." },
+        { status: 403 },
+      );
+    }
+
+    const municipalityIds = Array.from(
+      new Set(
+        body.municipalityIds
+          .map(Number)
+          .filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    );
+
+    if (!municipalityIds.length) {
+      return Response.json(
+        { error: "Selecione pelo menos um município." },
+        { status: 400 },
+      );
+    }
+
+    const { data, error } = await account.supabase.rpc(
+      "vf_set_gestor_municipalities",
+      {
+        p_user_id: targetId,
+        p_municipality_ids: municipalityIds,
+      },
+    );
+    if (error) return Response.json({ error: error.message }, { status: 400 });
+    return Response.json({ user: data });
+  }
+
+  if (!body.status) {
+    return Response.json({ error: "Status inválido." }, { status: 400 });
   }
 
   const { data, error } = await account.supabase.rpc("vf_set_user_status", {
