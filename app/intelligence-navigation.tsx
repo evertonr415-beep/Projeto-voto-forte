@@ -7,7 +7,10 @@ import { apiFetch } from "./supabase-client";
 
 type CurrentUser = {
   role?: string;
+  accessRole?: string;
 };
+
+type NavigationMode = "optimized" | "legacy";
 
 const TEAM_ROUTE = "/inteligencia-equipe";
 const SYSTEM_ROUTE = "/inteligencia-sistema";
@@ -40,19 +43,21 @@ export default function IntelligenceNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const suppressNavigation =
-    isPathWithin(pathname, "/contatos") ||
     isPathWithin(pathname, TEAM_ROUTE) ||
     isPathWithin(pathname, SYSTEM_ROUTE);
 
   const [role, setRole] = useState("");
+  const [accessRole, setAccessRole] = useState("");
   const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [mode, setMode] = useState<NavigationMode | null>(null);
 
-  const canOpenTeam = TEAM_ROLES.has(role);
-  const canOpenSystem = role === "master";
+  const canOpenTeam = TEAM_ROLES.has(role) || accessRole === "adm";
+  const canOpenSystem = role === "master" && accessRole !== "gestor";
 
   useEffect(() => {
     if (suppressNavigation) {
       setRole("");
+      setAccessRole("");
       return;
     }
 
@@ -64,6 +69,7 @@ export default function IntelligenceNavigation() {
         if (!active || !response.ok) return;
         const user = data.user as CurrentUser | undefined;
         setRole(String(user?.role ?? ""));
+        setAccessRole(String(user?.accessRole ?? ""));
       })
       .catch(() => undefined);
 
@@ -75,6 +81,7 @@ export default function IntelligenceNavigation() {
   useEffect(() => {
     if (suppressNavigation || (!canOpenTeam && !canOpenSystem)) {
       setTarget(null);
+      setMode(null);
       return;
     }
 
@@ -85,11 +92,21 @@ export default function IntelligenceNavigation() {
     let ownedSlot: HTMLElement | null = null;
 
     const detect = () => {
+      const optimizedNav =
+        document.querySelector<HTMLElement>(".optimized-quick-actions");
+      if (optimizedNav) {
+        setTarget(optimizedNav);
+        setMode("optimized");
+        observer?.disconnect();
+        return true;
+      }
+
       const nav = document.querySelector<HTMLElement>(".sidebar nav");
       if (!nav) return false;
 
       ownedSlot = ensureIntelligenceSlot(nav);
       setTarget(ownedSlot);
+      setMode("legacy");
       observer?.disconnect();
       return true;
     };
@@ -102,6 +119,7 @@ export default function IntelligenceNavigation() {
     return () => {
       observer?.disconnect();
       setTarget(null);
+      setMode(null);
       if (ownedSlot?.isConnected) ownedSlot.remove();
     };
   }, [canOpenSystem, canOpenTeam, router, suppressNavigation]);
@@ -109,9 +127,36 @@ export default function IntelligenceNavigation() {
   if (
     suppressNavigation ||
     !target ||
+    !mode ||
     (!canOpenTeam && !canOpenSystem)
   )
     return null;
+
+  if (mode === "optimized") {
+    return createPortal(
+      <>
+        {canOpenTeam ? (
+          <a href={TEAM_ROUTE}>
+            <span className="optimized-action-icon" aria-hidden="true">◈</span>
+            <span>
+              <b>Inteligência da Equipe</b>
+              <small>Gestão, sinais e oportunidades</small>
+            </span>
+          </a>
+        ) : null}
+        {canOpenSystem ? (
+          <a href={SYSTEM_ROUTE}>
+            <span className="optimized-action-icon" aria-hidden="true">✦</span>
+            <span>
+              <b>VOTO FORTE Neural</b>
+              <small>Saúde, riscos e otimizações</small>
+            </span>
+          </a>
+        ) : null}
+      </>,
+      target,
+    );
+  }
 
   return createPortal(
     <div role="group" aria-label="Inteligência">
@@ -123,9 +168,7 @@ export default function IntelligenceNavigation() {
           title="Inteligência da Equipe"
           aria-label="Abrir Inteligência da Equipe"
         >
-          <span className="nav-icon" aria-hidden="true">
-            ◈
-          </span>
+          <span className="nav-icon" aria-hidden="true">◈</span>
           <span className="nav-name">Inteligência da Equipe</span>
           <em>GESTÃO</em>
         </button>
@@ -137,9 +180,7 @@ export default function IntelligenceNavigation() {
           title="VOTO FORTE Neural"
           aria-label="Abrir VOTO FORTE Neural"
         >
-          <span className="nav-icon" aria-hidden="true">
-            ✦
-          </span>
+          <span className="nav-icon" aria-hidden="true">✦</span>
           <span className="nav-name">VOTO FORTE Neural</span>
           <em>MASTER</em>
         </button>
