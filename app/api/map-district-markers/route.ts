@@ -15,6 +15,14 @@ type DistrictGeocodeItem = {
   longitude?: number | string | null;
 };
 
+type DistrictBubbleItem = {
+  district?: string;
+  total?: number | string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  resolved?: boolean | null;
+};
+
 type ScopeStatsItem = {
   total_contacts?: number | string;
 };
@@ -107,26 +115,102 @@ export async function GET(request: Request) {
   }
 
   const arapongas = isArapongas(currentMunicipality.name);
-
-  const summaryPromise = arapongas
-    ? account.supabase.rpc("vf_map_district_summary", {
-        p_owner_emails: scopeEmails,
-      })
-    : account.supabase.rpc("vf_current_municipality_map_district_summary", {
-        p_owner_emails: scopeEmails,
-      });
-
-  const geocodePromise = arapongas
-    ? account.supabase
-        .from("vf_arapongas_district_geocodes")
-        .select("canonical_name, latitude, longitude")
-        .not("latitude", "is", null)
-        .not("longitude", "is", null)
-    : Promise.resolve({ data: [] as DistrictGeocodeItem[], error: null });
-
   const statsPromise = account.supabase.rpc("vf_map_scope_stats", {
     p_owner_emails: scopeEmails,
     p_profile: null,
+  });
+
+  if (arapongas) {
+    const bubblesPromise = account.supabase.rpc("vf_map_district_bubbles", {
+      p_owner_emails: scopeEmails,
+      p_profile: null,
+    });
+    const [bubblesResult, statsResult] = await Promise.all([
+      bubblesPromise,
+      statsPromise,
+    ]);
+
+    if (bubblesResult.error) {
+      console.error("Failed to load scoped district bubbles", bubblesResult.error);
+      return Response.json(
+        { error: "Não foi possível carregar os totais dos bairros agora." },
+        { status: 500 },
+      );
+    }
+    if (statsResult.error) {
+      console.error("Failed to load map scope totals", statsResult.error);
+      return Response.json(
+        { error: "Não foi possível carregar o total de contatos agora." },
+        { status: 500 },
+      );
+    }
+
+    const bubbleRows = Array.isArray(bubblesResult.data)
+      ? (bubblesResult.data as DistrictBubbleItem[])
+      : [];
+    const districts = bubbleRows
+      .map((item) => ({
+        district: String(item.district || "").trim(),
+        total: Math.max(0, Number(item.total || 0)),
+      }))
+      .filter(
+        (item) => item.district && normalizeDistrict(item.district) && item.total > 0,
+      );
+    const markers: DistrictMarker[] = bubbleRows
+      .filter((item) => Boolean(item.resolved))
+      .map((item) => ({
+        district: String(item.district || "").trim(),
+        total: Math.max(0, Number(item.total || 0)),
+        latitude: Number(item.latitude),
+        longitude: Number(item.longitude),
+      }))
+      .filter(
+        (item) =>
+          item.district &&
+          item.total > 0 &&
+          Number.isFinite(item.latitude) &&
+          Number.isFinite(item.longitude),
+      )
+      .sort(
+        (left, right) =>
+          right.total - left.total ||
+          left.district.localeCompare(right.district, "pt-BR"),
+      );
+    const statsRow = Array.isArray(statsResult.data)
+      ? (statsResult.data[0] as ScopeStatsItem | undefined)
+      : undefined;
+    const totalContacts = Math.max(0, Number(statsRow?.total_contacts || 0));
+
+    return Response.json(
+      {
+        scope,
+        municipality: {
+          id: Number(currentMunicipality.id),
+          name: String(currentMunicipality.name || ""),
+          state: String(currentMunicipality.state || ""),
+          usesLegacyArapongasReferences: true,
+        },
+        totalContacts,
+        districts,
+        markers,
+        resolvedDistricts: markers.length,
+        representedContacts: markers.reduce(
+          (sum, marker) => sum + marker.total,
+          0,
+        ),
+        availableGeocodes: markers.length,
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
+  }
+
+  const summaryPromise = account.supabase.rpc(
+    "vf_current_municipality_map_district_summary",
+    { p_owner_emails: scopeEmails },
+  );
+  const geocodePromise = Promise.resolve({
+    data: [] as DistrictGeocodeItem[],
+    error: null,
   });
 
   const [summaryResult, geocodeResult, statsResult] = await Promise.all([
@@ -219,7 +303,7 @@ export async function GET(request: Request) {
         id: Number(currentMunicipality.id),
         name: String(currentMunicipality.name || ""),
         state: String(currentMunicipality.state || ""),
-        usesLegacyArapongasReferences: arapongas,
+        usesLegacyArapongasReferences: false,
       },
       totalContacts,
       districts,
