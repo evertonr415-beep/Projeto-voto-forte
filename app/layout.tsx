@@ -5,6 +5,7 @@ import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
 import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
 import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
+import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
@@ -78,6 +79,7 @@ export default function RootLayout({
         <MunicipalityAdministrationEnhancer />
         <MunicipalityManagementEnhancer />
         <MunicipalityFieldEnhancer />
+        <MunicipalElectoralMapContext />
         <CepFallbackEnhancer />
         <MapInstantContactBootstrap />
         <MapToolsGate />
