@@ -34,7 +34,11 @@ function legacyAccessRole(role: unknown, email: string): AccessRole {
   return "liderado";
 }
 
-function normalizeAccessRole(value: unknown, role: unknown, email: string): AccessRole {
+function normalizeAccessRole(
+  value: unknown,
+  role: unknown,
+  email: string,
+): AccessRole {
   if (
     ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
       String(value),
@@ -88,7 +92,11 @@ export function isAdministrator(role: string) {
 export function canCreateRole(actorRole: UserRole, targetRole: UserRole) {
   if (actorRole === "master") return true;
   if (actorRole === "gestor")
-    return targetRole === "master" || targetRole === "lider" || targetRole === "liderado";
+    return (
+      targetRole === "master" ||
+      targetRole === "lider" ||
+      targetRole === "liderado"
+    );
   if (actorRole === "lider") return targetRole === "liderado";
   return false;
 }
@@ -105,10 +113,41 @@ export async function getVisibleUsers(
   const users = (data ?? []) as HierarchyUser[];
 
   if (account.accessRole === "adm") return users;
-  if (account.accessRole === "gestor")
-    return users.filter(
-      (user) => normalizeAccessRole(user.access_role, user.role, user.email) !== "adm",
+
+  if (account.accessRole === "gestor") {
+    const visiblePeople = users.filter(
+      (user) =>
+        normalizeAccessRole(user.access_role, user.role, user.email) !== "adm",
     );
+
+    // Os registros historicos podem estar vinculados a um ADM como owner_email.
+    // O RPC devolve somente esses identificadores operacionais; a linha da conta
+    // ADM continua fora do RLS de vf_users e nunca entra na lista administrativa.
+    const { data: operationalOwners } = await account.supabase.rpc(
+      "vf_gestor_operational_owner_emails",
+    );
+    const knownEmails = new Set(
+      visiblePeople.map((user) => String(user.email).trim().toLowerCase()),
+    );
+    const syntheticOwners = (Array.isArray(operationalOwners)
+      ? operationalOwners
+      : []
+    )
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter((email) => email && !knownEmails.has(email))
+      .map<HierarchyUser>((email, index) => ({
+        id: -(index + 1),
+        auth_user_id: "",
+        email,
+        name: "Operação municipal",
+        role: "liderado",
+        access_role: "master",
+        status: "active",
+        parent_user_id: null,
+      }));
+
+    return [...visiblePeople, ...syntheticOwners];
+  }
 
   const visibleIds = new Set<number>([Number(account.id)]);
   let changed = true;
@@ -138,7 +177,8 @@ export async function canManageUser(
 
   const visible = await getVisibleUsers(account);
   const target = visible.find((user) => Number(user.id) === targetId);
-  if (!target || Number(target.id) === Number(account.id)) return false;
+  if (!target || Number(target.id) === Number(account.id) || Number(target.id) <= 0)
+    return false;
 
   const targetAccessRole = normalizeAccessRole(
     target.access_role,
