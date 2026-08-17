@@ -12,6 +12,7 @@ import MapToolsGate from "./map-tools-gate";
 import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
+import AccountSessionSecurity from "./account-session-security";
 import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
@@ -36,6 +37,7 @@ import "./data-quality-panel.css";
 import "./user-hierarchy.css";
 import "./auth-reconciliation.css";
 import "./account-settings.css";
+import "./account-session-security.css";
 import "./reports-simplifier.css";
 import "./sidebar-scroll-fix.css";
 import "./overview-loading-enhancer.css";
@@ -86,6 +88,7 @@ export default function RootLayout({
         <UserHierarchyRemountGuard />
         <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
+        <AccountSessionSecurity />
         <ReportsSimplifier />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
