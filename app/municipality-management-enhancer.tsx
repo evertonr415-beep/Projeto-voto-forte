@@ -63,6 +63,7 @@ export default function MunicipalityManagementEnhancer() {
 
       const parent = filter.parentElement;
       if (!parent) return;
+      if (parent.dataset.vfMunicipalitiesActive !== "true") setActive(false);
 
       let tab = filter.querySelector<HTMLButtonElement>("[data-vf-municipalities-tab]");
       if (!tab) {
