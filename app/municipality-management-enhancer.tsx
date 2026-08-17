@@ -33,23 +33,30 @@ export default function MunicipalityManagementEnhancer() {
   const [message, setMessage] = useState("");
   const [active, setActive] = useState(false);
 
-  const load = useCallback(async () => {
-    const response = await apiFetch("/api/admin-municipalities");
-    if (response.status === 401 || response.status === 403) return;
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Não foi possível carregar os municípios.");
-    const next = Array.isArray(data.municipalities) ? data.municipalities : [];
-    setMunicipalities(next);
+  const applyMunicipalities = useCallback((items: Municipality[]) => {
+    setMunicipalities(items);
     setDrafts((current) => {
       const copy = { ...current };
-      for (const municipality of next) {
+      for (const municipality of items) {
         if (!copy[municipality.id]) copy[municipality.id] = { name: "", email: "" };
       }
       return copy;
     });
   }, []);
 
+  const load = useCallback(async () => {
+    const response = await apiFetch("/api/admin-municipalities");
+    if (response.status === 401 || response.status === 403) return false;
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Não foi possível carregar os municípios.");
+    applyMunicipalities(Array.isArray(data.municipalities) ? data.municipalities : []);
+    return true;
+  }, [applyMunicipalities]);
+
   useEffect(() => {
+    let observer: MutationObserver | null = null;
+    let cancelled = false;
+
     const detect = () => {
       const filter = document.querySelector<HTMLElement>(".management-filter");
       if (!filter || !filter.textContent?.includes("Usuários e acessos")) return;
@@ -99,10 +106,19 @@ export default function MunicipalityManagementEnhancer() {
       setHost(node);
     };
 
-    const observer = new MutationObserver(detect);
-    observer.observe(document.body, { childList: true, subtree: true });
-    detect();
-    return () => observer.disconnect();
+    void load()
+      .then((authorized) => {
+        if (cancelled || !authorized) return;
+        observer = new MutationObserver(detect);
+        observer.observe(document.body, { childList: true, subtree: true });
+        detect();
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+    };
   }, [load]);
 
   const totals = useMemo(
@@ -135,7 +151,7 @@ export default function MunicipalityManagementEnhancer() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Não foi possível concluir a ação.");
-      if (Array.isArray(data.municipalities)) setMunicipalities(data.municipalities);
+      if (Array.isArray(data.municipalities)) applyMunicipalities(data.municipalities);
       else await load();
       setDrafts((current) => ({ ...current, [municipality.id]: { name: "", email: "" } }));
       setMessage(
