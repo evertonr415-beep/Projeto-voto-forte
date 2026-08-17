@@ -51,6 +51,19 @@
 [data-vf-signup-municipality] select { width: 100%; }
 [data-vf-signup-municipality] small { display: block; margin-top: 4px; font-size: 10px; opacity: .65; }
 
+@media (min-width: 761px) {
+  .vf-municipality-context {
+    top: 94px;
+    right: 24px;
+    z-index: 2147483000;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-height: calc(100vh - 112px);
+    overflow: auto;
+  }
+}
+
 @media (max-width: 760px) {
   .vf-municipality-context { top: auto; bottom: 12px; right: 12px; width: min(330px, calc(100vw - 24px)); }
   .vf-municipality-request-list article { grid-template-columns: 1fr; align-items: stretch; }
