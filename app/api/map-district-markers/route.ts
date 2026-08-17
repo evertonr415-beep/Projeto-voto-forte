@@ -26,6 +26,17 @@ type DistrictMarker = {
   longitude: number;
 };
 
+type MunicipalityItem = {
+  id?: number | string;
+  name?: string;
+  state?: string;
+};
+
+type MunicipalityContext = {
+  currentMunicipalityId?: number | string;
+  municipalities?: MunicipalityItem[];
+};
+
 function normalizeDistrict(value: unknown) {
   return String(value ?? "")
     .normalize("NFD")
@@ -33,6 +44,10 @@ function normalizeDistrict(value: unknown) {
     .replace(/[^a-zA-Z0-9]+/g, " ")
     .trim()
     .toUpperCase();
+}
+
+function isArapongas(name: unknown) {
+  return String(name ?? "").trim().toLocaleLowerCase("pt-BR") === "arapongas";
 }
 
 async function visibleEmails(
@@ -71,23 +86,57 @@ export async function GET(request: Request) {
     );
   }
 
+  const contextResult = await account.supabase.rpc("vf_municipality_context");
+  if (contextResult.error) {
+    console.error("Failed to load municipality context for map", contextResult.error);
+    return Response.json(
+      { error: "Não foi possível identificar o município do mapa agora." },
+      { status: 500 },
+    );
+  }
+
+  const context = (contextResult.data || {}) as MunicipalityContext;
+  const currentMunicipality = (context.municipalities || []).find(
+    (item) => Number(item.id) === Number(context.currentMunicipalityId),
+  );
+  if (!currentMunicipality) {
+    return Response.json(
+      { error: "Município atual não encontrado." },
+      { status: 400 },
+    );
+  }
+
+  const arapongas = isArapongas(currentMunicipality.name);
+
+  const summaryPromise = arapongas
+    ? account.supabase.rpc("vf_map_district_summary", {
+        p_owner_emails: scopeEmails,
+      })
+    : account.supabase.rpc("vf_current_municipality_map_district_summary", {
+        p_owner_emails: scopeEmails,
+      });
+
+  const geocodePromise = arapongas
+    ? account.supabase
+        .from("vf_arapongas_district_geocodes")
+        .select("canonical_name, latitude, longitude")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+    : Promise.resolve({ data: [] as DistrictGeocodeItem[], error: null });
+
+  const statsPromise = account.supabase.rpc("vf_map_scope_stats", {
+    p_owner_emails: scopeEmails,
+    p_profile: null,
+  });
+
   const [summaryResult, geocodeResult, statsResult] = await Promise.all([
-    account.supabase.rpc("vf_map_district_summary", {
-      p_owner_emails: scopeEmails,
-    }),
-    account.supabase
-      .from("vf_arapongas_district_geocodes")
-      .select("canonical_name, latitude, longitude")
-      .not("latitude", "is", null)
-      .not("longitude", "is", null),
-    account.supabase.rpc("vf_map_scope_stats", {
-      p_owner_emails: scopeEmails,
-      p_profile: null,
-    }),
+    summaryPromise,
+    geocodePromise,
+    statsPromise,
   ]);
 
   if (summaryResult.error) {
-    console.error("Failed to load cached district map summary", summaryResult.error);
+    console.error("Failed to load district map summary", summaryResult.error);
     return Response.json(
       { error: "Não foi possível carregar os totais dos bairros agora." },
       { status: 500 },
@@ -129,7 +178,7 @@ export async function GET(request: Request) {
   const geocodeRows = Array.isArray(geocodeResult.data) ? geocodeResult.data : [];
 
   for (const rawItem of geocodeRows) {
-    const item = (rawItem ?? {}) as unknown as DistrictGeocodeItem;
+    const item = (rawItem ?? {}) as DistrictGeocodeItem;
     const key = normalizeDistrict(item.canonical_name);
     const summaryItem = totals.get(key);
     const latitude = Number(item.latitude);
@@ -166,6 +215,12 @@ export async function GET(request: Request) {
   return Response.json(
     {
       scope,
+      municipality: {
+        id: Number(currentMunicipality.id),
+        name: String(currentMunicipality.name || ""),
+        state: String(currentMunicipality.state || ""),
+        usesLegacyArapongasReferences: arapongas,
+      },
       totalContacts,
       districts,
       markers,
