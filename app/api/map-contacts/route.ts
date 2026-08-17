@@ -177,7 +177,7 @@ export async function GET(request: Request) {
       scope,
       profile: profile || null,
       features,
-      approximateDistricts,
+      approximateDistricts: [],
       stats,
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
