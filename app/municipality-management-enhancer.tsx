@@ -50,14 +50,12 @@ export default function MunicipalityManagementEnhancer() {
   }, []);
 
   useEffect(() => {
-    let observer: MutationObserver | null = null;
-
     const detect = () => {
       const filter = document.querySelector<HTMLElement>(".management-filter");
-      if (!filter || !filter.textContent?.includes("Usuários e acessos")) return false;
+      if (!filter || !filter.textContent?.includes("Usuários e acessos")) return;
 
       const parent = filter.parentElement;
-      if (!parent) return false;
+      if (!parent) return;
 
       let tab = filter.querySelector<HTMLButtonElement>("[data-vf-municipalities-tab]");
       if (!tab) {
@@ -76,7 +74,7 @@ export default function MunicipalityManagementEnhancer() {
         filter.insertAdjacentElement("afterend", node);
       }
 
-      const activate = () => {
+      tab.onclick = () => {
         parent.dataset.vfMunicipalitiesActive = "true";
         filter.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
           const selected = button === tab;
@@ -89,8 +87,6 @@ export default function MunicipalityManagementEnhancer() {
         void load().catch((error) => setMessage(error instanceof Error ? error.message : "Não foi possível carregar os municípios."));
       };
 
-      tab.onclick = activate;
-
       filter.querySelectorAll<HTMLButtonElement>("button:not([data-vf-municipalities-tab])").forEach((button) => {
         if (button.dataset.vfMunicipalitiesBound === "true") return;
         button.dataset.vfMunicipalitiesBound = "true";
@@ -101,16 +97,12 @@ export default function MunicipalityManagementEnhancer() {
       });
 
       setHost(node);
-      observer?.disconnect();
-      return true;
     };
 
-    if (!detect()) {
-      observer = new MutationObserver(detect);
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    return () => observer?.disconnect();
+    const observer = new MutationObserver(detect);
+    observer.observe(document.body, { childList: true, subtree: true });
+    detect();
+    return () => observer.disconnect();
   }, [load]);
 
   const totals = useMemo(
