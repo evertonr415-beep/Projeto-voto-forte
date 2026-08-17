@@ -175,7 +175,7 @@ export default function MunicipalityManagementEnhancer() {
         <div>
           <small>CENTRAL ESTADUAL · ADM GERAL</small>
           <h2>Municípios</h2>
-          <p>Cadastre a operação municipal com um único banco, mantendo usuários e dados isolados por município.</p>
+          <p>Ative e administre as operações municipais no mesmo banco, mantendo usuários e dados isolados por município.</p>
         </div>
         <div className="vf-admin-municipalities-kpis">
           <span><b>{municipalities.length}</b><small>municípios</small></span>
@@ -190,8 +190,8 @@ export default function MunicipalityManagementEnhancer() {
         {municipalities.map((municipality) => {
           const draft = drafts[municipality.id] || { name: "", email: "" };
           const configuring = municipality.status === "configuring";
-          const canInvite = configuring && !municipality.master && !municipality.pendingMasterInvitation;
-          const canActivate = configuring && Boolean(municipality.master);
+          const canInvite = municipality.status !== "inactive" && !municipality.master && !municipality.pendingMasterInvitation;
+          const canActivate = configuring;
 
           return (
             <article key={municipality.id} className={`vf-admin-municipality-card ${municipality.status}`}>
@@ -209,13 +209,13 @@ export default function MunicipalityManagementEnhancer() {
               </div>
 
               <div className="vf-admin-municipality-master">
-                <small>MASTER MUNICIPAL</small>
+                <small>MASTER MUNICIPAL · OPCIONAL</small>
                 {municipality.master ? (
                   <div><b>{municipality.master.name}</b><span>{municipality.master.email}</span></div>
                 ) : municipality.pendingMasterInvitation ? (
                   <div><b>{municipality.pendingMasterInvitation.name}</b><span>{municipality.pendingMasterInvitation.email} · convite pendente</span></div>
                 ) : (
-                  <p>Nenhum Master definido.</p>
+                  <p>Sem Master municipal. O ADM Geral permanece responsável pela operação.</p>
                 )}
               </div>
 
@@ -250,13 +250,7 @@ export default function MunicipalityManagementEnhancer() {
 
               {configuring && (
                 <footer>
-                  <p>
-                    {canActivate
-                      ? "Master ativo confirmado. O município já pode ser liberado pelo ADM Geral."
-                      : municipality.pendingMasterInvitation
-                        ? "Aguardando o Master aceitar o convite. A operação permanece bloqueada."
-                        : "Defina o Master antes de liberar a operação municipal."}
-                  </p>
+                  <p>O ADM Geral pode ativar este município agora. Você pode definir um Master municipal depois, se quiser delegar a gestão.</p>
                   <button
                     type="button"
                     disabled={!canActivate || busyId === municipality.id}
