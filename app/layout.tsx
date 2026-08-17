@@ -4,6 +4,7 @@ import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
 import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
+import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
@@ -39,6 +40,7 @@ import "./sidebar-scroll-fix.css";
 import "./overview-loading-enhancer.css";
 import "./contact-export-history.css";
 import "./municipality-multitenant.css";
+import "./municipality-management.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,6 +76,7 @@ export default function RootLayout({
         <SignupMunicipalityEnhancer />
         <MunicipalityContextEnhancer />
         <MunicipalityAdministrationEnhancer />
+        <MunicipalityManagementEnhancer />
         <MunicipalityFieldEnhancer />
         <CepFallbackEnhancer />
         <MapInstantContactBootstrap />
