@@ -58,7 +58,11 @@ export async function GET() {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const visibleUsers = await getVisibleUsers(account);
-  const visibleAuthIds = visibleUsers
+  // O Gestor pode receber identificadores operacionais sintéticos para ler
+  // registros historicamente vinculados a um ADM. Eles nunca representam uma
+  // conta real e não podem aparecer na Administração de usuários/auditoria.
+  const realVisibleUsers = visibleUsers.filter((user) => Number(user.id) > 0);
+  const visibleAuthIds = realVisibleUsers
     .map((user) => String(user.auth_user_id))
     .filter(Boolean);
 
@@ -98,7 +102,7 @@ export async function GET() {
       }));
   }
 
-  const mappedUsers = visibleUsers.map((user) =>
+  const mappedUsers = realVisibleUsers.map((user) =>
     mapUser(
       user as Record<string, unknown>,
       membershipMap.get(Number(user.id)) ?? [],
