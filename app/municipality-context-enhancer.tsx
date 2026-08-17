@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
 type Municipality = {
@@ -32,6 +33,7 @@ export default function MunicipalityContextEnhancer() {
   const [overview, setOverview] = useState<Overview[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,10 +49,46 @@ export default function MunicipalityContextEnhancer() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1000px)");
+
+    const findHeaderHost = () => {
+      if (!media.matches) {
+        setHeaderHost(null);
+        return;
+      }
+      const host = document.querySelector<HTMLElement>(
+        ".top-actions, .optimized-hero-controls",
+      );
+      setHeaderHost((current) => current === host ? current : host);
+    };
+
+    findHeaderHost();
+    const observer = new MutationObserver(findHeaderHost);
+    observer.observe(document.body, { childList: true, subtree: true });
+    media.addEventListener("change", findHeaderHost);
+
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", findHeaderHost);
+    };
+  }, []);
+
   const current = useMemo(
     () => context?.municipalities.find((item) => Number(item.id) === Number(context.currentMunicipalityId)) || context?.municipalities[0],
     [context],
   );
+
+  const desktopItems = useMemo<Overview[]>(() => {
+    if (overview.length) return overview;
+    return (context?.municipalities || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      state: item.state,
+      contacts: 0,
+      users: 0,
+    }));
+  }, [context, overview]);
 
   async function switchMunicipality(value: string) {
     if (!context?.isGeneralAdm || context.canSwitchMunicipality === false) return;
@@ -74,6 +112,45 @@ export default function MunicipalityContextEnhancer() {
   }
 
   if (!context || !current) return null;
+
+  if (headerHost) {
+    const headerControl = context.isGeneralAdm && desktopItems.length > 1 ? (
+      <details className="vf-municipality-header-menu">
+        <summary aria-label={`Município atual: ${current.name} - ${current.state}`}>
+          <span>{current.name} - {current.state}</span>
+          <i aria-hidden="true">⌄</i>
+        </summary>
+        <div className="vf-municipality-header-popover">
+          <header>
+            <small>VISÃO ESTADUAL</small>
+            <b>{desktopItems.length} município(s)</b>
+          </header>
+          <div className="vf-municipality-header-list">
+            {desktopItems.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                disabled={busy || Number(item.id) === Number(context.currentMunicipalityId)}
+                className={Number(item.id) === Number(context.currentMunicipalityId) ? "active" : ""}
+                onClick={() => void switchMunicipality(String(item.id))}
+              >
+                <span><b>{item.name}</b><small>{item.state}</small></span>
+                <span><b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b><small>contatos</small></span>
+                <span><b>{Number(item.users || 0).toLocaleString("pt-BR")}</b><small>usuários</small></span>
+              </button>
+            ))}
+          </div>
+          {message && <small className="vf-municipality-header-message">{message}</small>}
+        </div>
+      </details>
+    ) : (
+      <div className="vf-municipality-header-badge" aria-label="Município atual">
+        {current.name} - {current.state}
+      </div>
+    );
+
+    return createPortal(headerControl, headerHost);
+  }
 
   return (
     <aside className="vf-municipality-context" aria-label="Contexto municipal">
