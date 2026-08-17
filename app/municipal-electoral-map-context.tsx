@@ -78,29 +78,36 @@ function removeLegacyArapongasBoundary(map: any) {
   });
 }
 
+function setTextIfChanged(node: HTMLElement | null, value: string) {
+  if (node && node.textContent !== value) node.textContent = value;
+}
+
+function setAttributeIfChanged(node: HTMLElement | null, name: string, value: string) {
+  if (node && node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
+
 function updateMapCopy(municipality: Municipality) {
   const title = Array.from(document.querySelectorAll<HTMLElement>("h1,h2,h3")).find(
     (node) =>
       node.textContent?.trim() === "Mapa eleitoral de Arapongas" ||
       node.textContent?.trim().startsWith("Mapa eleitoral de "),
   );
-  if (title) title.textContent = `Mapa eleitoral de ${municipality.name}`;
+  setTextIfChanged(title || null, `Mapa eleitoral de ${municipality.name}`);
 
   const mapElement = document.querySelector<HTMLElement>(".full-map .leaflet-map");
-  if (mapElement) {
-    mapElement.setAttribute(
-      "aria-label",
-      `Mapa real de ${municipality.name} com bairros e pessoas cadastradas`,
-    );
-  }
+  setAttributeIfChanged(
+    mapElement,
+    "aria-label",
+    `Mapa real de ${municipality.name} com bairros e pessoas cadastradas`,
+  );
 
   const status = document.querySelector<HTMLElement>(".full-map .real-map-toolbar strong");
-  if (status) status.textContent = `Mapa real de ${municipality.name}`;
+  setTextIfChanged(status, `Mapa real de ${municipality.name}`);
 
   const home = document.querySelector<HTMLButtonElement>(
     ".full-map .real-map-toolbar .map-home",
   );
-  if (home) home.textContent = municipality.name;
+  setTextIfChanged(home, municipality.name);
 }
 
 async function loadMunicipalityGeometry(municipality: Municipality) {
@@ -120,7 +127,6 @@ async function loadMunicipalityGeometry(municipality: Municipality) {
   const data = (await response.json()) as { elements?: OverpassElement[] };
   const elements = Array.isArray(data.elements) ? data.elements : [];
 
-  // O centro fixo validado garante a cidade correta mesmo se houver homônimos no provedor.
   void state;
   return elements;
 }
@@ -134,7 +140,17 @@ export default function MunicipalElectoralMapContext() {
     let municipalBounds: any = null;
     let municipalCenter: MunicipalityFallback | null = null;
     let observer: MutationObserver | null = null;
+    let copyUpdateQueued = false;
     let legacyLayerGuard: ((event: any) => void) | null = null;
+
+    const scheduleCopyUpdate = () => {
+      if (!municipality || copyUpdateQueued) return;
+      copyUpdateQueued = true;
+      window.requestAnimationFrame(() => {
+        copyUpdateQueued = false;
+        if (!cancelled && municipality) updateMapCopy(municipality);
+      });
+    };
 
     const installLegacyLayerGuard = (map: any) => {
       if (legacyLayerGuard || !map?.on) return;
@@ -171,8 +187,6 @@ export default function MunicipalElectoralMapContext() {
         removeLegacyArapongasBoundary(map);
         updateMapCopy(municipality);
 
-        // A abertura da cidade não depende mais do Overpass. Mesmo se o serviço externo
-        // estiver lento ou indisponível, o mapa base abre imediatamente no município correto.
         if (municipalCenter) {
           map.setView(municipalCenter.center, municipalCenter.zoom);
           window.setTimeout(() => map.invalidateSize?.(), 80);
@@ -187,8 +201,6 @@ export default function MunicipalElectoralMapContext() {
         const elements = await loadMunicipalityGeometry(municipality);
         if (cancelled || activeMap !== map || !map._container) return;
 
-        // O mapa base de Arapongas carrega sua geometria de forma assíncrona. Removemos
-        // novamente qualquer camada antiga que tenha chegado depois da troca municipal.
         removeLegacyArapongasBoundary(map);
 
         if (municipalLayer) {
@@ -255,8 +267,6 @@ export default function MunicipalElectoralMapContext() {
         }
         map._vfMunicipalGeometryLoadedId = municipality.id;
       } catch {
-        // O mapa já está corretamente centralizado pela referência local. O provedor
-        // externo passa a ser somente um enriquecimento de limites e bairros.
         removeLegacyArapongasBoundary(map);
         if (municipalCenter) {
           map.setView(municipalCenter.center, municipalCenter.zoom);
@@ -300,7 +310,7 @@ export default function MunicipalElectoralMapContext() {
         if (isArapongas(current)) return;
 
         updateMapCopy(current);
-        observer = new MutationObserver(() => updateMapCopy(current));
+        observer = new MutationObserver(() => scheduleCopyUpdate());
         observer.observe(document.body, { childList: true, subtree: true });
         const existing = (window as any).__vfBaseElectoralMap;
         if (existing?._container) void decorateMap(existing);
