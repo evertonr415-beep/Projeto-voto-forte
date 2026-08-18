@@ -33,6 +33,7 @@ type ParsedCsv = {
 
 const BATCH_SIZE = 500;
 const MAX_CONTACTS = 150_000;
+const BATCH_REQUEST_TIMEOUT_MS = 60_000;
 
 function normalize(value: string) {
   return value
@@ -172,18 +173,31 @@ async function sendBatch(
   importBatchId: string,
   attempt = 1,
 ): Promise<Result> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    BATCH_REQUEST_TIMEOUT_MS,
+  );
+
   try {
     const response = await apiFetch("/api/records/import-contacts", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ contacts, importSessionId, importBatchId }),
+      signal: controller.signal,
     });
     const data = await response.json();
     if (!response.ok)
       throw new Error(data.error || "Falha ao importar o lote");
     return data as Result;
   } catch (error) {
-    if (attempt >= 3) throw error;
+    const batchError =
+      error instanceof DOMException && error.name === "AbortError"
+        ? new Error(
+            "O lote excedeu 60 segundos sem resposta. A tentativa foi encerrada para evitar travamento.",
+          )
+        : error;
+    if (attempt >= 3) throw batchError;
     await new Promise((resolve) =>
       window.setTimeout(resolve, attempt * 2000),
     );
@@ -193,6 +207,8 @@ async function sendBatch(
       importBatchId,
       attempt + 1,
     );
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
