@@ -10,6 +10,7 @@ type AllowedKind = (typeof allowedKinds)[number];
 const DASHBOARD_MAPPED_CONTACT_LIMIT = 2000;
 const DASHBOARD_MEETING_LIMIT = 2000;
 const DASHBOARD_DRAFT_LIMIT = 500;
+const OVERVIEW_MEETING_LIMIT = 3;
 
 type PayloadObject = Record<string, unknown>;
 
@@ -80,7 +81,9 @@ function normalizeCoordinates(payload: PayloadObject) {
   return { payload: normalized, error: null };
 }
 
-async function visibleOwners(account: NonNullable<Awaited<ReturnType<typeof getAccount>>>) {
+async function visibleOwners(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+) {
   const users = await getVisibleUsers(account);
   const emails = users
     .filter((user) => user.status === "active")
@@ -105,6 +108,12 @@ export async function GET(request: Request) {
 
   if (requestedKind && !kind) {
     return Response.json({ error: "Tipo de registro inválido" }, { status: 400 });
+  }
+  if (requestedMode === "overview" && kind !== "meeting") {
+    return Response.json(
+      { error: "O modo de resumo rápido é exclusivo da agenda" },
+      { status: 400 },
+    );
   }
 
   const { emails } = await visibleOwners(account);
@@ -131,15 +140,20 @@ export async function GET(request: Request) {
     return query;
   };
 
-  // Leituras de uma aba específica podem usar o mesmo limite seguro do
-  // dashboard sem cair no caminho histórico de até 20 mil registros.
-  if (kind && requestedMode === "dashboard") {
+  // Uma aba específica pode usar o mesmo limite seguro do dashboard. A Visão
+  // Geral tem um modo ainda menor que traz só os três compromissos exibidos.
+  if (
+    kind &&
+    (requestedMode === "dashboard" || requestedMode === "overview")
+  ) {
     const limit =
-      kind === "contact"
-        ? DASHBOARD_MAPPED_CONTACT_LIMIT
-        : kind === "meeting"
-          ? DASHBOARD_MEETING_LIMIT
-          : DASHBOARD_DRAFT_LIMIT;
+      requestedMode === "overview"
+        ? OVERVIEW_MEETING_LIMIT
+        : kind === "contact"
+          ? DASHBOARD_MAPPED_CONTACT_LIMIT
+          : kind === "meeting"
+            ? DASHBOARD_MEETING_LIMIT
+            : DASHBOARD_DRAFT_LIMIT;
 
     let query = makeScopedQuery(kind, limit);
     if (kind === "contact") {
@@ -159,11 +173,12 @@ export async function GET(request: Request) {
       {
         scope,
         kind,
-        mode: "dashboard",
+        mode: requestedMode,
         visibleOwners: emails,
         records: records.map(mapRecord),
         total: records.length,
-        truncated: records.length >= limit,
+        truncated:
+          requestedMode === "dashboard" ? records.length >= limit : false,
       },
       {
         headers: {
