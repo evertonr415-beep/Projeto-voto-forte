@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import GestorAccessUi from "./gestor-access-ui";
 import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
+import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 
 function isFullDashboardRoute(pathname: string) {
@@ -17,6 +18,7 @@ export default function GestorAccessGate() {
     <>
       <GestorAccessUi />
       <MunicipalityAdministrationEnhancer />
+      <MunicipalityManagementEnhancer />
       <TeamPerformanceAdminEnhancer />
     </>
   );
