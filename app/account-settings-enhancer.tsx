@@ -32,25 +32,51 @@ export default function AccountSettingsEnhancer() {
     `voto-forte:${email || "usuario"}:${name}`;
 
   useEffect(() => {
-    void supabase.auth.getUser().then(({ data }) => {
-      const user = data.user;
-      const userEmail = user?.email || "";
-      const serverAvatar = String(user?.user_metadata?.avatar_url || "");
-      setEmail(userEmail);
-      setUserId(user?.id || "");
-      if (serverAvatar) setAvatar(serverAvatar);
+    let cancelled = false;
+    let requested = false;
+    let authObserver: MutationObserver | null = null;
 
-      const savedPreferences = localStorage.getItem(
-        `voto-forte:${userEmail || "usuario"}:agenda-preferences`,
-      );
-      if (savedPreferences) {
-        try {
-          setPreferences(JSON.parse(savedPreferences) as Preferences);
-        } catch {
-          setPreferences(defaultPreferences);
+    const loadUser = () => {
+      if (cancelled || requested) return;
+      requested = true;
+      authObserver?.disconnect();
+      authObserver = null;
+
+      void supabase.auth.getUser().then(({ data }) => {
+        if (cancelled) return;
+        const user = data.user;
+        const userEmail = user?.email || "";
+        const serverAvatar = String(user?.user_metadata?.avatar_url || "");
+        setEmail(userEmail);
+        setUserId(user?.id || "");
+        if (serverAvatar) setAvatar(serverAvatar);
+
+        const savedPreferences = localStorage.getItem(
+          `voto-forte:${userEmail || "usuario"}:agenda-preferences`,
+        );
+        if (savedPreferences) {
+          try {
+            setPreferences(JSON.parse(savedPreferences) as Preferences);
+          } catch {
+            setPreferences(defaultPreferences);
+          }
         }
-      }
-    });
+      });
+    };
+
+    if (!document.querySelector(".auth-page")) {
+      loadUser();
+    } else {
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadUser();
+      });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      cancelled = true;
+      authObserver?.disconnect();
+    };
   }, []);
 
   useEffect(() => {
