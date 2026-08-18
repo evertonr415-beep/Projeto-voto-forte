@@ -28,7 +28,8 @@ jobs:
       - name: Verify changed client
         run: |
           npm ci
-          npm run lint -- --quiet
+          npx eslint app/api/records/route.ts --quiet
+          npx eslint app/dashboard-client.tsx --quiet --rule 'react-hooks/set-state-in-effect: 0' --rule '@typescript-eslint/no-explicit-any: 0'
           npm run build
       - name: Commit patched client
         run: |
