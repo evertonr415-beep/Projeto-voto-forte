@@ -13,11 +13,6 @@ const FILTER_CATEGORIES = [
   ...ESSENTIAL_ISSUE_CATEGORIES,
   ...AUXILIARY_FILTER_CATEGORIES,
 ] as const;
-const REQUIRED_FIELD_ISSUES = [
-  "missing_name",
-  "incomplete_name",
-  "missing_district",
-] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
 type FilterCategory = (typeof FILTER_CATEGORIES)[number];
@@ -26,9 +21,19 @@ type QualityIssueRow = Record<string, unknown> & {
   issue_codes?: unknown;
   severity?: unknown;
 };
-type QualitySummaryRow = {
-  filter_code?: unknown;
-  total?: unknown;
+type QualityScopeSummaryRow = {
+  total_contacts?: unknown;
+  total_issues?: unknown;
+  required_incomplete?: unknown;
+  invalid_phone?: unknown;
+  missing_name?: unknown;
+  incomplete_name?: unknown;
+  missing_district?: unknown;
+  location_divergence?: unknown;
+  missing_street?: unknown;
+  critical?: unknown;
+  warning?: unknown;
+  info?: unknown;
 };
 
 type QualityUpdateBody = {
@@ -55,6 +60,11 @@ function normalizeRequiredText(value: unknown) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function safeCount(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 async function readJsonBody<T>(request: Request): Promise<T | null> {
@@ -185,123 +195,33 @@ export async function GET(request: Request) {
 
     query = query.range(from, to);
 
-    if (scope === "all" && account.accessRole === "adm") {
-      const summaryPromise = account.supabase.rpc("vf_contact_quality_filter_summary");
-      const severityResultsPromise = Promise.all(
-        ISSUE_SEVERITIES.map(async (item) => {
-          let countQuery = account.supabase
-            .from("vf_contact_quality")
-            .select("record_id", { count: "exact", head: true })
-            .eq("severity", item)
-            .overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
-          countQuery = applyScope(countQuery, scope, emails);
-          const { count, error } = await countQuery;
-          if (error) throw new Error(error.message);
-          return [item, count ?? 0] as const;
-        }),
-      );
-      let requiredIncompleteQuery = account.supabase
-        .from("vf_contact_quality")
-        .select("record_id", { count: "exact", head: true })
-        .overlaps("issue_codes", [...REQUIRED_FIELD_ISSUES]);
-      requiredIncompleteQuery = applyScope(requiredIncompleteQuery, scope, emails);
-
-      const [
-        { data, count, error },
-        { data: summaryData, error: summaryError },
-        severityResults,
-        { count: requiredIncomplete, error: requiredIncompleteError },
-      ] = await Promise.all([
-        query,
-        summaryPromise,
-        severityResultsPromise,
-        requiredIncompleteQuery,
-      ]);
-      if (error) throw new Error(error.message);
-      if (summaryError) throw new Error(summaryError.message);
-      if (requiredIncompleteError) throw new Error(requiredIncompleteError.message);
-
-      const summaryCounts = Object.fromEntries(
-        ((summaryData ?? []) as QualitySummaryRow[]).map((row) => [
-          String(row.filter_code ?? ""),
-          Number(row.total ?? 0),
-        ]),
-      ) as Record<string, number>;
-      const categoryCounts = Object.fromEntries(
-        FILTER_CATEGORIES.map((item) => [item, Number(summaryCounts[item] ?? 0)]),
-      );
-      const severityCounts = Object.fromEntries(severityResults);
-      const total = count ?? 0;
-
-      return Response.json(
-        {
-          scope,
-          page,
-          pageSize: PAGE_SIZE,
-          total,
-          totalContacts: Number(summaryCounts.all ?? 0),
-          totalIssues:
-            Number(severityCounts.critical ?? 0) +
-            Number(severityCounts.warning ?? 0),
-          requiredIncomplete: requiredIncomplete ?? 0,
-          categoryCounts,
-          severityCounts,
-          totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-          issues: normalizeIssues(data, category),
-        },
-        { headers: { "Cache-Control": "private, no-store, max-age=0" } },
-      );
-    }
-
-    const countResults = await Promise.all(
-      FILTER_CATEGORIES.map(async (item) => {
-        let countQuery = account.supabase
-          .from("vf_contact_quality")
-          .select("record_id", { count: "exact", head: true })
-          .contains("issue_codes", [item]);
-        countQuery = applyScope(countQuery, scope, emails);
-        const { count, error } = await countQuery;
-        if (error) throw new Error(error.message);
-        return [item, count ?? 0] as const;
-      }),
-    );
-
-    const severityResults = await Promise.all(
-      ISSUE_SEVERITIES.map(async (item) => {
-        let countQuery = account.supabase
-          .from("vf_contact_quality")
-          .select("record_id", { count: "exact", head: true })
-          .eq("severity", item)
-          .overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
-        countQuery = applyScope(countQuery, scope, emails);
-        const { count, error } = await countQuery;
-        if (error) throw new Error(error.message);
-        return [item, count ?? 0] as const;
-      }),
-    );
-
-    let totalContactsQuery = account.supabase
-      .from("vf_contact_quality")
-      .select("record_id", { count: "exact", head: true });
-    totalContactsQuery = applyScope(totalContactsQuery, scope, emails);
-
-    let requiredIncompleteQuery = account.supabase
-      .from("vf_contact_quality")
-      .select("record_id", { count: "exact", head: true })
-      .overlaps("issue_codes", [...REQUIRED_FIELD_ISSUES]);
-    requiredIncompleteQuery = applyScope(requiredIncompleteQuery, scope, emails);
-
     const [
       { data, count, error },
-      { count: totalContacts, error: totalError },
-      { count: requiredIncomplete, error: requiredIncompleteError },
-    ] = await Promise.all([query, totalContactsQuery, requiredIncompleteQuery]);
-    if (error) throw new Error(error.message);
-    if (totalError) throw new Error(totalError.message);
-    if (requiredIncompleteError) throw new Error(requiredIncompleteError.message);
+      { data: summaryData, error: summaryError },
+    ] = await Promise.all([
+      query,
+      account.supabase.rpc("vf_contact_quality_scope_summary", {
+        p_owner_email: scope,
+      }),
+    ]);
 
-    const categoryCounts = Object.fromEntries(countResults);
-    const severityCounts = Object.fromEntries(severityResults);
+    if (error) throw new Error(error.message);
+    if (summaryError) throw new Error(summaryError.message);
+
+    const summary = ((summaryData ?? [])[0] ?? {}) as QualityScopeSummaryRow;
+    const categoryCounts = {
+      invalid_phone: safeCount(summary.invalid_phone),
+      missing_name: safeCount(summary.missing_name),
+      incomplete_name: safeCount(summary.incomplete_name),
+      missing_district: safeCount(summary.missing_district),
+      location_divergence: safeCount(summary.location_divergence),
+      missing_street: safeCount(summary.missing_street),
+    };
+    const severityCounts = {
+      critical: safeCount(summary.critical),
+      warning: safeCount(summary.warning),
+      info: safeCount(summary.info),
+    };
     const total = count ?? 0;
 
     return Response.json(
@@ -310,11 +230,9 @@ export async function GET(request: Request) {
         page,
         pageSize: PAGE_SIZE,
         total,
-        totalContacts: totalContacts ?? 0,
-        totalIssues:
-          Number(severityCounts.critical ?? 0) +
-          Number(severityCounts.warning ?? 0),
-        requiredIncomplete: requiredIncomplete ?? 0,
+        totalContacts: safeCount(summary.total_contacts),
+        totalIssues: severityCounts.critical + severityCounts.warning,
+        requiredIncomplete: safeCount(summary.required_incomplete),
         categoryCounts,
         severityCounts,
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
