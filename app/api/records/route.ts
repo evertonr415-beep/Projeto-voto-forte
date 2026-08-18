@@ -22,10 +22,6 @@ type OwnedRecord = {
   updated_at: string;
 };
 
-type MapScopeStatsRow = {
-  mapped_contacts?: number | string;
-};
-
 function mapRecord(record: OwnedRecord) {
   return {
     id: record.id,
@@ -148,42 +144,23 @@ export async function GET(request: Request) {
       .neq("payload->>latitude", "")
       .neq("payload->>longitude", "");
 
-    const mappedContactsStatsQuery = account.supabase.rpc("vf_map_scope_stats", {
-      p_owner_emails: scope === "all" ? emails : [scope],
-      p_profile: null,
-    });
-
-    const [
-      mappedContactsResult,
-      mappedContactsStatsResult,
-      meetingsResult,
-      draftsResult,
-    ] = await Promise.all([
-      mappedContactsQuery,
-      mappedContactsStatsQuery,
-      makeScopedQuery("meeting", DASHBOARD_MEETING_LIMIT),
-      makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT),
-    ]);
+    const [mappedContactsResult, meetingsResult, draftsResult] =
+      await Promise.all([
+        mappedContactsQuery,
+        makeScopedQuery("meeting", DASHBOARD_MEETING_LIMIT),
+        makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT),
+      ]);
 
     const error =
-      mappedContactsResult.error ||
-      mappedContactsStatsResult.error ||
-      meetingsResult.error ||
-      draftsResult.error;
+      mappedContactsResult.error || meetingsResult.error || draftsResult.error;
     if (error)
       return Response.json({ error: error.message }, { status: 400 });
 
     const mappedContacts = (mappedContactsResult.data ?? []) as OwnedRecord[];
-    const statsRow = Array.isArray(mappedContactsStatsResult.data)
-      ? (mappedContactsStatsResult.data[0] as MapScopeStatsRow | undefined)
-      : undefined;
-    const mappedContactsTotal = Math.max(
-      0,
-      Number(statsRow?.mapped_contacts ?? mappedContacts.length),
-    );
     const meetings = (meetingsResult.data ?? []) as OwnedRecord[];
     const drafts = (draftsResult.data ?? []) as OwnedRecord[];
-    const mappedContactsTruncated = mappedContactsTotal > mappedContacts.length;
+    const mappedContactsTruncated =
+      mappedContacts.length >= DASHBOARD_MAPPED_CONTACT_LIMIT;
     const truncated =
       mappedContactsTruncated ||
       meetings.length >= DASHBOARD_MEETING_LIMIT ||
@@ -201,7 +178,7 @@ export async function GET(request: Request) {
         visibleOwners: emails,
         records: dashboardRecords.map(mapRecord),
         total: dashboardRecords.length,
-        mappedContactsTotal,
+        mappedContactsTotal: mappedContacts.length,
         mappedContactRecords: mappedContacts.length,
         meetings: meetings.length,
         drafts: drafts.length,
