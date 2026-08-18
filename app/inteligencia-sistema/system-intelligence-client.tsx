@@ -171,7 +171,6 @@ export default function SystemIntelligenceClient() {
           </p>
         </div>
         <div className="system-intelligence-actions">
-          <a href="/inteligencia-equipe">Inteligência da Equipe</a>
           <a href="/contatos">Voltar ao painel</a>
         </div>
       </header>
