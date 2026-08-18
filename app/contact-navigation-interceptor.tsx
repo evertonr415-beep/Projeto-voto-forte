@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 const CONTACTS_ROUTE = "/contatos";
 const QUICK_ACTION_ROUTES = new Set([
+  CONTACTS_ROUTE,
   "/importar-contatos",
   "/pendencias-localizacao",
   "/sistema-completo",
