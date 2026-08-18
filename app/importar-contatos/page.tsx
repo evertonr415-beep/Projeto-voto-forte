@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import "./styles.css";
@@ -345,9 +346,9 @@ export default function BulkContactImportPage() {
   return (
     <main className="bulk-import-page">
       <section className="bulk-import-card">
-        <a className="back-link" href="/">
+        <Link className="back-link" href="/" prefetch={false}>
           ← Voltar ao Voto Forte
-        </a>
+        </Link>
         <small>IMPORTAÇÃO SEGURA EM MASSA</small>
         <h1>Importar até 150.000 contatos</h1>
         <p>
