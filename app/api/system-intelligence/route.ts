@@ -4,14 +4,6 @@ import { analyzeSystemSignals, type SystemSignals } from "./analysis";
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const AUDIT_LIMIT = 10_000;
 
-const ESSENTIAL_QUALITY_ISSUES = [
-  "invalid_phone",
-  "missing_name",
-  "incomplete_name",
-  "missing_district",
-  "location_divergence",
-] as const;
-
 type UserSignalRow = {
   id: number;
   role: string;
@@ -36,6 +28,11 @@ type ContactMetricRow = {
   total_contacts: number | string | null;
   contacts_last_7_days: number | string | null;
   contacts_last_30_days: number | string | null;
+};
+
+type UserMetricRow = {
+  owner_email: string;
+  system_pending_contacts: number | string | null;
 };
 
 function parseImportDetail(detail: unknown) {
@@ -71,16 +68,13 @@ export async function GET() {
   try {
     const [
       contactMetricsResult,
-      pendingContacts,
+      userMetricsResult,
       usersResult,
       backupResult,
       auditResult,
     ] = await Promise.all([
       account.supabase.rpc("vf_intelligence_contact_metrics"),
-      account.supabase
-        .from("vf_contact_quality")
-        .select("record_id", { count: "exact", head: true })
-        .overlaps("issue_codes", [...ESSENTIAL_QUALITY_ISSUES]),
+      account.supabase.rpc("vf_intelligence_user_metrics"),
       account.supabase
         .from("vf_users")
         .select("id,role,status,last_seen_at"),
@@ -100,7 +94,7 @@ export async function GET() {
 
     for (const result of [
       contactMetricsResult,
-      pendingContacts,
+      userMetricsResult,
       usersResult,
       backupResult,
       auditResult,
@@ -119,6 +113,10 @@ export async function GET() {
     );
     const newContacts30Days = contactMetrics.reduce(
       (sum, row) => sum + Number(row.contacts_last_30_days ?? 0),
+      0,
+    );
+    const pendingContacts = ((userMetricsResult.data ?? []) as UserMetricRow[]).reduce(
+      (sum, row) => sum + Number(row.system_pending_contacts ?? 0),
       0,
     );
 
@@ -176,7 +174,7 @@ export async function GET() {
     const signals: SystemSignals = {
       generatedAt: new Date().toISOString(),
       totalContacts,
-      pendingContacts: pendingContacts.count ?? 0,
+      pendingContacts,
       newContacts7Days,
       newContacts30Days,
       activeUsers: activeUsers.length,
