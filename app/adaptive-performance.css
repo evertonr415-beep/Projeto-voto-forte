@@ -1,0 +1,17 @@
+html[data-vf-performance="light"] *,
+html[data-vf-performance="light"] *::before,
+html[data-vf-performance="light"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-vf-performance="light"] .sidebar,
+html[data-vf-performance="light"] .topbar,
+html[data-vf-performance="light"] .panel,
+html[data-vf-performance="light"] .modal,
+html[data-vf-performance="light"] .vf-heatmap-control {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
