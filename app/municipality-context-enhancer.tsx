@@ -38,18 +38,44 @@ export default function MunicipalityContextEnhancer() {
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch("/api/municipality-context")
-      .then(async (response) => ({ response, data: await response.json() }))
-      .then(({ response, data }) => {
-        if (cancelled || response.status === 401) return;
-        if (!response.ok)
-          throw new Error(data.error || "Não foi possível carregar o município.");
-        setContext(data.context || null);
-        setOverview(Array.isArray(data.overview) ? data.overview : []);
-      })
-      .catch(() => undefined);
+    let requested = false;
+    let authObserver: MutationObserver | null = null;
+
+    const loadContext = () => {
+      if (cancelled || requested) return;
+      requested = true;
+      authObserver?.disconnect();
+      authObserver = null;
+
+      apiFetch("/api/municipality-context")
+        .then(async (response) => ({ response, data: await response.json() }))
+        .then(({ response, data }) => {
+          if (cancelled || response.status === 401) return;
+          if (!response.ok)
+            throw new Error(data.error || "Não foi possível carregar o município.");
+          setContext(data.context || null);
+          setOverview(Array.isArray(data.overview) ? data.overview : []);
+        })
+        .catch(() => undefined);
+    };
+
+    const waitForProtectedAccess = () => {
+      if (!document.querySelector(".auth-page")) {
+        loadContext();
+        return;
+      }
+
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadContext();
+      });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
+    waitForProtectedAccess();
+
     return () => {
       cancelled = true;
+      authObserver?.disconnect();
     };
   }, []);
 
