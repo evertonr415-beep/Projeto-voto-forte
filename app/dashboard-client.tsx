@@ -137,6 +137,8 @@ export default function DashboardClient({
   const [availableUsers, setAvailableUsers] = useState<ManagedUser[]>([]);
   const [scope, setScope] = useState(isAdmin ? "all" : currentUser.email);
   const [loadingData, setLoadingData] = useState(true);
+  const [draftsLoadedScope, setDraftsLoadedScope] = useState<string | null>(null);
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
   const [contactFilter, setContactFilter] = useState<Contact["kind"] | "Todos">(
     "Todos",
   );
@@ -208,7 +210,9 @@ export default function DashboardClient({
   }, [isAdmin]);
   useEffect(() => {
     let cancelled = false;
-    apiFetch(`/api/records?owner=${encodeURIComponent(scope)}`)
+    setDraftsLoadedScope(null);
+    setLoadingDrafts(false);
+    apiFetch(`/api/records?owner=${encodeURIComponent(scope)}&includeDrafts=0`)
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (cancelled) return;
@@ -225,6 +229,43 @@ export default function DashboardClient({
       cancelled = true;
     };
   }, [scope]);
+  useEffect(() => {
+    if (view !== "WhatsApp" || loadingData || draftsLoadedScope === scope) return;
+    let cancelled = false;
+    setLoadingDrafts(true);
+    apiFetch(
+      `/api/records?owner=${encodeURIComponent(scope)}&kind=draft&mode=dashboard`,
+      { cache: "no-store" },
+    )
+      .then(async (response) => ({ response, data: await response.json() }))
+      .then(({ response, data }) => {
+        if (cancelled) return;
+        if (!response.ok)
+          throw new Error(data.error || "Não foi possível carregar os rascunhos.");
+        const draftRecords = Array.isArray(data.records)
+          ? (data.records as OwnedRecord[])
+          : [];
+        setRecords((current) => [
+          ...current.filter((record) => record.kind !== "draft"),
+          ...draftRecords,
+        ]);
+        setDraftsLoadedScope(scope);
+      })
+      .catch((error) => {
+        if (!cancelled)
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar os rascunhos agora.",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDrafts(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draftsLoadedScope, loadingData, scope, view]);
   const contacts = records
     .filter((record) => record.kind === "contact")
     .map((record) => ({
@@ -369,11 +410,15 @@ export default function DashboardClient({
   ) : view === "Mapa Eleitoral" ? (
     <MapPage open={setModal} contacts={contacts} />
   ) : view === "WhatsApp" ? (
-    <Whatsapp
-      tell={setNotice}
-      drafts={drafts}
-      save={(payload) => createRecord("draft", payload)}
-    />
+    loadingDrafts ? (
+      <div className="loading-state">Carregando rascunhos…</div>
+    ) : (
+      <Whatsapp
+        tell={setNotice}
+        drafts={drafts}
+        save={(payload) => createRecord("draft", payload)}
+      />
+    )
   ) : view === "Administração" && isAdmin ? (
     <Administration
       currentUser={currentUser}
