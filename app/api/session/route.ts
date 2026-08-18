@@ -2,6 +2,11 @@ import { after } from "next/server";
 import { getAccountForAuthenticatedUser } from "../../server-identity";
 import { getServerSupabase } from "../../supabase-server";
 
+const LAST_SEEN_WRITE_INTERVAL_MS = 5 * 60 * 1000;
+const PRIVATE_NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store, max-age=0",
+};
+
 type SessionAccessState =
   | "active"
   | "profile_inactive"
@@ -18,6 +23,22 @@ type SessionAccessStatus = {
   email?: string;
   emailConfirmed?: boolean;
 };
+
+function shouldRefreshLastSeen(value: unknown, now: number) {
+  if (typeof value !== "string" || !value) return true;
+  const previous = Date.parse(value);
+  return !Number.isFinite(previous) || now - previous >= LAST_SEEN_WRITE_INTERVAL_MS;
+}
+
+function jsonResponse(body: unknown, init: ResponseInit = {}) {
+  return Response.json(body, {
+    ...init,
+    headers: {
+      ...PRIVATE_NO_STORE_HEADERS,
+      ...(init.headers || {}),
+    },
+  });
+}
 
 async function getAuthenticatedContext() {
   const supabase = await getServerSupabase();
@@ -49,12 +70,13 @@ async function activeSessionResponse(
     context.user,
   );
   if (!account) {
-    return Response.json(
+    return jsonResponse(
       {
         access: {
           ...access,
           state: "profile_inactive",
-          message: "Seu perfil Voto Forte não está disponível para acesso. Procure o ADM responsável.",
+          message:
+            "Seu perfil Voto Forte não está disponível para acesso. Procure o ADM responsável.",
           canEnterApplication: false,
           requiresAdmReview: true,
         },
@@ -63,14 +85,17 @@ async function activeSessionResponse(
     );
   }
 
-  after(async () => {
-    await context.supabase
-      .from("vf_users")
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq("auth_user_id", context.user.id);
-  });
+  const now = Date.now();
+  if (shouldRefreshLastSeen(account.last_seen_at, now)) {
+    after(async () => {
+      await context.supabase
+        .from("vf_users")
+        .update({ last_seen_at: new Date(now).toISOString() })
+        .eq("auth_user_id", context.user.id);
+    });
+  }
 
-  return Response.json({
+  return jsonResponse({
     access,
     user: {
       email: account.email,
@@ -86,7 +111,7 @@ async function activeSessionResponse(
 export async function GET() {
   const context = await getAuthenticatedContext();
   if (!context) {
-    return Response.json(
+    return jsonResponse(
       { error: "Sessão inválida ou expirada." },
       { status: 401 },
     );
@@ -94,20 +119,20 @@ export async function GET() {
 
   const access = await getAccessStatus(context.supabase);
   if (!access) {
-    return Response.json(
+    return jsonResponse(
       { error: "Não foi possível validar o estado de acesso desta conta." },
       { status: 503 },
     );
   }
 
-  if (access.state !== "active") return Response.json({ access });
+  if (access.state !== "active") return jsonResponse({ access });
   return activeSessionResponse(access, context);
 }
 
 export async function POST() {
   const context = await getAuthenticatedContext();
   if (!context) {
-    return Response.json(
+    return jsonResponse(
       { error: "Sessão inválida ou expirada." },
       { status: 401 },
     );
@@ -115,14 +140,14 @@ export async function POST() {
 
   const currentAccess = await getAccessStatus(context.supabase);
   if (!currentAccess) {
-    return Response.json(
+    return jsonResponse(
       { error: "Não foi possível validar o estado de acesso desta conta." },
       { status: 503 },
     );
   }
 
   if (currentAccess.state !== "invitation_ready") {
-    return Response.json(
+    return jsonResponse(
       {
         access: currentAccess,
         error: "Esta conta não possui um convite pronto para ativação.",
@@ -135,7 +160,7 @@ export async function POST() {
     "vf_claim_user_invitation",
   );
   if (claimError) {
-    return Response.json(
+    return jsonResponse(
       { access: currentAccess, error: claimError.message },
       { status: 400 },
     );
@@ -143,12 +168,15 @@ export async function POST() {
 
   const access = await getAccessStatus(context.supabase);
   if (!access) {
-    return Response.json(
-      { error: "O convite foi processado, mas o acesso não pôde ser revalidado." },
+    return jsonResponse(
+      {
+        error:
+          "O convite foi processado, mas o acesso não pôde ser revalidado.",
+      },
       { status: 503 },
     );
   }
 
-  if (access.state !== "active") return Response.json({ access });
+  if (access.state !== "active") return jsonResponse({ access });
   return activeSessionResponse(access, context);
 }

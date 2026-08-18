@@ -89,11 +89,16 @@ export default function AccountSessionSecurity() {
   }, []);
 
   useEffect(() => {
+    let currentHost: HTMLElement | null = null;
+
     const findHost = () => {
       const next = document.querySelector<HTMLElement>(".account-settings-content");
+      if (next === currentHost) return;
+      currentHost = next;
       setHost(next);
       if (next) void loadSessions();
     };
+
     findHost();
     const observer = new MutationObserver(findHost);
     observer.observe(document.body, { childList: true, subtree: true });

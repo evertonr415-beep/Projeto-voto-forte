@@ -22,6 +22,7 @@ import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import OverviewLoadingEnhancer from "./overview-loading-enhancer";
 import ExactLegacyMetrics from "./exact-legacy-metrics";
 import GestorAccessUi from "./gestor-access-ui";
+import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -48,6 +49,7 @@ import "./contact-export-history.css";
 import "./municipality-multitenant.css";
 import "./municipality-management.css";
 import "./gestor-access-ui.css";
+import "./runtime-version-guard.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,6 +104,7 @@ export default function RootLayout({
         <TeamPerformanceAdminEnhancer />
         <OverviewLoadingEnhancer />
         <ExactLegacyMetrics />
+        <RuntimeVersionGuard />
         {children}
       </body>
     </html>
