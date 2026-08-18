@@ -297,7 +297,7 @@ export default function AccountSettingsEnhancer() {
                 ref={fileInput}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
-                onChange={chooseFile => void chooseFile}
+                onChange={chooseAvatar}
                 hidden
               />
             </div>
