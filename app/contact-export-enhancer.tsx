@@ -113,7 +113,7 @@ export default function ContactExportEnhancer() {
   useEffect(() => {
     if (!isFullDashboardRoute(pathname)) return;
 
-    router.prefetch(HISTORY_ROUTE);
+    if (!document.querySelector(".auth-page")) router.prefetch(HISTORY_ROUTE);
     ensureHistoryNavigation(router);
     ensureHistoryLink(router);
     markAuditRows();
