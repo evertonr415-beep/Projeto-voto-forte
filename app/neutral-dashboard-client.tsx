@@ -106,8 +106,11 @@ export default function NeutralDashboardClient({
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Contact | null>(null);
+  const [savingContact, setSavingContact] = useState(false);
+  const [deletingContactId, setDeletingContactId] = useState<number | null>(null);
   const summaryVersion = useRef(0);
   const contactsVersion = useRef(0);
+  const contactActionInFlight = useRef(false);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -263,7 +266,11 @@ export default function NeutralDashboardClient({
   );
 
   async function deleteContact(contact: Contact) {
+    if (contactActionInFlight.current) return;
     if (!window.confirm(`Excluir o contato ${contact.name || "selecionado"}?`)) return;
+
+    contactActionInFlight.current = true;
+    setDeletingContactId(contact.id);
     try {
       const response = await apiFetch(`/api/records?id=${contact.id}`, {
         method: "DELETE",
@@ -277,31 +284,37 @@ export default function NeutralDashboardClient({
       window.dispatchEvent(new Event("voto-forte:records-changed"));
     } catch {
       setMessage("Não foi possível excluir o contato agora. Verifique sua conexão e tente novamente.");
+    } finally {
+      contactActionInFlight.current = false;
+      setDeletingContactId(null);
     }
   }
 
   async function saveContact(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editing) return;
+    if (!editing || contactActionInFlight.current) return;
 
+    const contact = editing;
+    contactActionInFlight.current = true;
+    setSavingContact(true);
     try {
       const response = await apiFetch("/api/records", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          id: editing.id,
+          id: contact.id,
           payload: {
-            name: String(editing.name || "").trim(),
-            phone: String(editing.phone || "").trim(),
-            phoneNormalized: String(editing.phone || "").replace(/\D/g, ""),
-            district: String(editing.district || "").trim(),
-            leader: String(editing.leader || "").trim(),
-            kind: editing.kind === "Liderança" ? "Liderança" : "Eleitor",
-            cep: String(editing.cep || "").trim(),
-            street: String(editing.street || "").trim(),
-            number: String(editing.number || "").trim(),
-            city: String(editing.city || "").trim(),
-            state: String(editing.state || "").trim(),
+            name: String(contact.name || "").trim(),
+            phone: String(contact.phone || "").trim(),
+            phoneNormalized: String(contact.phone || "").replace(/\D/g, ""),
+            district: String(contact.district || "").trim(),
+            leader: String(contact.leader || "").trim(),
+            kind: contact.kind === "Liderança" ? "Liderança" : "Eleitor",
+            cep: String(contact.cep || "").trim(),
+            street: String(contact.street || "").trim(),
+            number: String(contact.number || "").trim(),
+            city: String(contact.city || "").trim(),
+            state: String(contact.state || "").trim(),
           },
         }),
       });
@@ -315,6 +328,9 @@ export default function NeutralDashboardClient({
       window.dispatchEvent(new Event("voto-forte:records-changed"));
     } catch {
       setMessage("Não foi possível atualizar o contato agora. Verifique sua conexão e tente novamente.");
+    } finally {
+      contactActionInFlight.current = false;
+      setSavingContact(false);
     }
   }
 
@@ -549,15 +565,20 @@ export default function NeutralDashboardClient({
                         <td data-label="Responsável">{contact.ownerEmail}</td>
                       )}
                       <td data-label="Ações" className="optimized-row-actions">
-                        <button type="button" onClick={() => setEditing(contact)}>
+                        <button
+                          type="button"
+                          disabled={deletingContactId !== null}
+                          onClick={() => setEditing(contact)}
+                        >
                           Editar
                         </button>
                         <button
                           type="button"
                           className="danger"
+                          disabled={deletingContactId !== null}
                           onClick={() => void deleteContact(contact)}
                         >
-                          Excluir
+                          {deletingContactId === contact.id ? "Excluindo…" : "Excluir"}
                         </button>
                       </td>
                     </tr>
@@ -615,13 +636,16 @@ export default function NeutralDashboardClient({
       {editing && (
         <div
           className="optimized-modal-backdrop"
-          onMouseDown={() => setEditing(null)}
+          onMouseDown={() => {
+            if (!savingContact) setEditing(null);
+          }}
         >
           <form
             className="optimized-modal"
             role="dialog"
             aria-modal="true"
             aria-label="Editar contato"
+            aria-busy={savingContact}
             onSubmit={saveContact}
             onMouseDown={(event) => event.stopPropagation()}
           >
@@ -630,6 +654,7 @@ export default function NeutralDashboardClient({
               <button
                 type="button"
                 aria-label="Fechar"
+                disabled={savingContact}
                 onClick={() => setEditing(null)}
               >
                 ×
@@ -639,6 +664,7 @@ export default function NeutralDashboardClient({
               Nome
               <input
                 required
+                disabled={savingContact}
                 value={editing.name || ""}
                 onChange={(event) =>
                   setEditing({ ...editing, name: event.target.value })
@@ -649,6 +675,7 @@ export default function NeutralDashboardClient({
               Telefone
               <input
                 required
+                disabled={savingContact}
                 value={editing.phone || ""}
                 onChange={(event) =>
                   setEditing({ ...editing, phone: event.target.value })
@@ -658,6 +685,7 @@ export default function NeutralDashboardClient({
             <label>
               Perfil
               <select
+                disabled={savingContact}
                 value={editing.kind || "Eleitor"}
                 onChange={(event) =>
                   setEditing({
@@ -673,6 +701,7 @@ export default function NeutralDashboardClient({
             <label>
               Bairro
               <input
+                disabled={savingContact}
                 value={editing.district || ""}
                 onChange={(event) =>
                   setEditing({ ...editing, district: event.target.value })
@@ -682,6 +711,7 @@ export default function NeutralDashboardClient({
             <label>
               Liderança relacionada
               <input
+                disabled={savingContact}
                 value={editing.leader || ""}
                 onChange={(event) =>
                   setEditing({ ...editing, leader: event.target.value })
@@ -689,11 +719,15 @@ export default function NeutralDashboardClient({
               />
             </label>
             <div className="optimized-modal-actions">
-              <button type="button" onClick={() => setEditing(null)}>
+              <button
+                type="button"
+                disabled={savingContact}
+                onClick={() => setEditing(null)}
+              >
                 Cancelar
               </button>
-              <button type="submit" className="primary">
-                Salvar
+              <button type="submit" className="primary" disabled={savingContact}>
+                {savingContact ? "Salvando…" : "Salvar"}
               </button>
             </div>
           </form>
