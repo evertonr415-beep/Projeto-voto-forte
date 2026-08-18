@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import GestorAccessUi from "./gestor-access-ui";
 import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
 import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
@@ -20,6 +21,7 @@ export default function GestorAccessGate() {
       <MunicipalityAdministrationEnhancer />
       <MunicipalityManagementEnhancer />
       <TeamPerformanceAdminEnhancer />
+      <AuthReconciliationEnhancer />
     </>
   );
 }
