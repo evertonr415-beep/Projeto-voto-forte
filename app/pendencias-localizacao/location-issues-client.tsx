@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import "./location-issues.css";
 import "./required-fields.css";
@@ -160,6 +160,8 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
   const [query, setQuery] = useState("");
   const [data, setData] = useState<PageData>(EMPTY_PAGE);
   const [districts, setDistricts] = useState<string[]>([]);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const districtsScopeRef = useRef("");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -204,34 +206,38 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     return () => controller.abort();
   }, [isAdmin]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    apiFetch(`/api/contacts?mode=summary&owner=${encodeURIComponent(scope)}`, {
-      signal: controller.signal,
-    })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (controller.signal.aborted) return;
-        const rawDistricts = payload && typeof payload === "object" && !Array.isArray(payload)
-          ? (payload as { districts?: unknown }).districts
-          : [];
-        setDistricts(
-          (Array.isArray(rawDistricts) ? rawDistricts : [])
-            .map((item) =>
-              item && typeof item === "object" && !Array.isArray(item)
-                ? stringValue((item as { district?: unknown }).district)
-                : "",
-            )
-            .filter(Boolean)
-            .sort((a, b) => a.localeCompare(b, "pt-BR")),
-        );
-      })
-      .catch((error) => {
-        if (!(error instanceof DOMException && error.name === "AbortError"))
-          console.error("Failed to load districts", error);
-      });
-    return () => controller.abort();
-  }, [scope]);
+  const loadDistricts = useCallback(async () => {
+    if (districtsScopeRef.current === scope && districts.length) return;
+    setDistrictsLoading(true);
+    try {
+      const response = await apiFetch(
+        `/api/contacts?mode=summary&owner=${encodeURIComponent(scope)}`,
+        { cache: "no-store" },
+      );
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(payloadError(payload, "Não foi possível carregar os bairros."));
+
+      const rawDistricts = payload && typeof payload === "object" && !Array.isArray(payload)
+        ? (payload as { districts?: unknown }).districts
+        : [];
+      const nextDistricts = (Array.isArray(rawDistricts) ? rawDistricts : [])
+        .map((item) =>
+          item && typeof item === "object" && !Array.isArray(item)
+            ? stringValue((item as { district?: unknown }).district)
+            : "",
+        )
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+      setDistricts(nextDistricts);
+      districtsScopeRef.current = scope;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível carregar os bairros.");
+    } finally {
+      setDistrictsLoading(false);
+    }
+  }, [districts.length, scope]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -332,6 +338,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     setEditName(issue.contact_name ?? "");
     setEditDistrict(issue.district_original ?? "");
     setEditStreet(issue.street ?? "");
+    void loadDistricts();
   }
 
   function closeEdit() {
@@ -415,6 +422,13 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
     setPage(1);
   }
 
+  function changeScope(nextScope: string) {
+    setScope(nextScope);
+    clearFilters();
+    setDistricts([]);
+    districtsScopeRef.current = "";
+  }
+
   return (
     <main className="issues-shell">
       <header className="issues-header">
@@ -434,10 +448,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
               <select
                 aria-label="Selecionar responsável"
                 value={scope}
-                onChange={(event) => {
-                  setScope(event.target.value);
-                  clearFilters();
-                }}
+                onChange={(event) => changeScope(event.target.value)}
               >
                 <option value="all">Todos os usuários</option>
                 {users.map((user) => (
@@ -701,6 +712,7 @@ export default function LocationIssuesClient({ currentUser }: { currentUser: Cur
                 <datalist id="district-options">
                   {districts.map((district) => <option key={district} value={district} />)}
                 </datalist>
+                {districtsLoading && <small>Carregando sugestões de bairros…</small>}
               </label>
               <label>
                 Rua (opcional)
