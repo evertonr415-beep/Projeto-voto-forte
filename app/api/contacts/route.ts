@@ -138,6 +138,7 @@ export async function GET(request: Request) {
     const queryText = safeSearch(url.searchParams.get("q") ?? "");
     const profile = url.searchParams.get("profile");
     const district = (url.searchParams.get("district") ?? "").trim();
+    const skipTotal = url.searchParams.get("skipTotal") === "1";
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
@@ -180,6 +181,7 @@ export async function GET(request: Request) {
     const hasFilters = Boolean(
       queryText || profile === "Eleitor" || profile === "Liderança",
     );
+    const omitTotal = skipTotal && !hasFilters;
 
     let query = account.supabase
       .from("vf_owned_records")
@@ -213,7 +215,7 @@ export async function GET(request: Request) {
     }
 
     const pagePromise = query;
-    const totalPromise: Promise<number | null> = hasFilters
+    const totalPromise: Promise<number | null> = hasFilters || omitTotal
       ? Promise.resolve(null)
       : (async () => {
           const result = await account.supabase.rpc(
@@ -232,7 +234,7 @@ export async function GET(request: Request) {
     ]);
 
     if (error) throw new Error(error.message);
-    const total = hasFilters ? count ?? 0 : cachedTotal ?? 0;
+    const total = hasFilters ? count ?? 0 : omitTotal ? null : cachedTotal ?? 0;
 
     return Response.json(
       {
@@ -240,7 +242,7 @@ export async function GET(request: Request) {
         page,
         pageSize,
         total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        totalPages: total == null ? null : Math.max(1, Math.ceil(total / pageSize)),
         contacts: ((data ?? []) as ContactRow[]).map(mapContact),
       },
       {
