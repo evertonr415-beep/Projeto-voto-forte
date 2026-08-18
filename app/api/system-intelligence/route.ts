@@ -2,19 +2,12 @@ import { getAccount } from "../../server-identity";
 import { analyzeSystemSignals, type SystemSignals } from "./analysis";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const AUDIT_LIMIT = 10_000;
 
 type UserSignalRow = {
   id: number;
   role: string;
   status: string;
   last_seen_at: string | null;
-};
-
-type AuditSignalRow = {
-  action: string | null;
-  detail: string | null;
-  created_at: string;
 };
 
 type BackupSignalRow = {
@@ -35,18 +28,21 @@ type UserMetricRow = {
   system_pending_contacts: number | string | null;
 };
 
-function parseImportDetail(detail: unknown) {
-  const text = String(detail ?? "");
-  const read = (label: string) => {
-    const match = text.match(new RegExp(`([\\d.]+)\\s+${label}`, "i"));
-    return match ? Number(match[1].replace(/\D/g, "")) || 0 : 0;
-  };
-  return {
-    inserted: read("inseridos"),
-    duplicates: read("duplicados"),
-    invalid: read("inválidos"),
-  };
-}
+type NavigationMetric = {
+  label?: string | null;
+  count?: number | string | null;
+};
+
+type AuditMetricRow = {
+  audit_events?: number | string | null;
+  navigation_events?: number | string | null;
+  operational_events?: number | string | null;
+  import_runs?: number | string | null;
+  imported?: number | string | null;
+  duplicates?: number | string | null;
+  invalid?: number | string | null;
+  navigation?: NavigationMetric[] | null;
+};
 
 function backupAgeHours(createdAt: string | null) {
   if (!createdAt) return null;
@@ -71,7 +67,7 @@ export async function GET() {
       userMetricsResult,
       usersResult,
       backupResult,
-      auditResult,
+      auditMetricsResult,
     ] = await Promise.all([
       account.supabase.rpc("vf_intelligence_contact_metrics"),
       account.supabase.rpc("vf_intelligence_user_metrics"),
@@ -84,12 +80,9 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      account.supabase
-        .from("vf_audit_logs")
-        .select("action,detail,created_at")
-        .gte("created_at", thirtyDaysAgo)
-        .order("created_at", { ascending: false })
-        .limit(AUDIT_LIMIT + 1),
+      account.supabase.rpc("vf_system_audit_metrics", {
+        p_since: thirtyDaysAgo,
+      }),
     ]);
 
     for (const result of [
@@ -97,7 +90,7 @@ export async function GET() {
       userMetricsResult,
       usersResult,
       backupResult,
-      auditResult,
+      auditMetricsResult,
     ]) {
       if (result.error) throw new Error(result.error.message);
     }
@@ -129,46 +122,24 @@ export async function GET() {
     }).length;
     const leaders = activeUsers.filter((user) => user.role === "lider").length;
 
-    const auditRows = (auditResult.data ?? []) as AuditSignalRow[];
-    const audit = auditRows.slice(0, AUDIT_LIMIT);
-    const navigationCounts = new Map<string, number>();
-    let navigationEvents30Days = 0;
-    let operationalEvents30Days = 0;
-    let importRuns = 0;
-    let imported = 0;
-    let duplicates = 0;
-    let invalid = 0;
-
-    for (const event of audit) {
-      const action = String(event.action ?? "");
-      const detail = String(event.detail ?? "");
-      if (action === "Navegação") {
-        navigationEvents30Days += 1;
-        const label = detail.trim() || "Sem identificação";
-        navigationCounts.set(label, (navigationCounts.get(label) ?? 0) + 1);
-      }
-      if (!["Acesso ao sistema", "Navegação"].includes(action)) {
-        operationalEvents30Days += 1;
-      }
-      if (
-        action === "Importação inteligente de contatos" ||
-        action === "Importação de contatos em lote"
-      ) {
-        importRuns += 1;
-        const parsed = parseImportDetail(detail);
-        imported += parsed.inserted;
-        duplicates += parsed.duplicates;
-        invalid += parsed.invalid;
-      }
-    }
-
-    const navigation = [...navigationCounts.entries()]
-      .map(([label, count]) => ({
-        label,
-        count,
-        share: navigationEvents30Days ? count / navigationEvents30Days : 0,
-      }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "pt-BR"));
+    const auditMetric = (Array.isArray(auditMetricsResult.data)
+      ? auditMetricsResult.data[0]
+      : null) as AuditMetricRow | null;
+    const auditEvents30Days = Number(auditMetric?.audit_events ?? 0);
+    const navigationEvents30Days = Number(auditMetric?.navigation_events ?? 0);
+    const operationalEvents30Days = Number(auditMetric?.operational_events ?? 0);
+    const navigation = (Array.isArray(auditMetric?.navigation)
+      ? auditMetric.navigation
+      : [])
+      .map((item) => {
+        const count = Math.max(0, Number(item.count ?? 0));
+        return {
+          label: String(item.label || "Sem identificação"),
+          count,
+          share: navigationEvents30Days ? count / navigationEvents30Days : 0,
+        };
+      })
+      .filter((item) => item.count > 0);
 
     const backup = (backupResult.data ?? null) as BackupSignalRow | null;
     const signals: SystemSignals = {
@@ -181,15 +152,15 @@ export async function GET() {
       blockedUsers: blockedUsers.length,
       inactiveUsers30Days,
       leaders,
-      auditEvents30Days: audit.length,
+      auditEvents30Days,
       navigationEvents30Days,
       operationalEvents30Days,
-      auditWindowTruncated: auditRows.length > AUDIT_LIMIT,
+      auditWindowTruncated: false,
       imports30Days: {
-        runs: importRuns,
-        inserted: imported,
-        duplicates,
-        invalid,
+        runs: Number(auditMetric?.import_runs ?? 0),
+        inserted: Number(auditMetric?.imported ?? 0),
+        duplicates: Number(auditMetric?.duplicates ?? 0),
+        invalid: Number(auditMetric?.invalid ?? 0),
       },
       backup: {
         exists: Boolean(backup),
