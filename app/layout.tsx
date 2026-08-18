@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import AdaptivePerformance from "./adaptive-performance";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
@@ -21,6 +22,7 @@ import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import GestorAccessUi from "./gestor-access-ui";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
+import "./adaptive-performance.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
 import "./map-layout-compact.css";
@@ -79,6 +81,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
         <MunicipalityContextEnhancer />
         <MunicipalityAdministrationEnhancer />
