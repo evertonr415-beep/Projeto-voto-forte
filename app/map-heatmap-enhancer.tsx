@@ -10,6 +10,8 @@ type HeatPoint = {
   count: number;
 };
 
+type PerformanceModeEvent = CustomEvent<{ mode?: "full" | "light" }>;
+
 function aggregatePoints(records: Array<any>) {
   const grouped = new Map<string, HeatPoint>();
   for (const record of records) {
@@ -45,6 +47,7 @@ function heatStyle(count: number, maximum: number) {
 export default function MapHeatmapEnhancer() {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [lightMode, setLightMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadedMappedPoints, setLoadedMappedPoints] = useState(0);
   const [totalMappedPoints, setTotalMappedPoints] = useState(0);
@@ -76,6 +79,10 @@ export default function MapHeatmapEnhancer() {
       const L = (window as any).L;
       const map = mapRef.current;
       if (!L || !map || !enabledRef.current) return;
+      if (document.documentElement.getAttribute("data-vf-performance") === "light") {
+        clearLayer();
+        return;
+      }
 
       clearLayer();
 
@@ -110,6 +117,7 @@ export default function MapHeatmapEnhancer() {
 
     const loadPoints = async (force = false) => {
       if (!enabledRef.current || cancelled) return;
+      if (document.documentElement.getAttribute("data-vf-performance") === "light") return;
       const requestId = ++loadRequestRef.current;
       setLoading(true);
       try {
@@ -117,7 +125,8 @@ export default function MapHeatmapEnhancer() {
         if (
           cancelled ||
           !enabledRef.current ||
-          requestId !== loadRequestRef.current
+          requestId !== loadRequestRef.current ||
+          document.documentElement.getAttribute("data-vf-performance") === "light"
         ) {
           return;
         }
@@ -171,6 +180,10 @@ export default function MapHeatmapEnhancer() {
       }, 10_000);
     }
 
+    const initialLightMode =
+      document.documentElement.getAttribute("data-vf-performance") === "light";
+    setLightMode(initialLightMode);
+
     const handleToggle = (event: Event) => {
       const open = Boolean(
         (event as CustomEvent<{ open?: boolean }>).detail?.open,
@@ -182,8 +195,21 @@ export default function MapHeatmapEnhancer() {
       if (enabledRef.current) void loadPoints(true);
     };
 
+    const handlePerformanceMode = (event: Event) => {
+      const nextLightMode = (event as PerformanceModeEvent).detail?.mode === "light";
+      setLightMode(nextLightMode);
+      if (!nextLightMode) return;
+
+      enabledRef.current = false;
+      setEnabled(false);
+      loadRequestRef.current += 1;
+      setLoading(false);
+      clearLayer();
+    };
+
     window.addEventListener("voto-forte:heatmap-toggle", handleToggle);
     window.addEventListener("voto-forte:geocoding-complete", handleGeocodingComplete);
+    window.addEventListener("voto-forte:performance-mode", handlePerformanceMode);
 
     const handleEnable = () => void loadPoints(false);
     window.addEventListener("voto-forte:heatmap-enable", handleEnable);
@@ -197,6 +223,7 @@ export default function MapHeatmapEnhancer() {
         "voto-forte:geocoding-complete",
         handleGeocodingComplete,
       );
+      window.removeEventListener("voto-forte:performance-mode", handlePerformanceMode);
       if (patchTimer) window.clearInterval(patchTimer);
       if (patchTimeout) window.clearTimeout(patchTimeout);
       clearLayer();
@@ -206,6 +233,7 @@ export default function MapHeatmapEnhancer() {
   }, []);
 
   const toggleHeatmap = () => {
+    if (lightMode) return;
     const next = !enabled;
     setEnabled(next);
     enabledRef.current = next;
@@ -234,24 +262,28 @@ export default function MapHeatmapEnhancer() {
         <small>CAMADA VISUAL</small>
         <strong>Mapa de calor</strong>
         <span>
-          {loading
-            ? "Carregando concentrações..."
-            : truncated
-              ? `${loadedLabel} de ${totalLabel} contatos mapeados carregados para manter o mapa leve`
-              : `${loadedLabel} contato(s) mapeado(s) carregado(s)`}
+          {lightMode
+            ? "Pausado automaticamente para manter o mapa responsivo"
+            : loading
+              ? "Carregando concentrações..."
+              : truncated
+                ? `${loadedLabel} de ${totalLabel} contatos mapeados carregados para manter o mapa leve`
+                : `${loadedLabel} contato(s) mapeado(s) carregado(s)`}
         </span>
       </div>
       <button
         type="button"
         className={enabled ? "active" : ""}
         onClick={toggleHeatmap}
-        disabled={loading}
+        disabled={loading || lightMode}
       >
-        {loading
-          ? "Preparando mapa de calor..."
-          : enabled
-            ? "Desligar mapa de calor"
-            : "Ligar mapa de calor"}
+        {lightMode
+          ? "Modo leve ativo"
+          : loading
+            ? "Preparando mapa de calor..."
+            : enabled
+              ? "Desligar mapa de calor"
+              : "Ligar mapa de calor"}
       </button>
       <div className="vf-heat-legend" aria-label="Legenda do mapa de calor">
         <span><i className="low" /> Baixa</span>

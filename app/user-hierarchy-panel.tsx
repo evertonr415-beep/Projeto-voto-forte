@@ -122,27 +122,24 @@ export default function UserHierarchyPanel() {
   }, []);
 
   useEffect(() => {
-    let observer: MutationObserver | null = null;
-    let loaded = false;
+    let currentTarget: HTMLElement | null = null;
 
     const detect = () => {
-      const node = document.querySelector<HTMLElement>(".users-admin-grid");
-      if (!node) return false;
-      node.dataset.vfHierarchyReplaced = "true";
-      setTarget(node);
-      observer?.disconnect();
-      if (!loaded) {
-        loaded = true;
-        void load();
-      }
-      return true;
+      const nextTarget = document.querySelector<HTMLElement>(".users-admin-grid");
+      if (nextTarget === currentTarget) return;
+
+      currentTarget = nextTarget;
+      setTarget(nextTarget);
+      if (!nextTarget) return;
+
+      nextTarget.dataset.vfHierarchyReplaced = "true";
+      void load();
     };
 
-    if (!detect()) {
-      observer = new MutationObserver(detect);
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-    return () => observer?.disconnect();
+    detect();
+    const observer = new MutationObserver(detect);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [load]);
 
   useEffect(() => {

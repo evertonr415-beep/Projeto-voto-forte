@@ -9,13 +9,21 @@ const QUICK_ACTION_ROUTES = new Set([
   "/pendencias-localizacao",
   "/sistema-completo",
 ]);
+const PREFETCH_DELAY_MS = 1500;
 
 export default function ContactNavigationInterceptor() {
   const router = useRouter();
 
   useEffect(() => {
-    router.prefetch(CONTACTS_ROUTE);
-    for (const route of QUICK_ACTION_ROUTES) router.prefetch(route);
+    const prefetchTimer = window.setTimeout(() => {
+      if (
+        document.documentElement.getAttribute("data-vf-performance") === "light"
+      )
+        return;
+
+      router.prefetch(CONTACTS_ROUTE);
+      for (const route of QUICK_ACTION_ROUTES) router.prefetch(route);
+    }, PREFETCH_DELAY_MS);
 
     function handleClick(event: MouseEvent) {
       if (
@@ -63,7 +71,10 @@ export default function ContactNavigationInterceptor() {
     }
 
     document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
+    return () => {
+      window.clearTimeout(prefetchTimer);
+      document.removeEventListener("click", handleClick, true);
+    };
   }, [router]);
 
   return null;

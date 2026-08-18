@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import AdaptivePerformance from "./adaptive-performance";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
@@ -13,17 +14,15 @@ import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import AccountSessionSecurity from "./account-session-security";
-import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
-import OverviewLoadingEnhancer from "./overview-loading-enhancer";
-import ExactLegacyMetrics from "./exact-legacy-metrics";
 import GestorAccessUi from "./gestor-access-ui";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
+import "./adaptive-performance.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
 import "./map-layout-compact.css";
@@ -82,6 +81,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
         <MunicipalityContextEnhancer />
         <MunicipalityAdministrationEnhancer />
@@ -96,14 +96,11 @@ export default function RootLayout({
         <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
         <AccountSessionSecurity />
-        <ReportsSimplifier />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />
         <IntelligenceNavigation />
         <TeamPerformanceAdminEnhancer />
-        <OverviewLoadingEnhancer />
-        <ExactLegacyMetrics />
         <RuntimeVersionGuard />
         {children}
       </body>
