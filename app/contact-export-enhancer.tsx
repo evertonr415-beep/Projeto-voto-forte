@@ -1,11 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { apiFetch } from "./supabase-client";
 
 const HISTORY_ROUTE = "/exportacoes";
 const EXPORT_ID_PATTERN = /lote\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+function isFullDashboardRoute(pathname: string) {
+  return pathname === "/" || pathname === "/sistema-completo";
+}
 
 function normalClick(event: MouseEvent) {
   return (
@@ -103,9 +107,12 @@ function markAuditRows() {
 }
 
 export default function ContactExportEnhancer() {
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
+    if (!isFullDashboardRoute(pathname)) return;
+
     router.prefetch(HISTORY_ROUTE);
     ensureHistoryNavigation(router);
     ensureHistoryLink(router);
@@ -208,7 +215,7 @@ export default function ContactExportEnhancer() {
       document.removeEventListener("click", handleClick, true);
       document.removeEventListener("keydown", handleKeydown, true);
     };
-  }, [router]);
+  }, [pathname, router]);
 
   return null;
 }
