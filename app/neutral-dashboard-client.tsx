@@ -47,6 +47,7 @@ type VisibleUser = {
   status?: string;
 };
 
+const PAGE_SIZE = 25;
 const EMPTY_SUMMARY: Summary = {
   total: 0,
   voters: 0,
@@ -54,12 +55,11 @@ const EMPTY_SUMMARY: Summary = {
   meetings: 0,
   districtsReached: 0,
 };
-
 const EMPTY_PAGE: ContactPage = {
   contacts: [],
   total: 0,
   page: 1,
-  pageSize: 50,
+  pageSize: PAGE_SIZE,
   totalPages: 1,
 };
 
@@ -102,8 +102,9 @@ export default function NeutralDashboardClient({
   const [query, setQuery] = useState("");
   const [profile, setProfile] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
+  const [contactsRequested, setContactsRequested] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(true);
-  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(false);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Contact | null>(null);
   const [savingContact, setSavingContact] = useState(false);
@@ -114,10 +115,11 @@ export default function NeutralDashboardClient({
 
   useEffect(() => {
     if (!isAdmin) return;
-    apiFetch("/api/users", { cache: "no-store" })
+    const controller = new AbortController();
+    apiFetch("/api/users", { cache: "no-store", signal: controller.signal })
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
-        if (!response.ok) return;
+        if (!response.ok || controller.signal.aborted) return;
         setUsers(
           ((data.users ?? []) as VisibleUser[])
             .filter((user) => user.status === "active")
@@ -129,6 +131,7 @@ export default function NeutralDashboardClient({
         );
       })
       .catch(() => undefined);
+    return () => controller.abort();
   }, [isAdmin]);
 
   const loadSummary = useCallback(async () => {
@@ -151,22 +154,21 @@ export default function NeutralDashboardClient({
       });
     } catch (error) {
       if (version === summaryVersion.current)
-        setMessage(
-          error instanceof Error ? error.message : "Falha ao carregar resumo",
-        );
+        setMessage(error instanceof Error ? error.message : "Falha ao carregar resumo");
     } finally {
       if (version === summaryVersion.current) setLoadingSummary(false);
     }
   }, [scope]);
 
   const loadContacts = useCallback(async () => {
+    if (!contactsRequested) return;
     const version = ++contactsVersion.current;
     setLoadingContacts(true);
     try {
       const params = new URLSearchParams({
         owner: scope,
         page: String(page),
-        pageSize: "50",
+        pageSize: String(PAGE_SIZE),
       });
       if (query) params.set("q", query);
       if (profile) params.set("profile", profile);
@@ -183,26 +185,25 @@ export default function NeutralDashboardClient({
         contacts: Array.isArray(data.contacts) ? data.contacts : [],
         total: finiteNumber(data.total),
         page: Math.max(1, finiteNumber(data.page) || 1),
-        pageSize: Math.max(10, finiteNumber(data.pageSize) || 50),
+        pageSize: Math.max(1, finiteNumber(data.pageSize) || PAGE_SIZE),
         totalPages: Math.max(1, finiteNumber(data.totalPages) || 1),
       });
     } catch (error) {
       if (version === contactsVersion.current)
-        setMessage(
-          error instanceof Error ? error.message : "Falha ao carregar contatos",
-        );
+        setMessage(error instanceof Error ? error.message : "Falha ao carregar contatos");
     } finally {
       if (version === contactsVersion.current) setLoadingContacts(false);
     }
-  }, [districtFilter, page, profile, query, scope]);
+  }, [contactsRequested, districtFilter, page, profile, query, scope]);
 
   useEffect(() => {
     void loadSummary();
   }, [loadSummary]);
 
   useEffect(() => {
+    if (!contactsRequested) return;
     void loadContacts();
-  }, [loadContacts]);
+  }, [contactsRequested, loadContacts]);
 
   useEffect(() => {
     const handleDistrictFilter = (event: Event) => {
@@ -215,6 +216,7 @@ export default function NeutralDashboardClient({
       setQuery("");
       setProfile("");
       setDistrictFilter(district);
+      setContactsRequested(true);
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>(".contacts-panel")?.scrollIntoView({
           behavior: "smooth",
@@ -222,32 +224,29 @@ export default function NeutralDashboardClient({
         });
       });
     };
-    window.addEventListener(
-      "voto-forte:filter-district-contacts",
-      handleDistrictFilter,
-    );
+    window.addEventListener("voto-forte:filter-district-contacts", handleDistrictFilter);
     return () =>
-      window.removeEventListener(
-        "voto-forte:filter-district-contacts",
-        handleDistrictFilter,
-      );
+      window.removeEventListener("voto-forte:filter-district-contacts", handleDistrictFilter);
   }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      const nextQuery = queryInput.trim();
       setPage(1);
-      setQuery(queryInput.trim());
+      setQuery(nextQuery);
+      if (nextQuery) setContactsRequested(true);
     }, 350);
     return () => window.clearTimeout(timer);
   }, [queryInput]);
 
   useEffect(() => {
     const refresh = () => {
-      void Promise.all([loadSummary(), loadContacts()]);
+      void loadSummary();
+      if (contactsRequested) void loadContacts();
     };
     window.addEventListener("voto-forte:records-changed", refresh);
     return () => window.removeEventListener("voto-forte:records-changed", refresh);
-  }, [loadContacts, loadSummary]);
+  }, [contactsRequested, loadContacts, loadSummary]);
 
   const scopeName = useMemo(() => {
     if (scope === "all") return "Todos os usuários";
@@ -257,13 +256,39 @@ export default function NeutralDashboardClient({
   const firstItem = pageData.total
     ? (pageData.page - 1) * pageData.pageSize + 1
     : 0;
-  const lastItem = Math.min(
-    pageData.page * pageData.pageSize,
-    pageData.total,
-  );
-  const hasFilters = Boolean(
-    queryInput.trim() || query || profile || districtFilter,
-  );
+  const lastItem = Math.min(pageData.page * pageData.pageSize, pageData.total);
+  const hasFilters = Boolean(queryInput.trim() || query || profile || districtFilter);
+
+  function requestContacts() {
+    setPage(1);
+    setContactsRequested(true);
+  }
+
+  function resetContactList() {
+    contactsVersion.current += 1;
+    setLoadingContacts(false);
+    setContactsRequested(false);
+    setPageData(EMPTY_PAGE);
+    setPage(1);
+  }
+
+  function changeScope(nextScope: string) {
+    setScope(nextScope);
+    setQueryInput("");
+    setQuery("");
+    setProfile("");
+    setDistrictFilter("");
+    resetContactList();
+  }
+
+  function clearFilters() {
+    setQueryInput("");
+    setQuery("");
+    setProfile("");
+    setDistrictFilter("");
+    setPage(1);
+    if (!contactsRequested) setPageData(EMPTY_PAGE);
+  }
 
   async function deleteContact(contact: Contact) {
     if (contactActionInFlight.current) return;
@@ -272,9 +297,7 @@ export default function NeutralDashboardClient({
     contactActionInFlight.current = true;
     setDeletingContactId(contact.id);
     try {
-      const response = await apiFetch(`/api/records?id=${contact.id}`, {
-        method: "DELETE",
-      });
+      const response = await apiFetch(`/api/records?id=${contact.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) {
         setMessage(data.error || "Não foi possível excluir o contato.");
@@ -334,14 +357,6 @@ export default function NeutralDashboardClient({
     }
   }
 
-  function clearFilters() {
-    setQueryInput("");
-    setQuery("");
-    setProfile("");
-    setDistrictFilter("");
-    setPage(1);
-  }
-
   return (
     <main className="optimized-shell">
       <header className="optimized-topbar">
@@ -350,25 +365,17 @@ export default function NeutralDashboardClient({
           <div>
             <small>VOTO FORTE PARANÁ</small>
             <h1>Painel de contatos</h1>
-            <p>Indicadores consolidados e lista paginada da base.</p>
+            <p>Indicadores, bairros e contatos carregados somente quando necessários.</p>
           </div>
         </div>
         <div className="optimized-hero-controls">
           {isAdmin ? (
             <label className="optimized-scope-control">
               <span>Visualizando</span>
-              <select
-                value={scope}
-                onChange={(event) => {
-                  setPage(1);
-                  setScope(event.target.value);
-                }}
-              >
+              <select value={scope} onChange={(event) => changeScope(event.target.value)}>
                 <option value="all">Todos os usuários</option>
                 {users.map((user) => (
-                  <option key={user.email} value={user.email}>
-                    {user.name}
-                  </option>
+                  <option key={user.email} value={user.email}>{user.name}</option>
                 ))}
               </select>
             </label>
@@ -384,49 +391,33 @@ export default function NeutralDashboardClient({
       <nav className="optimized-quick-actions" aria-label="Ações rápidas">
         <a className="primary" href="/importar-contatos">
           <span className="optimized-action-icon" aria-hidden="true">＋</span>
-          <span>
-            <b>Importar contatos</b>
-            <small>Adicionar ou atualizar a base</small>
-          </span>
+          <span><b>Importar contatos</b><small>Adicionar ou atualizar a base</small></span>
         </a>
         <a href="/pendencias-localizacao">
           <span className="optimized-action-icon" aria-hidden="true">!</span>
-          <span>
-            <b>Pendências de localização</b>
-            <small>Revisar dados incompletos</small>
-          </span>
+          <span><b>Central de Qualidade</b><small>Revisar dados incompletos</small></span>
         </a>
         <button
           type="button"
-          onClick={() => void Promise.all([loadSummary(), loadContacts()])}
+          onClick={() => {
+            void loadSummary();
+            if (contactsRequested) void loadContacts();
+          }}
           disabled={loadingSummary || loadingContacts}
         >
           <span className="optimized-action-icon" aria-hidden="true">↻</span>
-          <span>
-            <b>Atualizar painel</b>
-            <small>Buscar os dados mais recentes</small>
-          </span>
+          <span><b>Atualizar painel</b><small>Buscar os dados mais recentes</small></span>
         </button>
         <a className="secondary" href="/sistema-completo">
           <span className="optimized-action-icon" aria-hidden="true">⋯</span>
-          <span>
-            <b>Sistema completo</b>
-            <small>Abrir ferramentas legadas</small>
-          </span>
+          <span><b>Sistema completo</b><small>Abrir ferramentas adicionais</small></span>
         </a>
       </nav>
 
       <section className="optimized-overview" aria-busy={loadingSummary}>
         <div className="optimized-section-heading">
-          <div>
-            <small>VISÃO GERAL</small>
-            <h2>{scopeName}</h2>
-          </div>
-          <span>
-            {loadingSummary
-              ? "Atualizando indicadores…"
-              : "Totais calculados sobre toda a base"}
-          </span>
+          <div><small>VISÃO GERAL</small><h2>{scopeName}</h2></div>
+          <span>{loadingSummary ? "Atualizando indicadores…" : "Totais calculados sobre toda a base"}</span>
         </div>
         <div className="optimized-kpis">
           <article className="is-primary">
@@ -446,9 +437,7 @@ export default function NeutralDashboardClient({
           </article>
           <article>
             <span className="optimized-kpi-label">Bairros alcançados</span>
-            <b>
-              {loadingSummary ? "—" : formatNumber(summary.districtsReached)}
-            </b>
+            <b>{loadingSummary ? "—" : formatNumber(summary.districtsReached)}</b>
             <small>bairros com cadastros</small>
           </article>
           <article>
@@ -464,19 +453,37 @@ export default function NeutralDashboardClient({
           <div className="optimized-panel-head">
             <div>
               <small>BASE DE CONTATOS</small>
-              <h2>Contatos cadastrados</h2>
+              <h2>{contactsRequested ? "Contatos selecionados" : "Escolha como deseja consultar"}</h2>
               <p>
-                Exibindo {formatNumber(firstItem)}–{formatNumber(lastItem)} de{" "}
-                {formatNumber(pageData.total)}
+                {contactsRequested
+                  ? `Exibindo ${formatNumber(firstItem)}–${formatNumber(lastItem)} de ${formatNumber(pageData.total)}`
+                  : "A lista completa não é carregada automaticamente. Use um bairro, uma busca ou o botão abaixo."}
               </p>
+            </div>
+            <div className="optimized-contact-load-actions">
+              {!contactsRequested ? (
+                <button className="primary" type="button" onClick={requestContacts}>
+                  Carregar contatos
+                </button>
+              ) : (
+                <button type="button" onClick={resetContactList} disabled={loadingContacts}>
+                  Ocultar lista
+                </button>
+              )}
             </div>
           </div>
 
           {districtFilter && (
             <div className="optimized-active-district" role="status">
               <span>Bairro: <b>{districtFilter}</b></span>
-              <button type="button" onClick={() => { setDistrictFilter(""); setPage(1); }}>
-                Ver todos os bairros
+              <button
+                type="button"
+                onClick={() => {
+                  setDistrictFilter("");
+                  setPage(1);
+                }}
+              >
+                Remover filtro de bairro
               </button>
             </div>
           )}
@@ -498,6 +505,7 @@ export default function NeutralDashboardClient({
                 onChange={(event) => {
                   setPage(1);
                   setProfile(event.target.value);
+                  setContactsRequested(true);
                 }}
               >
                 <option value="">Todos os perfis</option>
@@ -510,7 +518,12 @@ export default function NeutralDashboardClient({
             </button>
           </div>
 
-          {loadingContacts ? (
+          {!contactsRequested ? (
+            <div className="optimized-contact-idle" role="status">
+              <b>Consulta sob demanda</b>
+              <p>Os bairros permanecem disponíveis ao lado. Ao selecionar um bairro, os contatos correspondentes serão carregados automaticamente.</p>
+            </div>
+          ) : loadingContacts ? (
             <div className="optimized-loading">
               <span className="optimized-spinner" /> Carregando contatos…
             </div>
@@ -531,9 +544,7 @@ export default function NeutralDashboardClient({
                   {pageData.contacts.map((contact) => (
                     <tr key={contact.id}>
                       <td data-label="Contato" className="optimized-contact-cell">
-                        <span className="optimized-avatar">
-                          {initials(contact.name || "")}
-                        </span>
+                        <span className="optimized-avatar">{initials(contact.name || "")}</span>
                         <span>
                           <b>{contact.name || "Sem nome"}</b>
                           {contact.leader && <small>{contact.leader}</small>}
@@ -541,35 +552,20 @@ export default function NeutralDashboardClient({
                       </td>
                       <td data-label="Telefone">
                         {contact.phone ? (
-                          <a
-                            className="optimized-phone"
-                            href={`tel:${contact.phone.replace(/\D/g, "")}`}
-                          >
+                          <a className="optimized-phone" href={`tel:${contact.phone.replace(/\D/g, "")}`}>
                             {contact.phone}
                           </a>
-                        ) : (
-                          "—"
-                        )}
+                        ) : "—"}
                       </td>
                       <td data-label="Perfil">
-                        <span
-                          className={`optimized-profile-badge${
-                            contact.kind === "Liderança" ? " is-leader" : ""
-                          }`}
-                        >
+                        <span className={`optimized-profile-badge${contact.kind === "Liderança" ? " is-leader" : ""}`}>
                           {contact.kind || "Eleitor"}
                         </span>
                       </td>
                       <td data-label="Bairro">{contact.district || "—"}</td>
-                      {isAdmin && (
-                        <td data-label="Responsável">{contact.ownerEmail}</td>
-                      )}
+                      {isAdmin && <td data-label="Responsável">{contact.ownerEmail}</td>}
                       <td data-label="Ações" className="optimized-row-actions">
-                        <button
-                          type="button"
-                          disabled={deletingContactId !== null}
-                          onClick={() => setEditing(contact)}
-                        >
+                        <button type="button" disabled={deletingContactId !== null} onClick={() => setEditing(contact)}>
                           Editar
                         </button>
                         <button
@@ -594,43 +590,35 @@ export default function NeutralDashboardClient({
             </div>
           )}
 
-          <footer className="optimized-pagination">
-            <span>
-              Mostrando {formatNumber(firstItem)}–{formatNumber(lastItem)} de{" "}
-              {formatNumber(pageData.total)}
-            </span>
-            <div>
-              <button
-                type="button"
-                disabled={page <= 1 || loadingContacts}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                Anterior
-              </button>
-              <b>
-                Página {formatNumber(pageData.page)} de{" "}
-                {formatNumber(pageData.totalPages)}
-              </b>
-              <button
-                type="button"
-                disabled={page >= pageData.totalPages || loadingContacts}
-                onClick={() => setPage((value) => value + 1)}
-              >
-                Próxima
-              </button>
-            </div>
-          </footer>
+          {contactsRequested && !loadingContacts && (
+            <footer className="optimized-pagination">
+              <span>
+                Mostrando {formatNumber(firstItem)}–{formatNumber(lastItem)} de {formatNumber(pageData.total)}
+              </span>
+              <div>
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                >
+                  Anterior
+                </button>
+                <b>Página {formatNumber(pageData.page)} de {formatNumber(pageData.totalPages)}</b>
+                <button
+                  type="button"
+                  disabled={page >= pageData.totalPages}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Próxima
+                </button>
+              </div>
+            </footer>
+          )}
         </article>
       </section>
 
       {message && (
-        <div
-          className="optimized-toast"
-          role="status"
-          onClick={() => setMessage("")}
-        >
-          {message}
-        </div>
+        <div className="optimized-toast" role="status" onClick={() => setMessage("")}>{message}</div>
       )}
 
       {editing && (
@@ -651,14 +639,7 @@ export default function NeutralDashboardClient({
           >
             <header>
               <h2>Editar contato</h2>
-              <button
-                type="button"
-                aria-label="Fechar"
-                disabled={savingContact}
-                onClick={() => setEditing(null)}
-              >
-                ×
-              </button>
+              <button type="button" aria-label="Fechar" disabled={savingContact} onClick={() => setEditing(null)}>×</button>
             </header>
             <label>
               Nome
@@ -666,9 +647,7 @@ export default function NeutralDashboardClient({
                 required
                 disabled={savingContact}
                 value={editing.name || ""}
-                onChange={(event) =>
-                  setEditing({ ...editing, name: event.target.value })
-                }
+                onChange={(event) => setEditing({ ...editing, name: event.target.value })}
               />
             </label>
             <label>
@@ -677,9 +656,7 @@ export default function NeutralDashboardClient({
                 required
                 disabled={savingContact}
                 value={editing.phone || ""}
-                onChange={(event) =>
-                  setEditing({ ...editing, phone: event.target.value })
-                }
+                onChange={(event) => setEditing({ ...editing, phone: event.target.value })}
               />
             </label>
             <label>
@@ -687,12 +664,7 @@ export default function NeutralDashboardClient({
               <select
                 disabled={savingContact}
                 value={editing.kind || "Eleitor"}
-                onChange={(event) =>
-                  setEditing({
-                    ...editing,
-                    kind: event.target.value as Contact["kind"],
-                  })
-                }
+                onChange={(event) => setEditing({ ...editing, kind: event.target.value as Contact["kind"] })}
               >
                 <option value="Eleitor">Eleitor</option>
                 <option value="Liderança">Liderança</option>
@@ -703,9 +675,7 @@ export default function NeutralDashboardClient({
               <input
                 disabled={savingContact}
                 value={editing.district || ""}
-                onChange={(event) =>
-                  setEditing({ ...editing, district: event.target.value })
-                }
+                onChange={(event) => setEditing({ ...editing, district: event.target.value })}
               />
             </label>
             <label>
@@ -713,19 +683,11 @@ export default function NeutralDashboardClient({
               <input
                 disabled={savingContact}
                 value={editing.leader || ""}
-                onChange={(event) =>
-                  setEditing({ ...editing, leader: event.target.value })
-                }
+                onChange={(event) => setEditing({ ...editing, leader: event.target.value })}
               />
             </label>
             <div className="optimized-modal-actions">
-              <button
-                type="button"
-                disabled={savingContact}
-                onClick={() => setEditing(null)}
-              >
-                Cancelar
-              </button>
+              <button type="button" disabled={savingContact} onClick={() => setEditing(null)}>Cancelar</button>
               <button type="submit" className="primary" disabled={savingContact}>
                 {savingContact ? "Salvando…" : "Salvar"}
               </button>
