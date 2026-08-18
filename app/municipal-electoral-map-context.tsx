@@ -140,6 +140,8 @@ export default function MunicipalElectoralMapContext() {
     let municipalBounds: any = null;
     let municipalCenter: MunicipalityFallback | null = null;
     let observer: MutationObserver | null = null;
+    let authObserver: MutationObserver | null = null;
+    let contextRequested = false;
     let copyUpdateQueued = false;
     let legacyLayerGuard: ((event: any) => void) | null = null;
 
@@ -297,25 +299,46 @@ export default function MunicipalElectoralMapContext() {
       }
     };
 
-    apiFetch("/api/municipality-context", { cache: "no-store" })
-      .then(async (response) => ({ response, data: await response.json() }))
-      .then(({ response, data }) => {
-        if (cancelled || !response.ok) return;
-        const context = data.context as MunicipalityContext | undefined;
-        const current = context?.municipalities?.find(
-          (item) => Number(item.id) === Number(context.currentMunicipalityId),
-        );
-        if (!current) return;
-        municipality = current;
-        if (isArapongas(current)) return;
+    const loadContext = () => {
+      if (cancelled || contextRequested) return;
+      contextRequested = true;
+      authObserver?.disconnect();
+      authObserver = null;
 
-        updateMapCopy(current);
-        observer = new MutationObserver(() => scheduleCopyUpdate());
-        observer.observe(document.body, { childList: true, subtree: true });
-        const existing = (window as any).__vfBaseElectoralMap;
-        if (existing?._container) void decorateMap(existing);
-      })
-      .catch(() => undefined);
+      apiFetch("/api/municipality-context", { cache: "no-store" })
+        .then(async (response) => ({ response, data: await response.json() }))
+        .then(({ response, data }) => {
+          if (cancelled || !response.ok) return;
+          const context = data.context as MunicipalityContext | undefined;
+          const current = context?.municipalities?.find(
+            (item) => Number(item.id) === Number(context.currentMunicipalityId),
+          );
+          if (!current) return;
+          municipality = current;
+          if (isArapongas(current)) return;
+
+          updateMapCopy(current);
+          observer = new MutationObserver(() => scheduleCopyUpdate());
+          observer.observe(document.body, { childList: true, subtree: true });
+          const existing = (window as any).__vfBaseElectoralMap;
+          if (existing?._container) void decorateMap(existing);
+        })
+        .catch(() => undefined);
+    };
+
+    const waitForProtectedAccess = () => {
+      if (!document.querySelector(".auth-page")) {
+        loadContext();
+        return;
+      }
+
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadContext();
+      });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
+    waitForProtectedAccess();
 
     window.addEventListener("voto-forte:base-electoral-map-ready", onBaseMapReady);
     document.addEventListener("click", onHomeClick, true);
@@ -323,6 +346,7 @@ export default function MunicipalElectoralMapContext() {
     return () => {
       cancelled = true;
       observer?.disconnect();
+      authObserver?.disconnect();
       window.removeEventListener("voto-forte:base-electoral-map-ready", onBaseMapReady);
       document.removeEventListener("click", onHomeClick, true);
       if (activeMap && legacyLayerGuard) {
