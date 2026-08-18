@@ -17,6 +17,7 @@ export default function ContactNavigationInterceptor() {
   useEffect(() => {
     const prefetchTimer = window.setTimeout(() => {
       if (
+        document.querySelector(".auth-page") ||
         document.documentElement.getAttribute("data-vf-performance") === "light"
       )
         return;
