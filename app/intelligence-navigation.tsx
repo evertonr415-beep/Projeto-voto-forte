@@ -20,6 +20,14 @@ function isPathWithin(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
 
+function hasNavigationHost(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/sistema-completo" ||
+    pathname === "/contatos"
+  );
+}
+
 function ensureIntelligenceSlot(nav: HTMLElement) {
   const existing = nav.querySelector<HTMLElement>(SLOT_SELECTOR);
   if (existing) return existing;
@@ -42,6 +50,7 @@ export default function IntelligenceNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const suppressNavigation =
+    !hasNavigationHost(pathname) ||
     isPathWithin(pathname, LEGACY_TEAM_ROUTE) ||
     isPathWithin(pathname, SYSTEM_ROUTE);
 
