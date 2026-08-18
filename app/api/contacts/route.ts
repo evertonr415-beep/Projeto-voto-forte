@@ -217,22 +217,20 @@ export async function GET(request: Request) {
       ? Promise.resolve(null)
       : (async () => {
           const result = await account.supabase.rpc(
-            "vf_contact_dashboard_summary",
+            "vf_contact_scope_total",
             { p_owner_emails: scope === "all" ? emails : [scope] },
           );
           if (result.error) throw new Error(result.error.message);
-          return Number(
-            (result.data as { total?: number } | null)?.total ?? 0,
-          );
+          return Number(result.data ?? 0);
         })();
 
-    const [{ data, count, error }, cachedTotal] = await Promise.all([
+    const [{ data, count, error }, scopedTotal] = await Promise.all([
       pagePromise,
       totalPromise,
     ]);
 
     if (error) throw new Error(error.message);
-    const total = hasFilters ? count ?? 0 : cachedTotal ?? 0;
+    const total = hasFilters ? count ?? 0 : scopedTotal ?? 0;
 
     return Response.json(
       {
