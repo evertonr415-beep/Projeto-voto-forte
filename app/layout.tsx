@@ -15,6 +15,9 @@ import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import GestorAccessGate from "./gestor-access-gate";
 import RuntimeVersionGuard from "./runtime-version-guard";
+import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
+import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
+import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import "./globals.css";
 import "./adaptive-performance.css";
 import "./mobile-map-cleanup.css";
@@ -88,6 +91,9 @@ export default function RootLayout({
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />
         <IntelligenceNavigation />
+        <UserHierarchyRemountGuard />
+        <AuthReconciliationEnhancer />
+        <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />
         {children}
       </body>
