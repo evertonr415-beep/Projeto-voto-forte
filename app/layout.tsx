@@ -18,7 +18,6 @@ import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
-import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import GestorAccessGate from "./gestor-access-gate";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
@@ -98,7 +97,6 @@ export default function RootLayout({
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />
         <IntelligenceNavigation />
-        <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />
         {children}
       </body>
