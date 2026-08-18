@@ -26,6 +26,10 @@ type QualityIssueRow = Record<string, unknown> & {
   issue_codes?: unknown;
   severity?: unknown;
 };
+type QualitySummaryRow = {
+  filter_code?: unknown;
+  total?: unknown;
+};
 
 type QualityUpdateBody = {
   recordId?: number;
@@ -105,6 +109,33 @@ function isAuxiliaryCategory(value: string) {
   );
 }
 
+function normalizeIssues(data: unknown, category: string) {
+  const responseCategorySet = new Set<string>(
+    isAuxiliaryCategory(category)
+      ? FILTER_CATEGORIES
+      : ESSENTIAL_ISSUE_CATEGORIES,
+  );
+  return (Array.isArray(data) ? (data as QualityIssueRow[]) : []).map((issue) => {
+    const issueCodes = Array.isArray(issue.issue_codes)
+      ? issue.issue_codes.filter(
+          (code: unknown): code is FilterCategory =>
+            typeof code === "string" && responseCategorySet.has(code),
+        )
+      : [];
+    const hasEssentialIssue = issueCodes.some((code) =>
+      ESSENTIAL_ISSUE_CATEGORIES.includes(
+        code as (typeof ESSENTIAL_ISSUE_CATEGORIES)[number],
+      ),
+    );
+
+    return {
+      ...issue,
+      issue_codes: issueCodes,
+      severity: hasEssentialIssue ? issue.severity : "info",
+    };
+  });
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -153,6 +184,74 @@ export async function GET(request: Request) {
       );
 
     query = query.range(from, to);
+
+    if (scope === "all" && account.accessRole === "adm") {
+      const summaryPromise = account.supabase.rpc("vf_contact_quality_filter_summary");
+      const severityResultsPromise = Promise.all(
+        ISSUE_SEVERITIES.map(async (item) => {
+          let countQuery = account.supabase
+            .from("vf_contact_quality")
+            .select("record_id", { count: "exact", head: true })
+            .eq("severity", item)
+            .overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
+          countQuery = applyScope(countQuery, scope, emails);
+          const { count, error } = await countQuery;
+          if (error) throw new Error(error.message);
+          return [item, count ?? 0] as const;
+        }),
+      );
+      let requiredIncompleteQuery = account.supabase
+        .from("vf_contact_quality")
+        .select("record_id", { count: "exact", head: true })
+        .overlaps("issue_codes", [...REQUIRED_FIELD_ISSUES]);
+      requiredIncompleteQuery = applyScope(requiredIncompleteQuery, scope, emails);
+
+      const [
+        { data, count, error },
+        { data: summaryData, error: summaryError },
+        severityResults,
+        { count: requiredIncomplete, error: requiredIncompleteError },
+      ] = await Promise.all([
+        query,
+        summaryPromise,
+        severityResultsPromise,
+        requiredIncompleteQuery,
+      ]);
+      if (error) throw new Error(error.message);
+      if (summaryError) throw new Error(summaryError.message);
+      if (requiredIncompleteError) throw new Error(requiredIncompleteError.message);
+
+      const summaryCounts = Object.fromEntries(
+        ((summaryData ?? []) as QualitySummaryRow[]).map((row) => [
+          String(row.filter_code ?? ""),
+          Number(row.total ?? 0),
+        ]),
+      ) as Record<string, number>;
+      const categoryCounts = Object.fromEntries(
+        FILTER_CATEGORIES.map((item) => [item, Number(summaryCounts[item] ?? 0)]),
+      );
+      const severityCounts = Object.fromEntries(severityResults);
+      const total = count ?? 0;
+
+      return Response.json(
+        {
+          scope,
+          page,
+          pageSize: PAGE_SIZE,
+          total,
+          totalContacts: Number(summaryCounts.all ?? 0),
+          totalIssues:
+            Number(severityCounts.critical ?? 0) +
+            Number(severityCounts.warning ?? 0),
+          requiredIncomplete: requiredIncomplete ?? 0,
+          categoryCounts,
+          severityCounts,
+          totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+          issues: normalizeIssues(data, category),
+        },
+        { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      );
+    }
 
     const countResults = await Promise.all(
       FILTER_CATEGORIES.map(async (item) => {
@@ -204,30 +303,6 @@ export async function GET(request: Request) {
     const categoryCounts = Object.fromEntries(countResults);
     const severityCounts = Object.fromEntries(severityResults);
     const total = count ?? 0;
-    const responseCategorySet = new Set<string>(
-      isAuxiliaryCategory(category)
-        ? FILTER_CATEGORIES
-        : ESSENTIAL_ISSUE_CATEGORIES,
-    );
-    const issues = ((data ?? []) as QualityIssueRow[]).map((issue) => {
-      const issueCodes = Array.isArray(issue.issue_codes)
-        ? issue.issue_codes.filter(
-            (code: unknown): code is FilterCategory =>
-              typeof code === "string" && responseCategorySet.has(code),
-          )
-        : [];
-      const hasEssentialIssue = issueCodes.some((code) =>
-        ESSENTIAL_ISSUE_CATEGORIES.includes(
-          code as (typeof ESSENTIAL_ISSUE_CATEGORIES)[number],
-        ),
-      );
-
-      return {
-        ...issue,
-        issue_codes: issueCodes,
-        severity: hasEssentialIssue ? issue.severity : "info",
-      };
-    });
 
     return Response.json(
       {
@@ -243,7 +318,7 @@ export async function GET(request: Request) {
         categoryCounts,
         severityCounts,
         totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-        issues,
+        issues: normalizeIssues(data, category),
       },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
