@@ -74,22 +74,41 @@ export default function ContactWhatsappQuickQueue() {
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([
-      apiFetch("/api/session", { cache: "no-store" }).then((response) => response.json()),
-      apiFetch("/api/municipality-context", { cache: "no-store" }).then((response) =>
-        response.json(),
-      ),
-    ])
-      .then(([sessionData, municipalityData]: [SessionResponse, MunicipalityResponse]) => {
-        if (cancelled) return;
-        const email = String(sessionData.user?.email || "").trim().toLowerCase();
-        const role = String(sessionData.user?.role || "").trim().toLowerCase();
-        if (email) setScope(ADMIN_ROLES.has(role) ? "all" : email);
-        setMunicipalityId(Number(municipalityData.context?.currentMunicipalityId || 0));
-      })
-      .catch(() => {
-        if (!cancelled) setFeedback("Não foi possível preparar a fila agora.");
+    let requested = false;
+    let authObserver: MutationObserver | null = null;
+
+    const loadContext = () => {
+      if (cancelled || requested) return;
+      requested = true;
+      authObserver?.disconnect();
+      authObserver = null;
+
+      void Promise.all([
+        apiFetch("/api/session", { cache: "no-store" }).then((response) => response.json()),
+        apiFetch("/api/municipality-context", { cache: "no-store" }).then((response) =>
+          response.json(),
+        ),
+      ])
+        .then(([sessionData, municipalityData]: [SessionResponse, MunicipalityResponse]) => {
+          if (cancelled) return;
+          const email = String(sessionData.user?.email || "").trim().toLowerCase();
+          const role = String(sessionData.user?.role || "").trim().toLowerCase();
+          if (email) setScope(ADMIN_ROLES.has(role) ? "all" : email);
+          setMunicipalityId(Number(municipalityData.context?.currentMunicipalityId || 0));
+        })
+        .catch(() => {
+          if (!cancelled) setFeedback("Não foi possível preparar a fila agora.");
+        });
+    };
+
+    if (!document.querySelector(".auth-page")) {
+      loadContext();
+    } else {
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadContext();
       });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
     const handleScope = (event: Event) => {
       const select = event.target as HTMLSelectElement | null;
@@ -114,6 +133,7 @@ export default function ContactWhatsappQuickQueue() {
     window.addEventListener("voto-forte:filter-district-contacts", handleDistrict);
     return () => {
       cancelled = true;
+      authObserver?.disconnect();
       document.removeEventListener("change", handleScope, true);
       window.removeEventListener("voto-forte:filter-district-contacts", handleDistrict);
     };
