@@ -19,7 +19,7 @@ import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
-import GestorAccessUi from "./gestor-access-ui";
+import GestorAccessGate from "./gestor-access-gate";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
 import "./adaptive-performance.css";
@@ -90,7 +90,7 @@ export default function RootLayout({
         <MapInstantContactBootstrap />
         <MapToolsGate />
         <UserHierarchyRemountGuard />
-        <GestorAccessUi />
+        <GestorAccessGate />
         <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
         <AccountSessionSecurity />
