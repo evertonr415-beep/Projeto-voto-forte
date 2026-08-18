@@ -8,7 +8,6 @@ import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
-import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import AccountSessionSecurity from "./account-session-security";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
@@ -83,7 +82,6 @@ export default function RootLayout({
         <CepFallbackEnhancer />
         <MapInstantContactBootstrap />
         <MapToolsGate />
-        <UserHierarchyRemountGuard />
         <GestorAccessGate />
         <AccountSettingsEnhancer />
         <AccountSessionSecurity />
