@@ -69,19 +69,38 @@ export default function IntelligenceNavigation() {
     }
 
     let active = true;
+    let requested = false;
+    let authObserver: MutationObserver | null = null;
 
-    void apiFetch("/api/session")
-      .then(async (response) => ({ response, data: await response.json() }))
-      .then(({ response, data }) => {
-        if (!active || !response.ok) return;
-        const user = data.user as CurrentUser | undefined;
-        setRole(String(user?.role ?? ""));
-        setAccessRole(String(user?.accessRole ?? ""));
-      })
-      .catch(() => undefined);
+    const loadSession = () => {
+      if (!active || requested) return;
+      requested = true;
+      authObserver?.disconnect();
+      authObserver = null;
+
+      void apiFetch("/api/session")
+        .then(async (response) => ({ response, data: await response.json() }))
+        .then(({ response, data }) => {
+          if (!active || !response.ok) return;
+          const user = data.user as CurrentUser | undefined;
+          setRole(String(user?.role ?? ""));
+          setAccessRole(String(user?.accessRole ?? ""));
+        })
+        .catch(() => undefined);
+    };
+
+    if (!document.querySelector(".auth-page")) {
+      loadSession();
+    } else {
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadSession();
+      });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
     return () => {
       active = false;
+      authObserver?.disconnect();
     };
   }, [suppressNavigation]);
 
