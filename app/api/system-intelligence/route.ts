@@ -178,7 +178,12 @@ export async function GET() {
         signals,
         ...analyzeSystemSignals(signals),
       },
-      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60",
+          Vary: "Authorization",
+        },
+      },
     );
   } catch (error) {
     console.error("Failed to analyze system intelligence", error);
