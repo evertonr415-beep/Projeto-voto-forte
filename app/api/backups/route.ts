@@ -1,6 +1,7 @@
 import { getAccount } from "../../server-identity";
 
 const MAX_BACKUP_BYTES = 12 * 1024 * 1024;
+const SUPPORTED_BACKUP_VERSIONS = new Set([1, 2]);
 
 function canManageBackups(accessRole: string) {
   return accessRole === "adm";
@@ -77,7 +78,12 @@ export async function POST(request: Request) {
 
   if (body.action === "restore") {
     const backup = body.backup as Record<string, unknown> | null;
-    if (!backup || backup.format !== "voto-forte-backup" || backup.version !== 1)
+    const version = Number(backup?.version);
+    if (
+      !backup ||
+      backup.format !== "voto-forte-backup" ||
+      !SUPPORTED_BACKUP_VERSIONS.has(version)
+    )
       return Response.json(
         { error: "Arquivo de backup inválido ou incompatível" },
         { status: 400 },
