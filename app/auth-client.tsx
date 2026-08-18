@@ -129,8 +129,9 @@ export default function AuthClient({
     let cancelled = false;
     const controller = new AbortController();
     let timedOut = false;
+    let timeoutId: number | null = null;
     const timeoutPromise = new Promise<Response>((_, reject) => {
-      window.setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         timedOut = true;
         controller.abort();
         reject(new Error("SESSION_VALIDATION_TIMEOUT"));
@@ -177,10 +178,18 @@ export default function AuthClient({
         );
       })
       .finally(() => {
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         if (!cancelled) setBusy(false);
       });
     return () => {
       cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       controller.abort();
     };
   }, [session, validationAttempt]);
