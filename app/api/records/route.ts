@@ -98,6 +98,7 @@ export async function GET(request: Request) {
   const requested = url.searchParams.get("owner")?.trim().toLowerCase();
   const requestedKind = url.searchParams.get("kind")?.trim().toLowerCase();
   const requestedMode = url.searchParams.get("mode")?.trim().toLowerCase();
+  const includeDrafts = url.searchParams.get("includeDrafts") !== "0";
   const kind = allowedKinds.includes(requestedKind as AllowedKind)
     ? (requestedKind as AllowedKind)
     : null;
@@ -117,24 +118,66 @@ export async function GET(request: Request) {
       { status: 403 },
     );
 
+  const makeScopedQuery = (recordKind: AllowedKind, limit: number) => {
+    let query = account.supabase
+      .from("vf_owned_records")
+      .select("id,owner_email,kind,payload,created_at,updated_at")
+      .eq("kind", recordKind)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+
+    if (scope === "all") query = query.in("owner_email", emails);
+    else query = query.eq("owner_email", scope);
+    return query;
+  };
+
+  // Leituras de uma aba específica podem usar o mesmo limite seguro do
+  // dashboard sem cair no caminho histórico de até 20 mil registros.
+  if (kind && requestedMode === "dashboard") {
+    const limit =
+      kind === "contact"
+        ? DASHBOARD_MAPPED_CONTACT_LIMIT
+        : kind === "meeting"
+          ? DASHBOARD_MEETING_LIMIT
+          : DASHBOARD_DRAFT_LIMIT;
+
+    let query = makeScopedQuery(kind, limit);
+    if (kind === "contact") {
+      query = query
+        .not("payload->>latitude", "is", null)
+        .not("payload->>longitude", "is", null)
+        .neq("payload->>latitude", "")
+        .neq("payload->>longitude", "");
+    }
+
+    const { data, error } = await query;
+    if (error)
+      return Response.json({ error: error.message }, { status: 400 });
+
+    const records = (data ?? []) as OwnedRecord[];
+    return Response.json(
+      {
+        scope,
+        kind,
+        mode: "dashboard",
+        visibleOwners: emails,
+        records: records.map(mapRecord),
+        total: records.length,
+        truncated: records.length >= limit,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+        },
+      },
+    );
+  }
+
   // O modo leve é o padrão para leituras consolidadas do Sistema Completo.
   // A leitura histórica de até 20 mil registros só fica disponível quando
   // solicitada explicitamente com mode=full, preservando compatibilidade sem
   // expor a interface principal a cargas massivas ou visões parciais da base.
   if (!kind && requestedMode !== "full") {
-    const makeScopedQuery = (recordKind: AllowedKind, limit: number) => {
-      let query = account.supabase
-        .from("vf_owned_records")
-        .select("id,owner_email,kind,payload,created_at,updated_at")
-        .eq("kind", recordKind)
-        .order("updated_at", { ascending: false })
-        .limit(limit);
-
-      if (scope === "all") query = query.in("owner_email", emails);
-      else query = query.eq("owner_email", scope);
-      return query;
-    };
-
     const mappedContactsQuery = makeScopedQuery(
       "contact",
       DASHBOARD_MAPPED_CONTACT_LIMIT,
@@ -144,11 +187,15 @@ export async function GET(request: Request) {
       .neq("payload->>latitude", "")
       .neq("payload->>longitude", "");
 
+    const draftsPromise = includeDrafts
+      ? makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT)
+      : Promise.resolve({ data: [] as OwnedRecord[], error: null });
+
     const [mappedContactsResult, meetingsResult, draftsResult] =
       await Promise.all([
         mappedContactsQuery,
         makeScopedQuery("meeting", DASHBOARD_MEETING_LIMIT),
-        makeScopedQuery("draft", DASHBOARD_DRAFT_LIMIT),
+        draftsPromise,
       ]);
 
     const error =
