@@ -4,14 +4,12 @@
 .optimized-quick-actions > * { min-width: 0; }
 .optimized-panel.contacts-panel { scroll-margin-top: 12px; }
 
-/* A Central de Qualidade deve parecer uma ação principal, não um atalho residual. */
 .optimized-quick-actions a[href="/pendencias-localizacao"] {
   border-color: #c9d8e8;
   background: #f7fafc;
   color: #173f70;
 }
 
-/* Contraste dos controles municipais quando inseridos no topo do painel. */
 .optimized-hero-controls .vf-municipality-header-menu > summary,
 .optimized-hero-controls .vf-municipality-header-badge {
   border-color: #b9c9da;
@@ -23,7 +21,38 @@
   outline-offset: 2px;
 }
 
-/* WhatsApp fica visualmente próximo do contexto selecionado. */
+.optimized-contact-load-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.optimized-contact-load-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #c9d5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #173f70;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.optimized-contact-load-actions button.primary {
+  border-color: #123f72;
+  background: #123f72;
+  color: #fff;
+}
+.optimized-contact-idle {
+  margin-top: 12px;
+  padding: 18px;
+  border: 1px dashed #bdccdb;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #52687e;
+}
+.optimized-contact-idle b { color: #173f70; }
+.optimized-contact-idle p { margin: 5px 0 0; line-height: 1.5; }
+
 .vf-whatsapp-queue {
   scroll-margin-top: 12px;
   border-color: rgba(18, 63, 114, .14);
@@ -41,10 +70,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .optimized-quick-actions > * {
-    min-height: 64px;
-    padding: 10px;
-  }
+  .optimized-quick-actions > * { min-height: 64px; padding: 10px; }
   .optimized-quick-actions small { display: none; }
 
   .optimized-kpis {
@@ -54,30 +80,22 @@
   .optimized-kpis article { min-width: 0; padding: 12px; }
   .optimized-kpis article b { font-size: 1.35rem; }
 
-  .contact-mobile-switch {
-    position: sticky;
-    top: 6px;
-    z-index: 20;
-    margin-bottom: 8px;
-    background: rgba(255,255,255,.96);
-    backdrop-filter: blur(10px);
-  }
-
   .district-panel { max-height: none; }
   .district-row-button { min-height: 48px; }
   .district-name > span:first-child { color: #173f70; font-weight: 750; }
 
   .optimized-panel.contacts-panel { padding: 12px; }
+  .optimized-panel-head { align-items: flex-start; gap: 10px; }
+  .optimized-contact-load-actions,
+  .optimized-contact-load-actions button { width: 100%; }
   .optimized-filters.is-open {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  .optimized-contact-idle { padding: 14px; }
   .optimized-table-wrap table { min-width: 0; }
-  .optimized-pagination {
-    align-items: stretch;
-    gap: 8px;
-  }
+  .optimized-pagination { align-items: stretch; gap: 8px; }
   .optimized-pagination > div { display: grid; grid-template-columns: 1fr; gap: 6px; }
   .optimized-pagination button { min-height: 44px; }
 
