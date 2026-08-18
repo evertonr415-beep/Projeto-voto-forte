@@ -138,7 +138,6 @@ export async function GET(request: Request) {
     const queryText = safeSearch(url.searchParams.get("q") ?? "");
     const profile = url.searchParams.get("profile");
     const district = (url.searchParams.get("district") ?? "").trim();
-    const skipTotal = url.searchParams.get("skipTotal") === "1";
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
@@ -181,7 +180,6 @@ export async function GET(request: Request) {
     const hasFilters = Boolean(
       queryText || profile === "Eleitor" || profile === "Liderança",
     );
-    const omitTotal = skipTotal && !hasFilters;
 
     let query = account.supabase
       .from("vf_owned_records")
@@ -215,26 +213,24 @@ export async function GET(request: Request) {
     }
 
     const pagePromise = query;
-    const totalPromise: Promise<number | null> = hasFilters || omitTotal
+    const totalPromise: Promise<number | null> = hasFilters
       ? Promise.resolve(null)
       : (async () => {
           const result = await account.supabase.rpc(
-            "vf_contact_dashboard_summary",
+            "vf_contact_scope_total",
             { p_owner_emails: scope === "all" ? emails : [scope] },
           );
           if (result.error) throw new Error(result.error.message);
-          return Number(
-            (result.data as { total?: number } | null)?.total ?? 0,
-          );
+          return Number(result.data ?? 0);
         })();
 
-    const [{ data, count, error }, cachedTotal] = await Promise.all([
+    const [{ data, count, error }, scopedTotal] = await Promise.all([
       pagePromise,
       totalPromise,
     ]);
 
     if (error) throw new Error(error.message);
-    const total = hasFilters ? count ?? 0 : omitTotal ? null : cachedTotal ?? 0;
+    const total = hasFilters ? count ?? 0 : scopedTotal ?? 0;
 
     return Response.json(
       {
@@ -242,7 +238,7 @@ export async function GET(request: Request) {
         page,
         pageSize,
         total,
-        totalPages: total == null ? null : Math.max(1, Math.ceil(total / pageSize)),
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
         contacts: ((data ?? []) as ContactRow[]).map(mapContact),
       },
       {
