@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Guarded one-shot patch used only to validate the hierarchy observer refactor.
 path = Path('app/user-hierarchy-panel.tsx')
 text = path.read_text()
 old = '''  useEffect(() => {\n    let observer: MutationObserver | null = null;\n    let loaded = false;\n\n    const detect = () => {\n      const node = document.querySelector<HTMLElement>(\".users-admin-grid\");\n      if (!node) return false;\n      node.dataset.vfHierarchyReplaced = \"true\";\n      setTarget(node);\n      observer?.disconnect();\n      if (!loaded) {\n        loaded = true;\n        void load();\n      }\n      return true;\n    };\n\n    if (!detect()) {\n      observer = new MutationObserver(detect);\n      observer.observe(document.body, { childList: true, subtree: true });\n    }\n    return () => observer?.disconnect();\n  }, [load]);\n'''
