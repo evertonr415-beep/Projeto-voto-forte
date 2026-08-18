@@ -1,10 +1,13 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 export default function ImportCompletionEnhancer() {
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (window.location.pathname !== "/importar-contatos") return;
+    if (pathname !== "/importar-contatos") return;
 
     const sync = () => {
       const progressLabel = document.querySelector(".progress-block b");
@@ -27,7 +30,7 @@ export default function ImportCompletionEnhancer() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   return null;
 }
