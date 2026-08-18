@@ -9,7 +9,6 @@ import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
-import AccountSessionSecurity from "./account-session-security";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
@@ -84,7 +83,6 @@ export default function RootLayout({
         <MapToolsGate />
         <GestorAccessGate />
         <AccountSettingsEnhancer />
-        <AccountSessionSecurity />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />

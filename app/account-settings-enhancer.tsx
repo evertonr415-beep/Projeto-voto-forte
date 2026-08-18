@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import AccountSessionSecurity from "./account-session-security";
 import { supabase } from "./supabase-client";
 
 type Preferences = {
@@ -385,6 +386,7 @@ export default function AccountSettingsEnhancer() {
           </button>
         </footer>
       </section>
+      <AccountSessionSecurity />
     </div>
   );
 }
