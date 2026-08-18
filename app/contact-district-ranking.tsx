@@ -46,22 +46,40 @@ export default function ContactDistrictRanking() {
 
   useEffect(() => {
     let cancelled = false;
+    let requested = false;
+    let authObserver: MutationObserver | null = null;
 
-    void apiFetch("/api/session", { cache: "no-store" })
-      .then(async (response) => ({
-        response,
-        data: (await response.json()) as SessionResponse,
-      }))
-      .then(({ response, data }) => {
-        if (cancelled || !response.ok) return;
-        const email = String(data.user?.email || "").trim().toLowerCase();
-        const role = String(data.user?.role || "").trim().toLowerCase();
-        if (!email) return;
-        setScope(ADMIN_ROLES.has(role) ? "all" : email);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Não foi possível identificar o escopo dos bairros.");
+    const loadScope = () => {
+      if (cancelled || requested) return;
+      requested = true;
+      authObserver?.disconnect();
+      authObserver = null;
+
+      void apiFetch("/api/session", { cache: "no-store" })
+        .then(async (response) => ({
+          response,
+          data: (await response.json()) as SessionResponse,
+        }))
+        .then(({ response, data }) => {
+          if (cancelled || !response.ok) return;
+          const email = String(data.user?.email || "").trim().toLowerCase();
+          const role = String(data.user?.role || "").trim().toLowerCase();
+          if (!email) return;
+          setScope(ADMIN_ROLES.has(role) ? "all" : email);
+        })
+        .catch(() => {
+          if (!cancelled) setError("Não foi possível identificar o escopo dos bairros.");
+        });
+    };
+
+    if (!document.querySelector(".auth-page")) {
+      loadScope();
+    } else {
+      authObserver = new MutationObserver(() => {
+        if (!document.querySelector(".auth-page")) loadScope();
       });
+      authObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
     const handleScopeChange = (event: Event) => {
       const control = event.target as HTMLSelectElement | null;
@@ -73,6 +91,7 @@ export default function ContactDistrictRanking() {
     document.addEventListener("change", handleScopeChange, true);
     return () => {
       cancelled = true;
+      authObserver?.disconnect();
       document.removeEventListener("change", handleScopeChange, true);
     };
   }, []);
