@@ -51,6 +51,7 @@ const NeutralDashboardClient = dynamic(() => import("./neutral-dashboard-client"
 
 const OFFICIAL_SITE_URL = "https://www.sistemavotoforte.com.br";
 const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
+const SESSION_VALIDATION_TIMEOUT_MS = 15_000;
 
 export default function AuthClient({
   dashboardMode = "full",
@@ -69,6 +70,7 @@ export default function AuthClient({
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(true);
+  const [validationAttempt, setValidationAttempt] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -88,10 +90,21 @@ export default function AuthClient({
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (!data.session) setBusy(false);
-    });
+    let cancelled = false;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSession(data.session);
+        if (!data.session) setBusy(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBusy(false);
+        setMessage(
+          "Não foi possível verificar sua sessão agora. Confira sua conexão e tente entrar novamente.",
+        );
+      });
     const { data } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       if (!next) {
@@ -101,17 +114,35 @@ export default function AuthClient({
       } else {
         setAccount(null);
         setAccessStatus(null);
+        setBusy(true);
       }
       if (event === "PASSWORD_RECOVERY") setMode("recovery");
     });
-    return () => data.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeoutPromise = new Promise<Response>((_, reject) => {
+      window.setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+        reject(new Error("SESSION_VALIDATION_TIMEOUT"));
+      }, SESSION_VALIDATION_TIMEOUT_MS);
+    });
+
     setBusy(true);
-    apiFetch("/api/session")
+    setMessage("");
+    Promise.race([
+      apiFetch("/api/session", { signal: controller.signal }),
+      timeoutPromise,
+    ])
       .then(async (response) => ({
         response,
         data: (await response.json()) as SessionResponse,
@@ -138,15 +169,21 @@ export default function AuthClient({
         setMessage(data.access?.message || "Não foi possível liberar este acesso.");
       })
       .catch(() => {
-        if (!cancelled) setMessage("Não foi possível validar seu acesso agora.");
+        if (cancelled) return;
+        setMessage(
+          timedOut
+            ? "A validação demorou mais que o esperado. Confira sua conexão e tente novamente."
+            : "Não foi possível validar seu acesso agora.",
+        );
       })
       .finally(() => {
         if (!cancelled) setBusy(false);
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [session]);
+  }, [session, validationAttempt]);
 
   async function activateInvitation() {
     setBusy(true);
@@ -246,6 +283,42 @@ export default function AuthClient({
       <NeutralDashboardClient currentUser={account} />
     ) : (
       <DashboardClient currentUser={account} />
+    );
+  }
+
+  if (session && !accessStatus) {
+    return (
+      <main className="auth-page">
+        <section className="auth-panel">
+          <div className="auth-card">
+            <small>VALIDAÇÃO DO ACESSO</small>
+            <h2>Não foi possível concluir a validação</h2>
+            <p>
+              Sua sessão continua protegida. Nenhum acesso ao sistema é liberado
+              enquanto a validação não terminar com sucesso.
+            </p>
+            {message && (
+              <div className="auth-message" role="status">
+                {message}
+              </div>
+            )}
+            <button
+              type="button"
+              className="auth-submit"
+              onClick={() => setValidationAttempt((value) => value + 1)}
+            >
+              Tentar novamente
+            </button>
+            <button
+              type="button"
+              className="auth-link"
+              onClick={() => void supabase.auth.signOut()}
+            >
+              Sair desta conta
+            </button>
+          </div>
+        </section>
+      </main>
     );
   }
 
