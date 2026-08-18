@@ -24,7 +24,7 @@ export default function MapToolsGate() {
 
   return (
     <>
-      <MapContactLayer />
+      {protectedAccessReady && <MapContactLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       <MobileMapControls />
       {protectedAccessReady && <TerritorialPendingCenter />}
