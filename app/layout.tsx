@@ -19,8 +19,6 @@ import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
-import OverviewLoadingEnhancer from "./overview-loading-enhancer";
-import ExactLegacyMetrics from "./exact-legacy-metrics";
 import GestorAccessUi from "./gestor-access-ui";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import "./globals.css";
@@ -102,8 +100,6 @@ export default function RootLayout({
         <ContactExportEnhancer />
         <IntelligenceNavigation />
         <TeamPerformanceAdminEnhancer />
-        <OverviewLoadingEnhancer />
-        <ExactLegacyMetrics />
         <RuntimeVersionGuard />
         {children}
       </body>
