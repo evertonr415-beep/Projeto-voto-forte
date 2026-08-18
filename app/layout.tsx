@@ -4,7 +4,6 @@ import AdaptivePerformance from "./adaptive-performance";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
-import MunicipalityAdministrationEnhancer from "./municipality-administration-enhancer";
 import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
 import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
@@ -81,7 +80,6 @@ export default function RootLayout({
         <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
         <MunicipalityContextEnhancer />
-        <MunicipalityAdministrationEnhancer />
         <MunicipalityManagementEnhancer />
         <MunicipalityFieldEnhancer />
         <MunicipalElectoralMapContext />
