@@ -13,7 +13,6 @@ import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import AccountSessionSecurity from "./account-session-security";
-import ReportsSimplifier from "./reports-simplifier";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
@@ -94,7 +93,6 @@ export default function RootLayout({
         <AuthReconciliationEnhancer />
         <AccountSettingsEnhancer />
         <AccountSessionSecurity />
-        <ReportsSimplifier />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />
