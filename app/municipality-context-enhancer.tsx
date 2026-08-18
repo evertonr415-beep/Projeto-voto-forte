@@ -155,6 +155,18 @@ export default function MunicipalityContextEnhancer() {
 
   if (!context || !current) return null;
 
+  const contextLabel = context.isGeneralAdm
+    ? "CENTRAL VOTO FORTE"
+    : context.isGestor
+      ? "GESTÃO MULTIMUNICIPAL"
+      : "MUNICÍPIO";
+  const canSwitchMunicipality =
+    Boolean(context.canSwitchMunicipality) && context.municipalities.length > 1;
+  const hasMobileActions =
+    canSwitchMunicipality ||
+    (context.isGeneralAdm && overview.length > 0) ||
+    Boolean(message);
+
   if (headerHost) {
     const canChooseMunicipality =
       Boolean(context.canSwitchMunicipality) && desktopItems.length > 1;
@@ -226,18 +238,89 @@ export default function MunicipalityContextEnhancer() {
 
   return (
     <aside className="vf-municipality-context" aria-label="Contexto municipal">
+      {hasMobileActions ? (
+        <details className="vf-municipality-mobile-menu">
+          <summary
+            aria-label={`Município atual: ${current.name} - ${current.state}`}
+          >
+            <span>
+              <small>{contextLabel}</small>
+              <strong>{current.name} - {current.state}</strong>
+            </span>
+            <i aria-hidden="true">⌄</i>
+          </summary>
+          <div className="vf-municipality-mobile-panel">
+            {canSwitchMunicipality && (
+              <label>
+                <span>Trocar município</span>
+                <select
+                  aria-label="Trocar município"
+                  disabled={busy}
+                  value={context.currentMunicipalityId}
+                  onChange={(event) => void switchMunicipality(event.target.value)}
+                >
+                  {context.municipalities.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} - {item.state}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {context.isGeneralAdm && overview.length > 0 && (
+              <div className="vf-municipality-mobile-overview">
+                <small>VISÃO ESTADUAL · {overview.length} MUNICÍPIO(S)</small>
+                {overview.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    disabled={
+                      busy ||
+                      Number(item.id) === Number(context.currentMunicipalityId)
+                    }
+                    className={
+                      Number(item.id) === Number(context.currentMunicipalityId)
+                        ? "active"
+                        : ""
+                    }
+                    onClick={() => void switchMunicipality(String(item.id))}
+                  >
+                    <span>
+                      <b>{item.name}</b>
+                      <small>{item.state}</small>
+                    </span>
+                    <span>
+                      <b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b>
+                      <small>contatos</small>
+                    </span>
+                    <span>
+                      <b>{Number(item.users || 0).toLocaleString("pt-BR")}</b>
+                      <small>usuários</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {message && (
+              <small className="vf-municipality-mobile-message">{message}</small>
+            )}
+          </div>
+        </details>
+      ) : (
+        <div className="vf-municipality-mobile-badge" aria-label="Município atual">
+          <span>
+            <small>{contextLabel}</small>
+            <strong>{current.name} - {current.state}</strong>
+          </span>
+        </div>
+      )}
+
       <div className="vf-municipality-current">
-        <small>
-          {context.isGeneralAdm
-            ? "CENTRAL VOTO FORTE"
-            : context.isGestor
-              ? "GESTÃO MULTIMUNICIPAL"
-              : "MUNICÍPIO"}
-        </small>
+        <small>{contextLabel}</small>
         <strong>
           {current.name} - {current.state}
         </strong>
-        {context.canSwitchMunicipality && context.municipalities.length > 1 && (
+        {canSwitchMunicipality && (
           <select
             aria-label="Trocar município"
             disabled={busy}
