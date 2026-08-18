@@ -30,7 +30,7 @@ jobs:
           npm ci
           npx eslint app/api/records/route.ts --quiet
           npx eslint app/dashboard-client.tsx --quiet --rule 'react-hooks/set-state-in-effect: 0' --rule '@typescript-eslint/no-explicit-any: 0'
-          chmod +x scripts/sites-env.sh scripts/build-verified.sh
+          chmod +x scripts/sites-env.sh scripts/build-verified.sh scripts/validate-artifact.sh
           npm run build
       - name: Commit patched client
         run: |
