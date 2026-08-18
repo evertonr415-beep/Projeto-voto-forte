@@ -21,11 +21,7 @@ function isPathWithin(pathname: string, route: string) {
 }
 
 function hasNavigationHost(pathname: string) {
-  return (
-    pathname === "/" ||
-    pathname === "/sistema-completo" ||
-    pathname === "/contatos"
-  );
+  return pathname === "/" || pathname === "/sistema-completo";
 }
 
 function ensureIntelligenceSlot(nav: HTMLElement) {
