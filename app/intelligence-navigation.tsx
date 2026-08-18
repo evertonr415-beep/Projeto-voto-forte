@@ -12,9 +12,8 @@ type CurrentUser = {
 
 type NavigationMode = "optimized" | "legacy";
 
-const TEAM_ROUTE = "/inteligencia-equipe";
+const LEGACY_TEAM_ROUTE = "/inteligencia-equipe";
 const SYSTEM_ROUTE = "/inteligencia-sistema";
-const TEAM_ROLES = new Set(["master", "gestor", "lider"]);
 const SLOT_SELECTOR = '[data-vf-intelligence-section="main"]';
 
 function isPathWithin(pathname: string, route: string) {
@@ -43,7 +42,7 @@ export default function IntelligenceNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const suppressNavigation =
-    isPathWithin(pathname, TEAM_ROUTE) ||
+    isPathWithin(pathname, LEGACY_TEAM_ROUTE) ||
     isPathWithin(pathname, SYSTEM_ROUTE);
 
   const [role, setRole] = useState("");
@@ -51,7 +50,6 @@ export default function IntelligenceNavigation() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [mode, setMode] = useState<NavigationMode | null>(null);
 
-  const canOpenTeam = TEAM_ROLES.has(role) || accessRole === "adm";
   const canOpenSystem = role === "master" && accessRole !== "gestor";
 
   useEffect(() => {
@@ -79,14 +77,11 @@ export default function IntelligenceNavigation() {
   }, [suppressNavigation]);
 
   useEffect(() => {
-    if (suppressNavigation || (!canOpenTeam && !canOpenSystem)) {
+    if (suppressNavigation || !canOpenSystem) {
       setTarget(null);
       setMode(null);
       return;
     }
-
-    if (canOpenTeam) router.prefetch(TEAM_ROUTE);
-    if (canOpenSystem) router.prefetch(SYSTEM_ROUTE);
 
     let observer: MutationObserver | null = null;
     let ownedSlot: HTMLElement | null = null;
@@ -122,38 +117,19 @@ export default function IntelligenceNavigation() {
       setMode(null);
       if (ownedSlot?.isConnected) ownedSlot.remove();
     };
-  }, [canOpenSystem, canOpenTeam, router, suppressNavigation]);
+  }, [canOpenSystem, suppressNavigation]);
 
-  if (
-    suppressNavigation ||
-    !target ||
-    !mode ||
-    (!canOpenTeam && !canOpenSystem)
-  )
-    return null;
+  if (suppressNavigation || !target || !mode || !canOpenSystem) return null;
 
   if (mode === "optimized") {
     return createPortal(
-      <>
-        {canOpenTeam ? (
-          <a href={TEAM_ROUTE}>
-            <span className="optimized-action-icon" aria-hidden="true">◈</span>
-            <span>
-              <b>Inteligência da Equipe</b>
-              <small>Gestão, sinais e oportunidades</small>
-            </span>
-          </a>
-        ) : null}
-        {canOpenSystem ? (
-          <a href={SYSTEM_ROUTE}>
-            <span className="optimized-action-icon" aria-hidden="true">✦</span>
-            <span>
-              <b>VOTO FORTE Neural</b>
-              <small>Saúde, riscos e otimizações</small>
-            </span>
-          </a>
-        ) : null}
-      </>,
+      <a href={SYSTEM_ROUTE}>
+        <span className="optimized-action-icon" aria-hidden="true">✦</span>
+        <span>
+          <b>VOTO FORTE Neural</b>
+          <small>Saúde, riscos e otimizações</small>
+        </span>
+      </a>,
       target,
     );
   }
@@ -161,30 +137,16 @@ export default function IntelligenceNavigation() {
   return createPortal(
     <div role="group" aria-label="Inteligência">
       <div className="menu-label vf-intelligence-nav-label">INTELIGÊNCIA</div>
-      {canOpenTeam ? (
-        <button
-          type="button"
-          onClick={() => router.push(TEAM_ROUTE)}
-          title="Inteligência da Equipe"
-          aria-label="Abrir Inteligência da Equipe"
-        >
-          <span className="nav-icon" aria-hidden="true">◈</span>
-          <span className="nav-name">Inteligência da Equipe</span>
-          <em>GESTÃO</em>
-        </button>
-      ) : null}
-      {canOpenSystem ? (
-        <button
-          type="button"
-          onClick={() => router.push(SYSTEM_ROUTE)}
-          title="VOTO FORTE Neural"
-          aria-label="Abrir VOTO FORTE Neural"
-        >
-          <span className="nav-icon" aria-hidden="true">✦</span>
-          <span className="nav-name">VOTO FORTE Neural</span>
-          <em>MASTER</em>
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={() => router.push(SYSTEM_ROUTE)}
+        title="VOTO FORTE Neural"
+        aria-label="Abrir VOTO FORTE Neural"
+      >
+        <span className="nav-icon" aria-hidden="true">✦</span>
+        <span className="nav-name">VOTO FORTE Neural</span>
+        <em>MASTER</em>
+      </button>
     </div>,
     target,
   );
