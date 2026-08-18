@@ -15,12 +15,11 @@ type DistrictGeocodeItem = {
   longitude?: number | string | null;
 };
 
-type DistrictBubbleItem = {
+type CachedDistrictMarkerItem = {
   district?: string;
   total?: number | string;
   latitude?: number | string | null;
   longitude?: number | string | null;
-  resolved?: boolean | null;
 };
 
 type ScopeStatsItem = {
@@ -121,17 +120,19 @@ export async function GET(request: Request) {
   });
 
   if (arapongas) {
-    const bubblesPromise = account.supabase.rpc("vf_map_district_bubbles", {
+    // Arapongas keeps a trigger-maintained district summary. Reading this
+    // compact table avoids re-normalizing the entire contact base on every map
+    // opening while preserving the existing RLS owner scope.
+    const markersPromise = account.supabase.rpc("vf_map_cached_district_markers", {
       p_owner_emails: scopeEmails,
-      p_profile: null,
     });
-    const [bubblesResult, statsResult] = await Promise.all([
-      bubblesPromise,
+    const [markersResult, statsResult] = await Promise.all([
+      markersPromise,
       statsPromise,
     ]);
 
-    if (bubblesResult.error) {
-      console.error("Failed to load scoped district bubbles", bubblesResult.error);
+    if (markersResult.error) {
+      console.error("Failed to load cached district markers", markersResult.error);
       return Response.json(
         { error: "Não foi possível carregar os totais dos bairros agora." },
         { status: 500 },
@@ -145,10 +146,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const bubbleRows = Array.isArray(bubblesResult.data)
-      ? (bubblesResult.data as DistrictBubbleItem[])
+    const cachedRows = Array.isArray(markersResult.data)
+      ? (markersResult.data as CachedDistrictMarkerItem[])
       : [];
-    const districts = bubbleRows
+    const districts = cachedRows
       .map((item) => ({
         district: String(item.district || "").trim(),
         total: Math.max(0, Number(item.total || 0)),
@@ -156,8 +157,7 @@ export async function GET(request: Request) {
       .filter(
         (item) => item.district && normalizeDistrict(item.district) && item.total > 0,
       );
-    const markers: DistrictMarker[] = bubbleRows
-      .filter((item) => Boolean(item.resolved))
+    const markers: DistrictMarker[] = cachedRows
       .map((item) => ({
         district: String(item.district || "").trim(),
         total: Math.max(0, Number(item.total || 0)),

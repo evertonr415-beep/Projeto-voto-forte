@@ -6,19 +6,6 @@ import {
 
 const PROFILES = new Set(["Eleitor", "Liderança"]);
 
-type ExactMapFeature = {
-  district?: string | null;
-  profile?: string | null;
-};
-
-type DistrictBubbleRow = {
-  district?: string | null;
-  total?: number | string | null;
-  voters?: number | string | null;
-  leaders?: number | string | null;
-  resolved?: boolean | null;
-};
-
 async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
 ) {
@@ -63,15 +50,16 @@ export async function GET(request: Request) {
     p_profile: profile || null,
   };
 
+  // District aggregation intentionally lives in /api/map-district-markers.
+  // The old bubbles query here was discarded from the response and caused a
+  // second full aggregation of the contact base every time the map opened.
   const exactPromise = account.supabase.rpc("vf_map_exact_contact_points", rpcArgs);
-  const bubblesPromise = account.supabase.rpc("vf_map_district_bubbles", rpcArgs);
   const statsPromise = includeStats
     ? account.supabase.rpc("vf_map_scope_stats", rpcArgs)
     : Promise.resolve({ data: undefined, error: null });
 
-  const [exactResult, bubblesResult, statsResult] = await Promise.all([
+  const [exactResult, statsResult] = await Promise.all([
     exactPromise,
-    bubblesPromise,
     statsPromise,
   ]);
 
@@ -79,14 +67,6 @@ export async function GET(request: Request) {
     console.error("Failed to load exact map contacts", exactResult.error);
     return Response.json(
       { error: "Não foi possível carregar os pinos do mapa agora." },
-      { status: 500 },
-    );
-  }
-
-  if (bubblesResult.error) {
-    console.error("Failed to load district map bubbles", bubblesResult.error);
-    return Response.json(
-      { error: "Não foi possível carregar as bolhas dos bairros agora." },
       { status: 500 },
     );
   }
@@ -100,46 +80,6 @@ export async function GET(request: Request) {
   }
 
   const features = Array.isArray(exactResult.data) ? exactResult.data : [];
-  const exactByDistrict = new Map<
-    string,
-    { total: number; voters: number; leaders: number }
-  >();
-
-  for (const feature of features as ExactMapFeature[]) {
-    const district = String(feature.district || "").trim();
-    if (!district) continue;
-    const current = exactByDistrict.get(district) || {
-      total: 0,
-      voters: 0,
-      leaders: 0,
-    };
-    current.total += 1;
-    if (feature.profile === "Liderança") current.leaders += 1;
-    else current.voters += 1;
-    exactByDistrict.set(district, current);
-  }
-
-  const bubbleRows = Array.isArray(bubblesResult.data)
-    ? (bubblesResult.data as DistrictBubbleRow[])
-    : [];
-
-  const approximateDistricts = bubbleRows
-    .filter((row) => Boolean(row.resolved))
-    .map((row) => {
-      const district = String(row.district || "").trim();
-      const exact = exactByDistrict.get(district) || {
-        total: 0,
-        voters: 0,
-        leaders: 0,
-      };
-      return {
-        district,
-        total: Math.max(0, Number(row.total || 0) - exact.total),
-        voters: Math.max(0, Number(row.voters || 0) - exact.voters),
-        leaders: Math.max(0, Number(row.leaders || 0) - exact.leaders),
-      };
-    })
-    .filter((row) => row.district && row.total > 0);
 
   let stats:
     | {
@@ -153,22 +93,20 @@ export async function GET(request: Request) {
 
   if (includeStats) {
     const row = Array.isArray(statsResult.data) ? statsResult.data[0] : undefined;
-    const totalContacts = Number(row?.total_contacts ?? 0);
-    const mappedContacts = Number(row?.mapped_contacts ?? features.length);
-    const approximatedContacts = approximateDistricts.reduce(
-      (sum, district) => sum + district.total,
+    const totalContacts = Math.max(0, Number(row?.total_contacts ?? 0));
+    const mappedContacts = Math.max(
       0,
+      Number(row?.mapped_contacts ?? features.length),
     );
 
     stats = {
       totalContacts,
       mappedContacts,
-      approximatedContacts,
-      unresolvedContacts: Math.max(
-        0,
-        totalContacts - mappedContacts - approximatedContacts,
-      ),
-      resolvedDistricts: approximateDistricts.length,
+      // Approximate neighborhood totals are rendered by MapTerritoryEnhancer.
+      // Keeping them out of this endpoint prevents duplicate aggregation.
+      approximatedContacts: 0,
+      unresolvedContacts: Math.max(0, totalContacts - mappedContacts),
+      resolvedDistricts: 0,
     };
   }
 
