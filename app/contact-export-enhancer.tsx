@@ -68,7 +68,10 @@ function ensureHistoryNavigation(router: ReturnType<typeof useRouter>) {
   label.textContent = "Histórico de exportações";
 
   button.append(icon, label);
-  button.addEventListener("click", () => router.push(HISTORY_ROUTE));
+  button.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("voto-forte:close-mobile-sidebar"));
+    router.push(HISTORY_ROUTE);
+  });
   nav.insertBefore(button, adminButton);
 }
 

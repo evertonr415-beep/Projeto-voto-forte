@@ -196,17 +196,33 @@ export default function DashboardClient({
       );
   }, []);
 
- const navigateTo = (nextView: View) => {
-  closeMapPopup();
-  if (nextView === "Contatos") {
-    setContactFilter("Todos");
-    setContactDistrictFilter("");
-  }
-  setView(nextView);
+  const closeMobileSidebar = useCallback(() => {
+    closeMapPopup();
+    if (typeof window !== "undefined" && window.innerWidth <= 1050) {
+      setCollapsed(false);
+    }
+  }, []);
 
-  if (window.matchMedia("(max-width: 900px)").matches) {
-    setCollapsed(false);
-  }
+  useEffect(() => {
+    const handleCloseMobile = () => {
+      setCollapsed(false);
+    };
+    window.addEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
+    return () => {
+      window.removeEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
+    };
+  }, []);
+
+  const navigateTo = (nextView: View) => {
+    closeMapPopup();
+    if (nextView === "Contatos") {
+      setContactFilter("Todos");
+      setContactDistrictFilter("");
+    }
+    setView(nextView);
+    if (typeof window !== "undefined" && window.innerWidth <= 1050) {
+      setCollapsed(false);
+    }
   };
 
   const visibleMenu = isAdmin
@@ -602,14 +618,31 @@ export default function DashboardClient({
 
   return (
     <div className={`app-shell ${collapsed ? "collapsed" : ""}`}>
+      {/* Backdrop para fechar o menu mobile ao tocar fora */}
+      <div
+        className={`sidebar-backdrop ${collapsed ? "is-active" : ""}`}
+        onClick={() => setCollapsed(false)}
+        aria-hidden={!collapsed}
+      />
       <aside className="sidebar">
-        <button
-          className="brand-button"
-          onClick={() => navigateTo("Visão Geral")}
-          aria-label="Voltar à Visão Geral"
-        >
-          <Brand />
-        </button>
+        <div className="sidebar-header-row">
+          <button
+            className="brand-button"
+            onClick={() => navigateTo("Visão Geral")}
+            aria-label="Voltar à Visão Geral"
+          >
+            <Brand />
+          </button>
+          <button
+            type="button"
+            className="sidebar-close-mobile-btn"
+            onClick={() => setCollapsed(false)}
+            aria-label="Fechar menu lateral"
+            title="Fechar menu"
+          >
+            ✕
+          </button>
+        </div>
         <div className="menu-label">NAVEGAÇÃO</div>
         <nav>
           {visibleMenu.map((item) => (
@@ -638,6 +671,7 @@ export default function DashboardClient({
                   type="button"
                   className="whaticket-broadcast-sidebar-btn"
                   onClick={() => {
+                    closeMobileSidebar();
                     window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
                   }}
                   title="Disparo em Massa Whaticket"

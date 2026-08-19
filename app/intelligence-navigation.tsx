@@ -167,7 +167,10 @@ export default function IntelligenceNavigation() {
       <div className="menu-label vf-intelligence-nav-label">INTELIGÊNCIA</div>
       <button
         type="button"
-        onClick={() => router.push(SYSTEM_ROUTE)}
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("voto-forte:close-mobile-sidebar"));
+          router.push(SYSTEM_ROUTE);
+        }}
         title="VOTO FORTE Neural"
         aria-label="Abrir VOTO FORTE Neural"
       >
