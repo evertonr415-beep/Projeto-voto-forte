@@ -77,7 +77,7 @@ function markerIconHtml(item: DistrictItem) {
   return `
     <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)} (Arapongas): ${NUMBER.format(item.total)} contatos">
       <div class="vf-district-point-box">
-        <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
+        <span class="vf-district-name-text">📍 ${escapeHtml(item.district)}</span>
         <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
       </div>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
@@ -166,31 +166,32 @@ function installStyles() {
     .vf-district-point-box {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
+      gap: 8px;
+      padding: 6px 14px;
       border-radius: 999px;
-      background: #ffffff;
-      border: 2px solid #0284c7;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
-      color: #0f172a;
-      font: 800 12px/1 Arial, sans-serif;
+      background: linear-gradient(135deg, #0b3866 0%, #0284c7 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+      color: #ffffff;
+      font: 900 13px/1 Arial, sans-serif;
       white-space: nowrap;
     }
     .vf-district-name-text {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 900;
-      color: #0f172a;
+      color: #ffffff;
       letter-spacing: -0.2px;
-      max-width: 150px;
+      max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .vf-district-point-count {
-      background: #0284c7;
-      color: #ffffff;
-      padding: 2px 7px;
+      background: #ffffff;
+      color: #0284c7;
+      padding: 3px 9px;
       border-radius: 999px;
-      font: 900 11px/1 Arial, sans-serif;
+      font: 900 12px/1 Arial, sans-serif;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
     .vf-district-college-btn {
       background: #fef3c7;
