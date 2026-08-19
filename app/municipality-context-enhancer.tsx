@@ -34,7 +34,6 @@ export default function MunicipalityContextEnhancer() {
   const [overview, setOverview] = useState<Overview[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
