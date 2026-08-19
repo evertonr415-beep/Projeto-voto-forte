@@ -1027,14 +1027,19 @@ export default function NeighborhoodElectoralDrawer() {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
                         <div>
-                          <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
-                            {place.zone}
-                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+                            <span style={{ fontSize: "10px", fontWeight: 900, color: "#0369a1", background: "#e0f2fe", padding: "2px 7px", borderRadius: "999px", textTransform: "uppercase" }}>
+                              🏛️ Município: Arapongas - PR
+                            </span>
+                            <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
+                              {place.zone}
+                            </span>
+                          </div>
                           <h4 style={{ margin: "2px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: 800 }}>
-                            {place.name}
+                            🏫 {place.name}
                           </h4>
                           <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
-                            📍 {place.address} — <b>{place.district}</b>
+                            📍 Bairro: <b>{place.district}</b> · {place.address}
                           </p>
                         </div>
                         <span

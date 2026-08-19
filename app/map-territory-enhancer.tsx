@@ -79,12 +79,12 @@ function markerIconHtml(item: DistrictItem) {
   const mainCollege = colleges[0];
 
   return `
-    <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)}: ${NUMBER.format(item.total)} contatos">
+    <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)} (Arapongas): ${NUMBER.format(item.total)} contatos">
       <div class="vf-district-point-box">
         <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
         <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
         ${collegeCount > 0 ? `
-          <button type="button" class="vf-district-college-btn" data-college-id="${mainCollege.id}" data-district="${escapeHtml(item.district)}" title="Colégio Eleitoral: ${escapeHtml(mainCollege.shortName || mainCollege.name)} (${NUMBER.format(mainCollege.totalVoters)} eleitores) - Clique para ver apuração TSE">
+          <button type="button" class="vf-district-college-btn" data-college-id="${mainCollege.id}" data-district="${escapeHtml(item.district)}" title="Município: Arapongas - PR · Colégio: ${escapeHtml(mainCollege.shortName || mainCollege.name)} (${NUMBER.format(mainCollege.totalVoters)} eleitores)">
             🏫 ${collegeCount === 1 ? escapeHtml(mainCollege.shortName || mainCollege.name) : `${collegeCount} Colégios`}
           </button>
         ` : ''}
@@ -272,9 +272,9 @@ function installStyles() {
       opacity: 0.9;
     }
     
-    /* POPUP DE BAIRRO COM INDICAÇÃO DE COLÉGIOS */
+    /* POPUP DE BAIRRO COM INDICAÇÃO DE MUNICÍPIO E COLÉGIOS */
     .vf-district-area-popup {
-      min-width: 240px;
+      min-width: 250px;
       font: 500 12px/1.4 Arial, sans-serif;
       color: #26384d;
     }
@@ -283,7 +283,7 @@ function installStyles() {
       color: #17345c;
       font-size: 16px;
       font-weight: 900;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .vf-district-area-popup b {
       display: inline-block;
@@ -655,7 +655,7 @@ export default function MapTerritoryEnhancer() {
         node.dataset.collapsed = startsCollapsed ? "true" : "false";
         node.innerHTML = `
           <header>
-            <div><strong>Contatos por bairro</strong><small>Carregando distribuição territorial…</small></div>
+            <div><strong>Arapongas · Contatos por bairro</strong><small>Carregando distribuição territorial…</small></div>
             <button type="button" class="vf-district-map-toggle" aria-label="Abrir contatos por bairro" aria-expanded="${startsCollapsed ? "false" : "true"}">${startsCollapsed ? "+" : "−"}</button>
           </header>
           <div class="vf-district-map-list"><div class="vf-district-map-empty">Carregando bairros…</div></div>
@@ -708,7 +708,7 @@ export default function MapTerritoryEnhancer() {
           0,
         );
         if (header)
-          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · ${NUMBER.format(represented)} com referência`;
+          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · Arapongas - PR`;
         list.innerHTML = "";
         if (!rankingItems.length) {
           list.innerHTML = '<div class="vf-district-map-empty">Nenhum bairro com contatos neste ambiente.</div>';
@@ -761,7 +761,7 @@ export default function MapTerritoryEnhancer() {
                 zIndexOffset: 450,
                 icon: L.divIcon({
                   className: "vf-district-overview-total",
-                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos · Arapongas</small></div>`,
                   iconSize: [1, 1],
                   iconAnchor: [0, 0],
                 }),
@@ -770,7 +770,7 @@ export default function MapTerritoryEnhancer() {
               overviewMarker.setIcon(
                 L.divIcon({
                   className: "vf-district-overview-total",
-                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos · Arapongas</small></div>`,
                   iconSize: [1, 1],
                   iconAnchor: [0, 0],
                 }),
@@ -911,6 +911,12 @@ export default function MapTerritoryEnhancer() {
 
             const popupHtml = (editing = false) => `
               <div class="vf-district-area-popup">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                  <span style="font-size:10px;font-weight:900;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:999px;text-transform:uppercase;">
+                    🏛️ Arapongas - PR
+                  </span>
+                  <span style="font-size:10px;color:#64748b;font-weight:700;">61ª Zona</span>
+                </div>
                 <strong>📍 ${escapeHtml(item.district)}</strong>
                 <b>Referência territorial do bairro</b>
                 <p>👥 ${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
@@ -918,7 +924,7 @@ export default function MapTerritoryEnhancer() {
                 ${colleges.length > 0 ? `
                   <div style="margin: 8px 0; padding: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
                     <span style="display:block; font-size:10px; font-weight:800; color:#0369a1; text-transform:uppercase; margin-bottom:4px;">
-                      🏫 Colégio(s) de Votação (61ª Zona):
+                      🏫 Colégio(s) de Votação em Arapongas neste Bairro:
                     </span>
                     ${colleges.map(c => `
                       <button type="button" class="vf-popup-college-btn" data-college-id="${c.id}" data-district="${escapeHtml(item.district)}" style="width:100%; text-align:left; padding:6px 8px; margin-bottom:4px; background:#ffffff; border:1px solid #7dd3fc; border-radius:6px; font-size:11px; font-weight:700; color:#0f172a; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
@@ -929,7 +935,7 @@ export default function MapTerritoryEnhancer() {
                   </div>
                 ` : ''}
 
-                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O balão azul indica o bairro e permite consultar contatos, colégios e apuração oficial do TSE."}</small>
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O balão azul indica o bairro do município de Arapongas e permite consultar contatos, colégios e apuração oficial do TSE."}</small>
                 <div class="vf-district-popup-actions">
                   <button type="button" class="vf-district-open-electoral-drawer" style="background:#0284c7;color:#ffffff;font-weight:900;box-shadow:0 2px 8px rgba(2,132,199,0.3);">
                     📊 Abrir Painel Territorial do Bairro →
@@ -1015,7 +1021,7 @@ export default function MapTerritoryEnhancer() {
             };
 
             marker.bindTooltip(
-              `📍 ${item.district} · ${NUMBER.format(item.total)} contato(s)`,
+              `📍 ${item.district} · Arapongas (${NUMBER.format(item.total)} contato(s))`,
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
             marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
