@@ -74,20 +74,11 @@ function getCollegesForDistrict(districtName: string): PollingPlace[] {
 }
 
 function markerIconHtml(item: DistrictItem) {
-  const colleges = getCollegesForDistrict(item.district);
-  const collegeCount = colleges.length;
-  const mainCollege = colleges[0];
-
   return `
     <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)} (Arapongas): ${NUMBER.format(item.total)} contatos">
       <div class="vf-district-point-box">
         <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
         <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
-        ${collegeCount > 0 ? `
-          <button type="button" class="vf-district-college-btn" data-college-id="${mainCollege.id}" data-district="${escapeHtml(item.district)}" title="Município: Arapongas - PR · Colégio: ${escapeHtml(mainCollege.shortName || mainCollege.name)} (${NUMBER.format(mainCollege.totalVoters)} eleitores)">
-            🏫 ${collegeCount === 1 ? escapeHtml(mainCollege.shortName || mainCollege.name) : `${collegeCount} Colégios`}
-          </button>
-        ` : ''}
       </div>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
     </div>
@@ -964,13 +955,15 @@ export default function MapTerritoryEnhancer() {
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
             marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
-            marker.on("popupopen", bindActions);
-            marker.on("dblclick", () => {
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                  detail: { district: item.district, total: item.total },
-                }),
-              );
+            marker.on("click", (e) => {
+              // Se não estiver arrastando/editando posição, abre a gaveta consolidada diretamente no primeiro clique
+              if (!editingPosition) {
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                    detail: { district: item.district, total: item.total },
+                  }),
+                );
+              }
             });
 
             districtMarkers.set(item.key, { marker, item, center });
