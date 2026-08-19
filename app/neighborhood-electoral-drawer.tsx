@@ -7,6 +7,7 @@ import {
   ARAPONGAS_HISTORICAL_ELECTIONS,
   type PollingPlace,
   type ElectionYearData,
+  type ElectionOfficeData,
   type CandidateResult,
 } from "./electoral-tse-data";
 
@@ -34,6 +35,8 @@ type DrawerData = {
   elections: ElectionYearData[];
 };
 
+type SortOption = "votes_desc" | "votes_asc" | "name_asc" | "number_asc" | "party_asc";
+
 const NUMBER = new Intl.NumberFormat("pt-BR");
 const PERCENT = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -57,20 +60,23 @@ const PARTY_COLORS: Record<string, string> = {
   PV: "#15803d",
   PROS: "#b45309",
   PSB: "#c2410c",
+  PRD: "#b45309",
+  Avante: "#059669",
+  Solidariedade: "#f59e0b",
+  PSDB: "#2563eb",
 };
 
-// Sequência exata de cargos solicitada pelo usuário
-const ORDERED_OFFICES = [
-  { id: "presidente", label: "Presidente", icon: "🇧🇷", defaultYear: 2022, availableYears: [2022], scope: "Federal" },
-  { id: "senador", label: "Senador", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Paraná" },
-  { id: "governador", label: "Governador", icon: "🏢", defaultYear: 2022, availableYears: [2022], scope: "Paraná" },
-  { id: "deputado_federal", label: "Dep. Federal", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Federal" },
-  { id: "deputado_estadual", label: "Dep. Estadual", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Estadual" },
-  { id: "prefeito", label: "Prefeito", icon: "👔", defaultYear: 2024, availableYears: [2024, 2020], scope: "Municipal" },
-  { id: "vereador", label: "Vereador", icon: "🗳️", defaultYear: 2024, availableYears: [2024, 2020], scope: "Municipal" },
-] as const;
+const OFFICE_ICONS: Record<string, string> = {
+  presidente: "🇧🇷",
+  governador: "🏢",
+  senador: "🏛️",
+  deputado_federal: "🏛️",
+  deputado_estadual: "🏛️",
+  prefeito: "👔",
+  vereador: "🗳️",
+};
 
-// Lista completa de bairros de referência de Arapongas
+// Lista de referência dos bairros de Arapongas
 const ARAPONGAS_DEFAULT_DISTRICTS = [
   "Centro",
   "Jardim San Raphael",
@@ -119,12 +125,13 @@ export default function NeighborhoodElectoralDrawer() {
   const [contactProfileFilter, setContactProfileFilter] = useState<string>("");
   const [contactPage, setContactPage] = useState(1);
   const [searchCollege, setSearchCollege] = useState("");
-  const [searchCandidate, setSearchCandidate] = useState("");
   const [selectedPollingPlaceId, setSelectedPollingPlaceId] = useState<string>("");
 
-  // Sequência e seleção de cargos
-  const [selectedOffice, setSelectedOffice] = useState<string>("presidente");
-  const [selectedYear, setSelectedYear] = useState<number>(2022);
+  // Seleção eleitoral dinâmica
+  const [selectedYear, setSelectedYear] = useState<number>(2024);
+  const [selectedOffice, setSelectedOffice] = useState<string>("prefeito");
+  const [searchCandidate, setSearchCandidate] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("votes_desc");
 
   // Carrega todos os bairros existentes no banco
   useEffect(() => {
@@ -208,59 +215,92 @@ export default function NeighborhoodElectoralDrawer() {
     };
   }, [district, isOpen, contactPage, searchContact, selectedPollingPlaceId, showAllColleges]);
 
-  // Manipulador da troca de cargo garantindo o ano correto
-  const handleOfficeSelect = (officeId: string) => {
-    const meta = ORDERED_OFFICES.find((o) => o.id === officeId);
-    if (!meta) return;
-    setSelectedOffice(officeId);
-    if (!meta.availableYears.includes(selectedYear as never)) {
-      setSelectedYear(meta.defaultYear);
+  // Lista de todas as eleições disponíveis
+  const allElections = useMemo(() => {
+    return data?.elections || ARAPONGAS_HISTORICAL_ELECTIONS;
+  }, [data?.elections]);
+
+  // Eleição correspondente ao ano selecionado
+  const currentElection = useMemo(() => {
+    return allElections.find((e) => e.year === selectedYear) || allElections[0];
+  }, [allElections, selectedYear]);
+
+  // Lista de cargos disponíveis no ano selecionado
+  const availableOfficesForYear = useMemo(() => {
+    return currentElection?.offices || [];
+  }, [currentElection]);
+
+  // Sincroniza o cargo selecionado quando o ano muda
+  useEffect(() => {
+    if (availableOfficesForYear.length > 0) {
+      const exists = availableOfficesForYear.some((o) => o.office === selectedOffice);
+      if (!exists) {
+        setSelectedOffice(availableOfficesForYear[0].office);
+      }
     }
-  };
+  }, [availableOfficesForYear, selectedOffice]);
 
-  const activeOfficeMeta = useMemo(() => {
-    return ORDERED_OFFICES.find((o) => o.id === selectedOffice) || ORDERED_OFFICES[0];
-  }, [selectedOffice]);
-
-  // Busca a eleição que possui os dados do cargo selecionado
-  const activeYearData = useMemo(() => {
-    const electionList = data?.elections || ARAPONGAS_HISTORICAL_ELECTIONS;
-    // Tenta encontrar no ano ativo
-    const byYear = electionList.find((e) => e.year === selectedYear);
-    if (byYear && byYear.offices.some((o) => o.office === selectedOffice)) {
-      return byYear;
-    }
-    // Procura em qualquer eleição que contenha o cargo selecionado
-    const byOffice = electionList.find((e) => e.offices.some((o) => o.office === selectedOffice));
-    return byOffice || electionList[0] || null;
-  }, [data?.elections, selectedYear, selectedOffice]);
-
-  const activeOfficeData = useMemo(() => {
-    if (!activeYearData) return null;
+  // Dados do cargo ativo
+  const activeOfficeData: ElectionOfficeData | null = useMemo(() => {
+    if (!currentElection) return null;
     return (
-      activeYearData.offices.find((o) => o.office === selectedOffice) ||
-      activeYearData.offices[0] ||
+      currentElection.offices.find((o) => o.office === selectedOffice) ||
+      currentElection.offices[0] ||
       null
     );
-  }, [activeYearData, selectedOffice]);
+  }, [currentElection, selectedOffice]);
 
-  // Filtra candidatos na busca rápida
-  const filteredCandidates = useMemo(() => {
+  // Lista filtrada e ordenada de todos os candidatos
+  const candidatesList = useMemo(() => {
     if (!activeOfficeData?.candidates) return [];
-    if (!searchCandidate.trim()) return activeOfficeData.candidates;
-    const query = searchCandidate.toLowerCase().trim();
-    return activeOfficeData.candidates.filter(
-      (c) =>
-        c.name.toLowerCase().includes(query) ||
-        c.party.toLowerCase().includes(query) ||
-        String(c.ballotNumber || "").includes(query),
-    );
-  }, [activeOfficeData?.candidates, searchCandidate]);
+    let list = [...activeOfficeData.candidates];
+
+    // Busca rápida
+    if (searchCandidate.trim()) {
+      const q = searchCandidate.toLowerCase().trim();
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.fullName && c.fullName.toLowerCase().includes(q)) ||
+          c.party.toLowerCase().includes(q) ||
+          (c.partyName && c.partyName.toLowerCase().includes(q)) ||
+          String(c.ballotNumber || "").includes(q) ||
+          (c.runningMate?.name && c.runningMate.name.toLowerCase().includes(q)),
+      );
+    }
+
+    // Ordenação configurada
+    switch (sortBy) {
+      case "votes_desc":
+        list.sort((a, b) => b.votes - a.votes);
+        break;
+      case "votes_asc":
+        list.sort((a, b) => a.votes - b.votes);
+        break;
+      case "name_asc":
+        list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+        break;
+      case "number_asc":
+        list.sort((a, b) => Number(a.ballotNumber) - Number(b.ballotNumber));
+        break;
+      case "party_asc":
+        list.sort((a, b) => a.party.localeCompare(b.party, "pt-BR"));
+        break;
+    }
+
+    return list;
+  }, [activeOfficeData?.candidates, searchCandidate, sortBy]);
 
   // Lista de colégios disponíveis
   const availableColleges = useMemo(() => {
     return data?.pollingPlaces || ARAPONGAS_POLLING_PLACES;
   }, [data?.pollingPlaces]);
+
+  // Colégio selecionado atualmente
+  const currentSelectedPollingPlace = useMemo(() => {
+    if (!selectedPollingPlaceId) return null;
+    return availableColleges.find((p) => p.id === selectedPollingPlaceId) || null;
+  }, [availableColleges, selectedPollingPlaceId]);
 
   // Filtra colégios na busca rápida
   const filteredColleges = useMemo(() => {
@@ -301,7 +341,7 @@ export default function NeighborhoodElectoralDrawer() {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(13, 35, 66, 0.8)",
+        background: "rgba(13, 35, 66, 0.82)",
         backdropFilter: "blur(6px)",
         zIndex: 9990,
         display: "flex",
@@ -320,12 +360,12 @@ export default function NeighborhoodElectoralDrawer() {
       <div
         className="vf-neighborhood-drawer-panel"
         style={{
-          width: "min(940px, 100%)",
-          height: "92vh",
-          maxHeight: "92vh",
+          width: "min(960px, 100%)",
+          height: "94vh",
+          maxHeight: "94vh",
           background: "#ffffff",
           borderRadius: "20px",
-          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.4)",
+          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.45)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -438,7 +478,7 @@ export default function NeighborhoodElectoralDrawer() {
         )}
 
         {/* ======================================================== */}
-        {/* CABEÇALHO PRINCIPAL COM SELETOR DE BAIRRO VISÍVEL        */}
+        {/* CABEÇALHO PRINCIPAL COM SELETOR DE BAIRRO                */}
         {/* ======================================================== */}
         <header
           style={{
@@ -469,14 +509,14 @@ export default function NeighborhoodElectoralDrawer() {
                     borderRadius: "999px",
                   }}
                 >
-                  🏛️ Informações TSE
+                  🏛️ Informações Oficiais TSE
                 </span>
                 <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700 }}>
-                  Arapongas · PR (61ª Zona Eleitoral)
+                  61ª Zona Eleitoral · Arapongas - PR
                 </span>
               </div>
 
-              {/* SELETOR DIRETO DE BAIRRO NO COMPUTADOR E CELULAR */}
+              {/* SELETOR DE BAIRRO */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
                 <label style={{ fontSize: "12px", color: "#cbd5e1", fontWeight: 700 }}>
                   Bairro:
@@ -584,7 +624,7 @@ export default function NeighborhoodElectoralDrawer() {
           </div>
         </header>
 
-        {/* Barra de Abas de Navegação */}
+        {/* Barra de Abas */}
         <nav
           style={{
             display: "grid",
@@ -1066,7 +1106,7 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ======================================================== */}
           {activeTab === "electoral" && (
             <div style={{ display: "grid", gap: "12px" }}>
-              {/* PAINEL DE CONTROLE DE CARGOS NA SEQUÊNCIA EXATA SOLICITADA */}
+              {/* PAINEL DE CONTROLE DE ELEIÇÃO, CARGO E FILTRO */}
               <div
                 style={{
                   background: "#ffffff",
@@ -1077,34 +1117,78 @@ export default function NeighborhoodElectoralDrawer() {
                   gap: "14px",
                 }}
               >
-                {/* 1. SELEÇÃO DE CARGO NA SEQUÊNCIA EXATA SOLICITADA */}
+                {/* 1. SELEÇÃO DO ANO DA ELEIÇÃO */}
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      Selecione a Categoria de Votação:
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      1. Escolha o Ano da Eleição:
                     </span>
                     <span style={{ fontSize: "11px", fontWeight: 700, color: "#0284c7" }}>
-                      Dados 100% Oficiais TSE (61ª Zona)
+                      Base 100% Oficial do TSE
                     </span>
                   </div>
 
-                  {/* BOTOES DE CARGO NA SEQUÊNCIA EXATA */}
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {allElections.map((elec) => {
+                      const isSelected = selectedYear === elec.year;
+                      return (
+                        <button
+                          key={elec.year}
+                          type="button"
+                          onClick={() => setSelectedYear(elec.year)}
+                          style={{
+                            padding: "8px 16px",
+                            borderRadius: "10px",
+                            border: isSelected ? "2px solid #0284c7" : "1.5px solid #cbd5e1",
+                            background: isSelected ? "#0d2342" : "#ffffff",
+                            color: isSelected ? "#ffffff" : "#1e293b",
+                            fontWeight: 800,
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>📅 {elec.year}</span>
+                          <span style={{ fontSize: "10px", opacity: 0.8, fontWeight: 700 }}>
+                            ({elec.type === "municipal" ? "Municipal" : "Geral"})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. SELEÇÃO DINÂMICA DO CARGO DAQUELA ELEIÇÃO */}
+                <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      2. Escolha o Cargo Disputado em {selectedYear}:
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 700 }}>
+                      {availableOfficesForYear.length} cargos disponíveis
+                    </span>
+                  </div>
+
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(125px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
                       gap: "8px",
                     }}
                   >
-                    {ORDERED_OFFICES.map((off) => {
-                      const isSelected = selectedOffice === off.id;
+                    {availableOfficesForYear.map((off) => {
+                      const isSelected = selectedOffice === off.office;
+                      const icon = OFFICE_ICONS[off.office] || "🗳️";
                       return (
                         <button
-                          key={off.id}
+                          key={off.office}
                           type="button"
-                          onClick={() => handleOfficeSelect(off.id)}
+                          onClick={() => setSelectedOffice(off.office)}
                           style={{
-                            padding: "10px 10px",
+                            padding: "10px 12px",
                             borderRadius: "10px",
                             border: isSelected ? "2px solid #0284c7" : "1.5px solid #cbd5e1",
                             background: isSelected ? "#0284c7" : "#ffffff",
@@ -1120,50 +1204,37 @@ export default function NeighborhoodElectoralDrawer() {
                             transition: "all 0.15s ease",
                           }}
                         >
-                          <span>{off.icon}</span>
-                          <span>{off.label}</span>
+                          <span>{icon}</span>
+                          <span>{off.officeLabel}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* 2. SELEÇÃO DE ANO DA ELEIÇÃO & SELETOR DE COLÉGIO */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", borderTop: "1px solid #f1f5f9", paddingTop: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
-                      Ano:
-                    </span>
-                    {activeOfficeMeta.availableYears.map((yr) => (
-                      <button
-                        key={yr}
-                        type="button"
-                        onClick={() => setSelectedYear(yr)}
-                        style={{
-                          padding: "6px 14px",
-                          borderRadius: "8px",
-                          background: selectedYear === yr ? "#0d2342" : "#f1f5f9",
-                          color: selectedYear === yr ? "#ffffff" : "#475569",
-                          fontSize: "12px",
-                          fontWeight: 800,
-                          border: 0,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {yr} {yr === 2024 ? "(Recente)" : yr === 2022 ? "(Gerais)" : ""}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
-                      Filtrar por Colégio:
+                {/* 3. FILTRO POR COLÉGIO E ORDENAÇÃO */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    borderTop: "1px solid #f1f5f9",
+                    paddingTop: "12px",
+                  }}
+                >
+                  {/* Seletor de Colégio */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: "240px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 800, color: "#475569", whiteSpace: "nowrap" }}>
+                      Local de Votação:
                     </label>
                     <select
                       value={selectedPollingPlaceId}
                       onChange={(e) => setSelectedPollingPlaceId(e.target.value)}
                       style={{
-                        padding: "5px 10px",
+                        flex: 1,
+                        padding: "6px 10px",
                         borderRadius: "8px",
                         border: "1.5px solid #cbd5e1",
                         fontSize: "12px",
@@ -1171,26 +1242,52 @@ export default function NeighborhoodElectoralDrawer() {
                         background: "#ffffff",
                         color: "#0f172a",
                         cursor: "pointer",
-                        maxWidth: "220px",
                       }}
                     >
-                      <option value="">🏛️ Arapongas (Geral)</option>
+                      <option value="">🏛️ Arapongas (Apuração Geral - Município)</option>
                       {availableColleges.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.shortName || p.name}
+                          {p.shortName || p.name} ({p.district})
                         </option>
                       ))}
                     </select>
                   </div>
+
+                  {/* Menu de Ordenação de Candidatos */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 800, color: "#475569", whiteSpace: "nowrap" }}>
+                      Ordenar por:
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "8px",
+                        border: "1.5px solid #cbd5e1",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        background: "#ffffff",
+                        color: "#0f172a",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="votes_desc">🔽 Mais Votados (Decrescente)</option>
+                      <option value="votes_asc">🔼 Menos Votados (Crescente)</option>
+                      <option value="name_asc">🔤 Nome do Candidato (A-Z)</option>
+                      <option value="number_asc">🔢 Número na Urna</option>
+                      <option value="party_asc">🏷️ Partido / Sigla (A-Z)</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* 3. BUSCA RÁPIDA DE CANDIDATO */}
+                {/* 4. BUSCA RÁPIDA DE CANDIDATO */}
                 <div style={{ position: "relative" }}>
                   <input
                     type="search"
                     value={searchCandidate}
                     onChange={(e) => setSearchCandidate(e.target.value)}
-                    placeholder={`🔍 Buscar candidato a ${activeOfficeMeta.label} por nome, número ou partido...`}
+                    placeholder={`🔍 Buscar entre todos os candidatos a ${activeOfficeData?.officeLabel || "este cargo"} por nome, número, partido ou vice...`}
                     style={{
                       width: "100%",
                       padding: "10px 36px 10px 14px",
@@ -1225,7 +1322,7 @@ export default function NeighborhoodElectoralDrawer() {
                 </div>
 
                 {/* FILTRO DE COLÉGIO ATIVO */}
-                {selectedPollingPlaceId && (
+                {currentSelectedPollingPlace && (
                   <div
                     style={{
                       display: "flex",
@@ -1240,7 +1337,7 @@ export default function NeighborhoodElectoralDrawer() {
                     }}
                   >
                     <span>
-                      🏫 Apuração das seções de: <b>{availableColleges.find(p => p.id === selectedPollingPlaceId)?.name}</b>
+                      🏫 Apuração das seções de: <b>{currentSelectedPollingPlace.name}</b> ({currentSelectedPollingPlace.district})
                     </span>
                     <button
                       type="button"
@@ -1262,12 +1359,12 @@ export default function NeighborhoodElectoralDrawer() {
                 )}
               </div>
 
-              {/* RESUMO DE VOTOS TOTAIS DA ELEIÇÃO */}
+              {/* RESUMO DOS VOTOS TOTAIS DA ELEIÇÃO */}
               {activeOfficeData && (
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
                     gap: "8px",
                   }}
                 >
@@ -1295,17 +1392,37 @@ export default function NeighborhoodElectoralDrawer() {
                       {NUMBER.format(activeOfficeData.nullVotes)}
                     </b>
                   </div>
+                  {activeOfficeData.abstentions && (
+                    <div style={{ background: "#ffffff", padding: "10px 12px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                      <small style={{ fontSize: "9px", color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>
+                        Abstenções
+                      </small>
+                      <b style={{ display: "block", fontSize: "16px", color: "#64748b", marginTop: "1px" }}>
+                        {NUMBER.format(activeOfficeData.abstentions)}
+                      </b>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* LISTAGEM DE CANDIDATOS E RESULTADOS OFICIAIS DO TSE */}
-              {filteredCandidates && filteredCandidates.length > 0 ? (
+              {/* CONTADOR DE CANDIDATOS ENCONTRADOS */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
+                  📋 Relação Completa: {candidatesList.length} candidato(s) em {activeOfficeData?.officeLabel} ({selectedYear})
+                </span>
+                <span style={{ fontSize: "11px", color: "#64748b" }}>
+                  {searchCandidate ? "Filtrado por busca" : "Todos os candidatos listados"}
+                </span>
+              </div>
+
+              {/* LISTAGEM COMPLETA DE TODOS OS CANDIDATOS */}
+              {candidatesList && candidatesList.length > 0 ? (
                 <div style={{ display: "grid", gap: "8px" }}>
-                  {filteredCandidates.map((c: CandidateResult, index: number) => {
+                  {candidatesList.map((c: CandidateResult, index: number) => {
                     const partyColor = PARTY_COLORS[c.party] || "#2563eb";
                     return (
                       <div
-                        key={c.name}
+                        key={`${c.name}-${c.ballotNumber}`}
                         style={{
                           background: "#ffffff",
                           border: "1.5px solid #e2e8f0",
@@ -1316,60 +1433,100 @@ export default function NeighborhoodElectoralDrawer() {
                           boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
+                          {/* Lado Esquerdo: Posição, Nome e Detalhes */}
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                             <span
                               style={{
-                                width: "24px",
-                                height: "24px",
+                                width: "26px",
+                                height: "26px",
                                 borderRadius: "50%",
-                                background: index === 0 ? "#fef08a" : "#f1f5f9",
-                                color: index === 0 ? "#854d0e" : "#475569",
+                                background: index === 0 ? "#fef08a" : index < 3 ? "#e0f2fe" : "#f1f5f9",
+                                color: index === 0 ? "#854d0e" : index < 3 ? "#0369a1" : "#475569",
                                 fontWeight: 900,
                                 fontSize: "12px",
                                 display: "grid",
                                 placeItems: "center",
+                                marginTop: "2px",
                               }}
                             >
                               {index + 1}
                             </span>
                             <div>
-                              <strong style={{ fontSize: "15px", color: "#0f172a" }}>
-                                {c.name} {c.ballotNumber ? `(${c.ballotNumber})` : ""}
-                              </strong>
-                              <span
-                                style={{
-                                  fontSize: "10px",
-                                  fontWeight: 800,
-                                  color: "#ffffff",
-                                  background: partyColor,
-                                  padding: "2px 6px",
-                                  borderRadius: "4px",
-                                  marginLeft: "8px",
-                                }}
-                              >
-                                {c.party}
-                              </span>
-                              {c.elected && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                                <strong style={{ fontSize: "15px", color: "#0f172a" }}>
+                                  {c.name}
+                                </strong>
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 900,
+                                    color: "#0f172a",
+                                    background: "#f1f5f9",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                  }}
+                                >
+                                  Nº {c.ballotNumber}
+                                </span>
                                 <span
                                   style={{
                                     fontSize: "10px",
-                                    fontWeight: 900,
-                                    color: "#166534",
-                                    background: "#dcfce7",
+                                    fontWeight: 800,
+                                    color: "#ffffff",
+                                    background: partyColor,
                                     padding: "2px 6px",
                                     borderRadius: "4px",
-                                    marginLeft: "6px",
                                   }}
                                 >
-                                  🏆 ELEITO
+                                  {c.party}
                                 </span>
+                                {c.elected ? (
+                                  <span
+                                    style={{
+                                      fontSize: "10px",
+                                      fontWeight: 900,
+                                      color: "#166534",
+                                      background: "#dcfce7",
+                                      padding: "2px 6px",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    🏆 ELEITO
+                                  </span>
+                                ) : c.situation ? (
+                                  <span
+                                    style={{
+                                      fontSize: "10px",
+                                      fontWeight: 800,
+                                      color: c.situation.includes("Suplente") ? "#854d0e" : "#475569",
+                                      background: c.situation.includes("Suplente") ? "#fef9c3" : "#f1f5f9",
+                                      padding: "2px 6px",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    {c.situation}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {c.fullName && c.fullName !== c.name && (
+                                <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                                  Nome oficial: {c.fullName}
+                                </div>
+                              )}
+
+                              {c.runningMate && (
+                                <div style={{ fontSize: "11px", color: "#0284c7", fontWeight: 700, marginTop: "3px" }}>
+                                  🤝 {c.runningMate.roleLabel}: <b>{c.runningMate.name}</b> {c.runningMate.party ? `(${c.runningMate.party})` : ""}
+                                </div>
                               )}
                             </div>
                           </div>
 
+                          {/* Lado Direito: Votos e Percentual */}
                           <div style={{ textAlign: "right" }}>
-                            <b style={{ fontSize: "15px", color: "#0f172a" }}>
+                            <b style={{ fontSize: "16px", color: "#0f172a" }}>
                               {NUMBER.format(c.votes)} votos
                             </b>
                             <span style={{ display: "block", fontSize: "12px", fontWeight: 800, color: "#0284c7" }}>
@@ -1378,19 +1535,20 @@ export default function NeighborhoodElectoralDrawer() {
                           </div>
                         </div>
 
-                        {/* Barra de Progresso Visual de Votos */}
+                        {/* Barra de Progresso Visual */}
                         <div
                           style={{
                             height: "7px",
                             background: "#f1f5f9",
                             borderRadius: "999px",
                             overflow: "hidden",
+                            marginTop: "2px",
                           }}
                         >
                           <div
                             style={{
                               height: "100%",
-                              width: `${Math.min(100, Math.max(2, c.percentage))}%`,
+                              width: `${Math.min(100, Math.max(1, c.percentage))}%`,
                               background: partyColor,
                               borderRadius: "999px",
                               transition: "width 0.4s ease",
@@ -1399,8 +1557,8 @@ export default function NeighborhoodElectoralDrawer() {
                         </div>
 
                         {c.coalition && (
-                          <small style={{ fontSize: "11px", color: "#64748b" }}>
-                            Coligação: {c.coalition}
+                          <small style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                            Coligação / Federação: {c.coalition}
                           </small>
                         )}
                       </div>
@@ -1409,7 +1567,7 @@ export default function NeighborhoodElectoralDrawer() {
                 </div>
               ) : (
                 <div style={{ padding: "26px", textAlign: "center", color: "#64748b", background: "#ffffff", borderRadius: "12px" }}>
-                  Nenhum candidato encontrado com a busca "{searchCandidate}".
+                  Nenhum candidato encontrado com o filtro "{searchCandidate}".
                 </div>
               )}
             </div>
