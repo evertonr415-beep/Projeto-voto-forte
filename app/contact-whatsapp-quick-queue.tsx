@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ARAPONGAS_DISTRICTS } from "./arapongas-boundaries-data";
 import { apiFetch } from "./supabase-client";
 
 type Contact = {
@@ -117,12 +116,7 @@ export default function ContactWhatsappQuickQueue() {
             })),
           );
         } else {
-          setDistrictList(
-            ARAPONGAS_DISTRICTS.map((d) => ({
-              district: d.name,
-              total: 0,
-            })),
-          );
+          setDistrictList([]);
         }
       } catch (err) {
         console.error("Falha ao carregar contexto do WhatsApp", err);

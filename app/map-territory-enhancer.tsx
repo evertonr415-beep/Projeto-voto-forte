@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { ARAPONGAS_DISTRICTS } from "./arapongas-boundaries-data";
 import { apiFetch } from "./supabase-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
