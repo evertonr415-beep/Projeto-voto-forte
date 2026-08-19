@@ -65,15 +65,25 @@ async function getAccessStatus(
   }
 
   const email = user.email?.trim().toLowerCase();
-  // Fallback garantido para os ADMs Principais (OWNER_EMAIL / threexdroid / williammarquesmachado)
+  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
+  if (email === "evertonr415@gmail.com") {
+    return {
+      state: "active",
+      message: "Acesso administrativo principal liberado.",
+      canEnterApplication: true,
+      email: user.email,
+    };
+  }
+
+  // Fallback garantido para os Gestores (Pedro Lupion, threexdroid, williammarquesmachado)
   if (
-    email === "evertonr415@gmail.com" ||
+    email === "campanhaeleicaoxv@gmail.com" ||
     email === "threexdroid@gmail.com" ||
     email === "williammarquesmachado@gmail.com"
   ) {
     return {
       state: "active",
-      message: "Acesso administrativo principal liberado.",
+      message: "Acesso de Gestor liberado.",
       canEnterApplication: true,
       email: user.email,
     };

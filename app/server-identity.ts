@@ -2,8 +2,9 @@ import type { User } from "@supabase/supabase-js";
 import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
-export const ADMIN_EMAILS = [
-  "evertonr415@gmail.com",
+export const ADMIN_EMAILS = ["evertonr415@gmail.com"];
+export const GESTOR_EMAILS = [
+  "campanhaeleicaoxv@gmail.com",
   "threexdroid@gmail.com",
   "williammarquesmachado@gmail.com",
 ];
@@ -11,6 +12,11 @@ export const ADMIN_EMAILS = [
 export function isAdminEmail(email: string): boolean {
   const clean = String(email || "").trim().toLowerCase();
   return ADMIN_EMAILS.some((e) => e.toLowerCase() === clean);
+}
+
+export function isGestorEmail(email: string): boolean {
+  const clean = String(email || "").trim().toLowerCase();
+  return GESTOR_EMAILS.some((e) => e.toLowerCase() === clean);
 }
 
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
@@ -40,7 +46,7 @@ export type HierarchyUser = {
 function legacyAccessRole(role: unknown, email: string): AccessRole {
   const cleanEmail = email.trim().toLowerCase();
   if (isAdminEmail(cleanEmail)) return "adm";
-  if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
+  if (isGestorEmail(cleanEmail)) return "gestor";
   if (role === "master") return "master";
   if (role === "gestor") return "gestor";
   if (role === "lider") return "lideranca";
@@ -54,7 +60,7 @@ function normalizeAccessRole(
 ): AccessRole {
   const cleanEmail = email.trim().toLowerCase();
   if (isAdminEmail(cleanEmail)) return "adm";
-  if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
+  if (isGestorEmail(cleanEmail)) return "gestor";
   if (
     ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
       String(value),
@@ -95,15 +101,13 @@ export async function getAccountForAuthenticatedUser(
     }
   }
 
-  // Fallback garantido para os ADMs Principais
+  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
   if (!account && isAdminEmail(email)) {
-    const isWilliam = email === "williammarquesmachado@gmail.com";
-    const isThreex = email === "threexdroid@gmail.com";
     account = {
-      id: isWilliam ? 3 : isThreex ? 2 : 1,
+      id: 1,
       auth_user_id: user.id,
-      email: user.email,
-      name: isWilliam ? "William Marques Machado" : isThreex ? "Administrador" : "Everton Moreira",
+      email: OWNER_EMAIL,
+      name: "Everton Moreira",
       role: "master",
       access_role: "adm",
       status: "active",
@@ -112,12 +116,29 @@ export async function getAccountForAuthenticatedUser(
     };
   }
 
+  // Fallback garantido para os Gestores (Pedro Lupion, threexdroid, williammarquesmachado)
+  if (!account && isGestorEmail(email)) {
+    const isWilliam = email === "williammarquesmachado@gmail.com";
+    const isThreex = email === "threexdroid@gmail.com";
+    account = {
+      id: isWilliam ? 3 : isThreex ? 2 : 15,
+      auth_user_id: user.id,
+      email: user.email,
+      name: isWilliam ? "William Marques Machado" : isThreex ? "Gestor" : "Deputado Pedro Lupion",
+      role: "gestor",
+      access_role: "gestor",
+      status: "active",
+      parent_user_id: 1,
+      created_at: new Date().toISOString(),
+    };
+  }
+
   if (!account || account.status === "blocked") return null;
 
-  const isPedroLupion = email === "campanhaeleicaoxv@gmail.com";
-  const finalRole: UserRole = isPedroLupion ? "gestor" : (account.role as UserRole);
-  const finalAccessRole: AccessRole = isPedroLupion ? "gestor" : normalizeAccessRole(account.access_role, account.role, email);
-  const finalName: string = isPedroLupion ? "Deputado Pedro Lupion" : String(account.name || "");
+  const isGestor = isGestorEmail(email);
+  const finalRole: UserRole = isGestor ? "gestor" : (account.role as UserRole);
+  const finalAccessRole: AccessRole = isGestor ? "gestor" : normalizeAccessRole(account.access_role, account.role, email);
+  const finalName: string = email === "campanhaeleicaoxv@gmail.com" ? "Deputado Pedro Lupion" : String(account.name || "");
 
   return {
     ...account,
