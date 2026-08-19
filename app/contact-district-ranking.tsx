@@ -494,26 +494,48 @@ export default function ContactDistrictRanking() {
       {/* ======================================================== */}
       {panelTab === "colleges" && (
         <div style={{ display: "grid", gap: "8px", maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
-          <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 700, marginBottom: "4px" }}>
-            {ARAPONGAS_POLLING_PLACES.length} Colégios Oficiais (61ª Zona Eleitoral):
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 700 }}>
+              {ARAPONGAS_POLLING_PLACES.length} Colégios Oficiais (61ª Zona):
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                    detail: { district: "Todos os Bairros", initialTab: "colleges" },
+                  }),
+                );
+              }}
+              style={{
+                fontSize: "11px",
+                fontWeight: 800,
+                color: "#0284c7",
+                background: "transparent",
+                border: 0,
+                cursor: "pointer",
+                padding: "2px 4px",
+              }}
+            >
+              Ver todos →
+            </button>
           </div>
 
           {ARAPONGAS_POLLING_PLACES.map((place: PollingPlace) => (
             <div
               key={place.id}
-              onClick={() => openDistrictDrawer(place.district)}
               style={{
                 background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
+                border: "1.5px solid #e2e8f0",
+                borderRadius: "12px",
                 padding: "10px 12px",
-                cursor: "pointer",
                 display: "grid",
-                gap: "4px",
-                transition: "background 0.15s",
+                gap: "6px",
+                transition: "all 0.15s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
                 <strong style={{ fontSize: "13px", color: "#0f172a", lineHeight: "1.2" }}>
                   {place.shortName || place.name}
                 </strong>
@@ -534,6 +556,35 @@ export default function ContactDistrictRanking() {
               <div style={{ fontSize: "11px", color: "#64748b" }}>
                 📍 {place.district} · {place.sectionsCount} seções
               </div>
+              <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                        detail: { district: place.district, initialTab: "electoral" },
+                      }),
+                    );
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "6px 8px",
+                    borderRadius: "6px",
+                    background: "#0284c7",
+                    color: "#ffffff",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    border: 0,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "4px",
+                  }}
+                >
+                  🗳️ Ver Apuração Deste Colégio →
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -544,6 +595,35 @@ export default function ContactDistrictRanking() {
       {/* ======================================================== */}
       {panelTab === "elections" && (
         <div style={{ display: "grid", gap: "10px" }}>
+          {/* Botão de Destaque para o Painel Completo do TSE */}
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                  detail: { district: "Todos os Bairros", initialTab: "electoral" },
+                }),
+              );
+            }}
+            style={{
+              padding: "10px 12px",
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, #0d2342 0%, #0284c7 100%)",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: 900,
+              border: 0,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
+            }}
+          >
+            🏛️ Abrir Painel Completo TSE (7 Cargos) →
+          </button>
+
           {/* Seletor de Ano */}
           <div style={{ display: "flex", gap: "6px" }}>
             {[2024, 2022, 2020].map((yr) => (
