@@ -568,27 +568,45 @@ export default function ContactDistrictRanking() {
             ))}
           </div>
 
-          {/* Seletor de Cargo */}
+          {/* Seletor de Cargo na Sequência Exata Solicitada */}
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            {activeElectionData.offices.map((off) => (
-              <button
-                key={off.office}
-                type="button"
-                onClick={() => setSelectedOffice(off.office)}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "6px",
-                  background: selectedOffice === off.office ? "#0284c7" : "#ffffff",
-                  color: selectedOffice === off.office ? "#ffffff" : "#0284c7",
-                  border: "1px solid #0284c7",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                {off.officeLabel}
-              </button>
-            ))}
+            {[
+              { id: "presidente", label: "Presidente", year: 2022 },
+              { id: "senador", label: "Senador", year: 2022 },
+              { id: "governador", label: "Governador", year: 2022 },
+              { id: "deputado_federal", label: "Dep. Federal", year: 2022 },
+              { id: "deputado_estadual", label: "Dep. Estadual", year: 2022 },
+              { id: "prefeito", label: "Prefeito", year: 2024 },
+              { id: "vereador", label: "Vereador", year: 2024 },
+            ].map((off) => {
+              const isSelected = selectedOffice === off.id;
+              return (
+                <button
+                  key={off.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedOffice(off.id);
+                    if (off.id === "prefeito" || off.id === "vereador") {
+                      if (selectedYear !== 2024 && selectedYear !== 2020) setSelectedYear(2024);
+                    } else {
+                      setSelectedYear(2022);
+                    }
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    background: isSelected ? "#0284c7" : "#ffffff",
+                    color: isSelected ? "#ffffff" : "#0284c7",
+                    border: "1px solid #0284c7",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  {off.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Resumo de Votos e Candidatos */}
