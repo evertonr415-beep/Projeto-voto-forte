@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, supabase } from "./supabase-client";
   
 
@@ -613,26 +613,43 @@ export default function DashboardClient({
         <div className="menu-label">NAVEGAÇÃO</div>
         <nav>
           {visibleMenu.map((item) => (
-            <button
-              key={item.label}
-              className={view === item.label ? "active" : ""}
-              onClick={() => {
-                navigateTo(item.label);
-                apiFetch("/api/audit", {
-                  method: "POST",
-                  headers: { "content-type": "application/json" },
-                  body: JSON.stringify({
-                    action: "Navegação",
-                    detail: item.label,
-                  }),
-                }).catch(() => undefined);
-              }}
-              title={item.label}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-name">{item.label}</span>
-              {item.badge && <em>{item.badge}</em>}
-            </button>
+            <React.Fragment key={item.label}>
+              <button
+                className={view === item.label ? "active" : ""}
+                onClick={() => {
+                  navigateTo(item.label);
+                  apiFetch("/api/audit", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                      action: "Navegação",
+                      detail: item.label,
+                    }),
+                  }).catch(() => undefined);
+                }}
+                title={item.label}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-name">{item.label}</span>
+                {item.badge && <em>{item.badge}</em>}
+              </button>
+              {item.label === "WhatsApp" && (
+                <button
+                  type="button"
+                  className="whaticket-broadcast-sidebar-btn"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
+                  }}
+                  title="Disparo em Massa Whaticket"
+                >
+                  <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
+                  <span className="nav-name">Disparo em Massa</span>
+                  <em style={{ background: "rgba(45, 221, 127, 0.2)", color: "#2ddd7f", border: "1px solid rgba(45, 221, 127, 0.4)" }}>
+                    WHATICKET
+                  </em>
+                </button>
+              )}
+            </React.Fragment>
           ))}
           {isAdmin && (
             <button
@@ -742,22 +759,14 @@ export default function DashboardClient({
   );
 }
 
-function Overview({
-  go,
-  open,
-  openVoterReport,
-  summary,
-  meetings,
+const BrasiliaClockWidget = React.memo(function BrasiliaClockWidget({
   contextName,
   userName,
+  onOpenCadastro,
 }: {
-  go: (v: View) => void;
-  open: (m: Modal) => void;
-  openVoterReport: () => void;
-  summary: OverviewSummary;
-  meetings: (Meeting & { id: number; ownerEmail: string })[];
   contextName: string;
   userName: string;
+  onOpenCadastro: () => void;
 }) {
   const [brasiliaNow, setBrasiliaNow] = useState(() => new Date());
   useEffect(() => {
@@ -791,31 +800,58 @@ function Overview({
     second: "2-digit",
     hourCycle: "h23",
   }).format(brasiliaNow);
+
+  return (
+    <div className="welcome-pro">
+      <div className="welcome-copy">
+        <span>AMBIENTE SELECIONADO · {contextName.toUpperCase()}</span>
+        <h2>
+          {greeting}, {userName}
+        </h2>
+        <p>
+          Gestão eleitoral protegida. Seus indicadores estão organizados por
+          usuário.
+        </p>
+      </div>
+      <div className="welcome-actions">
+        <div className="brasilia-clock" aria-label="Data e hora de Brasília">
+          <small>{formattedDate}</small>
+          <strong>{formattedTime}</strong>
+          <em>Horário de Brasília</em>
+        </div>
+        <button onClick={onOpenCadastro}>+ Novo cadastro</button>
+      </div>
+    </div>
+  );
+});
+
+function Overview({
+  go,
+  open,
+  openVoterReport,
+  summary,
+  meetings,
+  contextName,
+  userName,
+}: {
+  go: (v: View) => void;
+  open: (m: Modal) => void;
+  openVoterReport: () => void;
+  summary: OverviewSummary;
+  meetings: (Meeting & { id: number; ownerEmail: string })[];
+  contextName: string;
+  userName: string;
+}) {
   const leaders = summary.leaders;
   const voters = summary.voters;
   const districts = summary.districtsReached;
   return (
     <>
-      <div className="welcome-pro">
-        <div className="welcome-copy">
-          <span>AMBIENTE SELECIONADO · {contextName.toUpperCase()}</span>
-          <h2>
-            {greeting}, {userName}
-          </h2>
-          <p>
-            Gestão eleitoral protegida. Seus indicadores estão organizados por
-            usuário.
-          </p>
-        </div>
-        <div className="welcome-actions">
-          <div className="brasilia-clock" aria-label="Data e hora de Brasília">
-            <small>{formattedDate}</small>
-            <strong>{formattedTime}</strong>
-            <em>Horário de Brasília</em>
-          </div>
-          <button onClick={() => open("cadastro")}>+ Novo cadastro</button>
-        </div>
-      </div>
+      <BrasiliaClockWidget
+        contextName={contextName}
+        userName={userName}
+        onOpenCadastro={() => open("cadastro")}
+      />
       <div className="kpis">
         <Kpi
           tone="green"
@@ -1540,21 +1576,33 @@ function ContactManager({
     };
   }, [districtFilter, filter, scope, query, districtPage, tell]);
 
-  const profileContacts =
-    filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter);
+  const profileContacts = useMemo(
+    () => (filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter)),
+    [contacts, filter],
+  );
   const filteredContacts = districtFilter ? districtContacts : profileContacts;
-  const list = districtFilter
-    ? filteredContacts
-    : filteredContacts.filter((c) =>
-        `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
-          .toLowerCase()
-          .includes(query.toLowerCase()),
-      );
-  const voters = contacts.filter((c) => c.kind === "Eleitor").length;
-  const leaders = contacts.filter((c) => c.kind === "Liderança").length;
-  const districts = new Set(
-    contacts.map((c) => c.district).filter(Boolean),
-  ).size;
+  const list = useMemo(() => {
+    if (districtFilter) return filteredContacts;
+    const q = query.trim().toLowerCase();
+    if (!q) return filteredContacts;
+    return filteredContacts.filter((c) =>
+      `${c.name} ${c.phone} ${c.district} ${c.ownerEmail}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [districtFilter, filteredContacts, query]);
+
+  const { voters, leaders, districts } = useMemo(() => {
+    let vCount = 0;
+    let lCount = 0;
+    const districtSet = new Set<string>();
+    for (const c of contacts) {
+      if (c.kind === "Eleitor") vCount++;
+      else if (c.kind === "Liderança") lCount++;
+      if (c.district) districtSet.add(c.district);
+    }
+    return { voters: vCount, leaders: lCount, districts: districtSet.size };
+  }, [contacts]);
   async function pick(file?: File) {
     if (!file) return;
     const parsed = file.name.toLowerCase().endsWith(".vcf")
@@ -2343,6 +2391,51 @@ function Whatsapp({
         text="Cada usuário mantém os próprios rascunhos; administradores podem analisar a visão consolidada."
       />
       <div className="wa-layout">
+        <div style={{ gridColumn: "1 / -1", marginBottom: "16px" }}>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"))}
+            style={{
+              width: "100%",
+              padding: "16px 20px",
+              background: "linear-gradient(135deg, #17345c, #0f172a)",
+              border: "1px solid #2ddd7f",
+              borderRadius: "14px",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+              boxShadow: "0 8px 24px rgba(45, 221, 127, 0.15)",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <span style={{ fontSize: "26px", color: "#2ddd7f", filter: "drop-shadow(0 0 8px rgba(45, 221, 127, 0.6))" }}>⚡</span>
+              <div>
+                <strong style={{ fontSize: "15px", display: "block", color: "#2ddd7f" }}>
+                  Disparo em Massa Whaticket / ZapAPI
+                </strong>
+                <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                  Envie mensagens em lote para eleitores e lideranças com atraso anti-bloqueio
+                </span>
+              </div>
+            </div>
+            <span
+              style={{
+                background: "#2ddd7f",
+                color: "#0f172a",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                fontWeight: "700",
+                fontSize: "13px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Abrir Disparador →
+            </span>
+          </button>
+        </div>
         <article className="panel composer">
           <div className="composer-head">
             <span>◉</span>

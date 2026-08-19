@@ -66,7 +66,11 @@ export default function MunicipalityContextEnhancer() {
       }
 
       authObserver = new MutationObserver(() => {
-        if (!document.querySelector(".auth-page")) loadContext();
+        if (!document.querySelector(".auth-page")) {
+          authObserver?.disconnect();
+          authObserver = null;
+          loadContext();
+        }
       });
       authObserver.observe(document.body, { childList: true, subtree: true });
     };
@@ -81,6 +85,7 @@ export default function MunicipalityContextEnhancer() {
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1000px)");
+    let frameId = 0;
 
     const findHeaderHost = () => {
       if (!media.matches) {
@@ -94,11 +99,18 @@ export default function MunicipalityContextEnhancer() {
     };
 
     findHeaderHost();
-    const observer = new MutationObserver(findHeaderHost);
+    const observer = new MutationObserver(() => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        findHeaderHost();
+      });
+    });
     observer.observe(document.body, { childList: true, subtree: true });
     media.addEventListener("change", findHeaderHost);
 
     return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
       media.removeEventListener("change", findHeaderHost);
     };

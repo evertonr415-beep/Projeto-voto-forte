@@ -333,7 +333,11 @@ export default function MunicipalElectoralMapContext() {
       }
 
       authObserver = new MutationObserver(() => {
-        if (!document.querySelector(".auth-page")) loadContext();
+        if (!document.querySelector(".auth-page")) {
+          authObserver?.disconnect();
+          authObserver = null;
+          loadContext();
+        }
       });
       authObserver.observe(document.body, { childList: true, subtree: true });
     };

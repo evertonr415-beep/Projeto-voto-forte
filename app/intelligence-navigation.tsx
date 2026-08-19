@@ -89,7 +89,11 @@ export default function IntelligenceNavigation() {
       loadSession();
     } else {
       authObserver = new MutationObserver(() => {
-        if (!document.querySelector(".auth-page")) loadSession();
+        if (!document.querySelector(".auth-page")) {
+          authObserver?.disconnect();
+          authObserver = null;
+          loadSession();
+        }
       });
       authObserver.observe(document.body, { childList: true, subtree: true });
     }

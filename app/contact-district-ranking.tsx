@@ -74,9 +74,12 @@ export default function ContactDistrictRanking() {
 
     if (!document.querySelector(".auth-page")) {
       loadScope();
-    } else {
       authObserver = new MutationObserver(() => {
-        if (!document.querySelector(".auth-page")) loadScope();
+        if (!document.querySelector(".auth-page")) {
+          authObserver?.disconnect();
+          authObserver = null;
+          loadScope();
+        }
       });
       authObserver.observe(document.body, { childList: true, subtree: true });
     }

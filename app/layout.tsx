@@ -18,7 +18,9 @@ import RuntimeVersionGuard from "./runtime-version-guard";
 import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
+import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import "./globals.css";
+import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
 import "./mobile-map-cleanup.css";
 import "./mobile-analytics-controls.css";
@@ -95,6 +97,7 @@ export default function RootLayout({
         <AuthReconciliationEnhancer />
         <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />
+        <WhaticketBroadcastDrawer />
         {children}
       </body>
     </html>

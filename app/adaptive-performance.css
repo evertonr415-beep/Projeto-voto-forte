@@ -1,3 +1,32 @@
+/* Global Smooth Performance Enhancements */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accelerated smooth scrolling for lists and tables */
+.contacts-table-container,
+.main-content,
+.sidebar,
+.panel,
+.contacts-list,
+.districts-list,
+.issues-scroll-area {
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+}
+
+/* Reduce composite layers and excessive blur overhead on general devices */
+.modal,
+.issues-modal-backdrop,
+.vf-heatmap-control,
+.vf-district-map-control,
+.vf-map-contact-control {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Light mode for devices under pressure */
 html[data-vf-performance="light"] *,
 html[data-vf-performance="light"] *::before,
 html[data-vf-performance="light"] *::after {
@@ -11,7 +40,10 @@ html[data-vf-performance="light"] .sidebar,
 html[data-vf-performance="light"] .topbar,
 html[data-vf-performance="light"] .panel,
 html[data-vf-performance="light"] .modal,
-html[data-vf-performance="light"] .vf-heatmap-control {
+html[data-vf-performance="light"] .vf-heatmap-control,
+html[data-vf-performance="light"] .vf-district-map-control,
+html[data-vf-performance="light"] .vf-map-contact-control {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  background-color: rgba(255, 255, 255, 0.98) !important;
 }

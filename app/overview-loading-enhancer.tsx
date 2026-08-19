@@ -71,7 +71,12 @@ export default function OverviewLoadingEnhancer() {
   useEffect(() => {
     if (!isLegacyDashboardPath()) return;
 
+    let frameId = 0;
     const decorateLoadingState = () => {
+      if (document.querySelector(".welcome-pro, .kpis, .dashboard")) {
+        observer.disconnect();
+        return;
+      }
       const loadingState = document.querySelector<HTMLElement>(".loading-state");
       if (!loadingState || loadingState.dataset.vfOverviewSkeleton === "1") return;
       if (!loadingState.textContent?.includes("Carregando ambiente protegido")) return;
@@ -82,10 +87,19 @@ export default function OverviewLoadingEnhancer() {
     };
 
     decorateLoadingState();
-    const observer = new MutationObserver(decorateLoadingState);
+    const observer = new MutationObserver(() => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        decorateLoadingState();
+      });
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    return () => observer.disconnect();
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      observer.disconnect();
+    };
   }, []);
 
   return null;

@@ -435,9 +435,15 @@ export default function TerritorialPendingCenter() {
       void load();
     };
 
-    const observer = new MutationObserver(ensureHost);
+    let frameId = 0;
+    const observer = new MutationObserver(() => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        ensureHost();
+      });
+    });
     observer.observe(document.body, { childList: true, subtree: true });
-    const timer = window.setInterval(ensureHost, 500);
     document.addEventListener("change", handleScope, true);
     ensureHost();
 
@@ -445,8 +451,8 @@ export default function TerritorialPendingCenter() {
       disposed = true;
       requestId += 1;
       stopCapture();
+      if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
-      window.clearInterval(timer);
       document.removeEventListener("change", handleScope, true);
       host?.remove();
     };

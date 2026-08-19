@@ -68,7 +68,11 @@ export default function AccountSettingsEnhancer() {
       loadUser();
     } else {
       authObserver = new MutationObserver(() => {
-        if (!document.querySelector(".auth-page")) loadUser();
+        if (!document.querySelector(".auth-page")) {
+          authObserver?.disconnect();
+          authObserver = null;
+          loadUser();
+        }
       });
       authObserver.observe(document.body, { childList: true, subtree: true });
     }
@@ -80,11 +84,12 @@ export default function AccountSettingsEnhancer() {
   }, []);
 
   useEffect(() => {
-    const applyAvatarTo = (root: ParentNode) => {
+    let frameId = 0;
+    const applyAvatarTo = (root: ParentNode = document) => {
       const elements: HTMLElement[] = [];
       if (
         root instanceof HTMLElement &&
-        root.matches(".profile > span, .profile-box > span")
+        (root.matches(".profile > span") || root.matches(".profile-box > span"))
       ) {
         elements.push(root);
       }
@@ -134,16 +139,17 @@ export default function AccountSettingsEnhancer() {
     document.addEventListener("click", handleAccountClick, true);
     window.addEventListener("voto-forte:avatar-updated", handleAvatarUpdated);
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of Array.from(mutation.addedNodes)) {
-          if (node instanceof HTMLElement) applyAvatarTo(node);
-        }
-      }
+    const observer = new MutationObserver(() => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        applyAvatarTo(document);
+      });
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
       document.removeEventListener("click", handleAccountClick, true);
       window.removeEventListener("voto-forte:avatar-updated", handleAvatarUpdated);
       observer.disconnect();
