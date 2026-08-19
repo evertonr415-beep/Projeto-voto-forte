@@ -1900,13 +1900,20 @@ function normalizeText(val: unknown): string {
     .toLowerCase();
 }
 
+const POLLING_PLACES_CACHE = new Map<string, PollingPlace[]>();
+const HISTORICAL_DATA_CACHE = new Map<string, ReturnType<typeof getHistoricalElectionDataRaw>>();
+
 /**
- * Retorna os colégios eleitorais correspondentes a um bairro
+ * Retorna os colégios eleitorais correspondentes a um bairro (com memoização O(1))
  */
 export function getPollingPlacesForDistrict(districtName: string): PollingPlace[] {
   const normDistrict = normalizeText(districtName);
   if (!normDistrict || normDistrict.includes("todos os bairros") || normDistrict === "arapongas") {
     return ARAPONGAS_POLLING_PLACES;
+  }
+
+  if (POLLING_PLACES_CACHE.has(normDistrict)) {
+    return POLLING_PLACES_CACHE.get(normDistrict)!;
   }
 
   const directMatches = ARAPONGAS_POLLING_PLACES.filter((p) => {
@@ -1918,7 +1925,10 @@ export function getPollingPlacesForDistrict(districtName: string): PollingPlace[
     );
   });
 
-  if (directMatches.length > 0) return directMatches;
+  if (directMatches.length > 0) {
+    POLLING_PLACES_CACHE.set(normDistrict, directMatches);
+    return directMatches;
+  }
 
   const stemMatches = ARAPONGAS_POLLING_PLACES.filter((p) => {
     const normPlaceDistrict = normalizeText(p.district);
@@ -1926,14 +1936,12 @@ export function getPollingPlacesForDistrict(districtName: string): PollingPlace[
     return words.some((w) => normPlaceDistrict.includes(w));
   });
 
-  if (stemMatches.length > 0) return stemMatches;
-  return ARAPONGAS_POLLING_PLACES;
+  const result = stemMatches.length > 0 ? stemMatches : ARAPONGAS_POLLING_PLACES;
+  POLLING_PLACES_CACHE.set(normDistrict, result);
+  return result;
 }
 
-/**
- * Retorna os resultados históricos de um local de votação específico ou do município consolidado
- */
-export function getHistoricalElectionData(
+function getHistoricalElectionDataRaw(
   pollingPlaceId?: string,
   year?: number,
   office?: string,
@@ -1983,4 +1991,21 @@ export function getHistoricalElectionData(
         }),
     })),
   };
+}
+
+/**
+ * Retorna os resultados históricos com cache ultra rápido
+ */
+export function getHistoricalElectionData(
+  pollingPlaceId?: string,
+  year?: number,
+  office?: string,
+) {
+  const cacheKey = `${pollingPlaceId || "all"}_${year || "all"}_${office || "all"}`;
+  if (HISTORICAL_DATA_CACHE.has(cacheKey)) {
+    return HISTORICAL_DATA_CACHE.get(cacheKey)!;
+  }
+  const data = getHistoricalElectionDataRaw(pollingPlaceId, year, office);
+  HISTORICAL_DATA_CACHE.set(cacheKey, data);
+  return data;
 }

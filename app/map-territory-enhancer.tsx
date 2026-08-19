@@ -1050,9 +1050,18 @@ export default function MapTerritoryEnhancer() {
         if (!target?.matches(".scope-picker select")) return;
         if (currentScope() !== lastScope) void draw();
       };
+      let frameId: number | null = null;
+      const scheduleUpdate = () => {
+        if (frameId !== null) return;
+        frameId = window.requestAnimationFrame(() => {
+          frameId = null;
+          updateVisiblePoints();
+        });
+      };
+
       const handleRecordsChanged = () => void draw();
-      const handleZoomEnd = () => updateVisiblePoints();
-      const handleMoveEnd = () => updateVisiblePoints();
+      const handleZoomEnd = () => scheduleUpdate();
+      const handleMoveEnd = () => scheduleUpdate();
 
       const handleGlobalCollegeClick = (e: MouseEvent) => {
         const target = e.target as HTMLElement | null;
@@ -1082,6 +1091,10 @@ export default function MapTerritoryEnhancer() {
 
       cleanupActiveMap = () => {
         requestId += 1;
+        if (frameId !== null) {
+          window.cancelAnimationFrame(frameId);
+          frameId = null;
+        }
         document.removeEventListener("click", handleGlobalCollegeClick, true);
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
