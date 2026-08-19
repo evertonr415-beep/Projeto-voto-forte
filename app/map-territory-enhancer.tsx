@@ -416,9 +416,14 @@ export default function MapTerritoryEnhancer() {
                 <strong>${escapeHtml(item.district)}</strong>
                 <b>Referência territorial do bairro</b>
                 <p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
-                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é uma referência territorial do bairro e não altera a localização individual dos contatos."}</small>
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é uma referência territorial do bairro e permite consultar contatos, colégios e apuração do TSE."}</small>
                 <div class="vf-district-popup-actions">
-                  <button type="button" class="vf-district-open-contacts">Ver contatos deste bairro →</button>
+                  <button type="button" class="vf-district-open-electoral-drawer" style="background:#0284c7;color:#ffffff;font-weight:900;box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+                    📊 Abrir Painel Territorial do Bairro →
+                  </button>
+                  <button type="button" class="vf-district-open-contacts">
+                    📁 Filtrar contatos na tabela
+                  </button>
                   ${canManageReferences ? editing
                     ? '<button type="button" class="vf-district-save">Salvar posição</button><button type="button" class="vf-district-cancel">Cancelar ajuste</button>'
                     : '<button type="button" class="vf-district-adjust">Ajustar posição</button>' : ""}
@@ -428,6 +433,13 @@ export default function MapTerritoryEnhancer() {
             const bindActions = () => {
               const popup = marker.getPopup?.()?.getElement?.() as HTMLElement | null;
               if (!popup) return;
+              popup.querySelector<HTMLButtonElement>(".vf-district-open-electoral-drawer")?.addEventListener("click", () => {
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                    detail: { district: item.district, total: item.total },
+                  }),
+                );
+              });
               popup.querySelector<HTMLButtonElement>(".vf-district-open-contacts")?.addEventListener("click", () => {
                 window.dispatchEvent(
                   new CustomEvent("voto-forte:open-district-contacts", {

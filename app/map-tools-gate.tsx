@@ -5,6 +5,7 @@ import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
+import NeighborhoodElectoralDrawer from "./neighborhood-electoral-drawer";
 import TerritorialPendingCenter from "./territorial-pending-center";
 
 export default function MapToolsGate() {
@@ -25,6 +26,7 @@ export default function MapToolsGate() {
 
   return (
     <>
+      {protectedAccessReady && <NeighborhoodElectoralDrawer />}
       {protectedAccessReady && <ContactWhatsappQuickQueue />}
       {protectedAccessReady && <MapContactLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}

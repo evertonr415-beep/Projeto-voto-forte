@@ -3783,3 +3783,23 @@ td {
   .leaflet-map,
   .leaflet-container { z-index: 1 !important; }
 }
+
+@keyframes vfDrawerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .vf-neighborhood-drawer-panel {
+    height: 96vh !important;
+    max-height: 96vh !important;
+    border-top-left-radius: 20px !important;
+    border-top-right-radius: 20px !important;
+  }
+}

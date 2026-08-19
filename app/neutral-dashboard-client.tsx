@@ -526,32 +526,60 @@ export default function NeutralDashboardClient({
                   Remover filtro ×
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  window.dispatchEvent(
-                    new CustomEvent("voto-forte:open-whatsapp-district-modal", {
-                      detail: { district: districtFilter },
-                    }),
-                  )
-                }
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "8px",
-                  background: "#16a34a",
-                  color: "#ffffff",
-                  fontWeight: 800,
-                  fontSize: "13px",
-                  border: 0,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(22, 163, 74, 0.28)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                📲 Disparar WhatsApp para este bairro
-              </button>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                        detail: { district: districtFilter },
+                      }),
+                    )
+                  }
+                  style={{
+                    padding: "8px 13px",
+                    borderRadius: "8px",
+                    background: "#0284c7",
+                    color: "#ffffff",
+                    fontWeight: 800,
+                    fontSize: "12px",
+                    border: 0,
+                    cursor: "pointer",
+                    boxShadow: "0 3px 10px rgba(2, 132, 199, 0.25)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  🏫 Colégios & Dados TSE
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("voto-forte:open-whatsapp-district-modal", {
+                        detail: { district: districtFilter },
+                      }),
+                    )
+                  }
+                  style={{
+                    padding: "8px 13px",
+                    borderRadius: "8px",
+                    background: "#16a34a",
+                    color: "#ffffff",
+                    fontWeight: 800,
+                    fontSize: "12px",
+                    border: 0,
+                    cursor: "pointer",
+                    boxShadow: "0 3px 10px rgba(22, 163, 74, 0.25)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  📲 WhatsApp
+                </button>
+              </div>
             </div>
           )}
 
