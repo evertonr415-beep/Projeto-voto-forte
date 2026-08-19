@@ -136,6 +136,15 @@ export async function getAccountForAuthenticatedUser(
   if (!account || account.status === "blocked") return null;
 
   const isGestor = isGestorEmail(email);
+  if (account && isGestor) {
+    account.role = "gestor";
+    account.access_role = "gestor";
+    void supabase
+      .from("vf_users")
+      .update({ role: "gestor", access_role: "gestor" })
+      .eq("id", account.id);
+  }
+
   const finalRole: UserRole = isGestor ? "gestor" : (account.role as UserRole);
   const finalAccessRole: AccessRole = isGestor ? "gestor" : normalizeAccessRole(account.access_role, account.role, email);
   const finalName: string = email === "campanhaeleicaoxv@gmail.com" ? "Deputado Pedro Lupion" : String(account.name || "");
