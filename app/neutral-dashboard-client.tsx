@@ -216,7 +216,7 @@ export default function NeutralDashboardClient({
       setQuery("");
       setProfile("");
       setDistrictFilter(district);
-      setContactsRequested(true);
+      setContactsRequested(false);
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>(".contacts-panel")?.scrollIntoView({
           behavior: "smooth",
@@ -453,17 +453,19 @@ export default function NeutralDashboardClient({
           <div className="optimized-panel-head">
             <div>
               <small>BASE DE CONTATOS</small>
-              <h2>{contactsRequested ? "Contatos selecionados" : "Escolha como deseja consultar"}</h2>
+              <h2>{contactsRequested ? "Contatos selecionados" : districtFilter ? `Bairro: ${districtFilter}` : "Base de contatos"}</h2>
               <p>
                 {contactsRequested
                   ? `Exibindo ${formatNumber(firstItem)}–${formatNumber(lastItem)} de ${formatNumber(pageData.total)}`
-                  : "A lista completa não é carregada automaticamente. Use um bairro, uma busca ou o botão abaixo."}
+                  : districtFilter
+                    ? `Bairro ${districtFilter} selecionado. Clique em "Ver lista" para abrir os contatos.`
+                    : "A lista completa está recolhida. Clique em \"Ver lista\" ou selecione um bairro."}
               </p>
             </div>
             <div className="optimized-contact-load-actions">
               {!contactsRequested ? (
                 <button className="primary" type="button" onClick={requestContacts}>
-                  Carregar contatos
+                  Ver lista
                 </button>
               ) : (
                 <button type="button" onClick={resetContactList} disabled={loadingContacts}>
@@ -519,9 +521,29 @@ export default function NeutralDashboardClient({
           </div>
 
           {!contactsRequested ? (
-            <div className="optimized-contact-idle" role="status">
-              <b>Consulta sob demanda</b>
-              <p>Os bairros permanecem disponíveis ao lado. Ao selecionar um bairro, os contatos correspondentes serão carregados automaticamente.</p>
+            <div className="optimized-contact-idle" role="status" style={{ textAlign: "center", padding: "28px 16px" }}>
+              <b>{districtFilter ? `Bairro ${districtFilter} selecionado` : "Lista de contatos recolhida"}</b>
+              <p style={{ margin: "6px 0 14px", color: "#64748b" }}>
+                {districtFilter
+                  ? `Os dados do bairro ${districtFilter} foram identificados. Clique no botão abaixo para abrir a lista.`
+                  : "A lista completa está oculta para otimizar o espaço e a navegação no celular. Clique para abrir."}
+              </p>
+              <button
+                className="primary"
+                type="button"
+                onClick={requestContacts}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                  background: "#17345c",
+                  color: "#fff",
+                  fontWeight: 800,
+                  border: 0,
+                  cursor: "pointer",
+                }}
+              >
+                Ver lista
+              </button>
             </div>
           ) : loadingContacts ? (
             <div className="optimized-loading">
