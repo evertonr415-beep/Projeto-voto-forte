@@ -450,21 +450,7 @@ function installStyles() {
         height: 72vh !important;
         min-height: 520px !important;
       }
-      .vf-map-floating-quick-bar {
-        top: 8px !important;
-        left: 8px !important;
-        right: 8px !important;
-        margin: 0 !important;
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 4px !important;
-        padding: 4px !important;
-      }
-      .vf-map-quick-btn {
-        padding: 6px 4px !important;
-        font-size: 8px !important;
-        justify-content: center !important;
-      }
+
       .full-map .map-legend {
         top: 82px !important;
         left: auto !important;
@@ -534,9 +520,7 @@ function installStyles() {
         width: 9px;
         height: 9px;
       }
-      .leaflet-control-zoom {
-        margin-top: 94px !important;
-      }
+
     }
     @media(max-width:480px) {
       .full-map {
@@ -599,52 +583,7 @@ export default function MapTerritoryEnhancer() {
       let visibleKeys = new Set<string>();
       let selectedKey = "";
 
-      // 1. BARRA DE ATALHOS RÁPIDOS NO TOPO DO MAPA
-      const quickControl = L.control({ position: "topright" });
-      let quickBarNode: HTMLElement | null = null;
-      quickControl.onAdd = () => {
-        const bar = L.DomUtil.create("div", "vf-map-floating-quick-bar") as HTMLElement;
-        bar.innerHTML = `
-          <button type="button" class="vf-map-quick-btn vf-btn-tse" title="Abrir Dados e Resultados Oficiais do TSE">
-            🏛️ Informações TSE (7 Cargos)
-          </button>
-          <button type="button" class="vf-map-quick-btn vf-btn-colleges" title="Ver 18 Colégios Eleitorais de Arapongas">
-            🏫 18 Colégios Eleitorais
-          </button>
-          <button type="button" class="vf-map-quick-btn vf-btn-districts" title="Ver Apuração por Bairro">
-            📊 Apuração por Bairro
-          </button>
-        `;
-        bar.querySelector<HTMLButtonElement>(".vf-btn-tse")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-              detail: { district: "Todos os Bairros", initialTab: "electoral" },
-            }),
-          );
-        });
-        bar.querySelector<HTMLButtonElement>(".vf-btn-colleges")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-              detail: { district: "Todos os Bairros", initialTab: "colleges" },
-            }),
-          );
-        });
-        bar.querySelector<HTMLButtonElement>(".vf-btn-districts")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-              detail: { district: "Todos os Bairros", initialTab: "contacts" },
-            }),
-          );
-        });
-        L.DomEvent.disableClickPropagation(bar);
-        L.DomEvent.disableScrollPropagation(bar);
-        quickBarNode = bar;
-        return bar;
-      };
-      quickControl.addTo(map);
+
 
       // 2. CONTROLE DE CONTATOS POR BAIRRO
       const control = L.control({ position: "bottomleft" });
@@ -1113,7 +1052,6 @@ export default function MapTerritoryEnhancer() {
           map.removeLayer(pointLayer);
           map.removeLayer(overviewLayer);
           map.removeControl(control);
-          if (quickBarNode) map.removeControl(quickControl);
         } catch {
           // O mapa pode ter sido destruído durante a navegação.
         }
