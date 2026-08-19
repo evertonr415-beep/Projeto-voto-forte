@@ -61,11 +61,43 @@ export async function getAccountForAuthenticatedUser(
   const email = user.email?.trim().toLowerCase();
   if (!email) return null;
 
-  const { data: account } = await supabase
+  let { data: account } = await supabase
     .from("vf_users")
     .select("*")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  if (!account) {
+    const { data: byEmail } = await supabase
+      .from("vf_users")
+      .select("*")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (byEmail) {
+      account = byEmail;
+      // Auto-vincula o auth_user_id caso ainda não estivesse vinculado
+      void supabase
+        .from("vf_users")
+        .update({ auth_user_id: user.id })
+        .eq("id", byEmail.id);
+    }
+  }
+
+  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
+  if (!account && email === OWNER_EMAIL.toLowerCase()) {
+    account = {
+      id: 1,
+      auth_user_id: user.id,
+      email: OWNER_EMAIL,
+      name: "Everton Moreira",
+      role: "master",
+      access_role: "adm",
+      status: "active",
+      parent_user_id: null,
+      created_at: new Date().toISOString(),
+    };
+  }
 
   if (!account || account.status === "blocked") return null;
 

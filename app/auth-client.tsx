@@ -51,7 +51,7 @@ const NeutralDashboardClient = dynamic(() => import("./neutral-dashboard-client"
 
 const OFFICIAL_SITE_URL = "https://www.sistemavotoforte.com.br";
 const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
-const SESSION_VALIDATION_TIMEOUT_MS = 15_000;
+const SESSION_VALIDATION_TIMEOUT_MS = 45_000;
 
 export default function AuthClient({
   dashboardMode = "full",
