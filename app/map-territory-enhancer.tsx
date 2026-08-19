@@ -954,7 +954,6 @@ export default function MapTerritoryEnhancer() {
               `📍 ${item.district} · Arapongas (${NUMBER.format(item.total)} contato(s))`,
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
-            marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
             marker.on("click", (e) => {
               // Se não estiver arrastando/editando posição, abre a gaveta consolidada diretamente no primeiro clique
               if (!editingPosition) {
