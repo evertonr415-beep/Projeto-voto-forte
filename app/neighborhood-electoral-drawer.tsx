@@ -60,13 +60,13 @@ const ORDERED_OFFICES = [
   { id: "presidente", label: "Presidente", icon: "🇧🇷", defaultYear: 2022, availableYears: [2022], scope: "Federal" },
   { id: "senador", label: "Senador", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Paraná" },
   { id: "governador", label: "Governador", icon: "🏢", defaultYear: 2022, availableYears: [2022], scope: "Paraná" },
-  { id: "deputado_federal", label: "Deputado Federal", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Federal" },
-  { id: "deputado_estadual", label: "Deputado Estadual", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Estadual" },
+  { id: "deputado_federal", label: "Dep. Federal", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Federal" },
+  { id: "deputado_estadual", label: "Dep. Estadual", icon: "🏛️", defaultYear: 2022, availableYears: [2022], scope: "Estadual" },
   { id: "prefeito", label: "Prefeito", icon: "👔", defaultYear: 2024, availableYears: [2024, 2020], scope: "Municipal" },
   { id: "vereador", label: "Vereador", icon: "🗳️", defaultYear: 2024, availableYears: [2024, 2020], scope: "Municipal" },
 ] as const;
 
-// Lista mestre de bairros para seleção rápida
+// Lista de bairros de referência de Arapongas
 const ARAPONGAS_DEFAULT_DISTRICTS = [
   "Centro",
   "Jardim San Raphael",
@@ -105,6 +105,7 @@ export default function NeighborhoodElectoralDrawer() {
   const [availableDistricts, setAvailableDistricts] = useState<string[]>(ARAPONGAS_DEFAULT_DISTRICTS);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
   const [searchDistrictQuery, setSearchDistrictQuery] = useState("");
+  const [showAllColleges, setShowAllColleges] = useState(false);
 
   // Filtros internos
   const [searchContact, setSearchContact] = useState("");
@@ -118,7 +119,7 @@ export default function NeighborhoodElectoralDrawer() {
   const [selectedOffice, setSelectedOffice] = useState<string>("presidente");
   const [selectedYear, setSelectedYear] = useState<number>(2022);
 
-  // Carrega todos os bairros existentes no sistema
+  // Carrega todos os bairros existentes no banco
   useEffect(() => {
     void apiFetch("/api/contacts?mode=summary", { cache: "no-store" })
       .then(async (res) => (res.ok ? res.json() : null))
@@ -134,58 +135,6 @@ export default function NeighborhoodElectoralDrawer() {
         }
       })
       .catch(() => undefined);
-  }, []);
-
-  // Injetor de botões na barra lateral do dashboard
-  useEffect(() => {
-    const ensureSidebarItems = () => {
-      const nav = document.querySelector<HTMLElement>(".sidebar nav");
-      if (!nav) return;
-
-      const broadcastBtn = nav.querySelector(".whaticket-broadcast-sidebar-btn");
-      if (broadcastBtn && !nav.querySelector(".tse-colleges-sidebar-btn")) {
-        const collegesBtn = document.createElement("button");
-        collegesBtn.type = "button";
-        collegesBtn.className = "tse-colleges-sidebar-btn";
-        collegesBtn.title = "Colégios de Votação TSE";
-        collegesBtn.innerHTML = `
-          <span class="nav-icon" style="color: #38bdf8">🏫</span>
-          <span class="nav-name">Colégios de Votação</span>
-          <em style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4)">TSE</em>
-        `;
-        collegesBtn.addEventListener("click", () => {
-          setActiveTab("colleges");
-          setIsOpen(true);
-        });
-
-        const electionsBtn = document.createElement("button");
-        electionsBtn.type = "button";
-        electionsBtn.className = "tse-elections-sidebar-btn";
-        electionsBtn.title = "Histórico Eleitoral TSE";
-        electionsBtn.innerHTML = `
-          <span class="nav-icon" style="color: #fbbf24">🗳️</span>
-          <span class="nav-name">Histórico Eleitoral</span>
-          <em style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4)">OFICIAL</em>
-        `;
-        electionsBtn.addEventListener("click", () => {
-          setActiveTab("electoral");
-          setIsOpen(true);
-        });
-
-        if (broadcastBtn.nextSibling) {
-          nav.insertBefore(collegesBtn, broadcastBtn.nextSibling);
-          nav.insertBefore(electionsBtn, collegesBtn.nextSibling);
-        } else {
-          nav.appendChild(collegesBtn);
-          nav.appendChild(electionsBtn);
-        }
-      }
-    };
-
-    ensureSidebarItems();
-    const observer = new MutationObserver(ensureSidebarItems);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
   }, []);
 
   // Escuta eventos de abertura
@@ -224,6 +173,7 @@ export default function NeighborhoodElectoralDrawer() {
           pageSize: "15",
           year: String(selectedYear),
         });
+        if (showAllColleges) params.set("allColleges", "true");
         if (searchContact) params.set("q", searchContact);
         if (selectedPollingPlaceId) params.set("pollingPlaceId", selectedPollingPlaceId);
         if (selectedOffice) params.set("office", selectedOffice);
@@ -246,7 +196,7 @@ export default function NeighborhoodElectoralDrawer() {
     return () => {
       cancelled = true;
     };
-  }, [district, isOpen, contactPage, searchContact, selectedPollingPlaceId, selectedYear, selectedOffice]);
+  }, [district, isOpen, contactPage, searchContact, selectedPollingPlaceId, selectedYear, selectedOffice, showAllColleges]);
 
   // Manipulador da troca de cargo garantindo o ano correto
   const handleOfficeSelect = (officeId: string) => {
@@ -310,7 +260,7 @@ export default function NeighborhoodElectoralDrawer() {
     return data.contacts.filter((c) => c.kind === contactProfileFilter);
   }, [data?.contacts, contactProfileFilter]);
 
-  // Filtra lista de bairros do modal de troca
+  // Filtra lista de bairros do modal de busca
   const filteredDistrictsList = useMemo(() => {
     if (!searchDistrictQuery.trim()) return availableDistricts;
     const q = searchDistrictQuery.toLowerCase().trim();
@@ -325,13 +275,13 @@ export default function NeighborhoodElectoralDrawer() {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(13, 35, 66, 0.72)",
+        background: "rgba(13, 35, 66, 0.75)",
         backdropFilter: "blur(6px)",
         zIndex: 9990,
         display: "flex",
         justifyContent: "center",
-        alignItems: "flex-end",
-        padding: "0",
+        alignItems: "center",
+        padding: "12px",
         overflow: "hidden",
       }}
       onClick={(e) => {
@@ -344,55 +294,54 @@ export default function NeighborhoodElectoralDrawer() {
       <div
         className="vf-neighborhood-drawer-panel"
         style={{
-          width: "min(880px, 100%)",
-          height: "94vh",
-          maxHeight: "94vh",
+          width: "min(920px, 100%)",
+          height: "92vh",
+          maxHeight: "92vh",
           background: "#ffffff",
-          borderTopLeftRadius: "24px",
-          borderTopRightRadius: "24px",
-          boxShadow: "0 -10px 40px rgba(0, 0, 0, 0.3)",
+          borderRadius: "20px",
+          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.35)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          animation: "vfDrawerSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+          animation: "vfDrawerSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           position: "relative",
         }}
       >
         {/* ======================================================== */}
-        {/* MODAL DE TROCA RÁPIDA DE BAIRRO                          */}
+        {/* MODAL DE BUSCA DE BAIRRO                                 */}
         {/* ======================================================== */}
         {showDistrictModal && (
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(15, 23, 42, 0.75)",
-              zIndex: 100,
+              background: "rgba(15, 23, 42, 0.8)",
+              zIndex: 200,
               display: "flex",
-              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
               padding: "16px",
-              animation: "vfDrawerSlideUp 0.2s ease-out",
             }}
           >
             <div
               style={{
                 background: "#ffffff",
                 borderRadius: "18px",
-                padding: "16px",
+                padding: "20px",
+                width: "min(480px, 100%)",
+                maxHeight: "80vh",
                 display: "flex",
                 flexDirection: "column",
-                maxHeight: "85vh",
-                overflow: "hidden",
                 boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 900, color: "#0f172a" }}>
                     📍 Selecionar Bairro
                   </h3>
-                  <small style={{ color: "#64748b" }}>Escolha o território para consultar contatos, colégios e votos</small>
+                  <small style={{ color: "#64748b" }}>Escolha o bairro de Arapongas para consultar</small>
                 </div>
                 <button
                   type="button"
@@ -416,14 +365,14 @@ export default function NeighborhoodElectoralDrawer() {
                 autoFocus
                 value={searchDistrictQuery}
                 onChange={(e) => setSearchDistrictQuery(e.target.value)}
-                placeholder="🔍 Digite o nome do bairro..."
+                placeholder="🔍 Digite para filtrar bairros..."
                 style={{
                   width: "100%",
                   padding: "10px 14px",
                   borderRadius: "10px",
                   border: "1.5px solid #cbd5e1",
                   fontSize: "14px",
-                  marginBottom: "10px",
+                  marginBottom: "12px",
                   boxSizing: "border-box",
                 }}
               />
@@ -463,88 +412,103 @@ export default function NeighborhoodElectoralDrawer() {
         )}
 
         {/* ======================================================== */}
-        {/* CABEÇALHO COM SELETOR CLICÁVEL DE BAIRRO                 */}
+        {/* CABEÇALHO PRINCIPAL COM SELETOR DE BAIRRO VISÍVEL        */}
         {/* ======================================================== */}
         <header
           style={{
             background: "linear-gradient(135deg, #0d2342 0%, #17345c 100%)",
             color: "#ffffff",
-            padding: "16px 18px 12px",
+            padding: "14px 18px",
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 900,
-                  color: "#38bdf8",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  background: "rgba(56, 189, 248, 0.15)",
-                  padding: "3px 8px",
-                  borderRadius: "999px",
-                }}
-              >
-                🗺️ Consulta Territorial Oficial
-              </span>
-              <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700 }}>
-                Arapongas · PR (61ª Zona)
-              </span>
-            </div>
+          {/* Lado Esquerdo: Identificação e Seletor de Bairro no Computador e Mobile */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 900,
+                    color: "#38bdf8",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    background: "rgba(56, 189, 248, 0.15)",
+                    padding: "2px 7px",
+                    borderRadius: "999px",
+                  }}
+                >
+                  🏛️ Informações TSE
+                </span>
+                <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700 }}>
+                  Arapongas · PR (61ª Zona)
+                </span>
+              </div>
 
-            {/* BOTÃO CLICÁVEL PARA SELECIONAR O BAIRRO DESEJADO */}
-            <button
-              type="button"
-              onClick={() => {
-                setSearchDistrictQuery("");
-                setShowDistrictModal(true);
-              }}
-              title="Clique para trocar de bairro"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "rgba(255, 255, 255, 0.12)",
-                border: "1.5px solid rgba(56, 189, 248, 0.4)",
-                borderRadius: "12px",
-                padding: "6px 12px",
-                color: "#ffffff",
-                cursor: "pointer",
-                margin: "4px 0",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <span style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "-0.3px", color: "#ffffff" }}>
-                {district}
-              </span>
-              <span
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: "#38bdf8",
-                  background: "rgba(56, 189, 248, 0.2)",
-                  padding: "2px 7px",
-                  borderRadius: "6px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                }}
-              >
-                Trocar ▾
-              </span>
-            </button>
+              {/* SELETOR DE BAIRRO CLARO E VISÍVEL NO COMPUTADOR */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                <label style={{ fontSize: "12px", color: "#cbd5e1", fontWeight: 700 }}>
+                  Bairro:
+                </label>
+                <select
+                  value={district}
+                  onChange={(e) => {
+                    setDistrict(e.target.value);
+                    setContactPage(1);
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    background: "#ffffff",
+                    color: "#0f172a",
+                    fontWeight: 900,
+                    fontSize: "14px",
+                    border: "2px solid #38bdf8",
+                    cursor: "pointer",
+                    outline: "none",
+                    maxWidth: "230px",
+                  }}
+                >
+                  {availableDistricts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "2px", fontSize: "12px", color: "#cbd5e1" }}>
-              <span>👥 <b>{NUMBER.format(data?.totalContacts ?? 0)}</b> contatos no sistema</span>
-              <span>🏫 <b>{data?.pollingPlaces?.length ?? 0}</b> locais de votação</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchDistrictQuery("");
+                    setShowDistrictModal(true);
+                  }}
+                  title="Abrir busca rápida de bairros"
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(255, 255, 255, 0.15)",
+                    color: "#ffffff",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  🔍 Buscar Bairro
+                </button>
+              </div>
             </div>
           </div>
 
+          {/* Lado Direito: Ações Rápidas */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               type="button"
@@ -867,6 +831,43 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ======================================================== */}
           {activeTab === "colleges" && (
             <div style={{ display: "grid", gap: "12px" }}>
+              {/* Seletor de Escopo de Colégios */}
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAllColleges(false)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    background: !showAllColleges ? "#0284c7" : "#ffffff",
+                    color: !showAllColleges ? "#ffffff" : "#0284c7",
+                    border: "1.5px solid #0284c7",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  📍 Colégios de {district} ({filteredColleges.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAllColleges(true)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    background: showAllColleges ? "#0284c7" : "#ffffff",
+                    color: showAllColleges ? "#ffffff" : "#0284c7",
+                    border: "1.5px solid #0284c7",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  🏛️ Ver Todos os 18 Colégios de Arapongas
+                </button>
+              </div>
+
+              {/* Barra de Pesquisa */}
               <div style={{ position: "relative" }}>
                 <input
                   type="search"
@@ -929,7 +930,7 @@ export default function NeighborhoodElectoralDrawer() {
                           {place.name}
                         </h4>
                         <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
-                          📍 {place.address} — {place.district}
+                          📍 {place.address} — <b>{place.district}</b>
                         </p>
                       </div>
                       <span
@@ -1014,22 +1015,22 @@ export default function NeighborhoodElectoralDrawer() {
                   gap: "12px",
                 }}
               >
-                {/* 1. SELEÇÃO DE CARGO NA SEQUÊNCIA EXATA */}
+                {/* 1. SELEÇÃO DE CARGO NA SEQUÊNCIA EXATA SOLICITADA */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                     <span style={{ fontSize: "12px", fontWeight: 900, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      Selecione o Cargo Desejado:
+                      Selecione a Categoria de Votação:
                     </span>
                     <span style={{ fontSize: "11px", fontWeight: 700, color: "#0284c7" }}>
-                      Dados Oficiais TSE
+                      Dados Oficiais TSE (61ª Zona)
                     </span>
                   </div>
 
-                  {/* BOTOES DE CARGO NA SEQUÊNCIA EXATA: Presidente, Senador, Governador, Deputado Federal, Deputado Estadual, Prefeito, Vereador */}
+                  {/* BOTOES DE CARGO NA SEQUÊNCIA: Presidente, Senador, Governador, Deputado Federal, Deputado Estadual, Prefeito, Vereador */}
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
                       gap: "6px",
                     }}
                   >
@@ -1064,7 +1065,7 @@ export default function NeighborhoodElectoralDrawer() {
                   </div>
                 </div>
 
-                {/* 2. SELEÇÃO DE ANO DA ELEIÇÃO PARA O CARGO ESCOLHIDO */}
+                {/* 2. SELEÇÃO DE ANO DA ELEIÇÃO */}
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: "10px" }}>
                   <span style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
                     Ano da Eleição:
@@ -1090,7 +1091,7 @@ export default function NeighborhoodElectoralDrawer() {
                   ))}
                 </div>
 
-                {/* 3. BARRA DE PESQUISA DIRETA DE CANDIDATO */}
+                {/* 3. BUSCA RÁPIDA DE CANDIDATO */}
                 <div style={{ position: "relative" }}>
                   <input
                     type="search"
@@ -1130,7 +1131,7 @@ export default function NeighborhoodElectoralDrawer() {
                   )}
                 </div>
 
-                {/* FILTRO DE COLÉGIO SE APLICADO */}
+                {/* FILTRO DE COLÉGIO ATIVO */}
                 {selectedPollingPlaceId && (
                   <div
                     style={{

@@ -52,10 +52,9 @@ export async function GET(request: Request) {
     url.searchParams.get("owner") ?? undefined,
   );
 
-  const ownerEmails = scope === "all" ? emails : [scope];
-
+  const allCollegesParam = url.searchParams.get("allColleges") === "true" || district === "Todos os Bairros";
   // 1. Carrega Colégios de Votação do TSE
-  const pollingPlaces = district
+  const pollingPlaces = (district && !allCollegesParam)
     ? getPollingPlacesForDistrict(district)
     : ARAPONGAS_POLLING_PLACES;
 
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
   let contacts: Array<Record<string, unknown>> = [];
   let totalContacts = 0;
 
-  if (district) {
+  if (district && district !== "Todos os Bairros") {
     try {
       const from = (page - 1) * pageSize;
       const { data, error } = await account.supabase.rpc(
