@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import "./institutional-communication.css";
 
 const STORAGE_KEY = "pc_dashboard_state_v1";
@@ -397,843 +396,804 @@ export default function InstitutionalCommunicationClient() {
 
   if (!isLoaded) {
     return (
-      <div className="pc-root" style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>
-        <p style={{ color: "var(--muted)" }}>Carregando Painel de Comunicação Institucional…</p>
+      <div className="pc-embedded-container" style={{ display: "grid", placeItems: "center", minHeight: "400px" }}>
+        <p style={{ color: "var(--pc-muted)" }}>Carregando Painel Institucional…</p>
       </div>
     );
   }
 
   return (
     <div
-      className={`pc-root ${state.theme === "light" ? "light-mode" : ""}`}
+      className={`pc-embedded-container ${state.theme === "light" ? "pc-theme-light" : ""}`}
       data-theme={state.theme}
     >
-      <div className="shell">
-        {/* TOPBAR */}
-        <header className="topbar">
-          <div className="brand">
-            <div className="logo">PC</div>
-            <div>
-              <h1>Painel de Comunicação Institucional</h1>
-              <p>Organização de conteúdo, agenda, território e conformidade — visualização local.</p>
-            </div>
+      {/* SUB-HEADER ELEGANTE */}
+      <div className="pc-embedded-header">
+        <div className="pc-embedded-title">
+          <div className="pc-logo-mini">PC</div>
+          <div>
+            <h2>Painel de Comunicação & Gestão Institucional</h2>
+            <p>Organização de conteúdo, agenda, território e conformidade — visualização integrada.</p>
           </div>
-          <div className="top-actions">
-            <span className="chip">
-              ● {state.lastSaved ? "salvo localmente" : "pronto para edição"}
-            </span>
-            <button type="button" className="btn ghost" onClick={toggleTheme}>
-              Alternar tema
-            </button>
-            <button type="button" className="btn" onClick={exportJson}>
-              Exportar JSON
-            </button>
-            <button type="button" className="btn success" onClick={resetToDefault}>
-              Restaurar exemplo
-            </button>
-            <Link href="/contatos" className="btn primary">
-              Sair
-            </Link>
-          </div>
-        </header>
-
-        {/* LAYOUT PRINCIPAL COM SIDEBAR */}
-        <div className="layout">
-          {/* SIDEBAR COM AS 7 SEÇÕES */}
-          <aside className="sidebar">
-            <div className="nav-title">
-              <strong>Seções</strong>
-              <span>7 blocos</span>
-            </div>
-            <div className="nav">
-              <button
-                type="button"
-                className={`tab ${activeTab === "visao" ? "active" : ""}`}
-                onClick={() => setActiveTab("visao")}
-              >
-                Visão Geral
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "perfil" ? "active" : ""}`}
-                onClick={() => setActiveTab("perfil")}
-              >
-                Perfil & Posicionamento
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "agenda" ? "active" : ""}`}
-                onClick={() => setActiveTab("agenda")}
-              >
-                Agenda & Entregas
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "territorio" ? "active" : ""}`}
-                onClick={() => setActiveTab("territorio")}
-              >
-                Território & Público
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "conteudo" ? "active" : ""}`}
-                onClick={() => setActiveTab("conteudo")}
-              >
-                Conteúdo & Peças
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "compliance" ? "active" : ""}`}
-                onClick={() => setActiveTab("compliance")}
-              >
-                Compliance
-              </button>
-              <button
-                type="button"
-                className={`tab ${activeTab === "exportacao" ? "active" : ""}`}
-                onClick={() => setActiveTab("exportacao")}
-              >
-                Exportação
-              </button>
-            </div>
-            <div className="note">
-              <strong>Observação</strong>
-              <br />
-              Este layout foi desenhado como uma <em>base institucional</em>: ele organiza comunicação pública, não textos persuasivos específicos. Você pode adaptar os campos para biografia, prestação de contas, agenda e temas de interesse público.
-            </div>
-          </aside>
-
-          {/* MAIN CONTENT AREA */}
-          <main className="main">
-            {/* 1. VISÃO GERAL */}
-            {activeTab === "visao" && (
-              <section>
-                <div className="hero">
-                  <div className="hero-banner">
-                    <div className="status">
-                      <span className="dot" /> painel salvo localmente · pronto para edição
-                    </div>
-                    <h2>Comunicação clara, moderna e orientada a informação pública</h2>
-                    <p>
-                      Organize a presença digital em um único lugar: identidade, prioridades, agenda, peças de conteúdo,
-                      cobertura territorial e checklist de conformidade. O painel foi pensado para visualizar a estrutura
-                      do projeto antes de avançar para desenvolvimento real.
-                    </p>
-                    <div className="hero-kpis">
-                      <div className="kpi">
-                        <strong>2</strong>
-                        <span>mandatos / frentes de atuação</span>
-                      </div>
-                      <div className="kpi">
-                        <strong>12</strong>
-                        <span>itens de agenda desta semana</span>
-                      </div>
-                      <div className="kpi">
-                        <strong>8</strong>
-                        <span>checagens de conformidade</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="hero-side">
-                    <div className="mini-stat">
-                      <div className="label">Status do workspace</div>
-                      <div className="value">Ativo e offline</div>
-                    </div>
-                    <div className="mini-stat">
-                      <div className="label">Último salvamento</div>
-                      <div className="value">{state.lastSaved || "—"}</div>
-                    </div>
-                    <div className="mini-stat">
-                      <div className="label">Modo visual</div>
-                      <div className="value">{state.theme === "light" ? "Claro" : "Escuro"}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid-3">
-                  <div className="card">
-                    <h4>Resumo estratégico</h4>
-                    <div className="field">
-                      <label>Objetivo editorial</label>
-                      <textarea
-                        value={state.overviewGoal}
-                        onChange={(e) => updateField("overviewGoal", e.target.value)}
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Mensagem central</label>
-                      <textarea
-                        value={state.overviewMessage}
-                        onChange={(e) => updateField("overviewMessage", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="card">
-                    <h4>Prioridades do período</h4>
-                    <div className="list">
-                      {state.priorities.map((item, i) => (
-                        <div key={i} className="list-item">
-                          <div style={{ flex: 1 }}>
-                            <strong>
-                              <input
-                                value={item.title}
-                                onChange={(e) => editPriority(i, "title", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  font: "inherit",
-                                  fontWeight: 800,
-                                  background: "transparent",
-                                  border: "none",
-                                  outline: "none",
-                                  color: "inherit",
-                                  padding: 0,
-                                  margin: "0 0 4px",
-                                }}
-                              />
-                            </strong>
-                            <p>
-                              <textarea
-                                value={item.body}
-                                onChange={(e) => editPriority(i, "body", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  minHeight: "58px",
-                                  font: "inherit",
-                                  background: "transparent",
-                                  border: "none",
-                                  outline: "none",
-                                  color: "var(--muted)",
-                                  resize: "vertical",
-                                  padding: 0,
-                                }}
-                              />
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => removePriority(i)}
-                            style={{ padding: "6px 10px", fontSize: "0.78rem" }}
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ marginTop: "12px" }}
-                      onClick={addPriority}
-                    >
-                      + Nova prioridade
-                    </button>
-                  </div>
-
-                  <div className="card">
-                    <h4>Ritmo da operação</h4>
-                    <div className="mini-stat">
-                      <div className="label">Peças programadas</div>
-                      <div className="value">3</div>
-                    </div>
-                    <div className="mini-stat" style={{ marginTop: "10px" }}>
-                      <div className="label">Pautas em andamento</div>
-                      <div className="value">3</div>
-                    </div>
-                    <div className="mini-stat" style={{ marginTop: "10px" }}>
-                      <div className="label">Alertas pendentes</div>
-                      <div className="value">{pendingAlertsCount}</div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 2. PERFIL & POSICIONAMENTO */}
-            {activeTab === "perfil" && (
-              <section>
-                <div className="section">
-                  <div className="section-head">
-                    <div>
-                      <h3>Perfil e posicionamento</h3>
-                      <p>Campos para organizar biografia, atuação, tom e assinatura pública.</p>
-                    </div>
-                    <div className="meta">Editable localmente</div>
-                  </div>
-                  <div className="profile-grid">
-                    <div className="card">
-                      <h4>Frente 1 · Candidato(a) / mandato</h4>
-                      <div className="field">
-                        <label>Nome de exibição</label>
-                        <input
-                          value={state.cand1Name}
-                          onChange={(e) => updateField("cand1Name", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Esfera / cargo</label>
-                        <input
-                          value={state.cand1Role}
-                          onChange={(e) => updateField("cand1Role", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Biografia resumida</label>
-                        <textarea
-                          value={state.cand1Bio}
-                          onChange={(e) => updateField("cand1Bio", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Tom de comunicação</label>
-                        <input
-                          value={state.cand1Tone}
-                          onChange={(e) => updateField("cand1Tone", e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="card">
-                      <h4>Frente 2 · Candidato(a) / mandato</h4>
-                      <div className="field">
-                        <label>Nome de exibição</label>
-                        <input
-                          value={state.cand2Name}
-                          onChange={(e) => updateField("cand2Name", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Esfera / cargo</label>
-                        <input
-                          value={state.cand2Role}
-                          onChange={(e) => updateField("cand2Role", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Biografia resumida</label>
-                        <textarea
-                          value={state.cand2Bio}
-                          onChange={(e) => updateField("cand2Bio", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Tom de comunicação</label>
-                        <input
-                          value={state.cand2Tone}
-                          onChange={(e) => updateField("cand2Tone", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="section" style={{ marginTop: "14px" }}>
-                    <div className="section-head">
-                      <div>
-                        <h3>Mensagens-chave</h3>
-                        <p>Texto-base institucional, sem apelo persuasivo direcionado.</p>
-                      </div>
-                      <div className="meta">Use para site, PDF e redes</div>
-                    </div>
-                    <div className="grid-2">
-                      <div className="field">
-                        <label>Mensagem 1</label>
-                        <textarea
-                          value={state.msg1}
-                          onChange={(e) => updateField("msg1", e.target.value)}
-                        />
-                      </div>
-                      <div className="field">
-                        <label>Mensagem 2</label>
-                        <textarea
-                          value={state.msg2}
-                          onChange={(e) => updateField("msg2", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 3. AGENDA & ENTREGAS */}
-            {activeTab === "agenda" && (
-              <section>
-                <div className="section">
-                  <div className="section-head">
-                    <div>
-                      <h3>Agenda & entregas</h3>
-                      <p>Planejamento semanal de ações, publicações, compromissos e entregas editoriais.</p>
-                    </div>
-                    <div className="meta">Clique para adicionar itens no navegador</div>
-                  </div>
-                  <div className="controls" style={{ marginBottom: "12px" }}>
-                    <button type="button" className="btn" onClick={addAgendaItem}>
-                      + Nova agenda
-                    </button>
-                  </div>
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>DATA</th>
-                          <th>TIPO</th>
-                          <th>DESCRIÇÃO</th>
-                          <th>STATUS</th>
-                          <th>RESPONSÁVEL</th>
-                          <th style={{ width: "40px" }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {state.agenda.map((row, i) => (
-                          <tr key={i}>
-                            <td>
-                              <input
-                                value={row.date}
-                                onChange={(e) => editAgendaItem(i, "date", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                value={row.type}
-                                onChange={(e) => editAgendaItem(i, "type", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <textarea
-                                value={row.desc}
-                                onChange={(e) => editAgendaItem(i, "desc", e.target.value)}
-                                style={{ width: "100%", minHeight: "52px", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none", resize: "vertical" }}
-                              />
-                            </td>
-                            <td>
-                              <select
-                                value={row.status}
-                                onChange={(e) => editAgendaItem(i, "status", e.target.value as AgendaItem["status"])}
-                                style={{ padding: "6px" }}
-                              >
-                                {["Pendente", "Em andamento", "Confirmado", "Concluído"].map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                value={row.owner}
-                                onChange={(e) => editAgendaItem(i, "owner", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="btn"
-                                onClick={() => removeAgendaItem(i)}
-                                style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
-                              >
-                                ✕
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 4. TERRITÓRIO & PÚBLICO */}
-            {activeTab === "territorio" && (
-              <section>
-                <div className="grid-2">
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Território e público</h3>
-                        <p>Mapa qualitativo de prioridades, regiões e grupos de interesse.</p>
-                      </div>
-                      <div className="meta">Visão macro</div>
-                    </div>
-                    <div className="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>REGIÃO</th>
-                            <th>PRIORIDADE</th>
-                            <th>DEMANDAS</th>
-                            <th style={{ width: "40px" }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {state.territory.map((row, i) => (
-                            <tr key={i}>
-                              <td>
-                                <input
-                                  value={row.region}
-                                  onChange={(e) => editTerritoryItem(i, "region", e.target.value)}
-                                  style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                                />
-                              </td>
-                              <td>
-                                <select
-                                  value={row.priority}
-                                  onChange={(e) => editTerritoryItem(i, "priority", e.target.value as TerritoryItem["priority"])}
-                                  style={{ padding: "6px" }}
-                                >
-                                  {["Alta", "Média", "Baixa"].map((s) => (
-                                    <option key={s} value={s}>
-                                      {s}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td>
-                                <textarea
-                                  value={row.demands}
-                                  onChange={(e) => editTerritoryItem(i, "demands", e.target.value)}
-                                  style={{ width: "100%", minHeight: "52px", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none", resize: "vertical" }}
-                                />
-                              </td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="btn"
-                                  onClick={() => removeTerritoryItem(i)}
-                                  style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
-                                >
-                                  ✕
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Segmentos de atenção</h3>
-                        <p>Organização por temas, setores e interlocutores públicos.</p>
-                      </div>
-                      <div className="meta">Atualização rápida</div>
-                    </div>
-                    <div className="list">
-                      {state.audiences.map((item, i) => (
-                        <div key={i} className="list-item">
-                          <div style={{ flex: 1 }}>
-                            <strong>
-                              <input
-                                value={item.title}
-                                onChange={(e) => editAudienceItem(i, "title", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  font: "inherit",
-                                  fontWeight: 800,
-                                  background: "transparent",
-                                  border: "none",
-                                  outline: "none",
-                                  color: "inherit",
-                                  padding: 0,
-                                  margin: "0 0 4px",
-                                }}
-                              />
-                            </strong>
-                            <p>
-                              <textarea
-                                value={item.body}
-                                onChange={(e) => editAudienceItem(i, "body", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  minHeight: "58px",
-                                  font: "inherit",
-                                  background: "transparent",
-                                  border: "none",
-                                  outline: "none",
-                                  color: "var(--muted)",
-                                  resize: "vertical",
-                                  padding: 0,
-                                }}
-                              />
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => removeAudienceItem(i)}
-                            style={{ padding: "6px 10px", fontSize: "0.78rem" }}
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ marginTop: "12px" }}
-                      onClick={addAudienceItem}
-                    >
-                      + Novo segmento
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 5. CONTEÚDO & PEÇAS */}
-            {activeTab === "conteudo" && (
-              <section>
-                <div className="section">
-                  <div className="section-head">
-                    <div>
-                      <h3>Conteúdo & peças</h3>
-                      <p>Calendário, formatos, temas e publicações em produção.</p>
-                    </div>
-                    <div className="meta">Editor rápido</div>
-                  </div>
-                  <div className="controls" style={{ marginBottom: "12px" }}>
-                    <button type="button" className="btn" onClick={addContentItem}>
-                      + Nova peça
-                    </button>
-                  </div>
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>FORMATO</th>
-                          <th>TEMA</th>
-                          <th>OBJETIVO</th>
-                          <th>CANAL</th>
-                          <th>PRAZO</th>
-                          <th style={{ width: "40px" }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {state.contents.map((row, i) => (
-                          <tr key={i}>
-                            <td>
-                              <input
-                                value={row.format}
-                                onChange={(e) => editContentItem(i, "format", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                value={row.theme}
-                                onChange={(e) => editContentItem(i, "theme", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                value={row.objective}
-                                onChange={(e) => editContentItem(i, "objective", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                value={row.channel}
-                                onChange={(e) => editContentItem(i, "channel", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                value={row.due}
-                                onChange={(e) => editContentItem(i, "due", e.target.value)}
-                                style={{ width: "100%", font: "inherit", background: "transparent", border: "none", color: "inherit", outline: "none" }}
-                              />
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="btn"
-                                onClick={() => removeContentItem(i)}
-                                style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
-                              >
-                                ✕
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 6. COMPLIANCE */}
-            {activeTab === "compliance" && (
-              <section>
-                <div className="grid-2">
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Checklist de conformidade</h3>
-                        <p>Itens mínimos para revisão antes de publicar.</p>
-                      </div>
-                      <div className="meta">Marque o que estiver ok</div>
-                    </div>
-                    <div className="list">
-                      {state.compliance.map((item, i) => (
-                        <div key={i} className="list-item">
-                          <div style={{ flex: 1 }}>
-                            <strong>
-                              <input
-                                value={item.text}
-                                onChange={(e) => editComplianceItem(i, e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  font: "inherit",
-                                  fontWeight: 800,
-                                  background: "transparent",
-                                  border: "none",
-                                  outline: "none",
-                                  color: "inherit",
-                                  padding: 0,
-                                  margin: "0 0 4px",
-                                }}
-                              />
-                            </strong>
-                            <p>
-                              Marcação:{" "}
-                              {item.ok ? (
-                                <span className="tag green">ok</span>
-                              ) : (
-                                <span className="tag orange">pendente</span>
-                              )}
-                            </p>
-                          </div>
-                          <div style={{ display: "flex", gap: "6px" }}>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => toggleComplianceItem(i)}
-                              style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-                            >
-                              {item.ok ? "Desmarcar" : "Marcar ok"}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => removeComplianceItem(i)}
-                              style={{ padding: "6px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ marginTop: "12px" }}
-                      onClick={addComplianceItem}
-                    >
-                      + Novo item
-                    </button>
-                  </div>
-
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Anotações editoriais</h3>
-                        <p>Espaço para observações, ajustes e pendências da equipe.</p>
-                      </div>
-                      <div className="meta">Notas locais</div>
-                    </div>
-                    <div className="field">
-                      <label>Notas gerais</label>
-                      <textarea
-                        value={state.editorNotes}
-                        onChange={(e) => updateField("editorNotes", e.target.value)}
-                        style={{ minHeight: "360px" }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 7. EXPORTAÇÃO */}
-            {activeTab === "exportacao" && (
-              <section>
-                <div className="grid-2">
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Exportação e backup</h3>
-                        <p>Baixe os dados do painel e salve uma cópia da configuração atual.</p>
-                      </div>
-                      <div className="meta">Compatível com JSON</div>
-                    </div>
-                    <div className="field">
-                      <label>JSON do estado atual</label>
-                      <textarea
-                        value={JSON.stringify(state, null, 2)}
-                        readOnly
-                        style={{ minHeight: "360px", fontFamily: "monospace", fontSize: "0.82rem" }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="section">
-                    <div className="section-head">
-                      <div>
-                        <h3>Ações rápidas</h3>
-                        <p>Exportar, restaurar, alternar tema e reiniciar estado.</p>
-                      </div>
-                      <div className="meta">Fluxo simples</div>
-                    </div>
-                    <div className="list">
-                      <div className="list-item">
-                        <div>
-                          <strong>Exportar JSON</strong>
-                          <p>Baixa uma cópia completa do conteúdo do painel.</p>
-                        </div>
-                        <button type="button" className="btn" onClick={exportJson}>
-                          Baixar
-                        </button>
-                      </div>
-                      <div className="list-item">
-                        <div>
-                          <strong>Restaurar exemplo</strong>
-                          <p>Recarrega os dados de demonstração originais.</p>
-                        </div>
-                        <button type="button" className="btn" onClick={resetToDefault}>
-                          Resetar
-                        </button>
-                      </div>
-                      <div className="list-item">
-                        <div>
-                          <strong>Trocar tema</strong>
-                          <p>Alterna entre modo escuro e claro.</p>
-                        </div>
-                        <button type="button" className="btn" onClick={toggleTheme}>
-                          Alternar
-                        </button>
-                      </div>
-                    </div>
-                    <div className="footer-note">
-                      <strong>Nota de uso:</strong> este painel organiza comunicação pública, agenda, territórios e conformidade de forma estruturada e 100% offline.
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-          </main>
         </div>
+        <div className="pc-embedded-actions">
+          <span className="pc-chip">
+            <span className="dot" /> {state.lastSaved ? "salvo localmente" : "pronto para edição"}
+          </span>
+          <button type="button" className="pc-btn ghost" onClick={toggleTheme}>
+            {state.theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+          </button>
+          <button type="button" className="pc-btn" onClick={exportJson}>
+            📥 Exportar JSON
+          </button>
+          <button type="button" className="pc-btn success" onClick={resetToDefault}>
+            🔄 Restaurar exemplo
+          </button>
+        </div>
+      </div>
+
+      {/* ABAS HORIZONTAIS DE ALTA USABILIDADE */}
+      <nav className="pc-horizontal-tabs" role="tablist">
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "visao" ? "active" : ""}`}
+          onClick={() => setActiveTab("visao")}
+        >
+          📊 Visão Geral
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "perfil" ? "active" : ""}`}
+          onClick={() => setActiveTab("perfil")}
+        >
+          👤 Perfil & Posicionamento
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "agenda" ? "active" : ""}`}
+          onClick={() => setActiveTab("agenda")}
+        >
+          📅 Agenda & Entregas
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "territorio" ? "active" : ""}`}
+          onClick={() => setActiveTab("territorio")}
+        >
+          📍 Território & Público
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "conteudo" ? "active" : ""}`}
+          onClick={() => setActiveTab("conteudo")}
+        >
+          🎬 Conteúdo & Peças
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "compliance" ? "active" : ""}`}
+          onClick={() => setActiveTab("compliance")}
+        >
+          ✅ Compliance {pendingAlertsCount > 0 ? `(${pendingAlertsCount})` : "✓"}
+        </button>
+        <button
+          type="button"
+          className={`pc-tab-pill ${activeTab === "exportacao" ? "active" : ""}`}
+          onClick={() => setActiveTab("exportacao")}
+        >
+          💾 Exportação
+        </button>
+      </nav>
+
+      {/* ÁREA DE CONTEÚDO */}
+      <div className="pc-tab-content-area">
+        {/* 1. VISÃO GERAL */}
+        {activeTab === "visao" && (
+          <>
+            <div className="pc-hero">
+              <div className="pc-hero-banner">
+                <div className="pc-status-tag">
+                  <span className="dot" /> painel salvo localmente · pronto para edição
+                </div>
+                <h3>Comunicação clara, moderna e orientada a informação pública</h3>
+                <p>
+                  Organize a presença digital em um único lugar: identidade, prioridades, agenda, peças de conteúdo,
+                  cobertura territorial e checklist de conformidade.
+                </p>
+                <div className="pc-hero-kpis">
+                  <div className="pc-kpi">
+                    <strong>2</strong>
+                    <span>mandatos / frentes de atuação</span>
+                  </div>
+                  <div className="pc-kpi">
+                    <strong>{state.agenda.length}</strong>
+                    <span>itens de agenda desta semana</span>
+                  </div>
+                  <div className="pc-kpi">
+                    <strong>{state.compliance.length}</strong>
+                    <span>checagens de conformidade</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pc-hero-side">
+                <div className="pc-mini-stat">
+                  <div className="label">Status do workspace</div>
+                  <div className="value">Ativo e offline</div>
+                </div>
+                <div className="pc-mini-stat">
+                  <div className="label">Último salvamento</div>
+                  <div className="value" style={{ fontSize: "0.95rem" }}>
+                    {state.lastSaved || "—"}
+                  </div>
+                </div>
+                <div className="pc-mini-stat">
+                  <div className="label">Modo visual</div>
+                  <div className="value">{state.theme === "light" ? "Claro" : "Escuro"}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pc-grid-3">
+              <div className="pc-card">
+                <h4>🎯 Resumo estratégico</h4>
+                <div className="pc-field">
+                  <label>Objetivo editorial</label>
+                  <textarea
+                    value={state.overviewGoal}
+                    onChange={(e) => updateField("overviewGoal", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Mensagem central</label>
+                  <textarea
+                    value={state.overviewMessage}
+                    onChange={(e) => updateField("overviewMessage", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="pc-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <h4 style={{ margin: 0 }}>⚡ Prioridades do período</h4>
+                  <button
+                    type="button"
+                    className="pc-btn primary"
+                    style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                    onClick={addPriority}
+                  >
+                    + Nova prioridade
+                  </button>
+                </div>
+                <div className="pc-list">
+                  {state.priorities.map((item, i) => (
+                    <div key={i} className="pc-list-item">
+                      <div className="pc-list-item-main">
+                        <strong>
+                          <input
+                            value={item.title}
+                            onChange={(e) => editPriority(i, "title", e.target.value)}
+                            style={{
+                              width: "100%",
+                              font: "inherit",
+                              fontWeight: 800,
+                              background: "transparent",
+                              border: "none",
+                              outline: "none",
+                              color: "inherit",
+                              padding: 0,
+                              margin: "0 0 4px",
+                            }}
+                          />
+                        </strong>
+                        <p>
+                          <textarea
+                            value={item.body}
+                            onChange={(e) => editPriority(i, "body", e.target.value)}
+                            style={{
+                              width: "100%",
+                              minHeight: "50px",
+                              font: "inherit",
+                              background: "transparent",
+                              border: "none",
+                              outline: "none",
+                              color: "var(--pc-muted)",
+                              resize: "vertical",
+                              padding: 0,
+                            }}
+                          />
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="pc-btn danger"
+                        onClick={() => removePriority(i)}
+                        style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pc-card">
+                <h4>📈 Ritmo da operação</h4>
+                <div className="pc-mini-stat" style={{ marginBottom: "10px" }}>
+                  <div className="label">Peças programadas</div>
+                  <div className="value" style={{ color: "var(--pc-accent)" }}>
+                    {state.contents.length}
+                  </div>
+                </div>
+                <div className="pc-mini-stat" style={{ marginBottom: "10px" }}>
+                  <div className="label">Pautas em andamento</div>
+                  <div className="value" style={{ color: "var(--pc-accent-2)" }}>
+                    {state.agenda.length}
+                  </div>
+                </div>
+                <div className="pc-mini-stat">
+                  <div className="label">Alertas pendentes</div>
+                  <div className="value" style={{ color: pendingAlertsCount > 0 ? "var(--pc-warning)" : "var(--pc-success)" }}>
+                    {pendingAlertsCount > 0 ? `${pendingAlertsCount} pendentes` : "Nenhum"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* 2. PERFIL & POSICIONAMENTO */}
+        {activeTab === "perfil" && (
+          <div className="pc-section">
+            <div className="pc-section-head">
+              <div>
+                <h3>Perfil e posicionamento</h3>
+                <p>Campos para organizar biografia, atuação, tom e assinatura pública.</p>
+              </div>
+              <span className="pc-tag blue">Editable localmente</span>
+            </div>
+            <div className="pc-profile-grid">
+              <div className="pc-card">
+                <h4>🏛️ Frente 1 · Candidato(a) / mandato</h4>
+                <div className="pc-field">
+                  <label>Nome de exibição</label>
+                  <input
+                    value={state.cand1Name}
+                    onChange={(e) => updateField("cand1Name", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Esfera / cargo</label>
+                  <input
+                    value={state.cand1Role}
+                    onChange={(e) => updateField("cand1Role", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Biografia resumida</label>
+                  <textarea
+                    value={state.cand1Bio}
+                    onChange={(e) => updateField("cand1Bio", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Tom de comunicação</label>
+                  <input
+                    value={state.cand1Tone}
+                    onChange={(e) => updateField("cand1Tone", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="pc-card">
+                <h4>🏛️ Frente 2 · Candidato(a) / mandato</h4>
+                <div className="pc-field">
+                  <label>Nome de exibição</label>
+                  <input
+                    value={state.cand2Name}
+                    onChange={(e) => updateField("cand2Name", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Esfera / cargo</label>
+                  <input
+                    value={state.cand2Role}
+                    onChange={(e) => updateField("cand2Role", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Biografia resumida</label>
+                  <textarea
+                    value={state.cand2Bio}
+                    onChange={(e) => updateField("cand2Bio", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Tom de comunicação</label>
+                  <input
+                    value={state.cand2Tone}
+                    onChange={(e) => updateField("cand2Tone", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pc-section" style={{ marginTop: "16px" }}>
+              <div className="pc-section-head">
+                <div>
+                  <h3>Mensagens-chave</h3>
+                  <p>Texto-base institucional, sem apelo persuasivo direcionado.</p>
+                </div>
+                <span className="pc-tag green">Use para site, PDF e redes</span>
+              </div>
+              <div className="pc-grid-2">
+                <div className="pc-field">
+                  <label>Mensagem 1</label>
+                  <textarea
+                    value={state.msg1}
+                    onChange={(e) => updateField("msg1", e.target.value)}
+                  />
+                </div>
+                <div className="pc-field">
+                  <label>Mensagem 2</label>
+                  <textarea
+                    value={state.msg2}
+                    onChange={(e) => updateField("msg2", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. AGENDA & ENTREGAS */}
+        {activeTab === "agenda" && (
+          <div className="pc-section">
+            <div className="pc-section-head">
+              <div>
+                <h3>Agenda & entregas</h3>
+                <p>Planejamento semanal de ações, publicações, compromissos e entregas editoriais.</p>
+              </div>
+              <button type="button" className="pc-btn primary" onClick={addAgendaItem}>
+                + Nova agenda
+              </button>
+            </div>
+            <div className="pc-table-wrap">
+              <table className="pc-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "130px" }}>DATA</th>
+                    <th style={{ width: "130px" }}>TIPO</th>
+                    <th>DESCRIÇÃO</th>
+                    <th style={{ width: "160px" }}>STATUS</th>
+                    <th style={{ width: "150px" }}>RESPONSÁVEL</th>
+                    <th style={{ width: "40px" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {state.agenda.map((row, i) => (
+                    <tr key={i}>
+                      <td>
+                        <input
+                          value={row.date}
+                          onChange={(e) => editAgendaItem(i, "date", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={row.type}
+                          onChange={(e) => editAgendaItem(i, "type", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          value={row.desc}
+                          onChange={(e) => editAgendaItem(i, "desc", e.target.value)}
+                          style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
+                        />
+                      </td>
+                      <td>
+                        <select
+                          value={row.status}
+                          onChange={(e) => editAgendaItem(i, "status", e.target.value as AgendaItem["status"])}
+                          style={{ padding: "6px 8px" }}
+                        >
+                          {["Pendente", "Em andamento", "Confirmado", "Concluído"].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          value={row.owner}
+                          onChange={(e) => editAgendaItem(i, "owner", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="pc-btn danger"
+                          onClick={() => removeAgendaItem(i)}
+                          style={{ padding: "4px 8px" }}
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4. TERRITÓRIO & PÚBLICO */}
+        {activeTab === "territorio" && (
+          <div className="pc-grid-2">
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Território e público</h3>
+                  <p>Mapa qualitativo de prioridades, regiões e grupos de interesse.</p>
+                </div>
+                <button type="button" className="pc-btn primary" onClick={addTerritoryItem}>
+                  + Região
+                </button>
+              </div>
+              <div className="pc-table-wrap">
+                <table className="pc-table">
+                  <thead>
+                    <tr>
+                      <th>REGIÃO</th>
+                      <th style={{ width: "110px" }}>PRIORIDADE</th>
+                      <th>DEMANDAS</th>
+                      <th style={{ width: "40px" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.territory.map((row, i) => (
+                      <tr key={i}>
+                        <td>
+                          <input
+                            value={row.region}
+                            onChange={(e) => editTerritoryItem(i, "region", e.target.value)}
+                            style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
+                          />
+                        </td>
+                        <td>
+                          <select
+                            value={row.priority}
+                            onChange={(e) => editTerritoryItem(i, "priority", e.target.value as TerritoryItem["priority"])}
+                            style={{ padding: "6px" }}
+                          >
+                            {["Alta", "Média", "Baixa"].map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <textarea
+                            value={row.demands}
+                            onChange={(e) => editTerritoryItem(i, "demands", e.target.value)}
+                            style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="pc-btn danger"
+                            onClick={() => removeTerritoryItem(i)}
+                            style={{ padding: "4px 8px" }}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Segmentos de atenção</h3>
+                  <p>Organização por temas, setores e interlocutores públicos.</p>
+                </div>
+                <button type="button" className="pc-btn primary" onClick={addAudienceItem}>
+                  + Novo segmento
+                </button>
+              </div>
+              <div className="pc-list">
+                {state.audiences.map((item, i) => (
+                  <div key={i} className="pc-list-item">
+                    <div className="pc-list-item-main">
+                      <strong>
+                        <input
+                          value={item.title}
+                          onChange={(e) => editAudienceItem(i, "title", e.target.value)}
+                          style={{
+                            width: "100%",
+                            font: "inherit",
+                            fontWeight: 800,
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "inherit",
+                            padding: 0,
+                            margin: "0 0 4px",
+                          }}
+                        />
+                      </strong>
+                      <p>
+                        <textarea
+                          value={item.body}
+                          onChange={(e) => editAudienceItem(i, "body", e.target.value)}
+                          style={{
+                            width: "100%",
+                            minHeight: "45px",
+                            font: "inherit",
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "var(--pc-muted)",
+                            resize: "vertical",
+                            padding: 0,
+                          }}
+                        />
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="pc-btn danger"
+                      onClick={() => removeAudienceItem(i)}
+                      style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 5. CONTEÚDO & PEÇAS */}
+        {activeTab === "conteudo" && (
+          <div className="pc-section">
+            <div className="pc-section-head">
+              <div>
+                <h3>Conteúdo & peças</h3>
+                <p>Calendário, formatos, temas e publicações em produção.</p>
+              </div>
+              <button type="button" className="pc-btn primary" onClick={addContentItem}>
+                + Nova peça
+              </button>
+            </div>
+            <div className="pc-table-wrap">
+              <table className="pc-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "150px" }}>FORMATO</th>
+                    <th style={{ width: "180px" }}>TEMA</th>
+                    <th>OBJETIVO</th>
+                    <th style={{ width: "160px" }}>CANAL</th>
+                    <th style={{ width: "120px" }}>PRAZO</th>
+                    <th style={{ width: "40px" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {state.contents.map((row, i) => (
+                    <tr key={i}>
+                      <td>
+                        <input
+                          value={row.format}
+                          onChange={(e) => editContentItem(i, "format", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={row.theme}
+                          onChange={(e) => editContentItem(i, "theme", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          value={row.objective}
+                          onChange={(e) => editContentItem(i, "objective", e.target.value)}
+                          style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={row.channel}
+                          onChange={(e) => editContentItem(i, "channel", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={row.due}
+                          onChange={(e) => editContentItem(i, "due", e.target.value)}
+                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="pc-btn danger"
+                          onClick={() => removeContentItem(i)}
+                          style={{ padding: "4px 8px" }}
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 6. COMPLIANCE */}
+        {activeTab === "compliance" && (
+          <div className="pc-grid-2">
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Checklist de conformidade</h3>
+                  <p>Itens mínimos para revisão antes de publicar.</p>
+                </div>
+                <button type="button" className="pc-btn primary" onClick={addComplianceItem}>
+                  + Novo item
+                </button>
+              </div>
+              <div className="pc-list">
+                {state.compliance.map((item, i) => (
+                  <div key={i} className="pc-list-item">
+                    <div className="pc-list-item-main">
+                      <strong>
+                        <input
+                          value={item.text}
+                          onChange={(e) => editComplianceItem(i, e.target.value)}
+                          style={{
+                            width: "100%",
+                            font: "inherit",
+                            fontWeight: 700,
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "inherit",
+                            padding: 0,
+                            margin: "0 0 4px",
+                          }}
+                        />
+                      </strong>
+                      <p>
+                        Marcação:{" "}
+                        {item.ok ? (
+                          <span className="pc-tag green">✓ ok</span>
+                        ) : (
+                          <span className="pc-tag orange">⚠ pendente</span>
+                        )}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        className={`pc-btn ${item.ok ? "ghost" : "success"}`}
+                        onClick={() => toggleComplianceItem(i)}
+                        style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+                      >
+                        {item.ok ? "Desmarcar" : "Marcar ok"}
+                      </button>
+                      <button
+                        type="button"
+                        className="pc-btn danger"
+                        onClick={() => removeComplianceItem(i)}
+                        style={{ padding: "6px 8px" }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Anotações editoriais</h3>
+                  <p>Espaço para observações, ajustes e pendências da equipe.</p>
+                </div>
+                <span className="pc-tag blue">Notas locais</span>
+              </div>
+              <div className="pc-field">
+                <label>Notas gerais da coordenação</label>
+                <textarea
+                  value={state.editorNotes}
+                  onChange={(e) => updateField("editorNotes", e.target.value)}
+                  style={{ minHeight: "360px", lineHeight: "1.6" }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 7. EXPORTAÇÃO */}
+        {activeTab === "exportacao" && (
+          <div className="pc-grid-2">
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Exportação e backup</h3>
+                  <p>Baixe os dados do painel e salve uma cópia da configuração atual.</p>
+                </div>
+                <span className="pc-tag blue">JSON V1</span>
+              </div>
+              <div className="pc-field">
+                <label>JSON do estado atual</label>
+                <textarea
+                  value={JSON.stringify(state, null, 2)}
+                  readOnly
+                  style={{ minHeight: "360px", fontFamily: "monospace", fontSize: "0.82rem", color: "#69e2c4", background: "rgba(0,0,0,0.3)" }}
+                />
+              </div>
+            </div>
+
+            <div className="pc-section">
+              <div className="pc-section-head">
+                <div>
+                  <h3>Ações rápidas</h3>
+                  <p>Exportar, restaurar, alternar tema e reiniciar estado.</p>
+                </div>
+              </div>
+              <div className="pc-list">
+                <div className="pc-list-item">
+                  <div className="pc-list-item-main">
+                    <strong>📥 Exportar JSON</strong>
+                    <p>Baixa uma cópia completa do conteúdo do painel.</p>
+                  </div>
+                  <button type="button" className="pc-btn primary" onClick={exportJson}>
+                    Baixar
+                  </button>
+                </div>
+                <div className="pc-list-item">
+                  <div className="pc-list-item-main">
+                    <strong>🔄 Restaurar exemplo</strong>
+                    <p>Recarrega os dados de demonstração originais.</p>
+                  </div>
+                  <button type="button" className="pc-btn success" onClick={resetToDefault}>
+                    Resetar
+                  </button>
+                </div>
+                <div className="pc-list-item">
+                  <div className="pc-list-item-main">
+                    <strong>🌓 Trocar tema</strong>
+                    <p>Alterna entre modo escuro e claro.</p>
+                  </div>
+                  <button type="button" className="pc-btn ghost" onClick={toggleTheme}>
+                    Alternar
+                  </button>
+                </div>
+              </div>
+              <div className="pc-footer-note">
+                <strong>Nota de uso:</strong> este painel organiza comunicação pública, agenda, territórios e conformidade de forma estruturada e 100% offline.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
