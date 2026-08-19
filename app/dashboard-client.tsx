@@ -779,24 +779,6 @@ export default function DashboardClient({
           </div>
         </header>
         <section className="workspace">{content}</section>
-        {/* Botão flutuante mobile com 3 riscos azuis */}
-        <button
-          type="button"
-          className={`vf-floating-mobile-menu-btn ${collapsed ? "is-hidden" : ""}`}
-          onClick={() => {
-            closeMapPopup();
-            setCollapsed(true);
-          }}
-          aria-label="Abrir menu de navegação"
-          title="Abrir Menu"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="4.5" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-            <rect x="3" y="10.75" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-            <rect x="3" y="17" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-          </svg>
-          <span>MENU</span>
-        </button>
       </main>
       {modal && (
         <ModalBox
