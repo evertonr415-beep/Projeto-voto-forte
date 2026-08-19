@@ -62,12 +62,32 @@ function visibilityForZoom(zoom: number) {
   return { limit: Number.POSITIVE_INFINITY, minDistance: 28, detail: "todos os bairros" };
 }
 
+/**
+ * Retorna os colégios de votação correspondentes ao bairro
+ */
+function getCollegesForDistrict(districtName: string): PollingPlace[] {
+  const norm = normalize(districtName);
+  return ARAPONGAS_POLLING_PLACES.filter((p) => {
+    const pNorm = normalize(p.district);
+    return pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm);
+  });
+}
+
 function markerIconHtml(item: DistrictItem) {
+  const colleges = getCollegesForDistrict(item.district);
+  const collegeCount = colleges.length;
+  const mainCollege = colleges[0];
+
   return `
     <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)}: ${NUMBER.format(item.total)} contatos">
       <div class="vf-district-point-box">
         <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
         <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
+        ${collegeCount > 0 ? `
+          <span class="vf-district-college-tag" title="Colégio Eleitoral: ${escapeHtml(mainCollege.shortName || mainCollege.name)}">
+            🏫 ${collegeCount === 1 ? escapeHtml(mainCollege.shortName || mainCollege.name) : `${collegeCount} Colégios`}
+          </span>
+        ` : ''}
       </div>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
     </div>
@@ -133,93 +153,39 @@ function installStyles() {
       background: #e2e8f0;
     }
 
-    /* MARCADOR DE COLÉGIO ELEITORAL */
-    .vf-polling-place-marker-icon {
-      background: transparent !important;
-      border: 0 !important;
-      overflow: visible !important;
-    }
-    .vf-map-college-point {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      filter: drop-shadow(0 3px 6px rgba(15, 35, 65, 0.25));
-      transition: transform 0.15s ease;
-      cursor: pointer;
-    }
-    .vf-map-college-point:hover {
-      transform: translateY(-3px) scale(1.08);
-      z-index: 1000 !important;
-    }
-    .vf-map-college-box {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 7px;
-      border-radius: 999px;
-      background: #0d2342;
-      border: 1.5px solid #38bdf8;
-      color: #ffffff;
-      font: 800 10px/1 Arial, sans-serif;
-      white-space: nowrap;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-    }
-    .vf-map-college-name {
-      font-size: 10px;
-      font-weight: 800;
-      color: #ffffff;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .vf-map-college-badge {
-      background: #38bdf8;
-      color: #0d2342;
-      padding: 2px 5px;
-      border-radius: 999px;
-      font: 900 9px/1 Arial, sans-serif;
-    }
-    .vf-map-college-pin {
-      display: block;
-      width: 9px;
-      height: 9px;
-      margin-top: 2px;
-      border-radius: 50%;
-      background: #f59e0b;
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 0 1px rgba(13, 35, 66, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    /* POPUP DE COLÉGIO ELEITORAL */
-    .vf-college-area-popup {
-      min-width: 230px;
-      font: 500 12px/1.4 Arial, sans-serif;
-      color: #26384d;
-    }
-    .vf-college-area-popup strong {
-      display: block;
-      color: #17345c;
-      font-size: 14px;
-      margin-bottom: 3px;
-    }
+    /* BALÕES AZUIS DOS BAIRROS */
+    .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
+    .vf-district-point-wrap{position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 6px rgba(15,35,65,.22));transition:transform .15s ease}
+    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.05)}
+    .vf-district-point-box{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.98);border:1.5px solid #0284c7;box-shadow:0 3px 12px rgba(15,35,65,.18);color:#17345c;font:800 11px/1 Arial,sans-serif;white-space:nowrap;backdrop-filter:blur(4px)}
+    .vf-district-name-text{font-size:11px;font-weight:900;color:#0f172a;letter-spacing:-.1px;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+    .vf-district-point-count{background:#0284c7;color:#ffffff;padding:2px 6px;border-radius:999px;font:900 10px/1 Arial,sans-serif}
+    .vf-district-college-tag{background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:2px 6px;border-radius:999px;font:800 9px/1 Arial,sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+    .vf-district-point-dot{display:block;width:10px;height:10px;margin-top:2px;border-radius:50%;background:#0284c7;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 4px rgba(22,66,108,.25)}
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 4px rgba(37,99,168,.25),0 0 0 1px rgba(24,74,124,.4),0 3px 6px rgba(22,66,108,.3)}
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box{border-color:#0284c7;background:#f0f9ff;box-shadow:0 3px 14px rgba(2,132,199,.4)}
+    
+    .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
+    
+    /* POPUP DE BAIRRO COM INDICAÇÃO DE COLÉGIOS */
+    .vf-district-area-popup{min-width:230px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}
+    .vf-district-area-popup strong{display:block;color:#17345c;font-size:15px;margin-bottom:3px}
+    .vf-district-area-popup b{display:inline-block;padding:2px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}
+    .vf-district-area-popup p{margin:6px 0 0;font-weight:700;color:#0f172a}
+    .vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}
+    .vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}
+    .vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}
+    .vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}
+    .vf-district-save{background:#1f7a4c;color:#fff}
+    .vf-district-cancel{background:#f3f4f6;color:#475569}
+    .vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
 
     /* PAINEL LATERAL DE CONTATOS POR BAIRRO */
     .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.13);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.16);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c;backdrop-filter:blur(6px)}
     .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3;display:flex;gap:8px;align-items:flex-start}.vf-district-map-control header>div{min-width:0;flex:1}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}.vf-district-map-toggle{display:none;border:1px solid #d9e3ef;background:#f5f8fc;color:#173f75;border-radius:8px;width:30px;height:30px;flex:0 0 30px;font:900 15px/1 Arial,sans-serif;cursor:pointer}
     .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
     .vf-district-map-scale{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale .vf-district-point-legend{width:9px;height:9px;border-radius:50%;background:#2563a8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.24)}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
-    .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
-    .vf-district-point-wrap{position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 5px rgba(15,35,65,.18));transition:transform .15s ease}
-    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.05)}
-    .vf-district-point-box{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.96);border:1px solid rgba(23,63,117,.25);box-shadow:0 3px 10px rgba(15,35,65,.14);color:#17345c;font:750 11px/1 Arial,sans-serif;white-space:nowrap;backdrop-filter:blur(4px)}
-    .vf-district-name-text{font-size:10px;font-weight:800;color:#17345c;letter-spacing:-.1px;max-width:130px;overflow:hidden;text-overflow:ellipsis}
-    .vf-district-point-count{background:#e0f2fe;color:#0369a1;padding:2px 5px;border-radius:999px;font:850 9px/1 Arial,sans-serif}
-    .vf-district-point-dot{display:block;width:10px;height:10px;margin-top:2px;border-radius:50%;background:#0284c7;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.25),0 2px 4px rgba(22,66,108,.2)}
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 4px rgba(37,99,168,.2),0 0 0 1px rgba(24,74,124,.4),0 3px 6px rgba(22,66,108,.25)}
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box{border-color:#0284c7;background:#f0f9ff;box-shadow:0 3px 12px rgba(2,132,199,.3)}
-    .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
-    .vf-district-area-popup{min-width:210px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}.vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}.vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}.vf-district-open-contacts{background:#173f75;color:#fff}.vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}.vf-district-save{background:#1f7a4c;color:#fff}.vf-district-cancel{background:#f3f4f6;color:#475569}.vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
+
     @media(max-width:760px){
       .full-map{height:72vh!important;min-height:520px!important}
       .vf-map-floating-quick-bar{top:8px!important;left:8px!important;right:8px!important;margin:0!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:4px!important;padding:4px!important;}
@@ -272,7 +238,6 @@ export default function MapTerritoryEnhancer() {
       }
 
       const pointLayer = L.layerGroup().addTo(map);
-      const pollingPlaceLayer = L.layerGroup().addTo(map);
       const overviewLayer = L.layerGroup().addTo(map);
       let overviewMarker: any = null;
       let overviewTotal = 0;
@@ -332,80 +297,7 @@ export default function MapTerritoryEnhancer() {
       };
       quickControl.addTo(map);
 
-      // 2. RENDERIZA OS 18 COLÉGIOS ELEITORAIS NO MAPA
-      const renderPollingPlaces = () => {
-        pollingPlaceLayer.clearLayers();
-        ARAPONGAS_POLLING_PLACES.forEach((place: PollingPlace) => {
-          if (!place.latitude || !place.longitude) return;
-
-          const collegeMarker = L.marker([place.latitude, place.longitude], {
-            icon: L.divIcon({
-              className: "vf-polling-place-marker-icon",
-              html: `
-                <div class="vf-map-college-point" title="${escapeHtml(place.name)}">
-                  <div class="vf-map-college-box">
-                    <span>🏫</span>
-                    <span class="vf-map-college-name">${escapeHtml(place.shortName || place.name)}</span>
-                    <span class="vf-map-college-badge">${NUMBER.format(place.totalVoters)}</span>
-                  </div>
-                  <span class="vf-map-college-pin"></span>
-                </div>
-              `,
-              iconSize: [40, 40],
-              iconAnchor: [20, 36],
-              popupAnchor: [0, -34],
-            }),
-            zIndexOffset: 300,
-          });
-
-          const popupContent = `
-            <div class="vf-college-area-popup">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                <span style="font-size:10px;font-weight:900;color:#0284c7;background:#e0f2fe;padding:2px 6px;border-radius:4px;">🏫 61ª ZONA ELEITORAL</span>
-                <span style="font-size:10px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 6px;border-radius:4px;">${NUMBER.format(place.totalVoters)} eleitores</span>
-              </div>
-              <strong style="display:block;font-size:14px;color:#0f172a;margin-bottom:2px;">${escapeHtml(place.name)}</strong>
-              <p style="margin:0;font-size:12px;color:#64748b;">📍 ${escapeHtml(place.address)} — <b>${escapeHtml(place.district)}</b></p>
-              <div style="font-size:11px;color:#475569;margin-top:4px;">
-                <b>${place.sectionsCount} Seções:</b> ${place.sections.join(", ")}
-              </div>
-              <div class="vf-college-popup-actions" style="display:grid;gap:6px;margin-top:10px;">
-                <button type="button" class="vf-college-open-results" style="padding:9px 12px;border-radius:8px;background:#0284c7;color:#fff;font-weight:900;font-size:12px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(2,132,199,0.35);">
-                  🗳️ Ver Votações Deste Colégio no TSE →
-                </button>
-                <button type="button" class="vf-college-open-district" style="padding:7px 10px;border-radius:8px;background:#f1f5f9;color:#1e293b;font-weight:700;font-size:11px;border:1px solid #cbd5e1;cursor:pointer;">
-                  📍 Ver Dados do Bairro (${escapeHtml(place.district)})
-                </button>
-              </div>
-            </div>
-          `;
-
-          collegeMarker.bindPopup(popupContent, { maxWidth: 300, closeButton: true });
-          collegeMarker.on("popupopen", () => {
-            const popupEl = collegeMarker.getPopup?.()?.getElement?.() as HTMLElement | null;
-            if (!popupEl) return;
-            popupEl.querySelector<HTMLButtonElement>(".vf-college-open-results")?.addEventListener("click", () => {
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                  detail: { district: place.district, initialTab: "electoral" },
-                }),
-              );
-            });
-            popupEl.querySelector<HTMLButtonElement>(".vf-college-open-district")?.addEventListener("click", () => {
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                  detail: { district: place.district, initialTab: "contacts" },
-                }),
-              );
-            });
-          });
-
-          collegeMarker.addTo(pollingPlaceLayer);
-        });
-      };
-      renderPollingPlaces();
-
-      // 3. CONTROLE DE CONTATOS POR BAIRRO
+      // 2. CONTROLE DE CONTATOS POR BAIRRO
       const control = L.control({ position: "bottomleft" });
       let controlNode: HTMLElement | null = null;
       control.onAdd = () => {
@@ -636,6 +528,8 @@ export default function MapTerritoryEnhancer() {
             const center = districtCenters.get(item.key);
             if (!center) continue;
 
+            const colleges = getCollegesForDistrict(item.district);
+
             const existing = districtMarkers.get(item.key);
             if (existing) {
               existing.item = item;
@@ -671,7 +565,22 @@ export default function MapTerritoryEnhancer() {
                 <strong>${escapeHtml(item.district)}</strong>
                 <b>Referência territorial do bairro</b>
                 <p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
-                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é uma referência territorial do bairro e permite consultar contatos, colégios e apuração do TSE."}</small>
+                
+                ${colleges.length > 0 ? `
+                  <div style="margin: 8px 0; padding: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
+                    <span style="display:block; font-size:10px; font-weight:800; color:#0369a1; text-transform:uppercase; margin-bottom:4px;">
+                      🏫 Colégio(s) de Votação (61ª Zona):
+                    </span>
+                    ${colleges.map(c => `
+                      <button type="button" class="vf-popup-college-btn" data-college-id="${c.id}" data-district="${escapeHtml(item.district)}" style="width:100%; text-align:left; padding:6px 8px; margin-bottom:4px; background:#ffffff; border:1px solid #7dd3fc; border-radius:6px; font-size:11px; font-weight:700; color:#0f172a; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🏫 ${escapeHtml(c.shortName || c.name)}</span>
+                        <span style="font-size:10px; color:#0284c7; font-weight:800;">${NUMBER.format(c.totalVoters)} el. →</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é a referência territorial do bairro e permite consultar contatos, colégios e apuração do TSE."}</small>
                 <div class="vf-district-popup-actions">
                   <button type="button" class="vf-district-open-electoral-drawer" style="background:#0284c7;color:#ffffff;font-weight:900;box-shadow:0 2px 8px rgba(2,132,199,0.3);">
                     📊 Abrir Painel Territorial do Bairro →
@@ -685,6 +594,19 @@ export default function MapTerritoryEnhancer() {
             const bindActions = () => {
               const popup = marker.getPopup?.()?.getElement?.() as HTMLElement | null;
               if (!popup) return;
+
+              popup.querySelectorAll<HTMLButtonElement>(".vf-popup-college-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                  const colId = btn.getAttribute("data-college-id") || "";
+                  const dist = btn.getAttribute("data-district") || item.district;
+                  window.dispatchEvent(
+                    new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                      detail: { district: dist, initialTab: "electoral", pollingPlaceId: colId },
+                    }),
+                  );
+                });
+              });
+
               popup.querySelector<HTMLButtonElement>(".vf-district-open-electoral-drawer")?.addEventListener("click", () => {
                 window.dispatchEvent(
                   new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
@@ -692,6 +614,7 @@ export default function MapTerritoryEnhancer() {
                   }),
                 );
               });
+
               popup.querySelector<HTMLButtonElement>(".vf-district-adjust")?.addEventListener("click", () => {
                 editingPosition = true;
                 marker.dragging?.enable?.();
@@ -750,7 +673,7 @@ export default function MapTerritoryEnhancer() {
             marker.on("dblclick", () => {
               window.dispatchEvent(
                 new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                  detail: { district: item.district, total: item.total, initialTab: "electoral" },
+                  detail: { district: item.district, total: item.total },
                 }),
               );
             });
@@ -801,7 +724,6 @@ export default function MapTerritoryEnhancer() {
         map.off?.("moveend", handleMoveEnd);
         try {
           map.removeLayer(pointLayer);
-          map.removeLayer(pollingPlaceLayer);
           map.removeLayer(overviewLayer);
           map.removeControl(control);
           if (quickBarNode) map.removeControl(quickControl);
