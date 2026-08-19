@@ -1,0 +1,8 @@
+node_modules
+.next
+.sites-runtime
+.wrangler
+dist
+build
+*.log
+.DS_Store

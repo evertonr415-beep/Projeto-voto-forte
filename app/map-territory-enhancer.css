@@ -1,0 +1,99 @@
+.vf-territory-label {
+  background: transparent;
+  border: 0;
+}
+
+.vf-territory-label > div,
+.vf-territory-label span {
+  pointer-events: none;
+}
+
+.vf-territory-label > div {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(201, 102, 28, 0.38);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(55, 32, 13, 0.14);
+  color: #66350f;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 96px;
+  padding: 6px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.vf-territory-label b {
+  align-items: center;
+  background: #ef8429;
+  border-radius: 999px;
+  color: white;
+  display: inline-flex;
+  font-size: 10px;
+  height: 20px;
+  justify-content: center;
+  min-width: 20px;
+  padding: 0 5px;
+}
+
+.vf-territory-popup {
+  display: grid;
+  gap: 7px;
+  min-width: 210px;
+}
+
+.vf-territory-popup strong {
+  color: #5c2f0d;
+  font-size: 15px;
+}
+
+.vf-territory-popup span {
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.vf-territory-popup small {
+  color: #6b7280;
+  display: block;
+  font-size: 12px;
+}
+
+.vf-territory-popup button {
+  background: #ef8429;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 11px;
+}
+
+.vf-territory-popup button:hover {
+  filter: brightness(0.96);
+}
+
+.vf-territory-polygon {
+  cursor: pointer;
+  transition: fill-opacity 160ms ease, stroke-width 160ms ease;
+}
+
+@media (max-width: 760px) {
+  .vf-territory-label > div {
+    font-size: 9px;
+    min-width: 76px;
+    padding: 5px 8px;
+  }
+
+  .vf-territory-label b {
+    font-size: 9px;
+    height: 18px;
+    min-width: 18px;
+  }
+}

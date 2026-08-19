@@ -1,0 +1,145 @@
+/* Ajustes coordenados da auditoria UX: contraste, densidade e mobile. */
+
+/* Municípios: contraste AA mais previsível e estado ativo inequívoco. */
+.vf-municipality-header-menu > summary,
+.vf-municipality-header-badge {
+  border-color: #b8c8d8;
+  background: #fff;
+  color: #12345f;
+}
+.vf-municipality-header-list button,
+.vf-municipality-mobile-overview button {
+  border-color: #d5e0ea;
+  color: #243f5d;
+}
+.vf-municipality-header-list button small,
+.vf-municipality-header-popover > header small,
+.vf-municipality-mobile-overview button small,
+.vf-municipality-mobile-menu > summary small,
+.vf-municipality-mobile-badge small {
+  color: #5e7084;
+  opacity: 1;
+}
+.vf-municipality-header-list button.active,
+.vf-municipality-mobile-overview button.active {
+  border-color: #155f38;
+  background: #eaf5ef;
+  color: #0d4a2b;
+  box-shadow: inset 3px 0 0 #155f38;
+}
+.vf-municipality-header-list button:not(.active):hover { background: #f5f8fb; }
+
+/* ADM: listas longas permanecem navegáveis sem empurrar toda a página. */
+.vf-auth-account-list {
+  max-height: min(620px, 62vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+.vf-auth-account-list article {
+  content-visibility: auto;
+  contain-intrinsic-size: 90px;
+}
+.vf-auth-reconcile-form {
+  position: sticky;
+  bottom: 8px;
+  z-index: 8;
+  box-shadow: 0 16px 38px rgba(15, 52, 96, .16);
+}
+
+/* Desempenho da equipe: tabela vira leitura em cartões no telefone. */
+@media (max-width: 700px) {
+  .vf-team-performance-panel { gap: 10px; }
+  .vf-team-performance-head,
+  .vf-team-performance-card { border-radius: 14px; }
+  .vf-team-performance-head,
+  .vf-team-performance-card { padding: 13px; }
+  .vf-team-performance-head button { width: 100%; min-height: 44px; }
+  .vf-team-performance-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .vf-team-performance-kpis article { padding: 11px; }
+  .vf-team-performance-kpis b { font-size: 1.3rem; }
+  .vf-team-performance-leaders article {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 11px;
+  }
+  .vf-team-performance-leaders article strong,
+  .vf-team-performance-leaders article small { grid-column: 1 / -1; }
+
+  .vf-team-performance-table-wrap { overflow: visible; }
+  .vf-team-performance-table-wrap table,
+  .vf-team-performance-table-wrap tbody { display: block; min-width: 0; }
+  .vf-team-performance-table-wrap thead { display: none; }
+  .vf-team-performance-table-wrap tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+    margin-bottom: 9px;
+    padding: 11px;
+    border: 1px solid rgba(15,52,96,.1);
+    border-radius: 12px;
+    background: #f9fbfd;
+  }
+  .vf-team-performance-table-wrap td {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .vf-team-performance-table-wrap td::before {
+    color: #718197;
+    font-size: .68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .vf-team-performance-table-wrap td:nth-child(1) { grid-column: 1 / -1; }
+  .vf-team-performance-table-wrap td:nth-child(1)::before { content: "Usuário"; }
+  .vf-team-performance-table-wrap td:nth-child(2)::before { content: "Perfil"; }
+  .vf-team-performance-table-wrap td:nth-child(3)::before { content: "Eleitores"; }
+  .vf-team-performance-table-wrap td:nth-child(4)::before { content: "7 dias"; }
+  .vf-team-performance-table-wrap td:nth-child(5)::before { content: "Pendências"; }
+  .vf-team-performance-table-wrap td:nth-child(6) { grid-column: 1 / -1; }
+  .vf-team-performance-table-wrap td:nth-child(6)::before { content: "Última ação"; }
+
+  .vf-auth-reconciliation { margin-top: 14px; padding-top: 14px; }
+  .vf-auth-reconciliation-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .vf-auth-account-list { max-height: 54vh; }
+  .vf-auth-account-list article {
+    gap: 9px;
+    padding: 11px;
+  }
+  .vf-auth-account-list dl { grid-template-columns: repeat(2, 1fr); }
+  .vf-auth-account-list article > button { width: 100%; min-height: 44px; }
+  .vf-auth-reconcile-form {
+    position: relative;
+    bottom: auto;
+    grid-template-columns: 1fr;
+    padding: 13px;
+  }
+
+  /* Visão Geral: no celular, prioriza indicadores e agenda. */
+  .welcome-pro { gap: 10px; }
+  .welcome-actions { width: 100%; }
+  .brasilia-clock { display: none; }
+  .welcome-actions > button { width: 100%; min-height: 46px; }
+  .workspace .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .workspace .kpi { min-width: 0; padding: 11px; }
+  .dashboard-grid .activity { display: none; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 430px) {
+  .vf-team-performance-kpis { grid-template-columns: 1fr 1fr; }
+  .vf-team-performance-leaders article { grid-template-columns: 1fr; }
+  .vf-team-performance-leaders article > * { grid-column: 1 / -1; }
+  .workspace .kpis { grid-template-columns: 1fr; }
+}

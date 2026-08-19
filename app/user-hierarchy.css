@@ -1,0 +1,448 @@
+.users-admin-grid[data-vf-hierarchy-replaced="true"] > :not(.vf-hierarchy-panel) {
+  display: none !important;
+}
+
+.vf-hierarchy-panel {
+  display: block !important;
+  grid-column: 1 / -1;
+  padding: 24px;
+  border: 1px solid #dbe4ee;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(15, 39, 68, 0.08);
+}
+
+.vf-hierarchy-panel > header,
+.vf-access-list-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.vf-hierarchy-panel > header {
+  margin-bottom: 18px;
+}
+
+.vf-hierarchy-panel > header small,
+.vf-access-create-card small,
+.vf-access-list-card header small {
+  color: #b7832e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.6px;
+}
+
+.vf-hierarchy-panel > header h3 {
+  margin: 5px 0 4px;
+  color: #102f59;
+  font-size: 24px;
+}
+
+.vf-hierarchy-panel > header p,
+.vf-access-create-card p,
+.vf-access-list-card p {
+  margin: 0;
+  color: #6b7d91;
+  line-height: 1.5;
+}
+
+.vf-hierarchy-panel > header button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #123f72;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-access-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #f3f6fa;
+}
+
+.vf-access-tabs button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #51677e;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-access-tabs button.active {
+  background: #fff;
+  color: #123f72;
+  box-shadow: 0 4px 14px rgba(15, 49, 92, 0.09);
+}
+
+.vf-hierarchy-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.vf-hierarchy-summary article {
+  padding: 15px;
+  border: 1px solid #e1e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.vf-hierarchy-summary small {
+  display: block;
+  color: #77889c;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.vf-hierarchy-summary b {
+  display: block;
+  margin-top: 6px;
+  color: #102f59;
+  font-size: 25px;
+}
+
+.vf-hierarchy-help,
+.vf-hierarchy-message,
+.vf-access-onboarding-note,
+.vf-access-parent-note,
+.vf-access-warning {
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: #eef5fd;
+  color: #264d75;
+  line-height: 1.5;
+}
+
+.vf-hierarchy-message {
+  background: #fff7e7;
+  color: #7a5515;
+}
+
+.vf-access-onboarding-note {
+  margin: 16px 0 0;
+  background: #f3f7fb;
+}
+
+.vf-access-warning {
+  margin: 0;
+  background: #fff7e7;
+  color: #7a5515;
+  font-size: 12px;
+}
+
+.vf-hierarchy-tree {
+  display: grid;
+  gap: 10px;
+}
+
+.vf-hierarchy-branch {
+  margin-left: calc(var(--depth) * 24px);
+}
+
+.vf-hierarchy-user {
+  display: grid;
+  grid-template-columns: 48px minmax(180px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #dde6ef;
+  border-left: 5px solid #7a8da3;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.vf-hierarchy-user.role-adm { border-left-color: #8b5e12; }
+.vf-hierarchy-user.role-master { border-left-color: #c9973f; }
+.vf-hierarchy-user.role-lideranca { border-left-color: #1c5f9f; }
+.vf-hierarchy-user.role-liderado { border-left-color: #3c8b63; }
+.vf-hierarchy-user.role-eleitor { border-left-color: #7b8795; }
+
+.vf-hierarchy-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 50%;
+  background: #123f72;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.vf-hierarchy-main {
+  min-width: 0;
+}
+
+.vf-hierarchy-main strong,
+.vf-hierarchy-main small {
+  display: block;
+}
+
+.vf-hierarchy-main strong {
+  color: #153554;
+  font-size: 15px;
+}
+
+.vf-hierarchy-main small {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #718297;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vf-hierarchy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.vf-hierarchy-tags span,
+.vf-hierarchy-tags i,
+.vf-hierarchy-tags em {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #34506d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.vf-hierarchy-tags i.active {
+  background: #e7f6ed;
+  color: #247044;
+}
+
+.vf-hierarchy-tags i.blocked {
+  background: #fdecec;
+  color: #a43c3c;
+}
+
+.vf-hierarchy-tags em {
+  background: transparent;
+  color: #77889c;
+  font-weight: 700;
+}
+
+.vf-access-status-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #eaf0f6;
+  color: #254663;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-access-create-card,
+.vf-access-list-card {
+  padding: 20px;
+  border: 1px solid #e0e8f0;
+  border-radius: 16px;
+  background: #fbfcfe;
+}
+
+.vf-access-create-card h4,
+.vf-access-list-card h4 {
+  margin: 4px 0 7px;
+  color: #123759;
+  font-size: 20px;
+}
+
+.vf-access-create-card form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.vf-access-create-card label,
+.vf-access-parent-note {
+  display: grid;
+  gap: 6px;
+  color: #607287;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vf-access-create-card input,
+.vf-access-create-card select {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 11px;
+  border: 1px solid #ced9e5;
+  border-radius: 10px;
+  background: #fff;
+  color: #173b60;
+  font: inherit;
+  font-weight: 650;
+}
+
+.vf-access-parent-note {
+  margin: 0;
+  justify-content: center;
+  background: #eef5fd;
+}
+
+.vf-access-parent-note span {
+  font-size: 10px;
+}
+
+.vf-access-create-card form > button {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 11px;
+  background: #123f72;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.vf-access-create-card button:disabled,
+.vf-access-status-button:disabled,
+.vf-hierarchy-panel > header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.vf-access-list-card > header {
+  margin-bottom: 14px;
+}
+
+.vf-access-list-card > header span {
+  display: grid;
+  min-width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 999px;
+  background: #123f72;
+  color: #fff;
+  font-weight: 900;
+}
+
+.vf-access-invitations,
+.vf-access-audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.vf-access-invitations > div {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) 110px 90px minmax(150px, auto);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e9f1;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.vf-access-invitations strong,
+.vf-access-invitations small {
+  display: block;
+}
+
+.vf-access-invitations small,
+.vf-access-invitations time,
+.vf-access-audit-list small,
+.vf-access-audit-list time {
+  margin-top: 3px;
+  color: #75869a;
+  font-size: 11px;
+}
+
+.vf-access-invitations > div > span,
+.vf-access-invitations > div > i {
+  justify-self: start;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #34506d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.vf-access-invitations i.status-pending { background: #fff3d8; color: #856019; }
+.vf-access-invitations i.status-claimed { background: #e7f6ed; color: #247044; }
+.vf-access-invitations i.status-expired,
+.vf-access-invitations i.status-revoked { background: #fdecec; color: #a43c3c; }
+
+.vf-access-audit-list > div {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+  border-bottom: 1px solid #e6ecf2;
+}
+
+.vf-access-audit-list > div:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .vf-hierarchy-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .vf-access-invitations > div,
+  .vf-access-audit-list > div {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .vf-hierarchy-panel {
+    padding: 16px;
+  }
+
+  .vf-hierarchy-panel > header {
+    display: grid;
+  }
+
+  .vf-hierarchy-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .vf-hierarchy-branch {
+    margin-left: calc(var(--depth) * 10px);
+  }
+
+  .vf-hierarchy-user {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .vf-access-status-button {
+    grid-column: 1 / -1;
+  }
+
+  .vf-access-create-card form,
+  .vf-access-invitations > div,
+  .vf-access-audit-list > div {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-access-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
