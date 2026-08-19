@@ -2,7 +2,6 @@
 
 import { useLayoutEffect } from "react";
 import { apiFetch } from "./supabase-client";
-import { ARAPONGAS_POLLING_PLACES, type PollingPlace } from "./electoral-tse-data";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DistrictSummaryItem = {
@@ -56,30 +55,16 @@ function currentScope() {
 }
 
 function visibilityForZoom(zoom: number) {
-  if (zoom <= 12) return { limit: 14, minDistance: 70, detail: "visão geral" };
-  if (zoom === 13) return { limit: 28, minDistance: 50, detail: "principais bairros" };
-  if (zoom === 14) return { limit: 60, minDistance: 36, detail: "mais bairros" };
-  return { limit: Number.POSITIVE_INFINITY, minDistance: 24, detail: "todos os bairros" };
-}
-
-/**
- * Retorna os colégios de votação correspondentes ao bairro
- */
-function getCollegesForDistrict(districtName: string): PollingPlace[] {
-  const norm = normalize(districtName);
-  return ARAPONGAS_POLLING_PLACES.filter((p) => {
-    const pNorm = normalize(p.district);
-    return pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm);
-  });
+  if (zoom <= 12) return { limit: 12, minDistance: 70, detail: "visão geral" };
+  if (zoom === 13) return { limit: 24, minDistance: 54, detail: "principais bairros" };
+  if (zoom === 14) return { limit: 55, minDistance: 40, detail: "mais bairros" };
+  return { limit: Number.POSITIVE_INFINITY, minDistance: 28, detail: "todos os bairros" };
 }
 
 function markerIconHtml(item: DistrictItem) {
   return `
-    <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)} (Arapongas): ${NUMBER.format(item.total)} contatos">
-      <div class="vf-district-point-box">
-        <span class="vf-district-name-text">📍 ${escapeHtml(item.district)}</span>
-        <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
-      </div>
+    <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)}: ${NUMBER.format(item.total)} contatos">
+      <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
     </div>
   `;
@@ -90,442 +75,37 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    /* BARRA DE ATALHOS FLUTUANTES NO MAPA */
-    .vf-map-floating-quick-bar {
-      display: flex;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 6px 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(23, 52, 92, 0.15);
-      box-shadow: 0 8px 24px rgba(15, 35, 65, 0.18);
-      backdrop-filter: blur(8px);
-      margin-top: 10px;
-      margin-right: 10px;
-      flex-wrap: wrap;
-      max-width: calc(100vw - 32px);
-      z-index: 400;
+    .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.13);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.16);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c;backdrop-filter:blur(6px)}
+    .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3;display:flex;gap:8px;align-items:flex-start}.vf-district-map-control header>div{min-width:0;flex:1}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}.vf-district-map-toggle{display:none;border:1px solid #d9e3ef;background:#f5f8fc;color:#173f75;border-radius:8px;width:30px;height:30px;flex:0 0 30px;font:900 15px/1 Arial,sans-serif;cursor:pointer}
+    .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
+    .vf-district-map-scale{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale .vf-district-point-legend{width:9px;height:9px;border-radius:50%;background:#2563a8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.24)}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
+    .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
+    .vf-district-point-wrap{position:relative;width:34px;height:38px;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 2px 3px rgba(10,40,75,.2));transition:transform .15s ease}
+    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.04)}
+    .vf-district-point-count{position:absolute;left:50%;bottom:17px;transform:translateX(-50%);min-width:28px;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.98);border:1px solid rgba(31,82,133,.22);box-shadow:0 3px 8px rgba(15,35,65,.16);color:#174a79;font:800 10px/1 Arial,sans-serif;text-align:center;white-space:nowrap;letter-spacing:-.1px}
+    .vf-district-point-dot{display:block;width:13px;height:13px;border-radius:50%;background:#2563a8;border:3px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 6px rgba(22,66,108,.24)}
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 5px rgba(37,99,168,.18),0 0 0 1px rgba(24,74,124,.42),0 3px 8px rgba(22,66,108,.3)}
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-count{border-color:rgba(37,99,168,.55);box-shadow:0 3px 10px rgba(37,99,168,.24)}
+    .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
+    .vf-district-area-popup{min-width:210px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}.vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}.vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}.vf-district-open-contacts{background:#173f75;color:#fff}.vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}.vf-district-save{background:#1f7a4c;color:#fff}.vf-district-cancel{background:#f3f4f6;color:#475569}.vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
+    @media(max-width:760px){
+      .full-map{height:72vh!important;min-height:520px!important}
+      .full-map .real-map-toolbar{top:8px!important;left:8px!important;right:8px!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;align-items:stretch!important}
+      .full-map .real-map-toolbar>div{grid-column:1/-1;width:auto!important;margin:0!important;padding:7px 9px!important;border-radius:8px!important}
+      .full-map .real-map-toolbar strong{font-size:8px!important;line-height:1.25!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .full-map .real-map-toolbar small{display:none!important}
+      .full-map .real-map-toolbar button{width:100%!important;padding:8px 5px!important;font-size:7px!important;line-height:1.1!important;white-space:nowrap!important;border-radius:7px!important}
+      .full-map .map-legend{top:82px!important;left:auto!important;right:8px!important;width:auto!important;max-width:190px!important;padding:8px 10px!important;border-radius:9px!important}
+      .full-map .map-legend h4,.full-map .map-legend hr,.full-map .map-legend>small,.full-map .map-legend>strong{display:none!important}
+      .full-map .map-legend label{margin:4px 0!important;font-size:7px!important;gap:5px!important}
+      .vf-district-map-control{width:min(240px,calc(100vw - 32px));max-height:260px}
+      .vf-district-map-control header{padding:8px 9px;border-bottom:0;align-items:center}.vf-district-map-control header strong{font-size:12px}.vf-district-map-control header small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vf-district-map-toggle{display:block}
+      .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,.vf-district-map-control[data-collapsed="true"] .vf-district-map-scale{display:none}
+      .vf-district-map-control[data-collapsed="true"] header{border-bottom:0}
+      .vf-district-map-list{max-height:170px}.vf-district-map-row{padding:6px}.vf-district-map-scale em{display:none}.vf-district-point-count{font-size:9px;padding:3px 5px}.vf-district-point-dot{width:12px;height:12px}
+      .leaflet-control-zoom{margin-top:94px!important}
     }
-    .vf-map-quick-btn {
-      padding: 7px 12px;
-      border-radius: 8px;
-      border: 0;
-      font: 800 11px/1.2 Arial, sans-serif;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-    .vf-btn-tse {
-      background: linear-gradient(135deg, #0d2342 0%, #0284c7 100%);
-      color: #ffffff;
-      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
-    }
-    .vf-btn-tse:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.4);
-    }
-    .vf-btn-colleges {
-      background: #f1f5f9;
-      color: #0f172a;
-      border: 1px solid #cbd5e1;
-    }
-    .vf-btn-colleges:hover {
-      background: #e2e8f0;
-    }
-    .vf-btn-districts {
-      background: #f1f5f9;
-      color: #0f172a;
-      border: 1px solid #cbd5e1;
-    }
-    .vf-btn-districts:hover {
-      background: #e2e8f0;
-    }
-
-    /* BALÕES AZUIS DOS BAIRROS COM NOME DO BAIRRO E BOTÃO DE COLÉGIO */
-    .vf-district-point-icon {
-      background: transparent !important;
-      border: 0 !important;
-      overflow: visible !important;
-    }
-    .vf-district-point-wrap {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      filter: drop-shadow(0 3px 8px rgba(15, 35, 65, 0.25));
-      transition: transform 0.15s ease;
-      cursor: pointer;
-    }
-    .vf-district-point-wrap:hover {
-      transform: translateY(-2px) scale(1.06);
-      z-index: 999 !important;
-    }
-    .vf-district-point-box {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #0b3866 0%, #0284c7 100%);
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
-      color: #ffffff;
-      font: 900 13px/1 Arial, sans-serif;
-      white-space: nowrap;
-    }
-    .vf-district-name-text {
-      font-size: 13px;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: -0.2px;
-      max-width: 180px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .vf-district-point-count {
-      background: #ffffff;
-      color: #0284c7;
-      padding: 3px 9px;
-      border-radius: 999px;
-      font: 900 12px/1 Arial, sans-serif;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-    .vf-district-college-btn {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #f59e0b;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font: 800 10px/1 Arial, sans-serif;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      max-width: 140px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      transition: all 0.15s ease;
-    }
-    .vf-district-college-btn:hover {
-      background: #fde68a;
-      transform: scale(1.05);
-    }
-    .vf-district-point-dot {
-      display: block;
-      width: 10px;
-      height: 10px;
-      margin-top: 2px;
-      border-radius: 50%;
-      background: #0284c7;
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.4), 0 2px 4px rgba(0, 0, 0, 0.25);
-    }
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot {
-      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.3), 0 0 0 1px #0284c7, 0 3px 6px rgba(2, 132, 199, 0.4);
-    }
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box {
-      border-color: #0d2342;
-      background: #f0f9ff;
-      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
-    }
-    
-    .vf-district-overview-total {
-      background: transparent !important;
-      border: 0 !important;
-      overflow: visible !important;
-    }
-    .vf-district-overview-total-wrap {
-      min-width: 112px;
-      padding: 12px 16px;
-      border-radius: 18px;
-      background: rgba(23, 63, 117, 0.94);
-      border: 2px solid #ffffff;
-      box-shadow: 0 10px 28px rgba(15, 35, 65, 0.28);
-      color: #ffffff;
-      text-align: center;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-    .vf-district-overview-total-wrap strong {
-      display: block;
-      font: 900 20px/1 Arial, sans-serif;
-      letter-spacing: -0.4px;
-    }
-    .vf-district-overview-total-wrap small {
-      display: block;
-      margin-top: 4px;
-      font: 800 9px/1.2 Arial, sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      opacity: 0.9;
-    }
-    
-    /* POPUP DE BAIRRO COM INDICAÇÃO DE MUNICÍPIO E COLÉGIOS */
-    .vf-district-area-popup {
-      min-width: 250px;
-      font: 500 12px/1.4 Arial, sans-serif;
-      color: #26384d;
-    }
-    .vf-district-area-popup strong {
-      display: block;
-      color: #17345c;
-      font-size: 16px;
-      font-weight: 900;
-      margin-bottom: 2px;
-    }
-    .vf-district-area-popup b {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: #eaf2fb;
-      color: #285b8e;
-      font-size: 10px;
-    }
-    .vf-district-area-popup p {
-      margin: 6px 0 0;
-      font-weight: 700;
-      color: #0f172a;
-    }
-    .vf-district-area-popup small {
-      display: block;
-      margin-top: 7px;
-      color: #64748b;
-    }
-    .vf-district-popup-actions {
-      display: grid;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    .vf-district-popup-actions button {
-      border: 0;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font: 800 11px/1.2 Arial, sans-serif;
-      cursor: pointer;
-    }
-    .vf-district-adjust {
-      background: #eef4fa;
-      color: #173f75;
-      border: 1px solid #d4e0ec !important;
-    }
-    .vf-district-save {
-      background: #1f7a4c;
-      color: #ffffff;
-    }
-    .vf-district-cancel {
-      background: #f3f4f6;
-      color: #475569;
-    }
-    .vf-district-dragging .vf-district-point-wrap {
-      filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
-      transform: scale(1.12);
-    }
-
-    /* PAINEL LATERAL DE CONTATOS POR BAIRRO */
-    .vf-district-map-control {
-      background: rgba(255, 255, 255, 0.97);
-      border: 1px solid rgba(23, 52, 92, 0.13);
-      border-radius: 14px;
-      box-shadow: 0 9px 24px rgba(15, 35, 65, 0.16);
-      width: 260px;
-      max-height: 310px;
-      overflow: hidden;
-      font: 600 11px/1.3 Arial, sans-serif;
-      color: #17345c;
-      backdrop-filter: blur(6px);
-    }
-    .vf-district-map-control header {
-      padding: 10px 11px 8px;
-      border-bottom: 1px solid #e4ebf3;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
-    .vf-district-map-control header > div {
-      min-width: 0;
-      flex: 1;
-    }
-    .vf-district-map-control header strong {
-      display: block;
-      font-size: 13px;
-    }
-    .vf-district-map-control header small {
-      display: block;
-      margin-top: 3px;
-      color: #64748b;
-      font-weight: 600;
-    }
-    .vf-district-map-toggle {
-      display: none;
-      border: 1px solid #d9e3ef;
-      background: #f5f8fc;
-      color: #173f75;
-      border-radius: 8px;
-      width: 30px;
-      height: 30px;
-      flex: 0 0 30px;
-      font: 900 15px/1 Arial, sans-serif;
-      cursor: pointer;
-    }
-    .vf-district-map-list {
-      max-height: 245px;
-      overflow: auto;
-      padding: 5px;
-    }
-    .vf-district-map-row {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      border: 0;
-      border-radius: 9px;
-      background: transparent;
-      color: #27405f;
-      text-align: left;
-      padding: 7px 8px;
-      cursor: pointer;
-      font: 700 11px/1.2 Arial, sans-serif;
-    }
-    .vf-district-map-row:hover:not(:disabled) {
-      background: #edf4fb;
-    }
-    .vf-district-map-row:disabled {
-      cursor: default;
-      opacity: 0.62;
-    }
-    .vf-district-map-row b {
-      font-size: 12px;
-      color: #17345c;
-    }
-    .vf-district-map-row small {
-      display: block;
-      margin-top: 2px;
-      color: #7a899c;
-      font-size: 9px;
-      font-weight: 600;
-    }
-    .vf-district-map-empty {
-      padding: 12px;
-      color: #64748b;
-      font-weight: 600;
-    }
-    .vf-district-map-scale {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 10px;
-      border-top: 1px solid #e4ebf3;
-      color: #64748b;
-      font-size: 9px;
-    }
-    .vf-district-map-scale .vf-district-point-legend {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #2563a8;
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 0 1px rgba(24, 74, 124, 0.24);
-    }
-    .vf-district-map-scale em {
-      margin-left: auto;
-      font-style: normal;
-      color: #8491a2;
-    }
-
-    @media(max-width:760px) {
-      .full-map {
-        height: 72vh !important;
-        min-height: 520px !important;
-      }
-
-      .full-map .map-legend {
-        top: 82px !important;
-        left: auto !important;
-        right: 8px !important;
-        width: auto !important;
-        max-width: 190px !important;
-        padding: 8px 10px !important;
-        border-radius: 9px !important;
-      }
-      .full-map .map-legend h4,
-      .full-map .map-legend hr,
-      .full-map .map-legend > small,
-      .full-map .map-legend > strong {
-        display: none !important;
-      }
-      .full-map .map-legend label {
-        margin: 4px 0 !important;
-        font-size: 7px !important;
-        gap: 5px !important;
-      }
-      .vf-district-map-control {
-        width: min(240px, calc(100vw - 32px));
-        max-height: 260px;
-      }
-      .vf-district-map-control header {
-        padding: 8px 9px;
-        border-bottom: 0;
-        align-items: center;
-      }
-      .vf-district-map-control header strong {
-        font-size: 12px;
-      }
-      .vf-district-map-control header small {
-        font-size: 8px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .vf-district-map-toggle {
-        display: block;
-      }
-      .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,
-      .vf-district-map-control[data-collapsed="true"] .vf-district-map-scale {
-        display: none;
-      }
-      .vf-district-map-control[data-collapsed="true"] header {
-        border-bottom: 0;
-      }
-      .vf-district-map-list {
-        max-height: 170px;
-      }
-      .vf-district-map-row {
-        padding: 6px;
-      }
-      .vf-district-map-scale em {
-        display: none;
-      }
-      .vf-district-name-text {
-        max-width: 90px;
-        font-size: 10px;
-      }
-      .vf-district-point-count {
-        font-size: 9px;
-        padding: 1px 5px;
-      }
-      .vf-district-point-dot {
-        width: 9px;
-        height: 9px;
-      }
-
-    }
-    @media(max-width:480px) {
-      .full-map {
-        height: 74vh !important;
-        min-height: 540px !important;
-      }
-      .full-map .map-legend {
-        max-width: 165px !important;
-      }
-      .vf-district-map-control {
-        width: min(220px, calc(100vw - 28px));
-      }
-    }
+    @media(max-width:480px){.full-map{height:74vh!important;min-height:540px!important}.full-map .map-legend{max-width:165px!important}.vf-district-map-control{width:min(220px,calc(100vw - 28px))}}
   `;
   document.head.appendChild(style);
 }
@@ -575,9 +155,6 @@ export default function MapTerritoryEnhancer() {
       let visibleKeys = new Set<string>();
       let selectedKey = "";
 
-
-
-      // 2. CONTROLE DE CONTATOS POR BAIRRO
       const control = L.control({ position: "bottomleft" });
       let controlNode: HTMLElement | null = null;
       control.onAdd = () => {
@@ -586,15 +163,10 @@ export default function MapTerritoryEnhancer() {
         node.dataset.collapsed = startsCollapsed ? "true" : "false";
         node.innerHTML = `
           <header>
-            <div><strong>Arapongas · Contatos por bairro</strong><small>Carregando distribuição territorial…</small></div>
+            <div><strong>Contatos por bairro</strong><small>Carregando distribuição territorial…</small></div>
             <button type="button" class="vf-district-map-toggle" aria-label="Abrir contatos por bairro" aria-expanded="${startsCollapsed ? "false" : "true"}">${startsCollapsed ? "+" : "−"}</button>
           </header>
           <div class="vf-district-map-list"><div class="vf-district-map-empty">Carregando bairros…</div></div>
-          <div style="padding:6px 8px;border-top:1px solid #e4ebf3;background:#f8fafc;">
-            <button type="button" class="vf-map-open-electoral-btn" style="width:100%;padding:7px;border-radius:8px;background:#0284c7;color:#ffffff;border:0;font:800 11px Arial,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 6px rgba(2,132,199,0.25);">
-              🏫 Colégios & Dados TSE →
-            </button>
-          </div>
           <div class="vf-district-map-scale"><span class="vf-district-point-legend"></span><span>ponto territorial do bairro</span><em>aproxime para detalhar</em></div>
         `;
         const toggle = node.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
@@ -604,13 +176,6 @@ export default function MapTerritoryEnhancer() {
           toggle.textContent = nextCollapsed ? "+" : "−";
           toggle.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
           toggle.setAttribute("aria-label", nextCollapsed ? "Abrir contatos por bairro" : "Recolher contatos por bairro");
-        });
-        node.querySelector<HTMLButtonElement>(".vf-map-open-electoral-btn")?.addEventListener("click", () => {
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-              detail: { district: "Todos os Bairros", initialTab: "electoral" },
-            }),
-          );
         });
         L.DomEvent.disableClickPropagation(node);
         L.DomEvent.disableScrollPropagation(node);
@@ -639,7 +204,7 @@ export default function MapTerritoryEnhancer() {
           0,
         );
         if (header)
-          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · Arapongas - PR`;
+          header.textContent = `${NUMBER.format(rankingItems.reduce((sum, item) => sum + item.total, 0))} contatos em ${NUMBER.format(rankingItems.length)} bairros · ${NUMBER.format(represented)} com referência`;
         list.innerHTML = "";
         if (!rankingItems.length) {
           list.innerHTML = '<div class="vf-district-map-empty">Nenhum bairro com contatos neste ambiente.</div>';
@@ -692,7 +257,7 @@ export default function MapTerritoryEnhancer() {
                 zIndexOffset: 450,
                 icon: L.divIcon({
                   className: "vf-district-overview-total",
-                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos · Arapongas</small></div>`,
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
                   iconSize: [1, 1],
                   iconAnchor: [0, 0],
                 }),
@@ -701,7 +266,7 @@ export default function MapTerritoryEnhancer() {
               overviewMarker.setIcon(
                 L.divIcon({
                   className: "vf-district-overview-total",
-                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos · Arapongas</small></div>`,
+                  html: `<div class="vf-district-overview-total-wrap"><strong>${NUMBER.format(overviewTotal)}</strong><small>contatos</small></div>`,
                   iconSize: [1, 1],
                   iconAnchor: [0, 0],
                 }),
@@ -753,110 +318,88 @@ export default function MapTerritoryEnhancer() {
 
         map._vfDistrictVisiblePointCount = visibleKeys.size;
         map._vfDistrictPointCount = mappedKeys.size;
+
+        const message = document.querySelector<HTMLElement>(".real-map-toolbar strong");
+        if (message) {
+          message.textContent = isOverviewZoom && overviewTotal > 0
+            ? `${NUMBER.format(overviewTotal)} contatos no escopo · visão geral`
+            : mappedKeys.size
+              ? `${visibleKeys.size} ponto(s) de bairro visíveis · ${mappedKeys.size} bairros com referência · ${config.detail}`
+              : "Ranking territorial ativo · sem referências territoriais para desenhar pontos";
+        }
+        renderRanking();
       };
 
       const draw = async () => {
-        const thisRequest = ++requestId;
-        lastScope = currentScope();
+        const id = ++requestId;
+        const scope = currentScope();
+        lastScope = scope;
+        const markerParams = new URLSearchParams();
+        if (scope) markerParams.set("owner", scope);
+
         try {
-          const params = new URLSearchParams({ mode: "summary" });
-          if (lastScope) params.set("owner", lastScope);
-          const [rankingResponse, centersResponse] = await Promise.all([
-            apiFetch(`/api/contacts?${params.toString()}`).catch(() => null),
-            apiFetch("/api/territorial-pending?mode=centers").catch(() => null),
-          ]);
+          const response = await apiFetch(
+            `/api/map-district-markers${markerParams.toString() ? `?${markerParams.toString()}` : ""}`,
+            { cache: "no-store" },
+          );
+          const payload = (await response.json()) as {
+            totalContacts?: number | string;
+            districts?: DistrictSummaryItem[];
+            markers?: DistrictCenter[];
+            error?: string;
+          };
+          if (!response.ok)
+            throw new Error(payload.error || "Falha ao carregar totais dos bairros");
+          if (cancelled || id !== requestId || !map._container) return;
+          overviewTotal = Math.max(0, Number(payload.totalContacts || 0));
 
-          const rankingData = rankingResponse?.ok
-            ? ((await rankingResponse.json().catch(() => ({}))) as { districts?: DistrictSummaryItem[] })
-            : {};
-          const centersData = centersResponse?.ok
-            ? ((await centersResponse.json().catch(() => ({}))) as { centers?: DistrictCenter[] })
-            : {};
-
-          if (thisRequest !== requestId || cancelled || !map?._container) return;
-
-          const rankingRaw = Array.isArray(rankingData?.districts) ? rankingData.districts : [];
-          overviewTotal = rankingRaw.reduce((sum, item) => sum + (Number(item?.total) || 0), 0);
+          rankingItems = (Array.isArray(payload.districts) ? payload.districts : [])
+            .map((item) => ({
+              district: String(item.district || "").trim(),
+              total: Math.max(0, Number(item.total || 0)),
+              key: normalize(item.district),
+            }))
+            .filter((item) => item.district && item.key && item.total > 0)
+            .sort(
+              (left, right) =>
+                right.total - left.total ||
+                left.district.localeCompare(right.district, "pt-BR"),
+            );
 
           districtCenters.clear();
-          const centersRaw = Array.isArray(centersData?.centers) ? centersData.centers : [];
-          for (const center of centersRaw) {
-            const district = String(center?.district || "").trim();
-            const lat = Number(center?.latitude);
-            const lng = Number(center?.longitude);
-            if (!district || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-            districtCenters.set(normalize(district), { latitude: lat, longitude: lng });
+          for (const item of Array.isArray(payload.markers) ? payload.markers : []) {
+            const key = normalize(item.district);
+            const latitude = Number(item.latitude);
+            const longitude = Number(item.longitude);
+            if (key && Number.isFinite(latitude) && Number.isFinite(longitude))
+              districtCenters.set(key, { latitude, longitude });
           }
 
-          // Adicionar coordenadas dos colégios de votação como fallback para todos os bairros de Arapongas
-          for (const place of ARAPONGAS_POLLING_PLACES) {
-            const key = normalize(place.district);
-            if (!districtCenters.has(key) && Number.isFinite(place.latitude) && Number.isFinite(place.longitude)) {
-              districtCenters.set(key, { latitude: place.latitude, longitude: place.longitude });
-            }
-          }
+          pointLayer.clearLayers();
+          overviewLayer.clearLayers();
+          overviewMarker = null;
+          districtMarkers.clear();
+          mappedKeys = new Set<string>();
+          visibleKeys = new Set<string>();
+          selectedKey = "";
+          const pane = map.getPane?.("vfDistrictPointsPane")
+            ? "vfDistrictPointsPane"
+            : undefined;
 
-          const districtTotals = new Map<string, { district: string; total: number }>();
-          for (const item of rankingRaw) {
-            const district = String(item?.district || "").trim();
-            if (district) {
-              const key = normalize(district);
-              districtTotals.set(key, { district, total: Math.max(0, Number(item?.total) || 0) });
-            }
-          }
-
-          // Garantir que todos os bairros conhecidos dos colégios de Arapongas estejam presentes no mapa
-          for (const place of ARAPONGAS_POLLING_PLACES) {
-            if (place.district) {
-              const key = normalize(place.district);
-              if (!districtTotals.has(key)) {
-                districtTotals.set(key, { district: place.district, total: 0 });
-              }
-            }
-          }
-
-          rankingItems = Array.from(districtTotals.values())
-            .filter((item) => item.district)
-            .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"))
-            .map((item) => ({ ...item, key: normalize(item.district) }));
-
-          mappedKeys = new Set(
-            rankingItems
-              .filter((item) => districtCenters.has(item.key))
-              .map((item) => item.key),
-          );
-
-          const pane = map.getPane?.("vfDistrictPointsPane");
           for (const item of rankingItems) {
             const center = districtCenters.get(item.key);
             if (!center) continue;
-
-            const colleges = getCollegesForDistrict(item.district);
-
-            const existing = districtMarkers.get(item.key);
-            if (existing) {
-              existing.item = item;
-              existing.center = center;
-              existing.marker.setLatLng([center.latitude, center.longitude]);
-              existing.marker.setIcon(
-                L.divIcon({
-                  className: `vf-district-point-icon${selectedKey === item.key ? " vf-district-point-selected" : ""}`,
-                  html: markerIconHtml(item),
-                  iconSize: [1, 1],
-                  iconAnchor: [0, 0],
-                }),
-              );
-              continue;
-            }
-
-            const options: any = {
-              icon: L.divIcon({
-                className: `vf-district-point-icon${selectedKey === item.key ? " vf-district-point-selected" : ""}`,
-                html: markerIconHtml(item),
-                iconSize: [1, 1],
-                iconAnchor: [0, 0],
-              }),
-              zIndexOffset: 100,
+            const icon = L.divIcon({
+              className: "vf-district-point-icon",
+              html: markerIconHtml(item),
+              iconSize: [34, 38],
+              iconAnchor: [17, 35],
+              popupAnchor: [0, -34],
+            });
+            const options: Record<string, unknown> = {
+              icon,
+              keyboard: true,
+              draggable: canManageReferences,
             };
             if (pane) options.pane = pane;
             const marker = L.marker([center.latitude, center.longitude], options);
@@ -865,35 +408,12 @@ export default function MapTerritoryEnhancer() {
 
             const popupHtml = (editing = false) => `
               <div class="vf-district-area-popup">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-                  <span style="font-size:10px;font-weight:900;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:999px;text-transform:uppercase;">
-                    🏛️ Arapongas - PR
-                  </span>
-                  <span style="font-size:10px;color:#64748b;font-weight:700;">61ª Zona</span>
-                </div>
-                <strong>📍 ${escapeHtml(item.district)}</strong>
+                <strong>${escapeHtml(item.district)}</strong>
                 <b>Referência territorial do bairro</b>
-                <p>👥 ${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
-                
-                ${colleges.length > 0 ? `
-                  <div style="margin: 8px 0; padding: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
-                    <span style="display:block; font-size:10px; font-weight:800; color:#0369a1; text-transform:uppercase; margin-bottom:4px;">
-                      🏫 Colégio(s) de Votação em Arapongas neste Bairro:
-                    </span>
-                    ${colleges.map(c => `
-                      <button type="button" class="vf-popup-college-btn" data-college-id="${c.id}" data-district="${escapeHtml(item.district)}" style="width:100%; text-align:left; padding:6px 8px; margin-bottom:4px; background:#ffffff; border:1px solid #7dd3fc; border-radius:6px; font-size:11px; font-weight:700; color:#0f172a; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                        <span>🏫 ${escapeHtml(c.shortName || c.name)}</span>
-                        <span style="font-size:10px; color:#0284c7; font-weight:800;">${NUMBER.format(c.totalVoters)} el. →</span>
-                      </button>
-                    `).join('')}
-                  </div>
-                ` : ''}
-
-                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O balão azul indica o bairro do município de Arapongas e permite consultar contatos, colégios e apuração oficial do TSE."}</small>
+                <p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é uma referência territorial do bairro e não altera a localização individual dos contatos."}</small>
                 <div class="vf-district-popup-actions">
-                  <button type="button" class="vf-district-open-electoral-drawer" style="background:#0284c7;color:#ffffff;font-weight:900;box-shadow:0 2px 8px rgba(2,132,199,0.3);">
-                    📊 Abrir Painel Territorial do Bairro →
-                  </button>
+                  <button type="button" class="vf-district-open-contacts">Ver contatos deste bairro →</button>
                   ${canManageReferences ? editing
                     ? '<button type="button" class="vf-district-save">Salvar posição</button><button type="button" class="vf-district-cancel">Cancelar ajuste</button>'
                     : '<button type="button" class="vf-district-adjust">Ajustar posição</button>' : ""}
@@ -903,28 +423,13 @@ export default function MapTerritoryEnhancer() {
             const bindActions = () => {
               const popup = marker.getPopup?.()?.getElement?.() as HTMLElement | null;
               if (!popup) return;
-
-              popup.querySelectorAll<HTMLButtonElement>(".vf-popup-college-btn").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  const colId = btn.getAttribute("data-college-id") || "";
-                  const dist = btn.getAttribute("data-district") || item.district;
-                  window.dispatchEvent(
-                    new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                      detail: { district: dist, initialTab: "electoral", pollingPlaceId: colId },
-                    }),
-                  );
-                });
-              });
-
-              popup.querySelector<HTMLButtonElement>(".vf-district-open-electoral-drawer")?.addEventListener("click", () => {
+              popup.querySelector<HTMLButtonElement>(".vf-district-open-contacts")?.addEventListener("click", () => {
                 window.dispatchEvent(
-                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                    detail: { district: item.district, total: item.total },
+                  new CustomEvent("voto-forte:open-district-contacts", {
+                    detail: { district: item.district },
                   }),
                 );
               });
-
               popup.querySelector<HTMLButtonElement>(".vf-district-adjust")?.addEventListener("click", () => {
                 editingPosition = true;
                 marker.dragging?.enable?.();
@@ -975,34 +480,32 @@ export default function MapTerritoryEnhancer() {
             };
 
             marker.bindTooltip(
-              `📍 ${item.district} · Arapongas (${NUMBER.format(item.total)} contato(s))`,
+              `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
-            marker.on("click", (e) => {
-              // Se não estiver arrastando/editando posição, abre a gaveta consolidada diretamente no primeiro clique
-              if (!editingPosition) {
-                window.dispatchEvent(
-                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                    detail: { district: item.district, total: item.total },
-                  }),
-                );
-              }
+            marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
+            marker.on("popupopen", bindActions);
+            marker.on("dragstart", () => {
+              if (!canManageReferences || !editingPosition) { marker.dragging?.disable?.(); return; }
+              marker.getElement?.()?.classList?.add("vf-district-dragging");
             });
-
+            marker.on("dragend", () => marker.openPopup());
+            marker.on("click", () => setSelectedMarker(item.key));
+            if (canManageReferences) marker.dragging?.disable?.();
             districtMarkers.set(item.key, { marker, item, center });
+            mappedKeys.add(item.key);
           }
 
-          for (const [key, visual] of districtMarkers) {
-            if (!mappedKeys.has(key)) {
-              if (pointLayer.hasLayer?.(visual.marker)) pointLayer.removeLayer(visual.marker);
-              districtMarkers.delete(key);
-            }
-          }
-
-          renderRanking();
           updateVisiblePoints();
         } catch (error) {
-          console.error("Falha ao desenhar inteligência territorial", error);
+          console.error("Failed to render district points", error);
+          if (controlNode) {
+            const header = controlNode.querySelector<HTMLElement>("header small");
+            const list = controlNode.querySelector<HTMLElement>(".vf-district-map-list");
+            if (header) header.textContent = "Não foi possível carregar os totais agora";
+            if (list)
+              list.innerHTML = '<div class="vf-district-map-empty">Os pinos exatos continuam funcionando normalmente.</div>';
+          }
         }
       };
 
@@ -1011,40 +514,12 @@ export default function MapTerritoryEnhancer() {
         if (!target?.matches(".scope-picker select")) return;
         if (currentScope() !== lastScope) void draw();
       };
-      let frameId: number | null = null;
-      const scheduleUpdate = () => {
-        if (frameId !== null) return;
-        frameId = window.requestAnimationFrame(() => {
-          frameId = null;
-          updateVisiblePoints();
-        });
-      };
-
       const handleRecordsChanged = () => void draw();
-      const handleZoomEnd = () => scheduleUpdate();
-      const handleMoveEnd = () => scheduleUpdate();
+      const handleZoomEnd = () => updateVisiblePoints();
+      const handleMoveEnd = () => updateVisiblePoints();
 
-      const handleGlobalCollegeClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement | null;
-        const btn = target?.closest<HTMLButtonElement>(".vf-district-college-btn, .vf-popup-college-btn");
-        if (btn) {
-          e.stopPropagation();
-          e.preventDefault();
-          const colId = btn.getAttribute("data-college-id") || "";
-          const dist = btn.getAttribute("data-district") || "";
-          window.dispatchEvent(
-            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-              detail: { district: dist, initialTab: "electoral", pollingPlaceId: colId },
-            }),
-          );
-        }
-      };
-
-      document.addEventListener("click", handleGlobalCollegeClick, true);
       document.addEventListener("change", handleScopeChange, true);
       window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
-      window.addEventListener("voto-forte:contacts-imported", handleRecordsChanged);
-      window.addEventListener("voto-forte:refresh-dashboard", handleRecordsChanged);
       window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
       map.on?.("zoomend", handleZoomEnd);
       map.on?.("moveend", handleMoveEnd);
@@ -1052,15 +527,8 @@ export default function MapTerritoryEnhancer() {
 
       cleanupActiveMap = () => {
         requestId += 1;
-        if (frameId !== null) {
-          window.cancelAnimationFrame(frameId);
-          frameId = null;
-        }
-        document.removeEventListener("click", handleGlobalCollegeClick, true);
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
-        window.removeEventListener("voto-forte:contacts-imported", handleRecordsChanged);
-        window.removeEventListener("voto-forte:refresh-dashboard", handleRecordsChanged);
         window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
         map.off?.("zoomend", handleZoomEnd);
         map.off?.("moveend", handleMoveEnd);
@@ -1089,7 +557,6 @@ export default function MapTerritoryEnhancer() {
 
     window.addEventListener("voto-forte:electoral-map-ready", handleMapReady);
     window.addEventListener("voto-forte:base-electoral-map-ready", handleMapReady);
-
     if (!attach()) {
       retryTimer = window.setInterval(() => {
         if (attach() && retryTimer !== null) {
