@@ -49,30 +49,87 @@ const PARTY_COLORS: Record<string, string> = {
 
 export default function NeighborhoodElectoralDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [district, setDistrict] = useState("");
+  const [district, setDistrict] = useState("Centro");
   const [activeTab, setActiveTab] = useState<"contacts" | "colleges" | "electoral">("contacts");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DrawerData | null>(null);
 
   // Filtros internos
   const [searchContact, setSearchContact] = useState("");
+  const [contactProfileFilter, setContactProfileFilter] = useState<string>("");
   const [contactPage, setContactPage] = useState(1);
+  const [searchCollege, setSearchCollege] = useState("");
+  const [searchCandidate, setSearchCandidate] = useState("");
   const [selectedPollingPlaceId, setSelectedPollingPlaceId] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<number>(2024);
   const [selectedOffice, setSelectedOffice] = useState<string>("prefeito");
+
+  // Injetor de botões na barra lateral caso necessário
+  useEffect(() => {
+    const ensureSidebarItems = () => {
+      const nav = document.querySelector<HTMLElement>(".sidebar nav");
+      if (!nav) return;
+
+      const broadcastBtn = nav.querySelector(".whaticket-broadcast-sidebar-btn");
+      if (broadcastBtn && !nav.querySelector(".tse-colleges-sidebar-btn")) {
+        const collegesBtn = document.createElement("button");
+        collegesBtn.type = "button";
+        collegesBtn.className = "tse-colleges-sidebar-btn";
+        collegesBtn.title = "Colégios de Votação TSE";
+        collegesBtn.innerHTML = `
+          <span class="nav-icon" style="color: #38bdf8">🏫</span>
+          <span class="nav-name">Colégios de Votação</span>
+          <em style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4)">TSE</em>
+        `;
+        collegesBtn.addEventListener("click", () => {
+          setDistrict("Centro");
+          setActiveTab("colleges");
+          setIsOpen(true);
+        });
+
+        const electionsBtn = document.createElement("button");
+        electionsBtn.type = "button";
+        electionsBtn.className = "tse-elections-sidebar-btn";
+        electionsBtn.title = "Histórico Eleitoral TSE";
+        electionsBtn.innerHTML = `
+          <span class="nav-icon" style="color: #fbbf24">🗳️</span>
+          <span class="nav-name">Histórico Eleitoral</span>
+          <em style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4)">OFICIAL</em>
+        `;
+        electionsBtn.addEventListener("click", () => {
+          setDistrict("Centro");
+          setActiveTab("electoral");
+          setIsOpen(true);
+        });
+
+        if (broadcastBtn.nextSibling) {
+          nav.insertBefore(collegesBtn, broadcastBtn.nextSibling);
+          nav.insertBefore(electionsBtn, collegesBtn.nextSibling);
+        } else {
+          nav.appendChild(collegesBtn);
+          nav.appendChild(electionsBtn);
+        }
+      }
+    };
+
+    ensureSidebarItems();
+    const observer = new MutationObserver(ensureSidebarItems);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   // Escuta eventos de abertura
   useEffect(() => {
     const handleOpen = (event: Event) => {
       const detail = (event as CustomEvent<{ district?: string; initialTab?: "contacts" | "colleges" | "electoral" }>).detail;
-      const targetDistrict = String(detail?.district || "").trim();
-      if (!targetDistrict) return;
-
+      const targetDistrict = String(detail?.district || "Centro").trim();
       setDistrict(targetDistrict);
       if (detail?.initialTab) setActiveTab(detail.initialTab);
       setSelectedPollingPlaceId("");
       setContactPage(1);
       setSearchContact("");
+      setSearchCollege("");
+      setSearchCandidate("");
       setIsOpen(true);
     };
 
@@ -142,6 +199,41 @@ export default function NeighborhoodElectoralDrawer() {
     );
   }, [activeYearData, selectedOffice]);
 
+  // Filtra candidatos na busca rápida
+  const filteredCandidates = useMemo(() => {
+    if (!activeOfficeData?.candidates) return [];
+    if (!searchCandidate.trim()) return activeOfficeData.candidates;
+    const query = searchCandidate.toLowerCase().trim();
+    return activeOfficeData.candidates.filter(
+      (c) =>
+        c.name.toLowerCase().includes(query) ||
+        c.party.toLowerCase().includes(query) ||
+        String(c.ballotNumber || "").includes(query),
+    );
+  }, [activeOfficeData?.candidates, searchCandidate]);
+
+  // Filtra colégios na busca rápida
+  const filteredColleges = useMemo(() => {
+    if (!data?.pollingPlaces) return [];
+    if (!searchCollege.trim()) return data.pollingPlaces;
+    const query = searchCollege.toLowerCase().trim();
+    return data.pollingPlaces.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        (p.shortName && p.shortName.toLowerCase().includes(query)) ||
+        p.address.toLowerCase().includes(query) ||
+        p.district.toLowerCase().includes(query) ||
+        p.sections.some((s) => String(s).includes(query)),
+    );
+  }, [data?.pollingPlaces, searchCollege]);
+
+  // Filtra contatos por perfil
+  const filteredContacts = useMemo(() => {
+    if (!data?.contacts) return [];
+    if (!contactProfileFilter) return data.contacts;
+    return data.contacts.filter((c) => c.kind === contactProfileFilter);
+  }, [data?.contacts, contactProfileFilter]);
+
   if (!isOpen) return null;
 
   return (
@@ -180,12 +272,12 @@ export default function NeighborhoodElectoralDrawer() {
           animation: "vfDrawerSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        {/* Cabeçalho Principal com Gradiente Premium */}
+        {/* Cabeçalho Principal */}
         <header
           style={{
             background: "linear-gradient(135deg, #0d2342 0%, #17345c 100%)",
             color: "#ffffff",
-            padding: "18px 20px 14px",
+            padding: "16px 20px 12px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
@@ -215,9 +307,9 @@ export default function NeighborhoodElectoralDrawer() {
             <h2 style={{ margin: "2px 0 0", fontSize: "22px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.3px" }}>
               {district}
             </h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "6px", fontSize: "12px", color: "#cbd5e1" }}>
-              <span>👥 <b>{NUMBER.format(data?.totalContacts ?? 0)}</b> contatos no sistema</span>
-              <span>🏫 <b>{data?.pollingPlaces?.length ?? 0}</b> locais de votação</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#cbd5e1" }}>
+              <span>👥 <b>{NUMBER.format(data?.totalContacts ?? 0)}</b> contatos</span>
+              <span>🏫 <b>{data?.pollingPlaces?.length ?? 0}</b> colégios</span>
             </div>
           </div>
 
@@ -246,7 +338,7 @@ export default function NeighborhoodElectoralDrawer() {
                 boxShadow: "0 4px 12px rgba(22, 163, 74, 0.3)",
               }}
             >
-              📲 Disparar WhatsApp
+              📲 Disparo WhatsApp
             </button>
             <button
               type="button"
@@ -318,7 +410,7 @@ export default function NeighborhoodElectoralDrawer() {
               gap: "6px",
             }}
           >
-            🏫 Colégios de Votação ({data?.pollingPlaces?.length ?? 0})
+            🏫 Colégios TSE ({data?.pollingPlaces?.length ?? 0})
           </button>
           <button
             type="button"
@@ -338,7 +430,7 @@ export default function NeighborhoodElectoralDrawer() {
               gap: "6px",
             }}
           >
-            🗳️ Dados Eleitorais (TSE)
+            🗳️ Histórico TSE
           </button>
         </nav>
 
@@ -348,35 +440,85 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ABA 1: CONTATOS DO BAIRRO                                */}
           {/* ======================================================== */}
           {activeTab === "contacts" && (
-            <div style={{ display: "grid", gap: "14px" }}>
-              {/* Barra de Busca de Contato */}
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <input
-                  type="search"
-                  value={searchContact}
-                  onChange={(e) => {
-                    setSearchContact(e.target.value);
-                    setContactPage(1);
-                  }}
-                  placeholder={`Buscar contato no bairro ${district}...`}
-                  style={{
-                    flex: 1,
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "14px",
-                    background: "#ffffff",
-                  }}
-                />
+            <div style={{ display: "grid", gap: "12px" }}>
+              {/* Barra de Busca e Filtros Rápidos */}
+              <div style={{ display: "grid", gap: "8px" }}>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="search"
+                    value={searchContact}
+                    onChange={(e) => {
+                      setSearchContact(e.target.value);
+                      setContactPage(1);
+                    }}
+                    placeholder={`🔍 Buscar por nome, telefone ou rua em ${district}...`}
+                    style={{
+                      width: "100%",
+                      padding: "10px 36px 10px 14px",
+                      borderRadius: "10px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  {searchContact && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchContact("")}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "#e2e8f0",
+                        border: 0,
+                        borderRadius: "50%",
+                        width: "20px",
+                        height: "20px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {[
+                    { label: "Todos", value: "" },
+                    { label: "Eleitores", value: "Eleitor" },
+                    { label: "Lideranças", value: "Liderança" },
+                  ].map((f) => (
+                    <button
+                      key={f.label}
+                      type="button"
+                      onClick={() => setContactProfileFilter(f.value)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        border: contactProfileFilter === f.value ? "1.5px solid #0284c7" : "1px solid #cbd5e1",
+                        background: contactProfileFilter === f.value ? "#e0f2fe" : "#ffffff",
+                        color: contactProfileFilter === f.value ? "#0369a1" : "#475569",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {loading ? (
                 <div style={{ padding: "30px", textAlign: "center", color: "#64748b", fontWeight: 700 }}>
                   Carregando contatos de {district}...
                 </div>
-              ) : data?.contacts && data.contacts.length > 0 ? (
-                <div style={{ display: "grid", gap: "10px" }}>
-                  {data.contacts.map((c) => {
+              ) : filteredContacts && filteredContacts.length > 0 ? (
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {filteredContacts.map((c) => {
                     const cleanPhone = (c.phone || "").replace(/\D/g, "");
                     const waLink = cleanPhone ? `https://wa.me/55${cleanPhone}` : "";
                     return (
@@ -390,7 +532,7 @@ export default function NeighborhoodElectoralDrawer() {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.02)",
                         }}
                       >
                         <div>
@@ -411,7 +553,7 @@ export default function NeighborhoodElectoralDrawer() {
                               {c.kind || "Eleitor"}
                             </span>
                           </div>
-                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
                             📍 {c.street ? `${c.street}${c.number ? `, ${c.number}` : ""}` : district}
                           </div>
                         </div>
@@ -443,7 +585,7 @@ export default function NeighborhoodElectoralDrawer() {
 
                   {/* Paginação */}
                   {data.totalPages > 1 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
                       <button
                         type="button"
                         disabled={contactPage <= 1}
@@ -483,8 +625,8 @@ export default function NeighborhoodElectoralDrawer() {
                   )}
                 </div>
               ) : (
-                <div style={{ padding: "30px", textAlign: "center", color: "#64748b", background: "#ffffff", borderRadius: "12px" }}>
-                  Nenhum contato encontrado com este filtro em {district}.
+                <div style={{ padding: "26px", textAlign: "center", color: "#64748b", background: "#ffffff", borderRadius: "12px" }}>
+                  Nenhum contato encontrado em {district}.
                 </div>
               )}
             </div>
@@ -494,42 +636,59 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ABA 2: COLÉGIOS DE VOTAÇÃO (TSE)                         */}
           {/* ======================================================== */}
           {activeTab === "colleges" && (
-            <div style={{ display: "grid", gap: "14px" }}>
-              <div
-                style={{
-                  background: "#eff6ff",
-                  border: "1px solid #bfdbfe",
-                  borderRadius: "12px",
-                  padding: "12px 16px",
-                  fontSize: "13px",
-                  color: "#1e40af",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                }}
-              >
-                <span>
-                  🏫 <b>Locais de Votação Oficiais da 61ª Zona Eleitoral</b> vinculados a {district}.
-                </span>
-                <span style={{ fontSize: "11px", fontWeight: 800, background: "#dbeafe", padding: "2px 8px", borderRadius: "6px" }}>
-                  Fonte Oficial: TSE / TRE-PR
-                </span>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {/* Barra de Pesquisa Intuitiva de Colégios */}
+              <div style={{ position: "relative" }}>
+                <input
+                  type="search"
+                  value={searchCollege}
+                  onChange={(e) => setSearchCollege(e.target.value)}
+                  placeholder="🔍 Pesquisar colégio por nome, endereço, bairro ou seção..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 36px 10px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "14px",
+                    background: "#ffffff",
+                    boxSizing: "border-box",
+                  }}
+                />
+                {searchCollege && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchCollege("")}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "#e2e8f0",
+                      border: 0,
+                      borderRadius: "50%",
+                      width: "20px",
+                      height: "20px",
+                      fontSize: "11px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
 
-              <div style={{ display: "grid", gap: "12px" }}>
-                {data?.pollingPlaces?.map((place) => (
+              <div style={{ display: "grid", gap: "10px" }}>
+                {filteredColleges.map((place) => (
                   <div
                     key={place.id}
                     style={{
                       background: "#ffffff",
                       border: "1.5px solid #e2e8f0",
-                      borderRadius: "16px",
-                      padding: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
+                      borderRadius: "14px",
+                      padding: "14px 16px",
+                      boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
                       display: "grid",
-                      gap: "10px",
+                      gap: "8px",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
@@ -537,10 +696,10 @@ export default function NeighborhoodElectoralDrawer() {
                         <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
                           {place.zone}
                         </span>
-                        <h4 style={{ margin: "2px 0 0", fontSize: "17px", color: "#0f172a", fontWeight: 800 }}>
+                        <h4 style={{ margin: "2px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: 800 }}>
                           {place.name}
                         </h4>
-                        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#64748b" }}>
+                        <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
                           📍 {place.address} — {place.district}
                         </p>
                       </div>
@@ -559,9 +718,9 @@ export default function NeighborhoodElectoralDrawer() {
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
-                      <span style={{ fontSize: "12px", color: "#475569", fontWeight: 700 }}>
-                        {place.sectionsCount} Seções Eleitorais:
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
+                      <span style={{ fontSize: "11px", color: "#475569", fontWeight: 700 }}>
+                        {place.sectionsCount} Seções:
                       </span>
                       {place.sections.map((sec) => (
                         <span
@@ -580,7 +739,7 @@ export default function NeighborhoodElectoralDrawer() {
                       ))}
                     </div>
 
-                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "10px", display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "flex-end" }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -588,7 +747,7 @@ export default function NeighborhoodElectoralDrawer() {
                           setActiveTab("electoral");
                         }}
                         style={{
-                          padding: "8px 14px",
+                          padding: "7px 12px",
                           borderRadius: "8px",
                           background: "#0284c7",
                           color: "#ffffff",
@@ -614,8 +773,8 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ABA 3: DADOS ELEITORAIS HISTÓRICOS (TSE)                 */}
           {/* ======================================================== */}
           {activeTab === "electoral" && (
-            <div style={{ display: "grid", gap: "16px" }}>
-              {/* Filtros de Ano e Cargo */}
+            <div style={{ display: "grid", gap: "14px" }}>
+              {/* Filtros de Ano, Cargo e Busca Rápida de Candidato */}
               <div
                 style={{
                   background: "#ffffff",
@@ -623,7 +782,7 @@ export default function NeighborhoodElectoralDrawer() {
                   padding: "14px",
                   border: "1px solid #e2e8f0",
                   display: "grid",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
                 {/* Seletor de Ano */}
@@ -672,6 +831,46 @@ export default function NeighborhoodElectoralDrawer() {
                       {off.officeLabel}
                     </button>
                   ))}
+                </div>
+
+                {/* Barra de Pesquisa de Candidato */}
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="search"
+                    value={searchCandidate}
+                    onChange={(e) => setSearchCandidate(e.target.value)}
+                    placeholder="🔍 Filtrar candidato por nome, partido ou número..."
+                    style={{
+                      width: "100%",
+                      padding: "8px 32px 8px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "13px",
+                      background: "#f8fafc",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  {searchCandidate && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchCandidate("")}
+                      style={{
+                        position: "absolute",
+                        right: "8px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "#e2e8f0",
+                        border: 0,
+                        borderRadius: "50%",
+                        width: "18px",
+                        height: "18px",
+                        fontSize: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
 
                 {/* Filtro de Colégio Ativo */}
@@ -749,9 +948,9 @@ export default function NeighborhoodElectoralDrawer() {
               )}
 
               {/* Tabela e Cards dos Candidatos e Votação */}
-              {activeOfficeData?.candidates && activeOfficeData.candidates.length > 0 ? (
-                <div style={{ display: "grid", gap: "10px" }}>
-                  {activeOfficeData.candidates.map((c: CandidateResult, index: number) => {
+              {filteredCandidates && filteredCandidates.length > 0 ? (
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {filteredCandidates.map((c: CandidateResult, index: number) => {
                     const partyColor = PARTY_COLORS[c.party] || "#2563eb";
                     return (
                       <div
@@ -760,10 +959,10 @@ export default function NeighborhoodElectoralDrawer() {
                           background: "#ffffff",
                           border: "1.5px solid #e2e8f0",
                           borderRadius: "14px",
-                          padding: "14px",
+                          padding: "12px 14px",
                           display: "grid",
-                          gap: "8px",
-                          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+                          gap: "6px",
+                          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -784,12 +983,12 @@ export default function NeighborhoodElectoralDrawer() {
                               {index + 1}
                             </span>
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#0f172a" }}>
+                              <strong style={{ fontSize: "15px", color: "#0f172a" }}>
                                 {c.name} {c.ballotNumber ? `(${c.ballotNumber})` : ""}
                               </strong>
                               <span
                                 style={{
-                                  fontSize: "11px",
+                                  fontSize: "10px",
                                   fontWeight: 800,
                                   color: "#ffffff",
                                   background: partyColor,
@@ -800,14 +999,29 @@ export default function NeighborhoodElectoralDrawer() {
                               >
                                 {c.party}
                               </span>
+                              {c.elected && (
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    fontWeight: 900,
+                                    color: "#166534",
+                                    background: "#dcfce7",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    marginLeft: "6px",
+                                  }}
+                                >
+                                  🏆 ELEITO
+                                </span>
+                              )}
                             </div>
                           </div>
 
                           <div style={{ textAlign: "right" }}>
-                            <b style={{ fontSize: "16px", color: "#0f172a" }}>
+                            <b style={{ fontSize: "15px", color: "#0f172a" }}>
                               {NUMBER.format(c.votes)} votos
                             </b>
-                            <span style={{ display: "block", fontSize: "13px", fontWeight: 800, color: "#0284c7" }}>
+                            <span style={{ display: "block", fontSize: "12px", fontWeight: 800, color: "#0284c7" }}>
                               {PERCENT.format(c.percentage)}%
                             </span>
                           </div>
@@ -816,7 +1030,7 @@ export default function NeighborhoodElectoralDrawer() {
                         {/* Barra de Progresso Visual de Votos */}
                         <div
                           style={{
-                            height: "8px",
+                            height: "7px",
                             background: "#f1f5f9",
                             borderRadius: "999px",
                             overflow: "hidden",
@@ -843,8 +1057,8 @@ export default function NeighborhoodElectoralDrawer() {
                   })}
                 </div>
               ) : (
-                <div style={{ padding: "30px", textAlign: "center", color: "#64748b", background: "#ffffff", borderRadius: "12px" }}>
-                  Nenhum dado de votação encontrado para este filtro.
+                <div style={{ padding: "26px", textAlign: "center", color: "#64748b", background: "#ffffff", borderRadius: "12px" }}>
+                  Nenhum candidato encontrado com a busca "{searchCandidate}".
                 </div>
               )}
             </div>
