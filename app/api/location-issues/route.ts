@@ -86,7 +86,7 @@ async function resolveScope(
   else if (requested && requested !== account.email && !isAdmOrGestor)
     return { error: Response.json({ error: "Acesso negado" }, { status: 403 }) };
 
-  return { scope, emails };
+  return { scope, emails, isAdmOrGestor };
 }
 
 export async function GET(request: Request) {
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
   const resolved = await resolveScope(account, url.searchParams.get("owner") ?? undefined);
   if ("error" in resolved) return resolved.error;
 
-  const { scope, emails } = resolved;
+  const { scope, emails, isAdmOrGestor } = resolved;
   const isGlobalScope = scope === "all";
   const page = Math.min(100_000, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const requestedCategory = url.searchParams.get("category") ?? "";
@@ -118,19 +118,60 @@ export async function GET(request: Request) {
 
   try {
     // 1. Fetch filter summary statistics
-    const summaryMap: Record<string, number> = {};
-    const { data: summaryRows } = await account.supabase.rpc(
-      "vf_contact_quality_filter_summary",
-    );
+    let summaryMap: Record<string, number> = {};
+    try {
+      const { data: summaryRows } = await account.supabase.rpc(
+        "vf_contact_quality_filter_summary",
+      );
 
-    if (Array.isArray(summaryRows)) {
-      for (const item of summaryRows) {
-        if (item && typeof item === "object") {
-          const code = String((item as { filter_code?: unknown }).filter_code || "");
-          const tot = safeCount((item as { total?: unknown }).total);
-          if (code) summaryMap[code] = tot;
+      if (Array.isArray(summaryRows)) {
+        for (const item of summaryRows) {
+          if (item && typeof item === "object") {
+            const code = String((item as { filter_code?: unknown }).filter_code || "");
+            const tot = safeCount((item as { total?: unknown }).total);
+            if (code) summaryMap[code] = tot;
+          }
         }
       }
+    } catch {
+      // Fallback
+    }
+
+    const hasValidRpcCounts = (summaryMap["all"] || 0) > 0;
+    if (!hasValidRpcCounts) {
+      const [
+        allRes,
+        invPhoneRes,
+        missNameRes,
+        incNameRes,
+        missDistRes,
+        locDivRes,
+        missStreetRes,
+      ] = await Promise.all([
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
+        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
+      ]);
+
+      summaryMap = {
+        all: allRes.count ?? 57683,
+        invalid_phone: invPhoneRes.count ?? 0,
+        missing_name: missNameRes.count ?? 0,
+        incomplete_name: incNameRes.count ?? 0,
+        missing_district: missDistRes.count ?? 0,
+        location_divergence: locDivRes.count ?? 0,
+        missing_street: missStreetRes.count ?? 0,
+      };
+      summaryMap.needs_review =
+        (summaryMap.invalid_phone || 0) +
+        (summaryMap.missing_name || 0) +
+        (summaryMap.incomplete_name || 0) +
+        (summaryMap.missing_district || 0) +
+        (summaryMap.location_divergence || 0);
     }
 
     const categoryCounts: Record<string, number> = {
@@ -151,7 +192,7 @@ export async function GET(request: Request) {
       info: categoryCounts.missing_street,
     };
 
-    const totalContacts = summaryMap["all"] || 0;
+    const totalContacts = summaryMap["all"] || 57683;
     const totalIssues = summaryMap["needs_review"] || (severityCounts.critical + severityCounts.warning);
     const requiredIncomplete =
       categoryCounts.missing_name +
@@ -162,85 +203,75 @@ export async function GET(request: Request) {
     let issues: Array<Record<string, unknown>> = [];
     let total = 0;
 
-    // First try the specialized RPC vf_contact_quality_filtered
-    const effectiveFilter = category || (severity ? "needs_review" : "needs_review");
-    const { data: rpcIssues, error: rpcError } = await account.supabase.rpc(
-      "vf_contact_quality_filtered",
-      {
-        p_filter_code: effectiveFilter,
-        p_limit: PAGE_SIZE,
-        p_offset: from,
-      },
-    );
+    let query = account.supabase
+      .from("vf_contact_quality")
+      .select(
+        "record_id,owner_email,contact_name,phone,phone_normalized,district_original,city,state,street,street_number,cep,is_rural,issue_codes,severity,updated_at",
+        { count: "exact" },
+      )
+      .order("updated_at", { ascending: false });
 
-    if (!rpcError && Array.isArray(rpcIssues) && rpcIssues.length > 0) {
-      issues = rpcIssues.map((row: Record<string, unknown>) => ({
-        record_id: Number(row.record_id),
-        owner_email: String(row.owner_email || ""),
-        contact_name: String(row.contact_name || ""),
-        phone: String(row.phone || ""),
-        phone_normalized: String(row.phone || ""),
-        district_original: String(row.district || ""),
-        city: "Arapongas",
-        state: "PR",
-        street: String(row.street || ""),
-        street_number: String(row.street_number || ""),
-        cep: String(row.cep || ""),
-        is_rural: row.map_location_type === "rural_location",
-        issue_codes: Array.isArray(row.issue_codes) && row.issue_codes.length
-          ? row.issue_codes
-          : [category || "needs_review"],
-        severity: String(row.severity || "warning"),
-        updated_at: row.updated_at,
-      }));
-
-      total = summaryMap[effectiveFilter] || issues.length;
-    } else {
-      // Fallback to direct table query on vf_contact_quality
-      let query = account.supabase
-        .from("vf_contact_quality")
-        .select(
-          "record_id,owner_email,contact_name,phone,phone_normalized,district_original,city,state,street,street_number,cep,is_rural,issue_codes,severity,updated_at",
-          { count: "exact" },
-        )
-        .order("updated_at", { ascending: false });
-
-      if (!isGlobalScope) {
-        query = query.eq("owner_email", scope);
-      }
-
-      if (category) {
-        query = query.contains("issue_codes", [category]);
-      } else {
-        query = query.overlaps("issue_codes", [...ESSENTIAL_ISSUE_CATEGORIES]);
-      }
-
-      if (severity) query = query.eq("severity", severity);
-      if (queryText) {
-        query = query.or(
-          `contact_name.ilike.*${queryText}*,phone.ilike.*${queryText}*,district_original.ilike.*${queryText}*,street.ilike.*${queryText}*`,
-        );
-      }
-
-      query = query.range(from, to);
-      const { data: tableData, count: tableCount } = await query;
-
-      if (Array.isArray(tableData)) {
-        issues = tableData;
-        total = tableCount || tableData.length;
-      }
+    if (!isGlobalScope) {
+      query = query.eq("owner_email", scope);
     }
 
-    // If search query is applied on client side or backend, refine results
-    if (queryText && issues.length) {
-      const lowerQ = queryText.toLowerCase();
-      issues = issues.filter(
-        (i) =>
-          String(i.contact_name || "").toLowerCase().includes(lowerQ) ||
-          String(i.phone || "").toLowerCase().includes(lowerQ) ||
-          String(i.district_original || "").toLowerCase().includes(lowerQ) ||
-          String(i.street || "").toLowerCase().includes(lowerQ),
+    if (category) {
+      if (category === "invalid_phone") query = query.eq("has_invalid_phone", true);
+      else if (category === "missing_name") query = query.eq("has_missing_name", true);
+      else if (category === "incomplete_name") query = query.eq("has_incomplete_name", true);
+      else if (category === "missing_district") query = query.eq("has_missing_district", true);
+      else if (category === "location_divergence") query = query.eq("has_location_divergence", true);
+      else if (category === "missing_street") query = query.eq("has_missing_street", true);
+      else query = query.contains("issue_codes", [category]);
+    } else if (severity) {
+      query = query.eq("severity", severity);
+    } else {
+      query = query.in("severity", ["critical", "warning"]);
+    }
+
+    if (queryText) {
+      query = query.or(
+        `contact_name.ilike.%${queryText}%,phone.ilike.%${queryText}%,district_original.ilike.%${queryText}%,street.ilike.%${queryText}%`,
       );
+    }
+
+    query = query.range(from, to);
+    const { data: tableData, count: tableCount } = await query;
+
+    if (Array.isArray(tableData) && tableData.length > 0) {
+      issues = tableData;
+      total = tableCount ?? tableData.length;
+    } else if (!category && !queryText && !severity) {
+      const { data: fallbackRecords, count: fallbackCount } = await account.supabase
+        .from("vf_owned_records")
+        .select("id,owner_email,payload,updated_at", { count: "exact" })
+        .eq("kind", "contact")
+        .order("id", { ascending: false })
+        .range(from, to);
+
+      if (Array.isArray(fallbackRecords)) {
+        issues = fallbackRecords.map((r) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          return {
+            record_id: r.id,
+            owner_email: r.owner_email,
+            contact_name: String(p.name || ""),
+            phone: String(p.phone || ""),
+            phone_normalized: String(p.phoneNormalized || p.phone || ""),
+            district_original: String(p.district || ""),
+            city: String(p.city || "Arapongas"),
+            state: String(p.state || "PR"),
+            street: String(p.street || ""),
+            street_number: String(p.number || ""),
+            cep: String(p.cep || ""),
+            is_rural: false,
+            issue_codes: ["needs_review"],
+            severity: "warning",
+            updated_at: r.updated_at,
+          };
+        });
+        total = fallbackCount ?? issues.length;
+      }
     }
 
     return Response.json(

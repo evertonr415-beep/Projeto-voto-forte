@@ -5,7 +5,7 @@ import { apiFetch } from "../supabase-client";
 import "./location-issues.css";
 import "./required-fields.css";
 
-type CurrentUser = { email: string; name: string; role: string };
+type CurrentUser = { email: string; name: string; role: string; accessRole?: string };
 type Issue = {
   record_id: number;
   owner_email: string;
@@ -40,9 +40,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   invalid_phone: "Telefone inválido",
   missing_name: "Sem nome",
   incomplete_name: "Nome incompleto",
-  missing_district: "Sem bairro/localidade",
-  missing_street: "Sem rua",
+  missing_district: "Sem bairro",
   location_divergence: "Bairro divergente",
+  missing_street: "Sem rua",
 };
 
 const FILTER_CATEGORY_KEYS = [
@@ -150,7 +150,10 @@ function payloadError(value: unknown, fallback: string) {
 }
 
 export default function LocationIssuesClient({ currentUser }: { currentUser: CurrentUser }) {
-  const isAdmin = ["master", "gestor", "lider"].includes(currentUser.role);
+  const isAdmin =
+    ["master", "gestor", "lider"].includes(currentUser.role) ||
+    currentUser.accessRole === "gestor" ||
+    currentUser.accessRole === "adm";
   const [scope, setScope] = useState(isAdmin ? "all" : currentUser.email);
   const [users, setUsers] = useState<{ email: string; name: string }[]>([]);
   const [page, setPage] = useState(1);

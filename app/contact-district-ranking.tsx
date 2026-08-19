@@ -34,7 +34,7 @@ function finiteNumber(value: unknown) {
 }
 
 export default function ContactDistrictRanking() {
-  const [scope, setScope] = useState("");
+  const [scope, setScope] = useState("all");
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
   const [mode, setMode] = useState<OrderMode>("rank");
   const [showAll, setShowAll] = useState(false);
@@ -64,8 +64,10 @@ export default function ContactDistrictRanking() {
           if (cancelled || !response.ok) return;
           const email = String(data.user?.email || "").trim().toLowerCase();
           const role = String(data.user?.role || "").trim().toLowerCase();
+          const accessRole = String((data.user as { accessRole?: string })?.accessRole || "").trim().toLowerCase();
           if (!email) return;
-          setScope(ADMIN_ROLES.has(role) ? "all" : email);
+          const isAdmin = ADMIN_ROLES.has(role) || accessRole === "gestor" || accessRole === "adm";
+          setScope(isAdmin ? "all" : email);
         })
         .catch(() => {
           if (!cancelled) setError("Não foi possível identificar o escopo dos bairros.");

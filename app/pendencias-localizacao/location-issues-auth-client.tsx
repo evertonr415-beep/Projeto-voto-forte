@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { apiFetch, supabase } from "../supabase-client";
+import { apiFetch } from "../supabase-client";
 import LocationIssuesClient from "./location-issues-client";
 
 type CurrentUser = {
@@ -11,26 +10,7 @@ type CurrentUser = {
   role: string;
 };
 
-const SESSION_TIMEOUT_MS = 15_000;
-
-function timeoutAfter<T>(promise: Promise<T>, message: string) {
-  return new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(message)), SESSION_TIMEOUT_MS);
-    promise.then(
-      (value) => {
-        window.clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        window.clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
 export default function LocationIssuesAuthClient() {
-  const [session, setSession] = useState<Session | null>(null);
   const [account, setAccount] = useState<CurrentUser | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(true);
@@ -38,53 +18,19 @@ export default function LocationIssuesAuthClient() {
 
   useEffect(() => {
     let active = true;
-    setBusy(true);
-    setMessage("");
-
-    void timeoutAfter(
-      supabase.auth.getSession(),
-      "A sessão demorou para responder. Verifique sua conexão e tente novamente.",
-    )
-      .then(({ data }) => {
-        if (!active) return;
-        setSession(data.session);
-        if (!data.session) window.location.replace("/contatos");
-      })
-      .catch((error) => {
-        if (!active) return;
-        setMessage(error instanceof Error ? error.message : "Não foi possível abrir sua sessão agora.");
-        setBusy(false);
-      });
-
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return;
-      setSession(nextSession);
-      if (!nextSession) {
-        setAccount(null);
-        window.location.replace("/contatos");
-      }
-    });
-
-    return () => {
-      active = false;
-      data.subscription.unsubscribe();
-    };
-  }, [retryKey]);
-
-  useEffect(() => {
-    if (!session) return;
-
-    let active = true;
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), SESSION_TIMEOUT_MS);
+    const timer = window.setTimeout(() => controller.abort(), 15_000);
     setBusy(true);
     setMessage("");
 
-    void apiFetch("/api/session", { signal: controller.signal })
+    void apiFetch("/api/session", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (!active) return;
-        if (!response.ok) throw new Error(data.error || "Não foi possível validar esta conta.");
+        if (!response.ok || !data.user) {
+          window.location.replace("/contatos");
+          return;
+        }
         setAccount(data.user);
       })
       .catch((error) => {
@@ -98,16 +44,16 @@ export default function LocationIssuesAuthClient() {
         );
       })
       .finally(() => {
-        window.clearTimeout(timeout);
+        window.clearTimeout(timer);
         if (active) setBusy(false);
       });
 
     return () => {
       active = false;
-      window.clearTimeout(timeout);
+      window.clearTimeout(timer);
       controller.abort();
     };
-  }, [session]);
+  }, [retryKey]);
 
   if (account) return <LocationIssuesClient currentUser={account} />;
 
