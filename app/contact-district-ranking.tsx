@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
+import {
+  ARAPONGAS_POLLING_PLACES,
+  ARAPONGAS_HISTORICAL_ELECTIONS,
+  type PollingPlace,
+  type CandidateResult,
+} from "./electoral-tse-data";
 
 type DistrictItem = {
   district: string;
@@ -21,12 +27,32 @@ type SessionResponse = {
   };
 };
 
+type PanelTab = "districts" | "colleges" | "elections";
 type OrderMode = "rank" | "alphabetical";
-type MobileSection = "contacts" | "districts";
+type MobileSection = "contacts" | "sidebar";
 
 const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
 const DESKTOP_QUERY = "(min-width: 1121px)";
 const MOBILE_QUERY = "(max-width: 760px)";
+const NUMBER = new Intl.NumberFormat("pt-BR");
+const PERCENT = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const PARTY_COLORS: Record<string, string> = {
+  PSD: "#1d4ed8",
+  PL: "#0284c7",
+  PP: "#0d9488",
+  PT: "#dc2626",
+  MDB: "#16a34a",
+  Republicanos: "#7c3aed",
+  União: "#2563eb",
+  "União Brasil": "#2563eb",
+  Podemos: "#0891b2",
+  PSC: "#475569",
+  PTB: "#ca8a04",
+  NOVO: "#ea580c",
+  PDT: "#b91c1c",
+  PSOL: "#e11d48",
+};
 
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
@@ -36,6 +62,7 @@ function finiteNumber(value: unknown) {
 export default function ContactDistrictRanking() {
   const [scope, setScope] = useState("all");
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
+  const [panelTab, setPanelTab] = useState<PanelTab>("districts");
   const [mode, setMode] = useState<OrderMode>("rank");
   const [showAll, setShowAll] = useState(false);
   const [mobileSection, setMobileSection] = useState<MobileSection>("contacts");
@@ -43,6 +70,10 @@ export default function ContactDistrictRanking() {
   const [error, setError] = useState("");
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const requestVersion = useRef(0);
+
+  // Filtros internos para a aba de eleições na barra lateral
+  const [selectedYear, setSelectedYear] = useState<number>(2024);
+  const [selectedOffice, setSelectedOffice] = useState<string>("prefeito");
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +141,7 @@ export default function ContactDistrictRanking() {
     const syncGrid = () => {
       if (!grid || !media) return;
       grid.style.gridTemplateColumns = media.matches
-        ? "minmax(0, 1fr) 330px"
+        ? "minmax(0, 1fr) 350px"
         : "1fr";
     };
 
@@ -150,7 +181,7 @@ export default function ContactDistrictRanking() {
 
   useEffect(() => {
     if (!target) return;
-    target.classList.toggle("mobile-show-districts", mobileSection === "districts");
+    target.classList.toggle("mobile-show-districts", mobileSection === "sidebar");
     return () => target.classList.remove("mobile-show-districts");
   }, [mobileSection, target]);
 
@@ -199,7 +230,7 @@ export default function ContactDistrictRanking() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Não foi possível carregar os bairros agora.",
+          : "Não foi possível carregar a relação de bairros agora.",
       );
     } finally {
       if (version === requestVersion.current) setLoading(false);
@@ -220,6 +251,29 @@ export default function ContactDistrictRanking() {
       window.removeEventListener("voto-forte:refresh-dashboard", refresh);
     };
   }, [load, scope]);
+
+  // Atualiza cargo padrão ao mudar de ano
+  useEffect(() => {
+    if (selectedYear === 2024 || selectedYear === 2020) {
+      setSelectedOffice("prefeito");
+    } else if (selectedYear === 2022) {
+      setSelectedOffice("presidente");
+    }
+  }, [selectedYear]);
+
+  const activeElectionData = useMemo(() => {
+    return (
+      ARAPONGAS_HISTORICAL_ELECTIONS.find((e) => e.year === selectedYear) ||
+      ARAPONGAS_HISTORICAL_ELECTIONS[0]
+    );
+  }, [selectedYear]);
+
+  const activeOfficeData = useMemo(() => {
+    return (
+      activeElectionData.offices.find((o) => o.office === selectedOffice) ||
+      activeElectionData.offices[0]
+    );
+  }, [activeElectionData, selectedOffice]);
 
   const ranked = useMemo(
     () =>
@@ -253,6 +307,14 @@ export default function ContactDistrictRanking() {
     switchMobileSection("contacts");
   };
 
+  const openDistrictDrawer = (district: string) => {
+    window.dispatchEvent(
+      new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+        detail: { district },
+      }),
+    );
+  };
+
   const mobileSwitch = (
     <nav className="contact-mobile-switch" aria-label="Visualização do painel de contatos">
       <button
@@ -265,28 +327,29 @@ export default function ContactDistrictRanking() {
       </button>
       <button
         type="button"
-        className={mobileSection === "districts" ? "is-active" : ""}
-        aria-pressed={mobileSection === "districts"}
-        onClick={() => switchMobileSection("districts")}
+        className={mobileSection === "sidebar" ? "is-active" : ""}
+        aria-pressed={mobileSection === "sidebar"}
+        onClick={() => switchMobileSection("sidebar")}
       >
-        Bairros
+        Bairros & Colégios TSE
       </button>
     </nav>
   );
 
   const panel = (
     <aside className="optimized-panel district-panel" aria-busy={loading}>
+      {/* Cabeçalho da Barra Lateral Direita */}
       <div className="district-panel-head">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
           <div>
-            <small>RELAÇÃO DE BAIRROS</small>
-            <h2>Bairros</h2>
+            <small style={{ color: "#0284c7", fontWeight: 800 }}>INTELIGÊNCIA TERRITORIAL</small>
+            <h2 style={{ fontSize: "18px", margin: "2px 0 0" }}>Painel Lateral</h2>
           </div>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whatsapp-district-modal"))}
             style={{
-              padding: "6px 11px",
+              padding: "6px 10px",
               borderRadius: "8px",
               background: "#16a34a",
               color: "#ffffff",
@@ -303,85 +366,307 @@ export default function ContactDistrictRanking() {
             📲 Disparo
           </button>
         </div>
-        <p>
-          Quantidade de cadastros por bairro. {reached.toLocaleString("pt-BR")} bairros com registros neste escopo.
-        </p>
       </div>
 
+      {/* Abas Principais da Barra Lateral Direita */}
       <div
         className="district-tabs"
         role="tablist"
-        aria-label="Ordenação dos bairros"
-        style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+        style={{
+          gridTemplateColumns: "repeat(3, 1fr)",
+          margin: "8px 0 12px",
+          background: "#f1f5f9",
+          padding: "3px",
+          borderRadius: "10px",
+        }}
       >
         <button
           type="button"
-          className={mode === "rank" ? "is-active" : ""}
-          onClick={() => {
-            setMode("rank");
-            setShowAll(false);
-          }}
+          className={panelTab === "districts" ? "is-active" : ""}
+          onClick={() => setPanelTab("districts")}
+          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
         >
-          Mais cadastros
+          📊 Bairros
         </button>
         <button
           type="button"
-          className={mode === "alphabetical" ? "is-active" : ""}
-          onClick={() => {
-            setMode("alphabetical");
-            setShowAll(false);
-          }}
+          className={panelTab === "colleges" ? "is-active" : ""}
+          onClick={() => setPanelTab("colleges")}
+          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
         >
-          A–Z
+          🏫 Colégios
+        </button>
+        <button
+          type="button"
+          className={panelTab === "elections" ? "is-active" : ""}
+          onClick={() => setPanelTab("elections")}
+          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
+        >
+          🗳️ Eleições
         </button>
       </div>
 
-      {loading || !scope ? (
-        <p className="optimized-empty">Carregando bairros…</p>
-      ) : error ? (
-        <p className="optimized-empty">{error}</p>
-      ) : (
+      {/* ======================================================== */}
+      {/* ABA 1: BAIRROS (RANKING)                                  */}
+      {/* ======================================================== */}
+      {panelTab === "districts" && (
         <>
-          <ol>
-            {visibleRows.map((item) => (
-              <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
-                <button
-                  type="button"
-                  className="district-row-button"
-                  disabled={item.total <= 0}
-                  onClick={() => openDistrict(item.district)}
-                  title={`Abrir contatos de ${item.district}`}
-                >
-                  <span className="district-name">
-                    <span>{item.district}</span>
-                    <span className="district-bar" aria-hidden="true">
-                      <i
-                        style={{
-                          width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
-                        }}
-                      />
-                    </span>
-                  </span>
-                  <b>{item.total.toLocaleString("pt-BR")}</b>
-                </button>
-              </li>
-            ))}
-          </ol>
-          {!visibleRows.length && (
-            <p className="optimized-empty">Nenhum bairro disponível.</p>
-          )}
-          {rows.length > 12 && (
+          <div
+            className="district-tabs"
+            role="tablist"
+            aria-label="Ordenação dos bairros"
+            style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginBottom: "10px" }}
+          >
             <button
-              className="district-show-more"
               type="button"
-              onClick={() => setShowAll((value) => !value)}
+              className={mode === "rank" ? "is-active" : ""}
+              onClick={() => {
+                setMode("rank");
+                setShowAll(false);
+              }}
             >
-              {showAll
-                ? "Mostrar menos"
-                : `Ver todos (${rows.length.toLocaleString("pt-BR")})`}
+              Mais cadastros
             </button>
+            <button
+              type="button"
+              className={mode === "alphabetical" ? "is-active" : ""}
+              onClick={() => {
+                setMode("alphabetical");
+                setShowAll(false);
+              }}
+            >
+              A–Z
+            </button>
+          </div>
+
+          {loading || !scope ? (
+            <p className="optimized-empty">Carregando bairros…</p>
+          ) : error ? (
+            <p className="optimized-empty">{error}</p>
+          ) : (
+            <>
+              <ol>
+                {visibleRows.map((item) => (
+                  <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
+                    <button
+                      type="button"
+                      className="district-row-button"
+                      disabled={item.total <= 0}
+                      onClick={() => openDistrict(item.district)}
+                      title={`Abrir contatos de ${item.district}`}
+                    >
+                      <span className="district-name">
+                        <span>{item.district}</span>
+                        <span className="district-bar" aria-hidden="true">
+                          <i
+                            style={{
+                              width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
+                            }}
+                          />
+                        </span>
+                      </span>
+                      <b>{item.total.toLocaleString("pt-BR")}</b>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              {!visibleRows.length && (
+                <p className="optimized-empty">Nenhum bairro disponível.</p>
+              )}
+              {rows.length > 12 && (
+                <button
+                  className="district-show-more"
+                  type="button"
+                  onClick={() => setShowAll((value) => !value)}
+                >
+                  {showAll
+                    ? "Mostrar menos"
+                    : `Ver todos (${rows.length.toLocaleString("pt-BR")})`}
+                </button>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 2: COLÉGIOS DE VOTAÇÃO (TSE)                         */}
+      {/* ======================================================== */}
+      {panelTab === "colleges" && (
+        <div style={{ display: "grid", gap: "8px", maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
+          <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 700, marginBottom: "4px" }}>
+            {ARAPONGAS_POLLING_PLACES.length} Colégios Oficiais (61ª Zona Eleitoral):
+          </div>
+
+          {ARAPONGAS_POLLING_PLACES.map((place: PollingPlace) => (
+            <div
+              key={place.id}
+              onClick={() => openDistrictDrawer(place.district)}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "10px 12px",
+                cursor: "pointer",
+                display: "grid",
+                gap: "4px",
+                transition: "background 0.15s",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <strong style={{ fontSize: "13px", color: "#0f172a", lineHeight: "1.2" }}>
+                  {place.shortName || place.name}
+                </strong>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    color: "#0369a1",
+                    background: "#e0f2fe",
+                    padding: "2px 6px",
+                    borderRadius: "999px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {NUMBER.format(place.totalVoters)} el.
+                </span>
+              </div>
+              <div style={{ fontSize: "11px", color: "#64748b" }}>
+                📍 {place.district} · {place.sectionsCount} seções
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 3: ELEIÇÕES HISTÓRICAS DO TSE                        */}
+      {/* ======================================================== */}
+      {panelTab === "elections" && (
+        <div style={{ display: "grid", gap: "10px" }}>
+          {/* Seletor de Ano */}
+          <div style={{ display: "flex", gap: "6px" }}>
+            {[2024, 2022, 2020].map((yr) => (
+              <button
+                key={yr}
+                type="button"
+                onClick={() => setSelectedYear(yr)}
+                style={{
+                  flex: 1,
+                  padding: "6px",
+                  borderRadius: "8px",
+                  background: selectedYear === yr ? "#0d2342" : "#f1f5f9",
+                  color: selectedYear === yr ? "#ffffff" : "#475569",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  border: 0,
+                  cursor: "pointer",
+                }}
+              >
+                {yr}
+              </button>
+            ))}
+          </div>
+
+          {/* Seletor de Cargo */}
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {activeElectionData.offices.map((off) => (
+              <button
+                key={off.office}
+                type="button"
+                onClick={() => setSelectedOffice(off.office)}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  background: selectedOffice === off.office ? "#0284c7" : "#ffffff",
+                  color: selectedOffice === off.office ? "#ffffff" : "#0284c7",
+                  border: "1px solid #0284c7",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                {off.officeLabel}
+              </button>
+            ))}
+          </div>
+
+          {/* Resumo de Votos e Candidatos */}
+          <div style={{ maxHeight: "300px", overflowY: "auto", display: "grid", gap: "6px", paddingRight: "2px" }}>
+            {activeOfficeData?.candidates?.slice(0, 6).map((c: CandidateResult, index: number) => {
+              const color = PARTY_COLORS[c.party] || "#2563eb";
+              return (
+                <div
+                  key={c.name}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
+                    display: "grid",
+                    gap: "4px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <strong style={{ fontSize: "12px", color: "#0f172a" }}>
+                        {index + 1}. {c.name}
+                      </strong>
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          color: "#fff",
+                          background: color,
+                          padding: "1px 5px",
+                          borderRadius: "4px",
+                          marginLeft: "6px",
+                        }}
+                      >
+                        {c.party}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
+                      {PERCENT.format(c.percentage)}%
+                    </span>
+                  </div>
+                  <div style={{ height: "5px", background: "#f1f5f9", borderRadius: "999px", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${Math.min(100, Math.max(3, c.percentage))}%`,
+                        background: color,
+                        borderRadius: "999px",
+                      }}
+                    />
+                  </div>
+                  <small style={{ fontSize: "10px", color: "#64748b" }}>
+                    {NUMBER.format(c.votes)} votos nominais
+                  </small>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openDistrictDrawer("Centro")}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: "8px",
+              background: "#0284c7",
+              color: "#ffffff",
+              fontSize: "11px",
+              fontWeight: 800,
+              border: 0,
+              cursor: "pointer",
+              marginTop: "4px",
+            }}
+          >
+            📊 Abrir Painel Completo de Apuração →
+          </button>
+        </div>
       )}
     </aside>
   );

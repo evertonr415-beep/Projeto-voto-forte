@@ -172,6 +172,11 @@ export default function MapTerritoryEnhancer() {
             <button type="button" class="vf-district-map-toggle" aria-label="Abrir contatos por bairro" aria-expanded="${startsCollapsed ? "false" : "true"}">${startsCollapsed ? "+" : "−"}</button>
           </header>
           <div class="vf-district-map-list"><div class="vf-district-map-empty">Carregando bairros…</div></div>
+          <div style="padding:6px 8px;border-top:1px solid #e4ebf3;background:#f8fafc;">
+            <button type="button" class="vf-map-open-electoral-btn" style="width:100%;padding:7px;border-radius:8px;background:#0284c7;color:#ffffff;border:0;font:800 11px Arial,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 6px rgba(2,132,199,0.25);">
+              🏫 Colégios & Dados TSE →
+            </button>
+          </div>
           <div class="vf-district-map-scale"><span class="vf-district-point-legend"></span><span>ponto territorial do bairro</span><em>aproxime para detalhar</em></div>
         `;
         const toggle = node.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
@@ -181,6 +186,13 @@ export default function MapTerritoryEnhancer() {
           toggle.textContent = nextCollapsed ? "+" : "−";
           toggle.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
           toggle.setAttribute("aria-label", nextCollapsed ? "Abrir contatos por bairro" : "Recolher contatos por bairro");
+        });
+        node.querySelector<HTMLButtonElement>(".vf-map-open-electoral-btn")?.addEventListener("click", () => {
+          window.dispatchEvent(
+            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+              detail: { district: "Centro" },
+            }),
+          );
         });
         L.DomEvent.disableClickPropagation(node);
         L.DomEvent.disableScrollPropagation(node);
@@ -502,6 +514,13 @@ export default function MapTerritoryEnhancer() {
             );
             marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
             marker.on("popupopen", bindActions);
+            marker.on("dblclick", () => {
+              window.dispatchEvent(
+                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+                  detail: { district: item.district, total: item.total },
+                }),
+              );
+            });
             marker.on("dragstart", () => {
               if (!canManageReferences || !editingPosition) { marker.dragging?.disable?.(); return; }
               marker.getElement?.()?.classList?.add("vf-district-dragging");
