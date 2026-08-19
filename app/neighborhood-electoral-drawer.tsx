@@ -154,7 +154,7 @@ export default function NeighborhoodElectoralDrawer() {
   // Escuta eventos de abertura
   useEffect(() => {
     const handleOpen = (event: Event) => {
-      const detail = (event as CustomEvent<{ district?: string; initialTab?: "contacts" | "colleges" | "electoral" }>).detail;
+      const detail = (event as CustomEvent<{ district?: string; initialTab?: "contacts" | "colleges" | "electoral"; pollingPlaceId?: string }>).detail;
       const raw = String(detail?.district || "").trim();
       const targetDistrict = !raw || raw === "Todos os Bairros" || raw.includes("Todos os Bairros")
         ? ALL_DISTRICTS_LABEL
@@ -162,7 +162,11 @@ export default function NeighborhoodElectoralDrawer() {
 
       setDistrict(targetDistrict);
       if (detail?.initialTab) setActiveTab(detail.initialTab);
-      setSelectedPollingPlaceId("");
+      if (detail?.pollingPlaceId) {
+        setSelectedPollingPlaceId(detail.pollingPlaceId);
+      } else {
+        setSelectedPollingPlaceId("");
+      }
       setContactPage(1);
       setSearchContact("");
       setSearchCollege("");

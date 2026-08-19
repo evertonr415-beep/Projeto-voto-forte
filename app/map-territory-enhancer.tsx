@@ -56,10 +56,10 @@ function currentScope() {
 }
 
 function visibilityForZoom(zoom: number) {
-  if (zoom <= 12) return { limit: 12, minDistance: 70, detail: "visão geral" };
-  if (zoom === 13) return { limit: 24, minDistance: 54, detail: "principais bairros" };
-  if (zoom === 14) return { limit: 55, minDistance: 40, detail: "mais bairros" };
-  return { limit: Number.POSITIVE_INFINITY, minDistance: 28, detail: "todos os bairros" };
+  if (zoom <= 12) return { limit: 14, minDistance: 70, detail: "visão geral" };
+  if (zoom === 13) return { limit: 28, minDistance: 50, detail: "principais bairros" };
+  if (zoom === 14) return { limit: 60, minDistance: 36, detail: "mais bairros" };
+  return { limit: Number.POSITIVE_INFINITY, minDistance: 24, detail: "todos os bairros" };
 }
 
 /**
@@ -84,9 +84,9 @@ function markerIconHtml(item: DistrictItem) {
         <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
         <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
         ${collegeCount > 0 ? `
-          <span class="vf-district-college-tag" title="Colégio Eleitoral: ${escapeHtml(mainCollege.shortName || mainCollege.name)}">
+          <button type="button" class="vf-district-college-btn" data-college-id="${mainCollege.id}" data-district="${escapeHtml(item.district)}" title="Colégio Eleitoral: ${escapeHtml(mainCollege.shortName || mainCollege.name)} (${NUMBER.format(mainCollege.totalVoters)} eleitores) - Clique para ver apuração TSE">
             🏫 ${collegeCount === 1 ? escapeHtml(mainCollege.shortName || mainCollege.name) : `${collegeCount} Colégios`}
-          </span>
+          </button>
         ` : ''}
       </div>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
@@ -153,54 +153,403 @@ function installStyles() {
       background: #e2e8f0;
     }
 
-    /* BALÕES AZUIS DOS BAIRROS */
-    .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
-    .vf-district-point-wrap{position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 6px rgba(15,35,65,.22));transition:transform .15s ease}
-    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.05)}
-    .vf-district-point-box{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.98);border:1.5px solid #0284c7;box-shadow:0 3px 12px rgba(15,35,65,.18);color:#17345c;font:800 11px/1 Arial,sans-serif;white-space:nowrap;backdrop-filter:blur(4px)}
-    .vf-district-name-text{font-size:11px;font-weight:900;color:#0f172a;letter-spacing:-.1px;max-width:140px;overflow:hidden;text-overflow:ellipsis}
-    .vf-district-point-count{background:#0284c7;color:#ffffff;padding:2px 6px;border-radius:999px;font:900 10px/1 Arial,sans-serif}
-    .vf-district-college-tag{background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:2px 6px;border-radius:999px;font:800 9px/1 Arial,sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}
-    .vf-district-point-dot{display:block;width:10px;height:10px;margin-top:2px;border-radius:50%;background:#0284c7;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 4px rgba(22,66,108,.25)}
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 4px rgba(37,99,168,.25),0 0 0 1px rgba(24,74,124,.4),0 3px 6px rgba(22,66,108,.3)}
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box{border-color:#0284c7;background:#f0f9ff;box-shadow:0 3px 14px rgba(2,132,199,.4)}
+    /* BALÕES AZUIS DOS BAIRROS COM NOME DO BAIRRO E BOTÃO DE COLÉGIO */
+    .vf-district-point-icon {
+      background: transparent !important;
+      border: 0 !important;
+      overflow: visible !important;
+    }
+    .vf-district-point-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      filter: drop-shadow(0 3px 8px rgba(15, 35, 65, 0.25));
+      transition: transform 0.15s ease;
+      cursor: pointer;
+    }
+    .vf-district-point-wrap:hover {
+      transform: translateY(-2px) scale(1.06);
+      z-index: 999 !important;
+    }
+    .vf-district-point-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 2px solid #0284c7;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+      color: #0f172a;
+      font: 800 12px/1 Arial, sans-serif;
+      white-space: nowrap;
+    }
+    .vf-district-name-text {
+      font-size: 12px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.2px;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vf-district-point-count {
+      background: #0284c7;
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font: 900 11px/1 Arial, sans-serif;
+    }
+    .vf-district-college-btn {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font: 800 10px/1 Arial, sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .vf-district-college-btn:hover {
+      background: #fde68a;
+      transform: scale(1.05);
+    }
+    .vf-district-point-dot {
+      display: block;
+      width: 10px;
+      height: 10px;
+      margin-top: 2px;
+      border-radius: 50%;
+      background: #0284c7;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.4), 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot {
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.3), 0 0 0 1px #0284c7, 0 3px 6px rgba(2, 132, 199, 0.4);
+    }
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box {
+      border-color: #0d2342;
+      background: #f0f9ff;
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
+    }
     
-    .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
+    .vf-district-overview-total {
+      background: transparent !important;
+      border: 0 !important;
+      overflow: visible !important;
+    }
+    .vf-district-overview-total-wrap {
+      min-width: 112px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: rgba(23, 63, 117, 0.94);
+      border: 2px solid #ffffff;
+      box-shadow: 0 10px 28px rgba(15, 35, 65, 0.28);
+      color: #ffffff;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .vf-district-overview-total-wrap strong {
+      display: block;
+      font: 900 20px/1 Arial, sans-serif;
+      letter-spacing: -0.4px;
+    }
+    .vf-district-overview-total-wrap small {
+      display: block;
+      margin-top: 4px;
+      font: 800 9px/1.2 Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      opacity: 0.9;
+    }
     
     /* POPUP DE BAIRRO COM INDICAÇÃO DE COLÉGIOS */
-    .vf-district-area-popup{min-width:230px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}
-    .vf-district-area-popup strong{display:block;color:#17345c;font-size:15px;margin-bottom:3px}
-    .vf-district-area-popup b{display:inline-block;padding:2px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}
-    .vf-district-area-popup p{margin:6px 0 0;font-weight:700;color:#0f172a}
-    .vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}
-    .vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}
-    .vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}
-    .vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}
-    .vf-district-save{background:#1f7a4c;color:#fff}
-    .vf-district-cancel{background:#f3f4f6;color:#475569}
-    .vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
+    .vf-district-area-popup {
+      min-width: 240px;
+      font: 500 12px/1.4 Arial, sans-serif;
+      color: #26384d;
+    }
+    .vf-district-area-popup strong {
+      display: block;
+      color: #17345c;
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 3px;
+    }
+    .vf-district-area-popup b {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #eaf2fb;
+      color: #285b8e;
+      font-size: 10px;
+    }
+    .vf-district-area-popup p {
+      margin: 6px 0 0;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .vf-district-area-popup small {
+      display: block;
+      margin-top: 7px;
+      color: #64748b;
+    }
+    .vf-district-popup-actions {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .vf-district-popup-actions button {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: 800 11px/1.2 Arial, sans-serif;
+      cursor: pointer;
+    }
+    .vf-district-adjust {
+      background: #eef4fa;
+      color: #173f75;
+      border: 1px solid #d4e0ec !important;
+    }
+    .vf-district-save {
+      background: #1f7a4c;
+      color: #ffffff;
+    }
+    .vf-district-cancel {
+      background: #f3f4f6;
+      color: #475569;
+    }
+    .vf-district-dragging .vf-district-point-wrap {
+      filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+      transform: scale(1.12);
+    }
 
     /* PAINEL LATERAL DE CONTATOS POR BAIRRO */
-    .vf-district-map-control{background:rgba(255,255,255,.97);border:1px solid rgba(23,52,92,.13);border-radius:14px;box-shadow:0 9px 24px rgba(15,35,65,.16);width:260px;max-height:310px;overflow:hidden;font:600 11px/1.3 Arial,sans-serif;color:#17345c;backdrop-filter:blur(6px)}
-    .vf-district-map-control header{padding:10px 11px 8px;border-bottom:1px solid #e4ebf3;display:flex;gap:8px;align-items:flex-start}.vf-district-map-control header>div{min-width:0;flex:1}.vf-district-map-control header strong{display:block;font-size:13px}.vf-district-map-control header small{display:block;margin-top:3px;color:#64748b;font-weight:600}.vf-district-map-toggle{display:none;border:1px solid #d9e3ef;background:#f5f8fc;color:#173f75;border-radius:8px;width:30px;height:30px;flex:0 0 30px;font:900 15px/1 Arial,sans-serif;cursor:pointer}
-    .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
-    .vf-district-map-scale{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale .vf-district-point-legend{width:9px;height:9px;border-radius:50%;background:#2563a8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.24)}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
-
-    @media(max-width:760px){
-      .full-map{height:72vh!important;min-height:520px!important}
-      .vf-map-floating-quick-bar{top:8px!important;left:8px!important;right:8px!important;margin:0!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:4px!important;padding:4px!important;}
-      .vf-map-quick-btn{padding:6px 4px!important;font-size:8px!important;justify-content:center!important;}
-      .full-map .map-legend{top:82px!important;left:auto!important;right:8px!important;width:auto!important;max-width:190px!important;padding:8px 10px!important;border-radius:9px!important}
-      .full-map .map-legend h4,.full-map .map-legend hr,.full-map .map-legend>small,.full-map .map-legend>strong{display:none!important}
-      .full-map .map-legend label{margin:4px 0!important;font-size:7px!important;gap:5px!important}
-      .vf-district-map-control{width:min(240px,calc(100vw - 32px));max-height:260px}
-      .vf-district-map-control header{padding:8px 9px;border-bottom:0;align-items:center}.vf-district-map-control header strong{font-size:12px}.vf-district-map-control header small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vf-district-map-toggle{display:block}
-      .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,.vf-district-map-control[data-collapsed="true"] .vf-district-map-scale{display:none}
-      .vf-district-map-control[data-collapsed="true"] header{border-bottom:0}
-      .vf-district-map-list{max-height:170px}.vf-district-map-row{padding:6px}.vf-district-map-scale em{display:none}.vf-district-name-text{max-width:90px;font-size:9px}.vf-district-point-count{font-size:8px;padding:1px 4px}.vf-district-point-dot{width:9px;height:9px}
-      .leaflet-control-zoom{margin-top:94px!important}
+    .vf-district-map-control {
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid rgba(23, 52, 92, 0.13);
+      border-radius: 14px;
+      box-shadow: 0 9px 24px rgba(15, 35, 65, 0.16);
+      width: 260px;
+      max-height: 310px;
+      overflow: hidden;
+      font: 600 11px/1.3 Arial, sans-serif;
+      color: #17345c;
+      backdrop-filter: blur(6px);
     }
-    @media(max-width:480px){.full-map{height:74vh!important;min-height:540px!important}.full-map .map-legend{max-width:165px!important}.vf-district-map-control{width:min(220px,calc(100vw - 28px))}}
+    .vf-district-map-control header {
+      padding: 10px 11px 8px;
+      border-bottom: 1px solid #e4ebf3;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .vf-district-map-control header > div {
+      min-width: 0;
+      flex: 1;
+    }
+    .vf-district-map-control header strong {
+      display: block;
+      font-size: 13px;
+    }
+    .vf-district-map-control header small {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .vf-district-map-toggle {
+      display: none;
+      border: 1px solid #d9e3ef;
+      background: #f5f8fc;
+      color: #173f75;
+      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      font: 900 15px/1 Arial, sans-serif;
+      cursor: pointer;
+    }
+    .vf-district-map-list {
+      max-height: 245px;
+      overflow: auto;
+      padding: 5px;
+    }
+    .vf-district-map-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #27405f;
+      text-align: left;
+      padding: 7px 8px;
+      cursor: pointer;
+      font: 700 11px/1.2 Arial, sans-serif;
+    }
+    .vf-district-map-row:hover:not(:disabled) {
+      background: #edf4fb;
+    }
+    .vf-district-map-row:disabled {
+      cursor: default;
+      opacity: 0.62;
+    }
+    .vf-district-map-row b {
+      font-size: 12px;
+      color: #17345c;
+    }
+    .vf-district-map-row small {
+      display: block;
+      margin-top: 2px;
+      color: #7a899c;
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .vf-district-map-empty {
+      padding: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .vf-district-map-scale {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-top: 1px solid #e4ebf3;
+      color: #64748b;
+      font-size: 9px;
+    }
+    .vf-district-map-scale .vf-district-point-legend {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2563a8;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(24, 74, 124, 0.24);
+    }
+    .vf-district-map-scale em {
+      margin-left: auto;
+      font-style: normal;
+      color: #8491a2;
+    }
+
+    @media(max-width:760px) {
+      .full-map {
+        height: 72vh !important;
+        min-height: 520px !important;
+      }
+      .vf-map-floating-quick-bar {
+        top: 8px !important;
+        left: 8px !important;
+        right: 8px !important;
+        margin: 0 !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 4px !important;
+        padding: 4px !important;
+      }
+      .vf-map-quick-btn {
+        padding: 6px 4px !important;
+        font-size: 8px !important;
+        justify-content: center !important;
+      }
+      .full-map .map-legend {
+        top: 82px !important;
+        left: auto !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: 190px !important;
+        padding: 8px 10px !important;
+        border-radius: 9px !important;
+      }
+      .full-map .map-legend h4,
+      .full-map .map-legend hr,
+      .full-map .map-legend > small,
+      .full-map .map-legend > strong {
+        display: none !important;
+      }
+      .full-map .map-legend label {
+        margin: 4px 0 !important;
+        font-size: 7px !important;
+        gap: 5px !important;
+      }
+      .vf-district-map-control {
+        width: min(240px, calc(100vw - 32px));
+        max-height: 260px;
+      }
+      .vf-district-map-control header {
+        padding: 8px 9px;
+        border-bottom: 0;
+        align-items: center;
+      }
+      .vf-district-map-control header strong {
+        font-size: 12px;
+      }
+      .vf-district-map-control header small {
+        font-size: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .vf-district-map-toggle {
+        display: block;
+      }
+      .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,
+      .vf-district-map-control[data-collapsed="true"] .vf-district-map-scale {
+        display: none;
+      }
+      .vf-district-map-control[data-collapsed="true"] header {
+        border-bottom: 0;
+      }
+      .vf-district-map-list {
+        max-height: 170px;
+      }
+      .vf-district-map-row {
+        padding: 6px;
+      }
+      .vf-district-map-scale em {
+        display: none;
+      }
+      .vf-district-name-text {
+        max-width: 90px;
+        font-size: 10px;
+      }
+      .vf-district-point-count {
+        font-size: 9px;
+        padding: 1px 5px;
+      }
+      .vf-district-point-dot {
+        width: 9px;
+        height: 9px;
+      }
+      .leaflet-control-zoom {
+        margin-top: 94px !important;
+      }
+    }
+    @media(max-width:480px) {
+      .full-map {
+        height: 74vh !important;
+        min-height: 540px !important;
+      }
+      .full-map .map-legend {
+        max-width: 165px !important;
+      }
+      .vf-district-map-control {
+        width: min(220px, calc(100vw - 28px));
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -562,9 +911,9 @@ export default function MapTerritoryEnhancer() {
 
             const popupHtml = (editing = false) => `
               <div class="vf-district-area-popup">
-                <strong>${escapeHtml(item.district)}</strong>
+                <strong>📍 ${escapeHtml(item.district)}</strong>
                 <b>Referência territorial do bairro</b>
-                <p>${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
+                <p>👥 ${NUMBER.format(item.total)} contato(s) cadastrados neste bairro</p>
                 
                 ${colleges.length > 0 ? `
                   <div style="margin: 8px 0; padding: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
@@ -580,7 +929,7 @@ export default function MapTerritoryEnhancer() {
                   </div>
                 ` : ''}
 
-                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O ponto azul é a referência territorial do bairro e permite consultar contatos, colégios e apuração do TSE."}</small>
+                <small>${editing ? "Arraste o ponto azul até a posição correta e salve." : "O balão azul indica o bairro e permite consultar contatos, colégios e apuração oficial do TSE."}</small>
                 <div class="vf-district-popup-actions">
                   <button type="button" class="vf-district-open-electoral-drawer" style="background:#0284c7;color:#ffffff;font-weight:900;box-shadow:0 2px 8px rgba(2,132,199,0.3);">
                     📊 Abrir Painel Territorial do Bairro →
@@ -596,7 +945,8 @@ export default function MapTerritoryEnhancer() {
               if (!popup) return;
 
               popup.querySelectorAll<HTMLButtonElement>(".vf-popup-college-btn").forEach((btn) => {
-                btn.addEventListener("click", () => {
+                btn.addEventListener("click", (e) => {
+                  e.stopPropagation();
                   const colId = btn.getAttribute("data-college-id") || "";
                   const dist = btn.getAttribute("data-district") || item.district;
                   window.dispatchEvent(
@@ -665,7 +1015,7 @@ export default function MapTerritoryEnhancer() {
             };
 
             marker.bindTooltip(
-              `${item.district} · ${NUMBER.format(item.total)} contato(s)`,
+              `📍 ${item.district} · ${NUMBER.format(item.total)} contato(s)`,
               { direction: "top", offset: [0, -30], opacity: 0.96 },
             );
             marker.bindPopup(popupHtml(false), { maxWidth: 320, closeButton: true });
