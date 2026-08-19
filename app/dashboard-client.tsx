@@ -1230,57 +1230,77 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
           marker.addTo(contactLayer.current);
         });
       setTimeout(() => map.invalidateSize(), 100);
-      const query =
-        '[out:json][timeout:25];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a);node["place"~"neighbourhood|suburb"]["name"](area.a););out tags center geom;';
-      fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-        body: `data=${encodeURIComponent(query)}`,
-      })
+      apiFetch("/api/arapongas-boundaries")
         .then((r) => r.json())
         .then((data) => {
           if (cancelled) return;
           const boundary = L.layerGroup().addTo(map);
-          for (const element of data.elements || []) {
-            const parts =
-              element.type === "relation"
-                ? (element.members || []).filter((m: any) => m.geometry)
-                : [element];
-            for (const part of parts)
-              if (part.geometry?.length > 1) {
-                const points = part.geometry.map((p: any) => [p.lat, p.lon]);
-                const first = part.geometry[0];
-                const last = part.geometry[part.geometry.length - 1];
-                const isClosed = first.lat === last.lat && first.lon === last.lon;
-                (isClosed ? L.polygon(points, {
-                  color: "#ef8429",
-                  weight: 2,
-                  opacity: 0.88,
-                  fillColor: "#f5a45f",
-                  fillOpacity: 0.08,
-                }) : L.polyline(points, {
-                  color: "#ef8429",
-                  weight: 2,
-                  opacity: 0.88,
-                })).addTo(boundary);
-              }
-            const center =
-              element.center ||
-              (element.lat && element.lon
-                ? { lat: element.lat, lon: element.lon }
-                : null);
-            if (center && element.tags?.name)
-              L.marker([center.lat, center.lon], {
-                interactive: false,
+          for (const district of data.districts || []) {
+            if (district.polygon?.length > 2) {
+              const total = Number(district.total || 0);
+              const polygon = L.polygon(district.polygon, {
+                color: "#0284c7",
+                weight: 2.2,
+                opacity: 0.88,
+                fillColor: "#38bdf8",
+                fillOpacity: total > 0 ? 0.09 : 0.04,
+              });
+
+              polygon.on("mouseover", () => {
+                polygon.setStyle({
+                  color: "#38bdf8",
+                  weight: 3.5,
+                  fillOpacity: 0.22,
+                });
+              });
+
+              polygon.on("mouseout", () => {
+                polygon.setStyle({
+                  color: "#0284c7",
+                  weight: 2.2,
+                  fillOpacity: total > 0 ? 0.09 : 0.04,
+                });
+              });
+
+              polygon.on("click", () => {
+                map.flyTo(district.center, Math.max(14, map.getZoom?.() || 14), { duration: 0.8 });
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:district-selected", { detail: { district: district.name } })
+                );
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:district-filter-change", { detail: { district: district.name } })
+                );
+              });
+
+              polygon.addTo(boundary);
+            }
+
+            if (district.center && Number.isFinite(district.center[0]) && Number.isFinite(district.center[1])) {
+              const labelHtml = district.total > 0
+                ? `<div class="vf-district-polygon-label"><span>${district.shortName || district.name}</span><span class="vf-badge">${district.total.toLocaleString("pt-BR")}</span></div>`
+                : `<div class="vf-district-polygon-label"><span>${district.shortName || district.name}</span></div>`;
+
+              L.marker(district.center, {
+                interactive: true,
+                zIndexOffset: -200,
                 icon: L.divIcon({
-                  className: "district-name",
-                  html: element.tags.name,
-                  iconSize: [120, 18],
-                  iconAnchor: [60, 9],
+                  className: "district-name-wrap",
+                  html: labelHtml,
+                  iconSize: [undefined, undefined],
+                  iconAnchor: [45, 12],
                 }),
-              }).addTo(boundary);
+              })
+                .on("click", () => {
+                  map.flyTo(district.center, Math.max(14, map.getZoom?.() || 14), { duration: 0.8 });
+                  window.dispatchEvent(
+                    new CustomEvent("voto-forte:district-selected", { detail: { district: district.name } })
+                  );
+                  window.dispatchEvent(
+                    new CustomEvent("voto-forte:district-filter-change", { detail: { district: district.name } })
+                  );
+                })
+                .addTo(boundary);
+            }
           }
         })
         .catch(() =>
