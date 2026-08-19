@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "./supabase-client";
 import {
   ARAPONGAS_POLLING_PLACES,
+  ARAPONGAS_HISTORICAL_ELECTIONS,
   type PollingPlace,
   type ElectionYearData,
   type CandidateResult,
@@ -28,6 +29,7 @@ type DrawerData = {
   pageSize: number;
   totalPages: number;
   pollingPlaces: PollingPlace[];
+  allPollingPlaces: PollingPlace[];
   selectedPollingPlace: PollingPlace | null;
   elections: ElectionYearData[];
 };
@@ -68,7 +70,7 @@ const ORDERED_OFFICES = [
   { id: "vereador", label: "Vereador", icon: "🗳️", defaultYear: 2024, availableYears: [2024, 2020], scope: "Municipal" },
 ] as const;
 
-// Lista de bairros de referência de Arapongas
+// Lista completa de bairros de referência de Arapongas
 const ARAPONGAS_DEFAULT_DISTRICTS = [
   "Centro",
   "Jardim San Raphael",
@@ -103,14 +105,14 @@ export default function NeighborhoodElectoralDrawer() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DrawerData | null>(null);
 
-  // Lista dinâmica de todos os bairros
+  // Lista dinâmica de bairros
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([
     ALL_DISTRICTS_LABEL,
     ...ARAPONGAS_DEFAULT_DISTRICTS,
   ]);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
   const [searchDistrictQuery, setSearchDistrictQuery] = useState("");
-  const [showAllColleges, setShowAllColleges] = useState(false);
+  const [showAllColleges, setShowAllColleges] = useState(true);
 
   // Filtros internos
   const [searchContact, setSearchContact] = useState("");
@@ -181,12 +183,10 @@ export default function NeighborhoodElectoralDrawer() {
           district: queryDistrict,
           page: String(contactPage),
           pageSize: "15",
-          year: String(selectedYear),
         });
         if (showAllColleges || district === ALL_DISTRICTS_LABEL) params.set("allColleges", "true");
         if (searchContact) params.set("q", searchContact);
         if (selectedPollingPlaceId) params.set("pollingPlaceId", selectedPollingPlaceId);
-        if (selectedOffice) params.set("office", selectedOffice);
 
         const response = await apiFetch(`/api/electoral-territory?${params.toString()}`, {
           cache: "no-store",
@@ -206,7 +206,7 @@ export default function NeighborhoodElectoralDrawer() {
     return () => {
       cancelled = true;
     };
-  }, [district, isOpen, contactPage, searchContact, selectedPollingPlaceId, selectedYear, selectedOffice, showAllColleges]);
+  }, [district, isOpen, contactPage, searchContact, selectedPollingPlaceId, showAllColleges]);
 
   // Manipulador da troca de cargo garantindo o ano correto
   const handleOfficeSelect = (officeId: string) => {
@@ -222,15 +222,24 @@ export default function NeighborhoodElectoralDrawer() {
     return ORDERED_OFFICES.find((o) => o.id === selectedOffice) || ORDERED_OFFICES[0];
   }, [selectedOffice]);
 
-  // Eleição e cargo ativos
+  // Busca a eleição que possui os dados do cargo selecionado
   const activeYearData = useMemo(() => {
-    return data?.elections?.find((e) => e.year === selectedYear) || data?.elections?.[0] || null;
-  }, [data?.elections, selectedYear]);
+    const electionList = data?.elections || ARAPONGAS_HISTORICAL_ELECTIONS;
+    // Tenta encontrar no ano ativo
+    const byYear = electionList.find((e) => e.year === selectedYear);
+    if (byYear && byYear.offices.some((o) => o.office === selectedOffice)) {
+      return byYear;
+    }
+    // Procura em qualquer eleição que contenha o cargo selecionado
+    const byOffice = electionList.find((e) => e.offices.some((o) => o.office === selectedOffice));
+    return byOffice || electionList[0] || null;
+  }, [data?.elections, selectedYear, selectedOffice]);
 
   const activeOfficeData = useMemo(() => {
+    if (!activeYearData) return null;
     return (
-      activeYearData?.offices?.find((o) => o.office === selectedOffice) ||
-      activeYearData?.offices?.[0] ||
+      activeYearData.offices.find((o) => o.office === selectedOffice) ||
+      activeYearData.offices[0] ||
       null
     );
   }, [activeYearData, selectedOffice]);
@@ -248,12 +257,17 @@ export default function NeighborhoodElectoralDrawer() {
     );
   }, [activeOfficeData?.candidates, searchCandidate]);
 
+  // Lista de colégios disponíveis
+  const availableColleges = useMemo(() => {
+    return data?.pollingPlaces || ARAPONGAS_POLLING_PLACES;
+  }, [data?.pollingPlaces]);
+
   // Filtra colégios na busca rápida
   const filteredColleges = useMemo(() => {
-    if (!data?.pollingPlaces) return [];
-    if (!searchCollege.trim()) return data.pollingPlaces;
+    if (!availableColleges) return [];
+    if (!searchCollege.trim()) return availableColleges;
     const query = searchCollege.toLowerCase().trim();
-    return data.pollingPlaces.filter(
+    return availableColleges.filter(
       (p) =>
         p.name.toLowerCase().includes(query) ||
         (p.shortName && p.shortName.toLowerCase().includes(query)) ||
@@ -261,7 +275,7 @@ export default function NeighborhoodElectoralDrawer() {
         p.district.toLowerCase().includes(query) ||
         p.sections.some((s) => String(s).includes(query)),
     );
-  }, [data?.pollingPlaces, searchCollege]);
+  }, [availableColleges, searchCollege]);
 
   // Filtra contatos por perfil
   const filteredContacts = useMemo(() => {
@@ -287,7 +301,7 @@ export default function NeighborhoodElectoralDrawer() {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(13, 35, 66, 0.78)",
+        background: "rgba(13, 35, 66, 0.8)",
         backdropFilter: "blur(6px)",
         zIndex: 9990,
         display: "flex",
@@ -306,7 +320,7 @@ export default function NeighborhoodElectoralDrawer() {
       <div
         className="vf-neighborhood-drawer-panel"
         style={{
-          width: "min(920px, 100%)",
+          width: "min(940px, 100%)",
           height: "92vh",
           maxHeight: "92vh",
           background: "#ffffff",
@@ -439,7 +453,7 @@ export default function NeighborhoodElectoralDrawer() {
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
-          {/* Lado Esquerdo: Identificação e Seletor de Bairro no Computador e Mobile */}
+          {/* Lado Esquerdo: Identificação e Seletor de Bairro */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
@@ -458,14 +472,14 @@ export default function NeighborhoodElectoralDrawer() {
                   🏛️ Informações TSE
                 </span>
                 <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700 }}>
-                  Arapongas · PR (61ª Zona)
+                  Arapongas · PR (61ª Zona Eleitoral)
                 </span>
               </div>
 
-              {/* SELETOR DE BAIRRO CLARO E VISÍVEL NO COMPUTADOR E CELULAR */}
+              {/* SELETOR DIRETO DE BAIRRO NO COMPUTADOR E CELULAR */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
                 <label style={{ fontSize: "12px", color: "#cbd5e1", fontWeight: 700 }}>
-                  Território / Bairro:
+                  Bairro:
                 </label>
                 <select
                   value={district}
@@ -618,7 +632,7 @@ export default function NeighborhoodElectoralDrawer() {
               gap: "6px",
             }}
           >
-            🏫 Colégios de Votação ({data?.pollingPlaces?.length ?? 0})
+            🏫 Colégios de Votação ({availableColleges.length})
           </button>
           <button
             type="button"
@@ -790,7 +804,7 @@ export default function NeighborhoodElectoralDrawer() {
                     );
                   })}
 
-                  {data.totalPages > 1 && (
+                  {data && data.totalPages > 1 && (
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
                       <button
                         type="button"
@@ -843,45 +857,74 @@ export default function NeighborhoodElectoralDrawer() {
           {/* ======================================================== */}
           {activeTab === "colleges" && (
             <div style={{ display: "grid", gap: "12px" }}>
-              {/* Seletor de Escopo de Colégios */}
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {!isAll && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllColleges(false)}
+              {/* Barra de Seleção Rápida de Colégio */}
+              <div
+                style={{
+                  background: "#ffffff",
+                  padding: "12px 14px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: "260px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 800, color: "#1e293b", whiteSpace: "nowrap" }}>
+                    🏫 Selecionar Colégio:
+                  </label>
+                  <select
+                    value={selectedPollingPlaceId}
+                    onChange={(e) => {
+                      setSelectedPollingPlaceId(e.target.value);
+                      if (e.target.value) {
+                        setActiveTab("electoral");
+                      }
+                    }}
                     style={{
-                      padding: "6px 12px",
+                      flex: 1,
+                      padding: "7px 10px",
                       borderRadius: "8px",
-                      background: !showAllColleges ? "#0284c7" : "#ffffff",
-                      color: !showAllColleges ? "#ffffff" : "#0284c7",
                       border: "1.5px solid #0284c7",
-                      fontSize: "12px",
-                      fontWeight: 800,
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      background: "#ffffff",
+                      color: "#0f172a",
                       cursor: "pointer",
                     }}
                   >
-                    📍 Colégios de {district} ({filteredColleges.length})
+                    <option value="">-- Todos os Colégios (Apuração Geral de Arapongas) --</option>
+                    {availableColleges.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.shortName || p.name} ({p.district}) - {NUMBER.format(p.totalVoters)} eleitores
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedPollingPlaceId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPollingPlaceId("")}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      background: "#f1f5f9",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      color: "#475569",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Ver Geral (Sem filtro) ×
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setShowAllColleges(true)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    background: showAllColleges || isAll ? "#0284c7" : "#ffffff",
-                    color: showAllColleges || isAll ? "#ffffff" : "#0284c7",
-                    border: "1.5px solid #0284c7",
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  🏛️ Ver Todos os 18 Colégios de Arapongas
-                </button>
               </div>
 
-              {/* Barra de Pesquisa */}
+              {/* Barra de Pesquisa de Colégios */}
               <div style={{ position: "relative" }}>
                 <input
                   type="search"
@@ -921,94 +964,99 @@ export default function NeighborhoodElectoralDrawer() {
                 )}
               </div>
 
+              {/* Listagem de Colégios */}
               <div style={{ display: "grid", gap: "10px" }}>
-                {filteredColleges.map((place) => (
-                  <div
-                    key={place.id}
-                    style={{
-                      background: "#ffffff",
-                      border: "1.5px solid #e2e8f0",
-                      borderRadius: "14px",
-                      padding: "14px 16px",
-                      boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
-                      display: "grid",
-                      gap: "8px",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
-                      <div>
-                        <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
-                          {place.zone}
-                        </span>
-                        <h4 style={{ margin: "2px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: 800 }}>
-                          {place.name}
-                        </h4>
-                        <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
-                          📍 {place.address} — <b>{place.district}</b>
-                        </p>
-                      </div>
-                      <span
-                        style={{
-                          background: "#e0f2fe",
-                          color: "#0369a1",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          padding: "4px 10px",
-                          borderRadius: "999px",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {NUMBER.format(place.totalVoters)} eleitores
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
-                      <span style={{ fontSize: "11px", color: "#475569", fontWeight: 700 }}>
-                        {place.sectionsCount} Seções:
-                      </span>
-                      {place.sections.map((sec) => (
+                {filteredColleges.map((place) => {
+                  const isSelected = selectedPollingPlaceId === place.id;
+                  return (
+                    <div
+                      key={place.id}
+                      style={{
+                        background: "#ffffff",
+                        border: isSelected ? "2px solid #0284c7" : "1.5px solid #e2e8f0",
+                        borderRadius: "14px",
+                        padding: "14px 16px",
+                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+                        display: "grid",
+                        gap: "8px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                        <div>
+                          <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
+                            {place.zone}
+                          </span>
+                          <h4 style={{ margin: "2px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: 800 }}>
+                            {place.name}
+                          </h4>
+                          <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#64748b" }}>
+                            📍 {place.address} — <b>{place.district}</b>
+                          </p>
+                        </div>
                         <span
-                          key={sec}
                           style={{
+                            background: "#e0f2fe",
+                            color: "#0369a1",
                             fontSize: "11px",
-                            fontWeight: 700,
-                            padding: "2px 6px",
-                            borderRadius: "6px",
-                            background: "#f1f5f9",
-                            color: "#334155",
+                            fontWeight: 800,
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          Sec. {sec}
+                          {NUMBER.format(place.totalVoters)} eleitores
                         </span>
-                      ))}
-                    </div>
+                      </div>
 
-                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "flex-end" }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedPollingPlaceId(place.id);
-                          setActiveTab("electoral");
-                        }}
-                        style={{
-                          padding: "7px 12px",
-                          borderRadius: "8px",
-                          background: "#0284c7",
-                          color: "#ffffff",
-                          fontSize: "12px",
-                          fontWeight: 800,
-                          border: 0,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
-                      >
-                        🗳️ Ver Resultados Eleitorais deste Colégio →
-                      </button>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
+                        <span style={{ fontSize: "11px", color: "#475569", fontWeight: 700 }}>
+                          {place.sectionsCount} Seções:
+                        </span>
+                        {place.sections.map((sec) => (
+                          <span
+                            key={sec}
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              padding: "2px 6px",
+                              borderRadius: "6px",
+                              background: "#f1f5f9",
+                              color: "#334155",
+                            }}
+                          >
+                            Sec. {sec}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPollingPlaceId(place.id);
+                            setActiveTab("electoral");
+                          }}
+                          style={{
+                            padding: "8px 14px",
+                            borderRadius: "8px",
+                            background: isSelected ? "#16a34a" : "#0284c7",
+                            color: "#ffffff",
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            border: 0,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)",
+                          }}
+                        >
+                          🗳️ Ver Votação Deste Colégio →
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1023,29 +1071,29 @@ export default function NeighborhoodElectoralDrawer() {
                 style={{
                   background: "#ffffff",
                   borderRadius: "16px",
-                  padding: "14px",
+                  padding: "16px",
                   border: "1.5px solid #e2e8f0",
                   display: "grid",
-                  gap: "12px",
+                  gap: "14px",
                 }}
               >
                 {/* 1. SELEÇÃO DE CARGO NA SEQUÊNCIA EXATA SOLICITADA */}
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                     <span style={{ fontSize: "12px", fontWeight: 900, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       Selecione a Categoria de Votação:
                     </span>
                     <span style={{ fontSize: "11px", fontWeight: 700, color: "#0284c7" }}>
-                      Dados Oficiais TSE (61ª Zona)
+                      Dados 100% Oficiais TSE (61ª Zona)
                     </span>
                   </div>
 
-                  {/* BOTOES DE CARGO NA SEQUÊNCIA: Presidente, Senador, Governador, Deputado Federal, Deputado Estadual, Prefeito, Vereador */}
+                  {/* BOTOES DE CARGO NA SEQUÊNCIA EXATA */}
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-                      gap: "6px",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(125px, 1fr))",
+                      gap: "8px",
                     }}
                   >
                     {ORDERED_OFFICES.map((off) => {
@@ -1056,18 +1104,19 @@ export default function NeighborhoodElectoralDrawer() {
                           type="button"
                           onClick={() => handleOfficeSelect(off.id)}
                           style={{
-                            padding: "9px 10px",
+                            padding: "10px 10px",
                             borderRadius: "10px",
-                            border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
+                            border: isSelected ? "2px solid #0284c7" : "1.5px solid #cbd5e1",
                             background: isSelected ? "#0284c7" : "#ffffff",
                             color: isSelected ? "#ffffff" : "#1e293b",
                             fontWeight: 800,
-                            fontSize: "12px",
+                            fontSize: "13px",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: "center",
                             gap: "6px",
-                            boxShadow: isSelected ? "0 4px 10px rgba(2, 132, 199, 0.3)" : "none",
+                            boxShadow: isSelected ? "0 4px 12px rgba(2, 132, 199, 0.35)" : "none",
                             transition: "all 0.15s ease",
                           }}
                         >
@@ -1079,30 +1128,60 @@ export default function NeighborhoodElectoralDrawer() {
                   </div>
                 </div>
 
-                {/* 2. SELEÇÃO DE ANO DA ELEIÇÃO */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: "10px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
-                    Ano da Eleição:
-                  </span>
-                  {activeOfficeMeta.availableYears.map((yr) => (
-                    <button
-                      key={yr}
-                      type="button"
-                      onClick={() => setSelectedYear(yr)}
+                {/* 2. SELEÇÃO DE ANO DA ELEIÇÃO & SELETOR DE COLÉGIO */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", borderTop: "1px solid #f1f5f9", paddingTop: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
+                      Ano:
+                    </span>
+                    {activeOfficeMeta.availableYears.map((yr) => (
+                      <button
+                        key={yr}
+                        type="button"
+                        onClick={() => setSelectedYear(yr)}
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: "8px",
+                          background: selectedYear === yr ? "#0d2342" : "#f1f5f9",
+                          color: selectedYear === yr ? "#ffffff" : "#475569",
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          border: 0,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {yr} {yr === 2024 ? "(Recente)" : yr === 2022 ? "(Gerais)" : ""}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 800, color: "#475569" }}>
+                      Filtrar por Colégio:
+                    </label>
+                    <select
+                      value={selectedPollingPlaceId}
+                      onChange={(e) => setSelectedPollingPlaceId(e.target.value)}
                       style={{
-                        padding: "5px 12px",
+                        padding: "5px 10px",
                         borderRadius: "8px",
-                        background: selectedYear === yr ? "#0d2342" : "#f1f5f9",
-                        color: selectedYear === yr ? "#ffffff" : "#475569",
+                        border: "1.5px solid #cbd5e1",
                         fontSize: "12px",
-                        fontWeight: 800,
-                        border: 0,
+                        fontWeight: 700,
+                        background: "#ffffff",
+                        color: "#0f172a",
                         cursor: "pointer",
+                        maxWidth: "220px",
                       }}
                     >
-                      {yr} {yr === 2024 ? "(Mais Recente)" : yr === 2022 ? "(Eleições Gerais)" : "(Anterior)"}
-                    </button>
-                  ))}
+                      <option value="">🏛️ Arapongas (Geral)</option>
+                      {availableColleges.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.shortName || p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* 3. BUSCA RÁPIDA DE CANDIDATO */}
@@ -1114,7 +1193,7 @@ export default function NeighborhoodElectoralDrawer() {
                     placeholder={`🔍 Buscar candidato a ${activeOfficeMeta.label} por nome, número ou partido...`}
                     style={{
                       width: "100%",
-                      padding: "9px 34px 9px 12px",
+                      padding: "10px 36px 10px 14px",
                       borderRadius: "8px",
                       border: "1px solid #cbd5e1",
                       fontSize: "13px",
@@ -1134,9 +1213,9 @@ export default function NeighborhoodElectoralDrawer() {
                         background: "#e2e8f0",
                         border: 0,
                         borderRadius: "50%",
-                        width: "18px",
-                        height: "18px",
-                        fontSize: "10px",
+                        width: "20px",
+                        height: "20px",
+                        fontSize: "11px",
                         cursor: "pointer",
                       }}
                     >
@@ -1161,7 +1240,7 @@ export default function NeighborhoodElectoralDrawer() {
                     }}
                   >
                     <span>
-                      🏫 Apuração das seções de: <b>{data?.selectedPollingPlace?.name}</b>
+                      🏫 Apuração das seções de: <b>{availableColleges.find(p => p.id === selectedPollingPlaceId)?.name}</b>
                     </span>
                     <button
                       type="button"
@@ -1177,7 +1256,7 @@ export default function NeighborhoodElectoralDrawer() {
                         cursor: "pointer",
                       }}
                     >
-                      Remover filtro de colégio ×
+                      Ver Arapongas Geral ×
                     </button>
                   </div>
                 )}

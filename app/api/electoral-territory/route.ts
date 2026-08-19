@@ -47,9 +47,6 @@ export async function GET(request: Request) {
   const district = isAllDistricts ? "Todos os Bairros" : rawDistrict;
 
   const pollingPlaceId = (url.searchParams.get("pollingPlaceId") || "").trim();
-  const yearParam = url.searchParams.get("year");
-  const year = yearParam ? Number(yearParam) : undefined;
-  const office = (url.searchParams.get("office") || "").trim();
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
   const pageSize = Math.min(50, Math.max(5, Number(url.searchParams.get("pageSize")) || 20));
   const searchQuery = (url.searchParams.get("q") || "").trim();
@@ -60,22 +57,17 @@ export async function GET(request: Request) {
   );
 
   const ownerEmails = scope === "all" ? emails : [scope];
-
   const allCollegesParam = url.searchParams.get("allColleges") === "true" || isAllDistricts;
 
-  // 1. Carrega Colégios de Votação do TSE
+  // 1. Colégios de Votação
   const pollingPlaces = (!isAllDistricts && !allCollegesParam)
     ? getPollingPlacesForDistrict(district)
     : ARAPONGAS_POLLING_PLACES;
 
-  // 2. Carrega Dados Eleitorais Históricos
-  const electionData = getHistoricalElectionData(
-    pollingPlaceId || undefined,
-    year,
-    office || undefined,
-  );
+  // 2. Dados Eleitorais Históricos Completos do TSE
+  const electionData = getHistoricalElectionData(pollingPlaceId || undefined);
 
-  // 3. Carrega Contatos Sob Demanda com Paginação e Busca
+  // 3. Contatos Territoriais
   let contacts: Array<Record<string, unknown>> = [];
   let totalContacts = 0;
   const from = (page - 1) * pageSize;
@@ -106,7 +98,6 @@ export async function GET(request: Request) {
       console.error("Falha ao carregar contatos do território", err);
     }
   } else {
-    // Carrega contatos de todos os bairros
     try {
       let query = account.supabase
         .from("vf_owned_records")
@@ -144,6 +135,7 @@ export async function GET(request: Request) {
       pageSize,
       totalPages: Math.ceil(totalContacts / pageSize) || 1,
       pollingPlaces,
+      allPollingPlaces: ARAPONGAS_POLLING_PLACES,
       selectedPollingPlace: electionData.pollingPlace || null,
       elections: electionData.elections,
     },
