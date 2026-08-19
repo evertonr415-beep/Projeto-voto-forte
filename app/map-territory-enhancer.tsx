@@ -525,6 +525,8 @@ export default function MapTerritoryEnhancer() {
 
       document.addEventListener("change", handleScopeChange, true);
       window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
+      window.addEventListener("voto-forte:contacts-imported", handleRecordsChanged);
+      window.addEventListener("voto-forte:refresh-dashboard", handleRecordsChanged);
       window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
       map.on?.("zoomend", handleZoomEnd);
       map.on?.("moveend", handleMoveEnd);
@@ -534,6 +536,8 @@ export default function MapTerritoryEnhancer() {
         requestId += 1;
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
+        window.removeEventListener("voto-forte:contacts-imported", handleRecordsChanged);
+        window.removeEventListener("voto-forte:refresh-dashboard", handleRecordsChanged);
         window.removeEventListener("voto-forte:geocoding-complete", handleRecordsChanged);
         map.off?.("zoomend", handleZoomEnd);
         map.off?.("moveend", handleMoveEnd);

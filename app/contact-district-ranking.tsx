@@ -211,9 +211,13 @@ export default function ContactDistrictRanking() {
     void load();
     const refresh = () => void load();
     window.addEventListener("voto-forte:records-changed", refresh);
+    window.addEventListener("voto-forte:contacts-imported", refresh);
+    window.addEventListener("voto-forte:refresh-dashboard", refresh);
     return () => {
       requestVersion.current += 1;
       window.removeEventListener("voto-forte:records-changed", refresh);
+      window.removeEventListener("voto-forte:contacts-imported", refresh);
+      window.removeEventListener("voto-forte:refresh-dashboard", refresh);
     };
   }, [load, scope]);
 

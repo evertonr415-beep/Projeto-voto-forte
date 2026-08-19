@@ -126,9 +126,14 @@ export async function GET(request: Request) {
     const markersPromise = account.supabase.rpc("vf_map_cached_district_markers", {
       p_owner_emails: scopeEmails,
     });
-    const [markersResult, statsResult] = await Promise.all([
+    const liveSummaryPromise = account.supabase.rpc("vf_map_district_summary", {
+      p_owner_emails: scopeEmails,
+    });
+
+    const [markersResult, statsResult, liveSummaryResult] = await Promise.all([
       markersPromise,
       statsPromise,
+      liveSummaryPromise,
     ]);
 
     if (markersResult.error) {
@@ -149,37 +154,89 @@ export async function GET(request: Request) {
     const cachedRows = Array.isArray(markersResult.data)
       ? (markersResult.data as CachedDistrictMarkerItem[])
       : [];
-    const districts = cachedRows
+
+    const liveRows = Array.isArray(liveSummaryResult.data)
+      ? (liveSummaryResult.data as { district?: string; total?: number; latitude?: number; longitude?: number }[])
+      : [];
+
+    // Mapeamento dinâmico: une os bairros catalogados com qualquer novo bairro importado
+    const districtMap = new Map<string, { district: string; total: number; latitude?: number; longitude?: number }>();
+
+    // 1. Insere referências catalogadas de Arapongas
+    for (const row of cachedRows) {
+      const name = String(row.district || "").trim();
+      const norm = normalizeDistrict(name);
+      if (!name || !norm) continue;
+      districtMap.set(norm, {
+        district: name,
+        total: Math.max(0, Number(row.total || 0)),
+        latitude: Number(row.latitude),
+        longitude: Number(row.longitude),
+      });
+    }
+
+    // 2. Atualiza ou adiciona dinamicamente qualquer novo bairro vindo dos contatos importados
+    for (const row of liveRows) {
+      const name = String(row.district || "").trim();
+      const norm = normalizeDistrict(name);
+      const total = Math.max(0, Number(row.total || 0));
+      if (!name || !norm || total <= 0) continue;
+
+      const existing = districtMap.get(norm);
+      if (existing) {
+        // Atualiza para o total real caso haja contatos novos importados
+        existing.total = Math.max(existing.total, total);
+        if (Number.isFinite(row.latitude) && Number.isFinite(row.longitude)) {
+          existing.latitude = Number(row.latitude);
+          existing.longitude = Number(row.longitude);
+        }
+      } else {
+        // Novo bairro detectado automaticamente nos dados importados!
+        districtMap.set(norm, {
+          district: name,
+          total,
+          latitude: Number.isFinite(row.latitude) ? Number(row.latitude) : -23.414,
+          longitude: Number.isFinite(row.longitude) ? Number(row.longitude) : -51.425,
+        });
+      }
+    }
+
+    const mergedItems = Array.from(districtMap.values());
+
+    const districts = mergedItems
+      .filter((item) => item.total > 0)
       .map((item) => ({
-        district: String(item.district || "").trim(),
-        total: Math.max(0, Number(item.total || 0)),
+        district: item.district,
+        total: item.total,
       }))
-      .filter(
-        (item) => item.district && normalizeDistrict(item.district) && item.total > 0,
-      );
-    const markers: DistrictMarker[] = cachedRows
-      .map((item) => ({
-        district: String(item.district || "").trim(),
-        total: Math.max(0, Number(item.total || 0)),
-        latitude: Number(item.latitude),
-        longitude: Number(item.longitude),
-      }))
+      .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
+
+    const markers: DistrictMarker[] = mergedItems
       .filter(
         (item) =>
-          item.district &&
           item.total > 0 &&
           Number.isFinite(item.latitude) &&
           Number.isFinite(item.longitude),
       )
+      .map((item) => ({
+        district: item.district,
+        total: item.total,
+        latitude: Number(item.latitude),
+        longitude: Number(item.longitude),
+      }))
       .sort(
         (left, right) =>
           right.total - left.total ||
           left.district.localeCompare(right.district, "pt-BR"),
       );
+
     const statsRow = Array.isArray(statsResult.data)
       ? (statsResult.data[0] as ScopeStatsItem | undefined)
       : undefined;
-    const totalContacts = Math.max(0, Number(statsRow?.total_contacts || 0));
+    const totalContacts = Math.max(
+      Number(statsRow?.total_contacts || 0),
+      districts.reduce((sum, d) => sum + d.total, 0),
+    );
 
     return Response.json(
       {

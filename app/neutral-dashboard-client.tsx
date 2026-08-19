@@ -245,7 +245,13 @@ export default function NeutralDashboardClient({
       if (contactsRequested) void loadContacts();
     };
     window.addEventListener("voto-forte:records-changed", refresh);
-    return () => window.removeEventListener("voto-forte:records-changed", refresh);
+    window.addEventListener("voto-forte:contacts-imported", refresh);
+    window.addEventListener("voto-forte:refresh-dashboard", refresh);
+    return () => {
+      window.removeEventListener("voto-forte:records-changed", refresh);
+      window.removeEventListener("voto-forte:contacts-imported", refresh);
+      window.removeEventListener("voto-forte:refresh-dashboard", refresh);
+    };
   }, [contactsRequested, loadContacts, loadSummary]);
 
   const scopeName = useMemo(() => {

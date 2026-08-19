@@ -339,7 +339,13 @@ export default function BulkContactImportPage() {
       );
     } else {
       setProcessed(totalRows);
-      setMessage("Importação concluída. Confira o relatório abaixo.");
+      setMessage("Importação concluída com sucesso! Bairros e contatos sincronizados.");
+      try {
+        window.dispatchEvent(new CustomEvent("voto-forte:contacts-imported"));
+        window.dispatchEvent(new CustomEvent("voto-forte:refresh-dashboard"));
+      } catch {
+        // Fallback
+      }
     }
   }
 
