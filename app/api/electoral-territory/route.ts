@@ -38,7 +38,14 @@ export async function GET(request: Request) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const url = new URL(request.url);
-  const district = (url.searchParams.get("district") || "").trim();
+  const rawDistrict = (url.searchParams.get("district") || "").trim();
+  const isAllDistricts =
+    !rawDistrict ||
+    rawDistrict === "Todos os Bairros" ||
+    rawDistrict.toLowerCase().includes("todos os bairros") ||
+    rawDistrict.toLowerCase() === "arapongas";
+  const district = isAllDistricts ? "Todos os Bairros" : rawDistrict;
+
   const pollingPlaceId = (url.searchParams.get("pollingPlaceId") || "").trim();
   const yearParam = url.searchParams.get("year");
   const year = yearParam ? Number(yearParam) : undefined;
@@ -52,9 +59,12 @@ export async function GET(request: Request) {
     url.searchParams.get("owner") ?? undefined,
   );
 
-  const allCollegesParam = url.searchParams.get("allColleges") === "true" || district === "Todos os Bairros";
+  const ownerEmails = scope === "all" ? emails : [scope];
+
+  const allCollegesParam = url.searchParams.get("allColleges") === "true" || isAllDistricts;
+
   // 1. Carrega Colégios de Votação do TSE
-  const pollingPlaces = (district && !allCollegesParam)
+  const pollingPlaces = (!isAllDistricts && !allCollegesParam)
     ? getPollingPlacesForDistrict(district)
     : ARAPONGAS_POLLING_PLACES;
 
@@ -65,13 +75,13 @@ export async function GET(request: Request) {
     office || undefined,
   );
 
-  // 3. Carrega Contatos do Bairro Sob Demanda com Paginação e Busca
+  // 3. Carrega Contatos Sob Demanda com Paginação e Busca
   let contacts: Array<Record<string, unknown>> = [];
   let totalContacts = 0;
+  const from = (page - 1) * pageSize;
 
-  if (district && district !== "Todos os Bairros") {
+  if (!isAllDistricts) {
     try {
-      const from = (page - 1) * pageSize;
       const { data, error } = await account.supabase.rpc(
         "vf_contacts_for_district",
         {
@@ -94,6 +104,33 @@ export async function GET(request: Request) {
       }
     } catch (err) {
       console.error("Falha ao carregar contatos do território", err);
+    }
+  } else {
+    // Carrega contatos de todos os bairros
+    try {
+      let query = account.supabase
+        .from("vf_owned_records")
+        .select("id,owner_email,payload,created_at,updated_at", { count: "exact" })
+        .eq("kind", "contact");
+
+      if (scope !== "all") {
+        query = query.in("owner_email", ownerEmails);
+      }
+      if (searchQuery) {
+        query = query.ilike("payload->>name", `%${searchQuery}%`);
+      }
+      query = query.order("id", { ascending: false }).range(from, from + pageSize - 1);
+      const { data, count, error } = await query;
+      if (!error && data) {
+        totalContacts = count ?? data.length;
+        contacts = data.map((r: { id: number; owner_email: string; payload?: Record<string, unknown> }) => ({
+          id: r.id,
+          ownerEmail: r.owner_email,
+          ...(r.payload || {}),
+        }));
+      }
+    } catch (err) {
+      console.error("Falha ao carregar contatos gerais de Arapongas", err);
     }
   }
 

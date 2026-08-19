@@ -47,7 +47,7 @@ export default function TseSidebarEnhancer() {
         // Abre a gaveta oficial do TSE
         window.dispatchEvent(
           new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-            detail: { district: "Centro", initialTab: "electoral" },
+            detail: { district: "Todos os Bairros (Geral - Arapongas)", initialTab: "electoral" },
           }),
         );
       });

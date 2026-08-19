@@ -700,7 +700,7 @@ export default function DashboardClient({
                       closeMobileSidebar();
                       window.dispatchEvent(
                         new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                          detail: { district: "Centro", initialTab: "electoral" },
+                          detail: { district: "Todos os Bairros (Geral - Arapongas)", initialTab: "electoral" },
                         }),
                       );
                     }}

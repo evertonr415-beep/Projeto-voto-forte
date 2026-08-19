@@ -35,6 +35,8 @@ type DrawerData = {
 const NUMBER = new Intl.NumberFormat("pt-BR");
 const PERCENT = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const ALL_DISTRICTS_LABEL = "Todos os Bairros (Geral - Arapongas)";
+
 const PARTY_COLORS: Record<string, string> = {
   PSD: "#1d4ed8",
   PL: "#0284c7",
@@ -96,13 +98,16 @@ const ARAPONGAS_DEFAULT_DISTRICTS = [
 
 export default function NeighborhoodElectoralDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [district, setDistrict] = useState("Centro");
+  const [district, setDistrict] = useState(ALL_DISTRICTS_LABEL);
   const [activeTab, setActiveTab] = useState<"contacts" | "colleges" | "electoral">("electoral");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DrawerData | null>(null);
 
   // Lista dinâmica de todos os bairros
-  const [availableDistricts, setAvailableDistricts] = useState<string[]>(ARAPONGAS_DEFAULT_DISTRICTS);
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([
+    ALL_DISTRICTS_LABEL,
+    ...ARAPONGAS_DEFAULT_DISTRICTS,
+  ]);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
   const [searchDistrictQuery, setSearchDistrictQuery] = useState("");
   const [showAllColleges, setShowAllColleges] = useState(false);
@@ -128,10 +133,10 @@ export default function NeighborhoodElectoralDrawer() {
           const names: string[] = json.districts
             .map((d: { district?: string }) => String(d?.district || "").trim())
             .filter(Boolean);
-          const combined = Array.from(new Set([...names, ...ARAPONGAS_DEFAULT_DISTRICTS])).sort((a, b) =>
+          const uniqueNeighborhoods = Array.from(new Set([...names, ...ARAPONGAS_DEFAULT_DISTRICTS])).sort((a, b) =>
             a.localeCompare(b, "pt-BR"),
           );
-          setAvailableDistricts(combined);
+          setAvailableDistricts([ALL_DISTRICTS_LABEL, ...uniqueNeighborhoods]);
         }
       })
       .catch(() => undefined);
@@ -141,7 +146,11 @@ export default function NeighborhoodElectoralDrawer() {
   useEffect(() => {
     const handleOpen = (event: Event) => {
       const detail = (event as CustomEvent<{ district?: string; initialTab?: "contacts" | "colleges" | "electoral" }>).detail;
-      const targetDistrict = String(detail?.district || "Centro").trim();
+      const raw = String(detail?.district || "").trim();
+      const targetDistrict = !raw || raw === "Todos os Bairros" || raw.includes("Todos os Bairros")
+        ? ALL_DISTRICTS_LABEL
+        : raw;
+
       setDistrict(targetDistrict);
       if (detail?.initialTab) setActiveTab(detail.initialTab);
       setSelectedPollingPlaceId("");
@@ -167,13 +176,14 @@ export default function NeighborhoodElectoralDrawer() {
     const loadData = async () => {
       setLoading(true);
       try {
+        const queryDistrict = district === ALL_DISTRICTS_LABEL ? "Todos os Bairros" : district;
         const params = new URLSearchParams({
-          district,
+          district: queryDistrict,
           page: String(contactPage),
           pageSize: "15",
           year: String(selectedYear),
         });
-        if (showAllColleges) params.set("allColleges", "true");
+        if (showAllColleges || district === ALL_DISTRICTS_LABEL) params.set("allColleges", "true");
         if (searchContact) params.set("q", searchContact);
         if (selectedPollingPlaceId) params.set("pollingPlaceId", selectedPollingPlaceId);
         if (selectedOffice) params.set("office", selectedOffice);
@@ -269,19 +279,21 @@ export default function NeighborhoodElectoralDrawer() {
 
   if (!isOpen) return null;
 
+  const isAll = district === ALL_DISTRICTS_LABEL;
+
   return (
     <div
       className="vf-neighborhood-drawer-backdrop"
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(13, 35, 66, 0.75)",
+        background: "rgba(13, 35, 66, 0.78)",
         backdropFilter: "blur(6px)",
         zIndex: 9990,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: "12px",
+        padding: "10px",
         overflow: "hidden",
       }}
       onClick={(e) => {
@@ -299,7 +311,7 @@ export default function NeighborhoodElectoralDrawer() {
           maxHeight: "92vh",
           background: "#ffffff",
           borderRadius: "20px",
-          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.35)",
+          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.4)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -450,10 +462,10 @@ export default function NeighborhoodElectoralDrawer() {
                 </span>
               </div>
 
-              {/* SELETOR DE BAIRRO CLARO E VISÍVEL NO COMPUTADOR */}
+              {/* SELETOR DE BAIRRO CLARO E VISÍVEL NO COMPUTADOR E CELULAR */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
                 <label style={{ fontSize: "12px", color: "#cbd5e1", fontWeight: 700 }}>
-                  Bairro:
+                  Território / Bairro:
                 </label>
                 <select
                   value={district}
@@ -471,7 +483,7 @@ export default function NeighborhoodElectoralDrawer() {
                     border: "2px solid #38bdf8",
                     cursor: "pointer",
                     outline: "none",
-                    maxWidth: "230px",
+                    maxWidth: "260px",
                   }}
                 >
                   {availableDistricts.map((d) => (
@@ -515,7 +527,7 @@ export default function NeighborhoodElectoralDrawer() {
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent("voto-forte:open-whatsapp-district-modal", {
-                    detail: { district },
+                    detail: { district: isAll ? "Geral" : district },
                   }),
                 );
               }}
@@ -633,7 +645,7 @@ export default function NeighborhoodElectoralDrawer() {
         {/* Conteúdo Principal com Rolagem Suave */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px", background: "#f8fafc" }}>
           {/* ======================================================== */}
-          {/* ABA 1: CONTATOS DO BAIRRO                                */}
+          {/* ABA 1: CONTATOS                                          */}
           {/* ======================================================== */}
           {activeTab === "contacts" && (
             <div style={{ display: "grid", gap: "12px" }}>
@@ -646,7 +658,7 @@ export default function NeighborhoodElectoralDrawer() {
                       setSearchContact(e.target.value);
                       setContactPage(1);
                     }}
-                    placeholder={`🔍 Buscar por nome, telefone ou rua em ${district}...`}
+                    placeholder={`🔍 Buscar por nome, telefone ou rua ${isAll ? "em Arapongas" : `em ${district}`}...`}
                     style={{
                       width: "100%",
                       padding: "10px 36px 10px 14px",
@@ -709,7 +721,7 @@ export default function NeighborhoodElectoralDrawer() {
 
               {loading ? (
                 <div style={{ padding: "30px", textAlign: "center", color: "#64748b", fontWeight: 700 }}>
-                  Carregando contatos de {district}...
+                  Carregando contatos...
                 </div>
               ) : filteredContacts && filteredContacts.length > 0 ? (
                 <div style={{ display: "grid", gap: "8px" }}>
@@ -749,7 +761,7 @@ export default function NeighborhoodElectoralDrawer() {
                             </span>
                           </div>
                           <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
-                            📍 {c.street ? `${c.street}${c.number ? `, ${c.number}` : ""}` : district}
+                            📍 {c.street ? `${c.street}${c.number ? `, ${c.number}` : ""}` : ""} <b>[{c.district || "Arapongas"}]</b>
                           </div>
                         </div>
 
@@ -833,30 +845,32 @@ export default function NeighborhoodElectoralDrawer() {
             <div style={{ display: "grid", gap: "12px" }}>
               {/* Seletor de Escopo de Colégios */}
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowAllColleges(false)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    background: !showAllColleges ? "#0284c7" : "#ffffff",
-                    color: !showAllColleges ? "#ffffff" : "#0284c7",
-                    border: "1.5px solid #0284c7",
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  📍 Colégios de {district} ({filteredColleges.length})
-                </button>
+                {!isAll && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllColleges(false)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      background: !showAllColleges ? "#0284c7" : "#ffffff",
+                      color: !showAllColleges ? "#ffffff" : "#0284c7",
+                      border: "1.5px solid #0284c7",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    📍 Colégios de {district} ({filteredColleges.length})
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowAllColleges(true)}
                   style={{
                     padding: "6px 12px",
                     borderRadius: "8px",
-                    background: showAllColleges ? "#0284c7" : "#ffffff",
-                    color: showAllColleges ? "#ffffff" : "#0284c7",
+                    background: showAllColleges || isAll ? "#0284c7" : "#ffffff",
+                    color: showAllColleges || isAll ? "#ffffff" : "#0284c7",
                     border: "1.5px solid #0284c7",
                     fontSize: "12px",
                     fontWeight: 800,
