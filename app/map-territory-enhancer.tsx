@@ -762,17 +762,17 @@ export default function MapTerritoryEnhancer() {
           const params = new URLSearchParams({ mode: "ranking" });
           if (lastScope) params.set("owner", lastScope);
           const [rankingResponse, centersResponse] = await Promise.all([
-            apiFetch(`/api/contacts?${params.toString()}`),
-            apiFetch("/api/territorial-pending?mode=centers"),
+            apiFetch(`/api/contacts?${params.toString()}`).catch(() => null),
+            apiFetch("/api/territorial-pending?mode=centers").catch(() => null),
           ]);
-          if (!rankingResponse.ok || !centersResponse.ok) return;
 
-          const rankingData = (await rankingResponse.json()) as {
-            districts?: DistrictSummaryItem[];
-          };
-          const centersData = (await centersResponse.json()) as {
-            centers?: DistrictCenter[];
-          };
+          const rankingData = rankingResponse?.ok
+            ? ((await rankingResponse.json().catch(() => ({}))) as { districts?: DistrictSummaryItem[] })
+            : {};
+          const centersData = centersResponse?.ok
+            ? ((await centersResponse.json().catch(() => ({}))) as { centers?: DistrictCenter[] })
+            : {};
+
           if (thisRequest !== requestId || cancelled || !map?._container) return;
 
           const rankingRaw = Array.isArray(rankingData?.districts) ? rankingData.districts : [];
@@ -788,14 +788,37 @@ export default function MapTerritoryEnhancer() {
             districtCenters.set(normalize(district), { latitude: lat, longitude: lng });
           }
 
-          rankingItems = rankingRaw
-            .map((item) => {
-              const district = String(item?.district || "").trim();
-              const total = Math.max(0, Number(item?.total) || 0);
-              return { district, total, key: normalize(district) };
-            })
-            .filter((item) => item.district && item.total > 0)
-            .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
+          // Adicionar coordenadas dos colégios de votação como fallback para todos os bairros de Arapongas
+          for (const place of ARAPONGAS_POLLING_PLACES) {
+            const key = normalize(place.district);
+            if (!districtCenters.has(key) && Number.isFinite(place.latitude) && Number.isFinite(place.longitude)) {
+              districtCenters.set(key, { latitude: place.latitude, longitude: place.longitude });
+            }
+          }
+
+          const districtTotals = new Map<string, { district: string; total: number }>();
+          for (const item of rankingRaw) {
+            const district = String(item?.district || "").trim();
+            if (district) {
+              const key = normalize(district);
+              districtTotals.set(key, { district, total: Math.max(0, Number(item?.total) || 0) });
+            }
+          }
+
+          // Garantir que todos os bairros conhecidos dos colégios de Arapongas estejam presentes no mapa
+          for (const place of ARAPONGAS_POLLING_PLACES) {
+            if (place.district) {
+              const key = normalize(place.district);
+              if (!districtTotals.has(key)) {
+                districtTotals.set(key, { district: place.district, total: 0 });
+              }
+            }
+          }
+
+          rankingItems = Array.from(districtTotals.values())
+            .filter((item) => item.district)
+            .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"))
+            .map((item) => ({ ...item, key: normalize(item.district) }));
 
           mappedKeys = new Set(
             rankingItems
