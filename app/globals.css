@@ -1877,6 +1877,9 @@ td {
   }
   .hero-copy h1 {
     font-size: 38px;
+  }
+}
+
 /* Sidebar Backdrop Overlay on Mobile & Tablet */
 .sidebar-backdrop {
   display: none;
