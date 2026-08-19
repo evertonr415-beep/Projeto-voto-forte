@@ -2,7 +2,11 @@ import type { User } from "@supabase/supabase-js";
 import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
-export const ADMIN_EMAILS = ["evertonr415@gmail.com", "threexdroid@gmail.com"];
+export const ADMIN_EMAILS = [
+  "evertonr415@gmail.com",
+  "threexdroid@gmail.com",
+  "williammarquesmachado@gmail.com",
+];
 
 export function isAdminEmail(email: string): boolean {
   const clean = String(email || "").trim().toLowerCase();
@@ -93,11 +97,13 @@ export async function getAccountForAuthenticatedUser(
 
   // Fallback garantido para os ADMs Principais
   if (!account && isAdminEmail(email)) {
+    const isWilliam = email === "williammarquesmachado@gmail.com";
+    const isThreex = email === "threexdroid@gmail.com";
     account = {
-      id: email === "threexdroid@gmail.com" ? 2 : 1,
+      id: isWilliam ? 3 : isThreex ? 2 : 1,
       auth_user_id: user.id,
       email: user.email,
-      name: email === "threexdroid@gmail.com" ? "Administrador" : "Everton Moreira",
+      name: isWilliam ? "William Marques Machado" : isThreex ? "Administrador" : "Everton Moreira",
       role: "master",
       access_role: "adm",
       status: "active",
