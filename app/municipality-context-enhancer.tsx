@@ -83,36 +83,44 @@ export default function MunicipalityContextEnhancer() {
     };
   }, []);
 
+  const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null);
+  const [sidebarHost, setSidebarHost] = useState<HTMLElement | null>(null);
+
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1000px)");
     let frameId = 0;
 
-    const findHeaderHost = () => {
-      if (!media.matches) {
+    const findHosts = () => {
+      if (media.matches) {
+        const topHost = document.querySelector<HTMLElement>(
+          ".top-actions, .optimized-hero-controls",
+        );
+        setHeaderHost((current) => (current === topHost ? current : topHost));
+      } else {
         setHeaderHost(null);
-        return;
       }
-      const host = document.querySelector<HTMLElement>(
-        ".top-actions, .optimized-hero-controls",
+
+      const sideHost = document.querySelector<HTMLElement>(
+        "#vf-sidebar-municipality-host",
       );
-      setHeaderHost((current) => (current === host ? current : host));
+      setSidebarHost((current) => (current === sideHost ? current : sideHost));
     };
 
-    findHeaderHost();
+    findHosts();
     const observer = new MutationObserver(() => {
       if (frameId) return;
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
-        findHeaderHost();
+        findHosts();
       });
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    media.addEventListener("change", findHeaderHost);
+    media.addEventListener("change", findHosts);
 
     return () => {
       if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
-      media.removeEventListener("change", findHeaderHost);
+      media.removeEventListener("change", findHosts);
     };
   }, []);
 
@@ -248,141 +256,38 @@ export default function MunicipalityContextEnhancer() {
     return createPortal(headerControl, headerHost);
   }
 
-  return (
-    <aside className="vf-municipality-context" aria-label="Contexto municipal">
-      {hasMobileActions ? (
-        <details className="vf-municipality-mobile-menu">
-          <summary
-            aria-label={`Município atual: ${current.name} - ${current.state}`}
-          >
-            <span>
-              <small>{contextLabel}</small>
-              <strong>{current.name} - {current.state}</strong>
-            </span>
-            <i aria-hidden="true">⌄</i>
-          </summary>
-          <div className="vf-municipality-mobile-panel">
-            {canSwitchMunicipality && (
-              <label>
-                <span>Trocar município</span>
-                <select
-                  aria-label="Trocar município"
-                  disabled={busy}
-                  value={context.currentMunicipalityId}
-                  onChange={(event) => void switchMunicipality(event.target.value)}
-                >
-                  {context.municipalities.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} - {item.state}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {context.isGeneralAdm && overview.length > 0 && (
-              <div className="vf-municipality-mobile-overview">
-                <small>VISÃO ESTADUAL · {overview.length} MUNICÍPIO(S)</small>
-                {overview.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    disabled={
-                      busy ||
-                      Number(item.id) === Number(context.currentMunicipalityId)
-                    }
-                    className={
-                      Number(item.id) === Number(context.currentMunicipalityId)
-                        ? "active"
-                        : ""
-                    }
-                    onClick={() => void switchMunicipality(String(item.id))}
-                  >
-                    <span>
-                      <b>{item.name}</b>
-                      <small>{item.state}</small>
-                    </span>
-                    <span>
-                      <b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b>
-                      <small>contatos</small>
-                    </span>
-                    <span>
-                      <b>{Number(item.users || 0).toLocaleString("pt-BR")}</b>
-                      <small>usuários</small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {message && (
-              <small className="vf-municipality-mobile-message">{message}</small>
-            )}
-          </div>
-        </details>
-      ) : (
-        <div className="vf-municipality-mobile-badge" aria-label="Município atual">
-          <span>
-            <small>{contextLabel}</small>
-            <strong>{current.name} - {current.state}</strong>
-          </span>
-        </div>
-      )}
-
-      <div className="vf-municipality-current">
+  if (sidebarHost) {
+    const sidebarControl = (
+      <div className="vf-sidebar-municipality-box">
         <small>{contextLabel}</small>
-        <strong>
-          {current.name} - {current.state}
-        </strong>
-        {canSwitchMunicipality && (
-          <select
-            aria-label="Trocar município"
-            disabled={busy}
-            value={context.currentMunicipalityId}
-            onChange={(event) => void switchMunicipality(event.target.value)}
-          >
-            {context.municipalities.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} - {item.state}
-              </option>
-            ))}
-          </select>
+        {canSwitchMunicipality ? (
+          <label className="vf-sidebar-municipality-select-wrap">
+            <select
+              aria-label="Trocar município"
+              disabled={busy}
+              value={context.currentMunicipalityId}
+              onChange={(event) => void switchMunicipality(event.target.value)}
+            >
+              {context.municipalities.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} - {item.state}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className="vf-sidebar-municipality-badge">
+            {current.name} - {current.state}
+          </div>
+        )}
+        {message && (
+          <small className="vf-sidebar-municipality-msg">{message}</small>
         )}
       </div>
-      {context.isGeneralAdm && overview.length > 0 && (
-        <details className="vf-municipality-overview">
-          <summary>Visão estadual · {overview.length} município(s)</summary>
-          <div>
-            {overview.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                disabled={busy}
-                className={
-                  Number(item.id) === Number(context.currentMunicipalityId)
-                    ? "active"
-                    : ""
-                }
-                onClick={() => void switchMunicipality(String(item.id))}
-              >
-                <span>
-                  <b>{item.name}</b>
-                  <small>{item.state}</small>
-                </span>
-                <span>
-                  <b>{Number(item.contacts || 0).toLocaleString("pt-BR")}</b>
-                  <small>contatos</small>
-                </span>
-                <span>
-                  <b>{Number(item.users || 0).toLocaleString("pt-BR")}</b>
-                  <small>usuários</small>
-                </span>
-              </button>
-            ))}
-          </div>
-        </details>
-      )}
-      {message && (
-        <small className="vf-municipality-context-message">{message}</small>
-      )}
-    </aside>
-  );
+    );
+
+    return createPortal(sidebarControl, sidebarHost);
+  }
+
+  return null;
 }

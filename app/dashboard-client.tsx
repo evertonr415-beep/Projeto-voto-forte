@@ -643,6 +643,7 @@ export default function DashboardClient({
             ✕
           </button>
         </div>
+        <div id="vf-sidebar-municipality-host" className="vf-sidebar-municipality-host" />
         <div className="menu-label">NAVEGAÇÃO</div>
         <nav>
           {visibleMenu.map((item) => (
