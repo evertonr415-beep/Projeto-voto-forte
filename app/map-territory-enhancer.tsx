@@ -759,7 +759,7 @@ export default function MapTerritoryEnhancer() {
         const thisRequest = ++requestId;
         lastScope = currentScope();
         try {
-          const params = new URLSearchParams({ mode: "ranking" });
+          const params = new URLSearchParams({ mode: "summary" });
           if (lastScope) params.set("owner", lastScope);
           const [rankingResponse, centersResponse] = await Promise.all([
             apiFetch(`/api/contacts?${params.toString()}`).catch(() => null),
