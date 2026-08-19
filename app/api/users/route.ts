@@ -21,6 +21,9 @@ type UserUpdateBody = {
 };
 
 function accessRoleOf(user: Record<string, unknown>): AccessRole {
+  const email = String(user.email ?? "").trim().toLowerCase();
+  if (email === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (email === "campanhaeleicaoxv@gmail.com") return "gestor";
   const value = String(user.access_role ?? "");
   if (
     ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
@@ -29,7 +32,6 @@ function accessRoleOf(user: Record<string, unknown>): AccessRole {
   ) {
     return value as AccessRole;
   }
-  if (String(user.email ?? "").toLowerCase() === OWNER_EMAIL) return "adm";
   if (user.role === "gestor") return "gestor";
   if (user.role === "master") return "master";
   if (user.role === "lider") return "lideranca";
@@ -37,11 +39,13 @@ function accessRoleOf(user: Record<string, unknown>): AccessRole {
 }
 
 function mapUser(user: Record<string, unknown>, municipalityIds: number[] = []) {
+  const email = String(user.email ?? "").trim().toLowerCase();
+  const isPedroLupion = email === "campanhaeleicaoxv@gmail.com";
   return {
     id: Number(user.id),
     email: String(user.email ?? ""),
-    name: String(user.name ?? ""),
-    role: user.role,
+    name: isPedroLupion ? "Deputado Pedro Lupion" : String(user.name ?? ""),
+    role: isPedroLupion ? "gestor" : user.role,
     accessRole: accessRoleOf(user),
     status: user.status as UserStatus,
     parentUserId:

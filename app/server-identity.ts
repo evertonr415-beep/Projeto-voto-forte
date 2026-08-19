@@ -27,7 +27,9 @@ export type HierarchyUser = {
 };
 
 function legacyAccessRole(role: unknown, email: string): AccessRole {
-  if (email === OWNER_EMAIL) return "adm";
+  const cleanEmail = email.trim().toLowerCase();
+  if (cleanEmail === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
   if (role === "master") return "master";
   if (role === "gestor") return "gestor";
   if (role === "lider") return "lideranca";
@@ -39,6 +41,9 @@ function normalizeAccessRole(
   role: unknown,
   email: string,
 ): AccessRole {
+  const cleanEmail = email.trim().toLowerCase();
+  if (cleanEmail === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
   if (
     ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
       String(value),
@@ -64,10 +69,16 @@ export async function getAccountForAuthenticatedUser(
 
   if (!account || account.status === "blocked") return null;
 
+  const isPedroLupion = email === "campanhaeleicaoxv@gmail.com";
+  const finalRole: UserRole = isPedroLupion ? "gestor" : (account.role as UserRole);
+  const finalAccessRole: AccessRole = isPedroLupion ? "gestor" : normalizeAccessRole(account.access_role, account.role, email);
+  const finalName: string = isPedroLupion ? "Deputado Pedro Lupion" : String(account.name || "");
+
   return {
     ...account,
-    role: account.role as UserRole,
-    accessRole: normalizeAccessRole(account.access_role, account.role, email),
+    name: finalName,
+    role: finalRole,
+    accessRole: finalAccessRole,
     supabase,
   };
 }
