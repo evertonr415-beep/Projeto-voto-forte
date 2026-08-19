@@ -2,20 +2,20 @@
 
 import { useEffect } from "react";
 
+const STYLE_ID = "vf-agenda-calendar-enhancer-styles";
+
 export default function AgendaCalendarEnhancer() {
   useEffect(() => {
-    const handleOldPrivacyCard = () => {
-      const privacyCard = document.querySelector<HTMLElement>(".agenda-cards .privacy-card");
-      if (privacyCard) {
-        privacyCard.style.display = "none";
-      }
-    };
-
-    handleOldPrivacyCard();
-    const observer = new MutationObserver(handleOldPrivacyCard);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = STYLE_ID;
+      style.textContent = `
+        .agenda-cards .privacy-card {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }, []);
 
   return null;

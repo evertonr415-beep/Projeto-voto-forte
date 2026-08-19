@@ -495,8 +495,8 @@ export default function ContactDistrictRanking() {
       {panelTab === "colleges" && (
         <div style={{ display: "grid", gap: "8px", maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 700 }}>
-              {ARAPONGAS_POLLING_PLACES.length} Colégios Oficiais (61ª Zona):
+            <span style={{ fontSize: "11px", color: "#0369a1", fontWeight: 800 }}>
+              🏛️ Município: Arapongas - PR ({ARAPONGAS_POLLING_PLACES.length} Colégios · 61ª Zona):
             </span>
             <button
               type="button"
@@ -536,9 +536,14 @@ export default function ContactDistrictRanking() {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
-                <strong style={{ fontSize: "13px", color: "#0f172a", lineHeight: "1.2" }}>
-                  {place.shortName || place.name}
-                </strong>
+                <div>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#0369a1", textTransform: "uppercase" }}>
+                    🏛️ Arapongas - PR
+                  </span>
+                  <strong style={{ display: "block", fontSize: "13px", color: "#0f172a", lineHeight: "1.2", marginTop: "1px" }}>
+                    {place.shortName || place.name}
+                  </strong>
+                </div>
                 <span
                   style={{
                     fontSize: "10px",
@@ -554,7 +559,7 @@ export default function ContactDistrictRanking() {
                 </span>
               </div>
               <div style={{ fontSize: "11px", color: "#64748b" }}>
-                📍 {place.district} · {place.sectionsCount} seções
+                📍 Bairro: <b>{place.district}</b> · {place.sectionsCount} seções
               </div>
               <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
                 <button
@@ -562,7 +567,7 @@ export default function ContactDistrictRanking() {
                   onClick={() => {
                     window.dispatchEvent(
                       new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                        detail: { district: place.district, initialTab: "electoral" },
+                        detail: { district: place.district, initialTab: "electoral", pollingPlaceId: place.id },
                       }),
                     );
                   }}
