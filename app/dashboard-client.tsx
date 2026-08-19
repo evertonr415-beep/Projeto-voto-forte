@@ -3,13 +3,13 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, supabase } from "./supabase-client";
 import MeetingInteractiveCalendar from "./meeting-interactive-calendar";
-  
+import InstitutionalCommunicationClient from "./comunicacao-institucional/institutional-communication-client";
 
 type View =
   | "Visão Geral"
   | "Contatos"
   | "Agenda Inteligente"
-  | "Mapa Eleitoral"
+  | "Comunicação Institucional"
   | "WhatsApp"
   | "Administração";
 type Modal =
@@ -24,7 +24,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
-  { label: "Mapa Eleitoral", icon: "⌖" },
+  { label: "Comunicação Institucional", icon: "📢", badge: "EDITORIAL" },
   { label: "WhatsApp", icon: "◉" },
 ];
 
@@ -321,7 +321,7 @@ export default function DashboardClient({
 
   useEffect(() => {
     if (
-      (view !== "Contatos" && view !== "Mapa Eleitoral") ||
+      view !== "Contatos" ||
       contactsLoadedScope === scope
     )
       return;
@@ -590,12 +590,8 @@ export default function DashboardClient({
         users={availableUsers}
       />
     )
-  ) : view === "Mapa Eleitoral" ? (
-    loadingContacts && contactsLoadedScope !== scope ? (
-      <div className="loading-state">Carregando mapa eleitoral…</div>
-    ) : (
-      <MapPage open={setModal} contacts={contacts} />
-    )
+  ) : view === "Comunicação Institucional" ? (
+    <InstitutionalCommunicationClient embedded />
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
@@ -947,11 +943,11 @@ function Overview({
         />
         <Kpi
           tone="gold"
-          icon="⌖"
+          icon="📢"
           value={String(districts)}
-          label="Bairros alcançados"
-          delta="Navegar no mapa eleitoral"
-          onClick={() => go("Mapa Eleitoral")}
+          label="Comunicação Institucional"
+          delta="Abrir planejamento editorial"
+          onClick={() => go("Comunicação Institucional")}
         />
         <Kpi
           tone="violet"

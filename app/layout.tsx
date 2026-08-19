@@ -19,6 +19,8 @@ import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
+import TseSidebarEnhancer from "./tse-sidebar-enhancer";
+import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import "./globals.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
@@ -98,6 +100,8 @@ export default function RootLayout({
         <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />
         <WhaticketBroadcastDrawer />
+        <TseSidebarEnhancer />
+        <ComunicacaoSidebarEnhancer />
         {children}
       </body>
     </html>

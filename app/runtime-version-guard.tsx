@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const VERSION_CHECK_INTERVAL_MS = 30 * 1000;
 
 type VersionPayload = {
   version?: string;
