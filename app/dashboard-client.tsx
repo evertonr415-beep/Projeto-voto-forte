@@ -2,6 +2,7 @@
 
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, supabase } from "./supabase-client";
+import MeetingInteractiveCalendar from "./meeting-interactive-calendar";
   
 
 type View =
@@ -146,8 +147,15 @@ export default function DashboardClient({
   const isAdmin = currentUser.role === "master" || currentUser.role === "admin";
   const [view, setView] = useState<View>("Visão Geral");
   const [modal, setModal] = useState<Modal>(null);
+  const [presetMeetingDay, setPresetMeetingDay] = useState<string>("");
   const [notice, setNotice] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+
+  const open = useCallback((nextModal: Modal, dayPreset?: string) => {
+    if (dayPreset) setPresetMeetingDay(dayPreset);
+    else setPresetMeetingDay("");
+    setModal(nextModal);
+  }, []);
   const [records, setRecords] = useState<OwnedRecord[]>([]);
   const [availableUsers, setAvailableUsers] = useState<ManagedUser[]>([]);
   const [scope, setScope] = useState(isAdmin ? "all" : currentUser.email);
@@ -575,7 +583,7 @@ export default function DashboardClient({
       <Agenda
         meetings={meetings}
         tell={setNotice}
-        open={setModal}
+        open={open}
         updateMeeting={updateMeeting}
         deleteMeeting={(id) => deleteRecord(id, "Reunião")}
         isAdmin={isAdmin}
@@ -806,7 +814,11 @@ export default function DashboardClient({
       {modal && (
         <ModalBox
           kind={modal}
-          close={() => setModal(null)}
+          presetDay={presetMeetingDay}
+          close={() => {
+            setModal(null);
+            setPresetMeetingDay("");
+          }}
           tell={setNotice}
           meetings={meetings}
           currentUser={currentUser}
@@ -2026,6 +2038,7 @@ function ContactManager({
 }
 function Agenda({
   meetings,
+  tell,
   open,
   updateMeeting,
   deleteMeeting,
@@ -2034,7 +2047,7 @@ function Agenda({
 }: {
   meetings: (Meeting & { id: number; ownerEmail: string })[];
   tell: (s: string) => void;
-  open: (m: Modal) => void;
+  open: (m: Modal, dayPreset?: string) => void;
   updateMeeting: (id: number, m: Meeting) => Promise<boolean>;
   deleteMeeting: (id: number) => Promise<boolean>;
   isAdmin: boolean;
@@ -2089,19 +2102,11 @@ function Agenda({
             só lugar.
           </p>
         </article>
-        <article className="panel agenda-map">
-          <PanelTitle
-            title="Ambiente protegido"
-            subtitle="Dados vinculados ao usuário autenticado"
+        <article className="panel agenda-map" style={{ padding: "16px 18px", overflow: "visible" }}>
+          <MeetingInteractiveCalendar
+            meetings={meetings}
+            onSelectDate={(dayString) => open("reuniao", dayString)}
           />
-          <div className="privacy-card">
-            <span>◆</span>
-            <h3>Agenda individual</h3>
-            <p>
-              Usuários comuns não visualizam reuniões cadastradas por outras
-              pessoas.
-            </p>
-          </div>
         </article>
       </div>
       <article className="panel meeting-list">
@@ -3159,6 +3164,7 @@ function Users({
 
 function ModalBox({
   kind,
+  presetDay,
   close,
   tell,
   meetings,
@@ -3166,6 +3172,7 @@ function ModalBox({
   onSave,
 }: {
   kind: Exclude<Modal, null>;
+  presetDay?: string;
   close: () => void;
   tell: (s: string) => void;
   meetings: (Meeting & { id: number; ownerEmail: string })[];
@@ -3184,8 +3191,8 @@ function ModalBox({
   };
   const [meeting, setMeeting] = useState<Meeting>({
     title: "",
-    day: "",
-    time: "",
+    day: presetDay || (kind === "reuniao" ? new Date().toISOString().split("T")[0] : ""),
+    time: "19:00",
     date: "",
     address: "",
     place: "",
