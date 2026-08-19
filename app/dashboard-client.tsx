@@ -687,27 +687,7 @@ export default function DashboardClient({
 
                   <button
                     type="button"
-                    className="tse-colleges-sidebar-btn"
-                    onClick={() => {
-                      closeMobileSidebar();
-                      window.dispatchEvent(
-                        new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                          detail: { district: "Centro", initialTab: "colleges" },
-                        }),
-                      );
-                    }}
-                    title="Colégios de Votação TSE"
-                  >
-                    <span className="nav-icon" style={{ color: "#38bdf8" }}>🏫</span>
-                    <span className="nav-name">Colégios de Votação</span>
-                    <em style={{ background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.4)" }}>
-                      TSE
-                    </em>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="tse-elections-sidebar-btn"
+                    className="tse-info-sidebar-btn"
                     onClick={() => {
                       closeMobileSidebar();
                       window.dispatchEvent(
@@ -716,12 +696,12 @@ export default function DashboardClient({
                         }),
                       );
                     }}
-                    title="Histórico Eleitoral TSE"
+                    title="Informações TSE"
                   >
-                    <span className="nav-icon" style={{ color: "#fbbf24" }}>🗳️</span>
-                    <span className="nav-name">Histórico Eleitoral</span>
-                    <em style={{ background: "rgba(251, 191, 36, 0.2)", color: "#fbbf24", border: "1px solid rgba(251, 191, 36, 0.4)" }}>
-                      OFICIAL
+                    <span className="nav-icon" style={{ color: "#38bdf8" }}>🏛️</span>
+                    <span className="nav-name">Informações TSE</span>
+                    <em style={{ background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.4)" }}>
+                      TSE
                     </em>
                   </button>
                 </>
