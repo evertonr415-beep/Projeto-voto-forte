@@ -1230,45 +1230,7 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
           marker.addTo(contactLayer.current);
         });
       setTimeout(() => map.invalidateSize(), 100);
-      apiFetch("/api/arapongas-boundaries")
-        .then((r) => r.json())
-        .then((data) => {
-          if (cancelled) return;
-          const boundary = L.layerGroup().addTo(map);
-          for (const district of data.districts || []) {
-            if (district.center && Number.isFinite(district.center[0]) && Number.isFinite(district.center[1])) {
-              const labelHtml = district.total > 0
-                ? `<div class="vf-district-polygon-label"><span>${district.shortName || district.name}</span><span class="vf-badge">${district.total.toLocaleString("pt-BR")}</span></div>`
-                : `<div class="vf-district-polygon-label"><span>${district.shortName || district.name}</span></div>`;
 
-              L.marker(district.center, {
-                interactive: true,
-                zIndexOffset: -200,
-                icon: L.divIcon({
-                  className: "district-name-wrap",
-                  html: labelHtml,
-                  iconSize: [undefined, undefined],
-                  iconAnchor: [45, 12],
-                }),
-              })
-                .on("click", () => {
-                  map.flyTo(district.center, Math.max(14, map.getZoom?.() || 14), { duration: 0.8 });
-                  window.dispatchEvent(
-                    new CustomEvent("voto-forte:district-selected", { detail: { district: district.name } })
-                  );
-                  window.dispatchEvent(
-                    new CustomEvent("voto-forte:district-filter-change", { detail: { district: district.name } })
-                  );
-                })
-                .addTo(boundary);
-            }
-          }
-        })
-        .catch(() =>
-          setLocationMessage(
-            "Mapa ativo · limites conforme a base territorial",
-          ),
-        );
     }
     startMap().catch(() =>
       setLocationMessage("Não foi possível carregar o mapa agora"),
