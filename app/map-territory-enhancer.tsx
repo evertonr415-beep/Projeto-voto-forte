@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect } from "react";
+import { ARAPONGAS_DISTRICTS } from "./arapongas-boundaries-data";
 import { apiFetch } from "./supabase-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -64,7 +65,10 @@ function visibilityForZoom(zoom: number) {
 function markerIconHtml(item: DistrictItem) {
   return `
     <div class="vf-district-point-wrap" aria-label="${escapeHtml(item.district)}: ${NUMBER.format(item.total)} contatos">
-      <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
+      <div class="vf-district-point-box">
+        <span class="vf-district-name-text">${escapeHtml(item.district)}</span>
+        <span class="vf-district-point-count">${NUMBER.format(item.total)}</span>
+      </div>
       <span class="vf-district-point-dot" aria-hidden="true"></span>
     </div>
   `;
@@ -80,12 +84,14 @@ function installStyles() {
     .vf-district-map-list{max-height:245px;overflow:auto;padding:5px}.vf-district-map-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:0;border-radius:9px;background:transparent;color:#27405f;text-align:left;padding:7px 8px;cursor:pointer;font:700 11px/1.2 Arial,sans-serif}.vf-district-map-row:hover:not(:disabled){background:#edf4fb}.vf-district-map-row:disabled{cursor:default;opacity:.62}.vf-district-map-row b{font-size:12px;color:#17345c}.vf-district-map-row small{display:block;margin-top:2px;color:#7a899c;font-size:9px;font-weight:600}.vf-district-map-empty{padding:12px;color:#64748b;font-weight:600}
     .vf-district-map-scale{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid #e4ebf3;color:#64748b;font-size:9px}.vf-district-map-scale .vf-district-point-legend{width:9px;height:9px;border-radius:50%;background:#2563a8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.24)}.vf-district-map-scale em{margin-left:auto;font-style:normal;color:#8491a2}
     .vf-district-point-icon{background:transparent!important;border:0!important;overflow:visible!important}
-    .vf-district-point-wrap{position:relative;width:34px;height:38px;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 2px 3px rgba(10,40,75,.2));transition:transform .15s ease}
-    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.04)}
-    .vf-district-point-count{position:absolute;left:50%;bottom:17px;transform:translateX(-50%);min-width:28px;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.98);border:1px solid rgba(31,82,133,.22);box-shadow:0 3px 8px rgba(15,35,65,.16);color:#174a79;font:800 10px/1 Arial,sans-serif;text-align:center;white-space:nowrap;letter-spacing:-.1px}
-    .vf-district-point-dot{display:block;width:13px;height:13px;border-radius:50%;background:#2563a8;border:3px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 6px rgba(22,66,108,.24)}
+    .vf-district-point-wrap{position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 3px 6px rgba(10,40,75,.28));transition:transform .15s ease}
+    .vf-district-point-icon:hover .vf-district-point-wrap{transform:translateY(-2px) scale(1.06)}
+    .vf-district-point-box{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:rgba(15,35,65,.92);border:1.5px solid #38bdf8;box-shadow:0 4px 12px rgba(15,35,65,.35);color:#fff;font:800 11px/1 Arial,sans-serif;white-space:nowrap;backdrop-filter:blur(6px)}
+    .vf-district-name-text{font-size:10px;letter-spacing:-.1px;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+    .vf-district-point-count{background:#38bdf8;color:#0f172a;padding:2px 6px;border-radius:999px;font:900 9px/1 Arial,sans-serif}
+    .vf-district-point-dot{display:block;width:12px;height:12px;margin-top:2px;border-radius:50%;background:#0284c7;border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(24,74,124,.3),0 2px 6px rgba(22,66,108,.24)}
     .vf-district-point-icon.vf-district-point-selected .vf-district-point-dot{box-shadow:0 0 0 5px rgba(37,99,168,.18),0 0 0 1px rgba(24,74,124,.42),0 3px 8px rgba(22,66,108,.3)}
-    .vf-district-point-icon.vf-district-point-selected .vf-district-point-count{border-color:rgba(37,99,168,.55);box-shadow:0 3px 10px rgba(37,99,168,.24)}
+    .vf-district-point-icon.vf-district-point-selected .vf-district-point-box{border-color:#f4c64f;box-shadow:0 3px 12px rgba(244,198,79,.4)}
     .vf-district-overview-total{background:transparent!important;border:0!important;overflow:visible!important}.vf-district-overview-total-wrap{min-width:112px;padding:12px 16px;border-radius:18px;background:rgba(23,63,117,.94);border:2px solid #fff;box-shadow:0 10px 28px rgba(15,35,65,.28);color:#fff;text-align:center;transform:translate(-50%,-50%);pointer-events:none}.vf-district-overview-total-wrap strong{display:block;font:900 20px/1 Arial,sans-serif;letter-spacing:-.4px}.vf-district-overview-total-wrap small{display:block;margin-top:4px;font:800 9px/1.2 Arial,sans-serif;text-transform:uppercase;letter-spacing:.7px;opacity:.9}
     .vf-district-area-popup{min-width:210px;font:500 12px/1.4 Arial,sans-serif;color:#26384d}.vf-district-area-popup strong{display:block;color:#17345c;font-size:14px;margin-bottom:5px}.vf-district-area-popup b{display:inline-block;padding:3px 7px;border-radius:999px;background:#eaf2fb;color:#285b8e;font-size:10px}.vf-district-area-popup p{margin:6px 0 0}.vf-district-area-popup small{display:block;margin-top:7px;color:#64748b}.vf-district-popup-actions{display:grid;gap:6px;margin-top:10px}.vf-district-popup-actions button{border:0;border-radius:8px;padding:8px 10px;font:800 11px/1.2 Arial,sans-serif;cursor:pointer}.vf-district-open-contacts{background:#173f75;color:#fff}.vf-district-adjust{background:#eef4fa;color:#173f75;border:1px solid #d4e0ec!important}.vf-district-save{background:#1f7a4c;color:#fff}.vf-district-cancel{background:#f3f4f6;color:#475569}.vf-district-dragging .vf-district-point-wrap{filter:drop-shadow(0 0 0 rgba(0,0,0,0));transform:scale(1.12)}
     @media(max-width:760px){
@@ -102,7 +108,7 @@ function installStyles() {
       .vf-district-map-control header{padding:8px 9px;border-bottom:0;align-items:center}.vf-district-map-control header strong{font-size:12px}.vf-district-map-control header small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vf-district-map-toggle{display:block}
       .vf-district-map-control[data-collapsed="true"] .vf-district-map-list,.vf-district-map-control[data-collapsed="true"] .vf-district-map-scale{display:none}
       .vf-district-map-control[data-collapsed="true"] header{border-bottom:0}
-      .vf-district-map-list{max-height:170px}.vf-district-map-row{padding:6px}.vf-district-map-scale em{display:none}.vf-district-point-count{font-size:9px;padding:3px 5px}.vf-district-point-dot{width:12px;height:12px}
+      .vf-district-map-list{max-height:170px}.vf-district-map-row{padding:6px}.vf-district-map-scale em{display:none}.vf-district-name-text{max-width:100px;font-size:9px}.vf-district-point-count{font-size:8px;padding:2px 4px}.vf-district-point-dot{width:11px;height:11px}
       .leaflet-control-zoom{margin-top:94px!important}
     }
     @media(max-width:480px){.full-map{height:74vh!important;min-height:540px!important}.full-map .map-legend{max-width:165px!important}.vf-district-map-control{width:min(220px,calc(100vw - 28px))}}
@@ -143,6 +149,7 @@ export default function MapTerritoryEnhancer() {
       }
 
       const pointLayer = L.layerGroup().addTo(map);
+      const boundariesLayer = L.layerGroup().addTo(map);
       const overviewLayer = L.layerGroup().addTo(map);
       let overviewMarker: any = null;
       let overviewTotal = 0;
@@ -375,6 +382,54 @@ export default function MapTerritoryEnhancer() {
               districtCenters.set(key, { latitude, longitude });
           }
 
+          boundariesLayer.clearLayers();
+          for (const b of ARAPONGAS_DISTRICTS) {
+            if (!b.polygon || b.polygon.length < 3) continue;
+            const matchingItem = rankingItems.find(
+              (r) => r.key === normalize(b.name) || r.key === normalize(b.shortName),
+            );
+            const total = matchingItem?.total || 0;
+            const polygon = L.polygon(b.polygon, {
+              color: "#0284c7",
+              weight: 2.2,
+              opacity: 0.88,
+              fillColor: "#38bdf8",
+              fillOpacity: total > 0 ? 0.09 : 0.04,
+            });
+
+            polygon.on("mouseover", () => {
+              polygon.setStyle({
+                color: "#38bdf8",
+                weight: 3.8,
+                fillOpacity: 0.22,
+              });
+            });
+
+            polygon.on("mouseout", () => {
+              polygon.setStyle({
+                color: "#0284c7",
+                weight: 2.2,
+                fillOpacity: total > 0 ? 0.09 : 0.04,
+              });
+            });
+
+            polygon.on("click", () => {
+              map.setView(b.center, Math.max(14, map.getZoom?.() || 14), { animate: true });
+              window.dispatchEvent(
+                new CustomEvent("voto-forte:district-selected", {
+                  detail: { district: b.name },
+                }),
+              );
+              window.dispatchEvent(
+                new CustomEvent("voto-forte:district-filter-change", {
+                  detail: { district: b.name },
+                }),
+              );
+            });
+
+            polygon.addTo(boundariesLayer);
+          }
+
           pointLayer.clearLayers();
           overviewLayer.clearLayers();
           overviewMarker = null;
@@ -392,9 +447,9 @@ export default function MapTerritoryEnhancer() {
             const icon = L.divIcon({
               className: "vf-district-point-icon",
               html: markerIconHtml(item),
-              iconSize: [34, 38],
-              iconAnchor: [17, 35],
-              popupAnchor: [0, -34],
+              iconSize: [undefined, undefined],
+              iconAnchor: [50, 30],
+              popupAnchor: [0, -32],
             });
             const options: Record<string, unknown> = {
               icon,
