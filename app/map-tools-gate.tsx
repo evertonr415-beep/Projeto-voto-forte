@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AgendaCalendarEnhancer from "./agenda-calendar-enhancer";
 import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
@@ -27,6 +28,7 @@ export default function MapToolsGate() {
 
   return (
     <>
+      {protectedAccessReady && <AgendaCalendarEnhancer />}
       {protectedAccessReady && <TseSidebarEnhancer />}
       {protectedAccessReady && <NeighborhoodElectoralDrawer />}
       {protectedAccessReady && <ContactWhatsappQuickQueue />}
