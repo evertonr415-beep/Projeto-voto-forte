@@ -2,6 +2,13 @@ import type { User } from "@supabase/supabase-js";
 import { getServerSupabase } from "./supabase-server";
 
 export const OWNER_EMAIL = "evertonr415@gmail.com";
+export const ADMIN_EMAILS = ["evertonr415@gmail.com", "threexdroid@gmail.com"];
+
+export function isAdminEmail(email: string): boolean {
+  const clean = String(email || "").trim().toLowerCase();
+  return ADMIN_EMAILS.some((e) => e.toLowerCase() === clean);
+}
+
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
 export type AccessRole =
   | "adm"
@@ -28,7 +35,7 @@ export type HierarchyUser = {
 
 function legacyAccessRole(role: unknown, email: string): AccessRole {
   const cleanEmail = email.trim().toLowerCase();
-  if (cleanEmail === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (isAdminEmail(cleanEmail)) return "adm";
   if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
   if (role === "master") return "master";
   if (role === "gestor") return "gestor";
@@ -42,7 +49,7 @@ function normalizeAccessRole(
   email: string,
 ): AccessRole {
   const cleanEmail = email.trim().toLowerCase();
-  if (cleanEmail === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (isAdminEmail(cleanEmail)) return "adm";
   if (cleanEmail === "campanhaeleicaoxv@gmail.com") return "gestor";
   if (
     ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"].includes(
@@ -84,13 +91,13 @@ export async function getAccountForAuthenticatedUser(
     }
   }
 
-  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
-  if (!account && email === OWNER_EMAIL.toLowerCase()) {
+  // Fallback garantido para os ADMs Principais
+  if (!account && isAdminEmail(email)) {
     account = {
-      id: 1,
+      id: email === "threexdroid@gmail.com" ? 2 : 1,
       auth_user_id: user.id,
-      email: OWNER_EMAIL,
-      name: "Everton Moreira",
+      email: user.email,
+      name: email === "threexdroid@gmail.com" ? "Administrador" : "Everton Moreira",
       role: "master",
       access_role: "adm",
       status: "active",

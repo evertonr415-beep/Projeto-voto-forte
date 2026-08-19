@@ -65,8 +65,8 @@ async function getAccessStatus(
   }
 
   const email = user.email?.trim().toLowerCase();
-  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
-  if (email === "evertonr415@gmail.com") {
+  // Fallback garantido para os ADMs Principais (OWNER_EMAIL / threexdroid@gmail.com)
+  if (email === "evertonr415@gmail.com" || email === "threexdroid@gmail.com") {
     return {
       state: "active",
       message: "Acesso administrativo principal liberado.",
