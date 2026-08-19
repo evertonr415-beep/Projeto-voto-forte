@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ArapongasBoundariesLayer from "./arapongas-boundaries-layer";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
@@ -25,7 +24,6 @@ export default function MapToolsGate() {
 
   return (
     <>
-      {protectedAccessReady && <ArapongasBoundariesLayer />}
       {protectedAccessReady && <MapContactLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}

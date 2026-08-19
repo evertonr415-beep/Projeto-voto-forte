@@ -149,7 +149,6 @@ export default function MapTerritoryEnhancer() {
       }
 
       const pointLayer = L.layerGroup().addTo(map);
-      const boundariesLayer = L.layerGroup().addTo(map);
       const overviewLayer = L.layerGroup().addTo(map);
       let overviewMarker: any = null;
       let overviewTotal = 0;
@@ -380,57 +379,6 @@ export default function MapTerritoryEnhancer() {
             const longitude = Number(item.longitude);
             if (key && Number.isFinite(latitude) && Number.isFinite(longitude))
               districtCenters.set(key, { latitude, longitude });
-          }
-
-          boundariesLayer.clearLayers();
-          for (const b of ARAPONGAS_DISTRICTS) {
-            if (!b.polygon || b.polygon.length < 3) continue;
-            const matchingItem = rankingItems.find(
-              (r) => r.key === normalize(b.name) || r.key === normalize(b.shortName),
-            );
-            const total = matchingItem?.total || 0;
-            const polygon = L.polygon(b.polygon, {
-              color: "#0369a1",
-              weight: 1.6,
-              opacity: 0.7,
-              fillColor: "#38bdf8",
-              fillOpacity: total > 0 ? 0.04 : 0.02,
-              dashArray: "3, 4",
-            });
-
-            polygon.on("mouseover", () => {
-              polygon.setStyle({
-                color: "#0284c7",
-                weight: 2.6,
-                fillOpacity: 0.16,
-                dashArray: undefined,
-              });
-            });
-
-            polygon.on("mouseout", () => {
-              polygon.setStyle({
-                color: "#0369a1",
-                weight: 1.6,
-                fillOpacity: total > 0 ? 0.04 : 0.02,
-                dashArray: "3, 4",
-              });
-            });
-
-            polygon.on("click", () => {
-              map.setView(b.center, Math.max(14, map.getZoom?.() || 14), { animate: true });
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:district-selected", {
-                  detail: { district: b.name },
-                }),
-              );
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:district-filter-change", {
-                  detail: { district: b.name },
-                }),
-              );
-            });
-
-            polygon.addTo(boundariesLayer);
           }
 
           pointLayer.clearLayers();

@@ -1236,45 +1236,6 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
           if (cancelled) return;
           const boundary = L.layerGroup().addTo(map);
           for (const district of data.districts || []) {
-            if (district.polygon?.length > 2) {
-              const total = Number(district.total || 0);
-              const polygon = L.polygon(district.polygon, {
-                color: "#0284c7",
-                weight: 2.2,
-                opacity: 0.88,
-                fillColor: "#38bdf8",
-                fillOpacity: total > 0 ? 0.09 : 0.04,
-              });
-
-              polygon.on("mouseover", () => {
-                polygon.setStyle({
-                  color: "#38bdf8",
-                  weight: 3.5,
-                  fillOpacity: 0.22,
-                });
-              });
-
-              polygon.on("mouseout", () => {
-                polygon.setStyle({
-                  color: "#0284c7",
-                  weight: 2.2,
-                  fillOpacity: total > 0 ? 0.09 : 0.04,
-                });
-              });
-
-              polygon.on("click", () => {
-                map.flyTo(district.center, Math.max(14, map.getZoom?.() || 14), { duration: 0.8 });
-                window.dispatchEvent(
-                  new CustomEvent("voto-forte:district-selected", { detail: { district: district.name } })
-                );
-                window.dispatchEvent(
-                  new CustomEvent("voto-forte:district-filter-change", { detail: { district: district.name } })
-                );
-              });
-
-              polygon.addTo(boundary);
-            }
-
             if (district.center && Number.isFinite(district.center[0]) && Number.isFinite(district.center[1])) {
               const labelHtml = district.total > 0
                 ? `<div class="vf-district-polygon-label"><span>${district.shortName || district.name}</span><span class="vf-badge">${district.total.toLocaleString("pt-BR")}</span></div>`
