@@ -1054,6 +1054,23 @@ export default function MapTerritoryEnhancer() {
       const handleZoomEnd = () => updateVisiblePoints();
       const handleMoveEnd = () => updateVisiblePoints();
 
+      const handleGlobalCollegeClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        const btn = target?.closest<HTMLButtonElement>(".vf-district-college-btn, .vf-popup-college-btn");
+        if (btn) {
+          e.stopPropagation();
+          e.preventDefault();
+          const colId = btn.getAttribute("data-college-id") || "";
+          const dist = btn.getAttribute("data-district") || "";
+          window.dispatchEvent(
+            new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
+              detail: { district: dist, initialTab: "electoral", pollingPlaceId: colId },
+            }),
+          );
+        }
+      };
+
+      document.addEventListener("click", handleGlobalCollegeClick, true);
       document.addEventListener("change", handleScopeChange, true);
       window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
       window.addEventListener("voto-forte:contacts-imported", handleRecordsChanged);
@@ -1065,6 +1082,7 @@ export default function MapTerritoryEnhancer() {
 
       cleanupActiveMap = () => {
         requestId += 1;
+        document.removeEventListener("click", handleGlobalCollegeClick, true);
         document.removeEventListener("change", handleScopeChange, true);
         window.removeEventListener("voto-forte:records-changed", handleRecordsChanged);
         window.removeEventListener("voto-forte:contacts-imported", handleRecordsChanged);
