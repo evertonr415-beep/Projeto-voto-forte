@@ -139,10 +139,30 @@ export async function getAccountForAuthenticatedUser(
   if (account && isGestor) {
     account.role = "gestor";
     account.access_role = "gestor";
-    void supabase
-      .from("vf_users")
-      .update({ role: "gestor", access_role: "gestor" })
-      .eq("id", account.id);
+    void (async () => {
+      await supabase
+        .from("vf_users")
+        .update({ role: "gestor", access_role: "gestor" })
+        .eq("id", account.id);
+
+      const { data: municipalities } = await supabase
+        .from("vf_municipalities")
+        .select("id")
+        .eq("status", "active");
+
+      if (Array.isArray(municipalities) && municipalities.length > 0) {
+        const rows = municipalities.map((m, index) => ({
+          user_id: account.id,
+          municipality_id: Number(m.id),
+          access_role: "gestor",
+          status: "active",
+          is_default: index === 0,
+        }));
+        await supabase
+          .from("vf_user_municipalities")
+          .upsert(rows, { onConflict: "user_id,municipality_id" });
+      }
+    })();
   }
 
   const finalRole: UserRole = isGestor ? "gestor" : (account.role as UserRole);
