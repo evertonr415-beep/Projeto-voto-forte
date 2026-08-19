@@ -201,25 +201,7 @@ function clone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-function fmtTag(value: string) {
-  const map: Record<string, string> = {
-    Alta: "red",
-    Média: "orange",
-    Baixa: "green",
-    Confirmado: "green",
-    Pendente: "orange",
-    "Em andamento": "blue",
-    Concluído: "green",
-  };
-  const cls = map[value] || "blue";
-  return <span className={`pc-tag ${cls}`}>{value}</span>;
-}
-
-export default function InstitutionalCommunicationClient({
-  embedded = false,
-}: {
-  embedded?: boolean;
-} = {}) {
+export default function InstitutionalCommunicationClient() {
   const [state, setState] = useState<InstitutionalState>(defaultState);
   const [activeTab, setActiveTab] = useState<
     "visao" | "perfil" | "agenda" | "territorio" | "conteudo" | "compliance" | "exportacao"
@@ -415,107 +397,105 @@ export default function InstitutionalCommunicationClient({
 
   if (!isLoaded) {
     return (
-      <div className="pc-app-wrapper" style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>
-        <p style={{ color: "var(--pc-muted)" }}>Carregando Painel de Comunicação Institucional…</p>
+      <div className="pc-root" style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>
+        <p style={{ color: "var(--muted)" }}>Carregando Painel de Comunicação Institucional…</p>
       </div>
     );
   }
 
   return (
     <div
-      className={`pc-app-wrapper ${embedded ? "embedded" : ""} ${state.theme === "light" ? "pc-theme-light" : ""}`}
-      data-pc-theme={state.theme}
+      className={`pc-root ${state.theme === "light" ? "light-mode" : ""}`}
+      data-theme={state.theme}
     >
-      <div className={`pc-shell ${embedded ? "embedded" : ""}`}>
+      <div className="shell">
         {/* TOPBAR */}
-        <header className="pc-topbar">
-          <div className="pc-brand">
-            <div className="pc-logo">PC</div>
+        <header className="topbar">
+          <div className="brand">
+            <div className="logo">PC</div>
             <div>
               <h1>Painel de Comunicação Institucional</h1>
               <p>Organização de conteúdo, agenda, território e conformidade — visualização local.</p>
             </div>
           </div>
-          <div className="pc-top-actions">
-            <span className="pc-chip">
+          <div className="top-actions">
+            <span className="chip">
               ● {state.lastSaved ? "salvo localmente" : "pronto para edição"}
             </span>
-            <button type="button" className="pc-btn ghost" onClick={toggleTheme}>
+            <button type="button" className="btn ghost" onClick={toggleTheme}>
               Alternar tema
             </button>
-            <button type="button" className="pc-btn" onClick={exportJson}>
+            <button type="button" className="btn" onClick={exportJson}>
               Exportar JSON
             </button>
-            <button type="button" className="pc-btn success" onClick={resetToDefault}>
+            <button type="button" className="btn success" onClick={resetToDefault}>
               Restaurar exemplo
             </button>
-            {!embedded && (
-              <Link href="/contatos" className="pc-btn primary">
-                Sair
-              </Link>
-            )}
+            <Link href="/contatos" className="btn primary">
+              Sair
+            </Link>
           </div>
         </header>
 
-        {/* LAYOUT PRINCIPAL */}
-        <div className="pc-layout">
+        {/* LAYOUT PRINCIPAL COM SIDEBAR */}
+        <div className="layout">
           {/* SIDEBAR COM AS 7 SEÇÕES */}
-          <aside className="pc-sidebar">
-            <div className="pc-nav-title">
+          <aside className="sidebar">
+            <div className="nav-title">
               <strong>Seções</strong>
               <span>7 blocos</span>
             </div>
-            <nav className="pc-nav">
+            <div className="nav">
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "visao" ? "active" : ""}`}
+                className={`tab ${activeTab === "visao" ? "active" : ""}`}
                 onClick={() => setActiveTab("visao")}
               >
                 Visão Geral
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "perfil" ? "active" : ""}`}
+                className={`tab ${activeTab === "perfil" ? "active" : ""}`}
                 onClick={() => setActiveTab("perfil")}
               >
                 Perfil & Posicionamento
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "agenda" ? "active" : ""}`}
+                className={`tab ${activeTab === "agenda" ? "active" : ""}`}
                 onClick={() => setActiveTab("agenda")}
               >
                 Agenda & Entregas
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "territorio" ? "active" : ""}`}
+                className={`tab ${activeTab === "territorio" ? "active" : ""}`}
                 onClick={() => setActiveTab("territorio")}
               >
                 Território & Público
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "conteudo" ? "active" : ""}`}
+                className={`tab ${activeTab === "conteudo" ? "active" : ""}`}
                 onClick={() => setActiveTab("conteudo")}
               >
                 Conteúdo & Peças
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "compliance" ? "active" : ""}`}
+                className={`tab ${activeTab === "compliance" ? "active" : ""}`}
                 onClick={() => setActiveTab("compliance")}
               >
                 Compliance
               </button>
               <button
                 type="button"
-                className={`pc-tab ${activeTab === "exportacao" ? "active" : ""}`}
+                className={`tab ${activeTab === "exportacao" ? "active" : ""}`}
                 onClick={() => setActiveTab("exportacao")}
               >
                 Exportação
               </button>
-            </nav>
+            </div>
             <div className="note">
               <strong>Observação</strong>
               <br />
@@ -524,13 +504,13 @@ export default function InstitutionalCommunicationClient({
           </aside>
 
           {/* MAIN CONTENT AREA */}
-          <main className="pc-main">
+          <main className="main">
             {/* 1. VISÃO GERAL */}
             {activeTab === "visao" && (
               <section>
-                <div className="pc-hero">
-                  <div className="pc-hero-banner">
-                    <div className="pc-status">
+                <div className="hero">
+                  <div className="hero-banner">
+                    <div className="status">
                       <span className="dot" /> painel salvo localmente · pronto para edição
                     </div>
                     <h2>Comunicação clara, moderna e orientada a informação pública</h2>
@@ -539,48 +519,48 @@ export default function InstitutionalCommunicationClient({
                       cobertura territorial e checklist de conformidade. O painel foi pensado para visualizar a estrutura
                       do projeto antes de avançar para desenvolvimento real.
                     </p>
-                    <div className="pc-hero-kpis">
-                      <div className="pc-kpi">
+                    <div className="hero-kpis">
+                      <div className="kpi">
                         <strong>2</strong>
                         <span>mandatos / frentes de atuação</span>
                       </div>
-                      <div className="pc-kpi">
-                        <strong>{state.agenda.length}</strong>
+                      <div className="kpi">
+                        <strong>12</strong>
                         <span>itens de agenda desta semana</span>
                       </div>
-                      <div className="pc-kpi">
-                        <strong>{state.compliance.length}</strong>
+                      <div className="kpi">
+                        <strong>8</strong>
                         <span>checagens de conformidade</span>
                       </div>
                     </div>
                   </div>
-                  <div className="pc-hero-side">
-                    <div className="pc-mini-stat">
+                  <div className="hero-side">
+                    <div className="mini-stat">
                       <div className="label">Status do workspace</div>
                       <div className="value">Ativo e offline</div>
                     </div>
-                    <div className="pc-mini-stat">
+                    <div className="mini-stat">
                       <div className="label">Último salvamento</div>
                       <div className="value">{state.lastSaved || "—"}</div>
                     </div>
-                    <div className="pc-mini-stat">
+                    <div className="mini-stat">
                       <div className="label">Modo visual</div>
                       <div className="value">{state.theme === "light" ? "Claro" : "Escuro"}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="pc-grid-3">
-                  <div className="pc-card">
+                <div className="grid-3">
+                  <div className="card">
                     <h4>Resumo estratégico</h4>
-                    <div className="pc-field">
+                    <div className="field">
                       <label>Objetivo editorial</label>
                       <textarea
                         value={state.overviewGoal}
                         onChange={(e) => updateField("overviewGoal", e.target.value)}
                       />
                     </div>
-                    <div className="pc-field">
+                    <div className="field">
                       <label>Mensagem central</label>
                       <textarea
                         value={state.overviewMessage}
@@ -589,11 +569,11 @@ export default function InstitutionalCommunicationClient({
                     </div>
                   </div>
 
-                  <div className="pc-card">
+                  <div className="card">
                     <h4>Prioridades do período</h4>
-                    <div className="pc-list">
+                    <div className="list">
                       {state.priorities.map((item, i) => (
-                        <div key={i} className="pc-list-item">
+                        <div key={i} className="list-item">
                           <div style={{ flex: 1 }}>
                             <strong>
                               <input
@@ -623,7 +603,7 @@ export default function InstitutionalCommunicationClient({
                                   background: "transparent",
                                   border: "none",
                                   outline: "none",
-                                  color: "var(--pc-muted)",
+                                  color: "var(--muted)",
                                   resize: "vertical",
                                   padding: 0,
                                 }}
@@ -632,7 +612,7 @@ export default function InstitutionalCommunicationClient({
                           </div>
                           <button
                             type="button"
-                            className="pc-btn"
+                            className="btn"
                             onClick={() => removePriority(i)}
                             style={{ padding: "6px 10px", fontSize: "0.78rem" }}
                           >
@@ -643,7 +623,7 @@ export default function InstitutionalCommunicationClient({
                     </div>
                     <button
                       type="button"
-                      className="pc-btn"
+                      className="btn"
                       style={{ marginTop: "12px" }}
                       onClick={addPriority}
                     >
@@ -651,17 +631,17 @@ export default function InstitutionalCommunicationClient({
                     </button>
                   </div>
 
-                  <div className="pc-card">
+                  <div className="card">
                     <h4>Ritmo da operação</h4>
-                    <div className="pc-mini-stat">
+                    <div className="mini-stat">
                       <div className="label">Peças programadas</div>
-                      <div className="value">{state.contents.length}</div>
+                      <div className="value">3</div>
                     </div>
-                    <div className="pc-mini-stat" style={{ marginTop: "10px" }}>
+                    <div className="mini-stat" style={{ marginTop: "10px" }}>
                       <div className="label">Pautas em andamento</div>
-                      <div className="value">{state.agenda.length}</div>
+                      <div className="value">3</div>
                     </div>
-                    <div className="pc-mini-stat" style={{ marginTop: "10px" }}>
+                    <div className="mini-stat" style={{ marginTop: "10px" }}>
                       <div className="label">Alertas pendentes</div>
                       <div className="value">{pendingAlertsCount}</div>
                     </div>
@@ -673,39 +653,39 @@ export default function InstitutionalCommunicationClient({
             {/* 2. PERFIL & POSICIONAMENTO */}
             {activeTab === "perfil" && (
               <section>
-                <div className="pc-section">
-                  <div className="pc-section-head">
+                <div className="section">
+                  <div className="section-head">
                     <div>
                       <h3>Perfil e posicionamento</h3>
                       <p>Campos para organizar biografia, atuação, tom e assinatura pública.</p>
                     </div>
                     <div className="meta">Editable localmente</div>
                   </div>
-                  <div className="pc-profile-grid">
-                    <div className="pc-card">
+                  <div className="profile-grid">
+                    <div className="card">
                       <h4>Frente 1 · Candidato(a) / mandato</h4>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Nome de exibição</label>
                         <input
                           value={state.cand1Name}
                           onChange={(e) => updateField("cand1Name", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Esfera / cargo</label>
                         <input
                           value={state.cand1Role}
                           onChange={(e) => updateField("cand1Role", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Biografia resumida</label>
                         <textarea
                           value={state.cand1Bio}
                           onChange={(e) => updateField("cand1Bio", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Tom de comunicação</label>
                         <input
                           value={state.cand1Tone}
@@ -714,30 +694,30 @@ export default function InstitutionalCommunicationClient({
                       </div>
                     </div>
 
-                    <div className="pc-card">
+                    <div className="card">
                       <h4>Frente 2 · Candidato(a) / mandato</h4>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Nome de exibição</label>
                         <input
                           value={state.cand2Name}
                           onChange={(e) => updateField("cand2Name", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Esfera / cargo</label>
                         <input
                           value={state.cand2Role}
                           onChange={(e) => updateField("cand2Role", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Biografia resumida</label>
                         <textarea
                           value={state.cand2Bio}
                           onChange={(e) => updateField("cand2Bio", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Tom de comunicação</label>
                         <input
                           value={state.cand2Tone}
@@ -747,23 +727,23 @@ export default function InstitutionalCommunicationClient({
                     </div>
                   </div>
 
-                  <div className="pc-section" style={{ marginTop: "14px" }}>
-                    <div className="pc-section-head">
+                  <div className="section" style={{ marginTop: "14px" }}>
+                    <div className="section-head">
                       <div>
                         <h3>Mensagens-chave</h3>
                         <p>Texto-base institucional, sem apelo persuasivo direcionado.</p>
                       </div>
                       <div className="meta">Use para site, PDF e redes</div>
                     </div>
-                    <div className="pc-grid-2">
-                      <div className="pc-field">
+                    <div className="grid-2">
+                      <div className="field">
                         <label>Mensagem 1</label>
                         <textarea
                           value={state.msg1}
                           onChange={(e) => updateField("msg1", e.target.value)}
                         />
                       </div>
-                      <div className="pc-field">
+                      <div className="field">
                         <label>Mensagem 2</label>
                         <textarea
                           value={state.msg2}
@@ -779,28 +759,28 @@ export default function InstitutionalCommunicationClient({
             {/* 3. AGENDA & ENTREGAS */}
             {activeTab === "agenda" && (
               <section>
-                <div className="pc-section">
-                  <div className="pc-section-head">
+                <div className="section">
+                  <div className="section-head">
                     <div>
                       <h3>Agenda & entregas</h3>
                       <p>Planejamento semanal de ações, publicações, compromissos e entregas editoriais.</p>
                     </div>
                     <div className="meta">Clique para adicionar itens no navegador</div>
                   </div>
-                  <div className="pc-controls" style={{ marginBottom: "12px" }}>
-                    <button type="button" className="pc-btn" onClick={addAgendaItem}>
+                  <div className="controls" style={{ marginBottom: "12px" }}>
+                    <button type="button" className="btn" onClick={addAgendaItem}>
                       + Nova agenda
                     </button>
                   </div>
-                  <div className="pc-table-wrap">
-                    <table className="pc-table">
+                  <div className="table-wrap">
+                    <table>
                       <thead>
                         <tr>
-                          <th>Data</th>
-                          <th>Tipo</th>
-                          <th>Descrição</th>
-                          <th>Status</th>
-                          <th>Responsável</th>
+                          <th>DATA</th>
+                          <th>TIPO</th>
+                          <th>DESCRIÇÃO</th>
+                          <th>STATUS</th>
+                          <th>RESPONSÁVEL</th>
                           <th style={{ width: "40px" }}></th>
                         </tr>
                       </thead>
@@ -851,7 +831,7 @@ export default function InstitutionalCommunicationClient({
                             <td>
                               <button
                                 type="button"
-                                className="pc-btn"
+                                className="btn"
                                 onClick={() => removeAgendaItem(i)}
                                 style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
                               >
@@ -870,22 +850,22 @@ export default function InstitutionalCommunicationClient({
             {/* 4. TERRITÓRIO & PÚBLICO */}
             {activeTab === "territorio" && (
               <section>
-                <div className="pc-grid-2">
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                <div className="grid-2">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Território e público</h3>
                         <p>Mapa qualitativo de prioridades, regiões e grupos de interesse.</p>
                       </div>
                       <div className="meta">Visão macro</div>
                     </div>
-                    <div className="pc-table-wrap">
-                      <table className="pc-table">
+                    <div className="table-wrap">
+                      <table>
                         <thead>
                           <tr>
-                            <th>Região</th>
-                            <th>Prioridade</th>
-                            <th>Demandas</th>
+                            <th>REGIÃO</th>
+                            <th>PRIORIDADE</th>
+                            <th>DEMANDAS</th>
                             <th style={{ width: "40px" }}></th>
                           </tr>
                         </thead>
@@ -922,7 +902,7 @@ export default function InstitutionalCommunicationClient({
                               <td>
                                 <button
                                   type="button"
-                                  className="pc-btn"
+                                  className="btn"
                                   onClick={() => removeTerritoryItem(i)}
                                   style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
                                 >
@@ -936,17 +916,17 @@ export default function InstitutionalCommunicationClient({
                     </div>
                   </div>
 
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Segmentos de atenção</h3>
                         <p>Organização por temas, setores e interlocutores públicos.</p>
                       </div>
                       <div className="meta">Atualização rápida</div>
                     </div>
-                    <div className="pc-list">
+                    <div className="list">
                       {state.audiences.map((item, i) => (
-                        <div key={i} className="pc-list-item">
+                        <div key={i} className="list-item">
                           <div style={{ flex: 1 }}>
                             <strong>
                               <input
@@ -976,7 +956,7 @@ export default function InstitutionalCommunicationClient({
                                   background: "transparent",
                                   border: "none",
                                   outline: "none",
-                                  color: "var(--pc-muted)",
+                                  color: "var(--muted)",
                                   resize: "vertical",
                                   padding: 0,
                                 }}
@@ -985,7 +965,7 @@ export default function InstitutionalCommunicationClient({
                           </div>
                           <button
                             type="button"
-                            className="pc-btn"
+                            className="btn"
                             onClick={() => removeAudienceItem(i)}
                             style={{ padding: "6px 10px", fontSize: "0.78rem" }}
                           >
@@ -996,7 +976,7 @@ export default function InstitutionalCommunicationClient({
                     </div>
                     <button
                       type="button"
-                      className="pc-btn"
+                      className="btn"
                       style={{ marginTop: "12px" }}
                       onClick={addAudienceItem}
                     >
@@ -1010,28 +990,28 @@ export default function InstitutionalCommunicationClient({
             {/* 5. CONTEÚDO & PEÇAS */}
             {activeTab === "conteudo" && (
               <section>
-                <div className="pc-section">
-                  <div className="pc-section-head">
+                <div className="section">
+                  <div className="section-head">
                     <div>
                       <h3>Conteúdo & peças</h3>
                       <p>Calendário, formatos, temas e publicações em produção.</p>
                     </div>
                     <div className="meta">Editor rápido</div>
                   </div>
-                  <div className="pc-controls" style={{ marginBottom: "12px" }}>
-                    <button type="button" className="pc-btn" onClick={addContentItem}>
+                  <div className="controls" style={{ marginBottom: "12px" }}>
+                    <button type="button" className="btn" onClick={addContentItem}>
                       + Nova peça
                     </button>
                   </div>
-                  <div className="pc-table-wrap">
-                    <table className="pc-table">
+                  <div className="table-wrap">
+                    <table>
                       <thead>
                         <tr>
-                          <th>Formato</th>
-                          <th>Tema</th>
-                          <th>Objetivo</th>
-                          <th>Canal</th>
-                          <th>Prazo</th>
+                          <th>FORMATO</th>
+                          <th>TEMA</th>
+                          <th>OBJETIVO</th>
+                          <th>CANAL</th>
+                          <th>PRAZO</th>
                           <th style={{ width: "40px" }}></th>
                         </tr>
                       </thead>
@@ -1076,7 +1056,7 @@ export default function InstitutionalCommunicationClient({
                             <td>
                               <button
                                 type="button"
-                                className="pc-btn"
+                                className="btn"
                                 onClick={() => removeContentItem(i)}
                                 style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
                               >
@@ -1095,18 +1075,18 @@ export default function InstitutionalCommunicationClient({
             {/* 6. COMPLIANCE */}
             {activeTab === "compliance" && (
               <section>
-                <div className="pc-grid-2">
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                <div className="grid-2">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Checklist de conformidade</h3>
                         <p>Itens mínimos para revisão antes de publicar.</p>
                       </div>
                       <div className="meta">Marque o que estiver ok</div>
                     </div>
-                    <div className="pc-list">
+                    <div className="list">
                       {state.compliance.map((item, i) => (
-                        <div key={i} className="pc-list-item">
+                        <div key={i} className="list-item">
                           <div style={{ flex: 1 }}>
                             <strong>
                               <input
@@ -1128,16 +1108,16 @@ export default function InstitutionalCommunicationClient({
                             <p>
                               Marcação:{" "}
                               {item.ok ? (
-                                <span className="pc-tag green">ok</span>
+                                <span className="tag green">ok</span>
                               ) : (
-                                <span className="pc-tag orange">pendente</span>
+                                <span className="tag orange">pendente</span>
                               )}
                             </p>
                           </div>
                           <div style={{ display: "flex", gap: "6px" }}>
                             <button
                               type="button"
-                              className="pc-btn"
+                              className="btn"
                               onClick={() => toggleComplianceItem(i)}
                               style={{ padding: "6px 12px", fontSize: "0.8rem" }}
                             >
@@ -1145,7 +1125,7 @@ export default function InstitutionalCommunicationClient({
                             </button>
                             <button
                               type="button"
-                              className="pc-btn"
+                              className="btn"
                               onClick={() => removeComplianceItem(i)}
                               style={{ padding: "6px 8px", fontSize: "0.75rem", background: "rgba(255,107,139,0.15)", color: "#ff8ca3", borderColor: "rgba(255,107,139,0.3)" }}
                             >
@@ -1157,7 +1137,7 @@ export default function InstitutionalCommunicationClient({
                     </div>
                     <button
                       type="button"
-                      className="pc-btn"
+                      className="btn"
                       style={{ marginTop: "12px" }}
                       onClick={addComplianceItem}
                     >
@@ -1165,15 +1145,15 @@ export default function InstitutionalCommunicationClient({
                     </button>
                   </div>
 
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Anotações editoriais</h3>
                         <p>Espaço para observações, ajustes e pendências da equipe.</p>
                       </div>
                       <div className="meta">Notas locais</div>
                     </div>
-                    <div className="pc-field">
+                    <div className="field">
                       <label>Notas gerais</label>
                       <textarea
                         value={state.editorNotes}
@@ -1189,16 +1169,16 @@ export default function InstitutionalCommunicationClient({
             {/* 7. EXPORTAÇÃO */}
             {activeTab === "exportacao" && (
               <section>
-                <div className="pc-grid-2">
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                <div className="grid-2">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Exportação e backup</h3>
                         <p>Baixe os dados do painel e salve uma cópia da configuração atual.</p>
                       </div>
                       <div className="meta">Compatível com JSON</div>
                     </div>
-                    <div className="pc-field">
+                    <div className="field">
                       <label>JSON do estado atual</label>
                       <textarea
                         value={JSON.stringify(state, null, 2)}
@@ -1208,44 +1188,44 @@ export default function InstitutionalCommunicationClient({
                     </div>
                   </div>
 
-                  <div className="pc-section">
-                    <div className="pc-section-head">
+                  <div className="section">
+                    <div className="section-head">
                       <div>
                         <h3>Ações rápidas</h3>
                         <p>Exportar, restaurar, alternar tema e reiniciar estado.</p>
                       </div>
                       <div className="meta">Fluxo simples</div>
                     </div>
-                    <div className="pc-list">
-                      <div className="pc-list-item">
+                    <div className="list">
+                      <div className="list-item">
                         <div>
                           <strong>Exportar JSON</strong>
                           <p>Baixa uma cópia completa do conteúdo do painel.</p>
                         </div>
-                        <button type="button" className="pc-btn" onClick={exportJson}>
+                        <button type="button" className="btn" onClick={exportJson}>
                           Baixar
                         </button>
                       </div>
-                      <div className="pc-list-item">
+                      <div className="list-item">
                         <div>
                           <strong>Restaurar exemplo</strong>
                           <p>Recarrega os dados de demonstração originais.</p>
                         </div>
-                        <button type="button" className="pc-btn" onClick={resetToDefault}>
+                        <button type="button" className="btn" onClick={resetToDefault}>
                           Resetar
                         </button>
                       </div>
-                      <div className="pc-list-item">
+                      <div className="list-item">
                         <div>
                           <strong>Trocar tema</strong>
                           <p>Alterna entre modo escuro e claro.</p>
                         </div>
-                        <button type="button" className="pc-btn" onClick={toggleTheme}>
+                        <button type="button" className="btn" onClick={toggleTheme}>
                           Alternar
                         </button>
                       </div>
                     </div>
-                    <div className="pc-footer-note">
+                    <div className="footer-note">
                       <strong>Nota de uso:</strong> este painel organiza comunicação pública, agenda, territórios e conformidade de forma estruturada e 100% offline.
                     </div>
                   </div>
