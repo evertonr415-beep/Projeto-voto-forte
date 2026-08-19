@@ -393,6 +393,14 @@ export default function NeutralDashboardClient({
           <span className="optimized-action-icon" aria-hidden="true">＋</span>
           <span><b>Importar contatos</b><small>Adicionar ou atualizar a base</small></span>
         </a>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whatsapp-district-modal"))}
+          style={{ cursor: "pointer", textAlign: "left" }}
+        >
+          <span className="optimized-action-icon" aria-hidden="true" style={{ color: "#16a34a", background: "#dcfce7" }}>📲</span>
+          <span><b>Disparo por Bairros</b><small>WhatsApp em massa por região</small></span>
+        </button>
         <a href="/pendencias-localizacao">
           <span className="optimized-action-icon" aria-hidden="true">!</span>
           <span><b>Central de Qualidade</b><small>Revisar dados incompletos</small></span>
@@ -408,10 +416,6 @@ export default function NeutralDashboardClient({
           <span className="optimized-action-icon" aria-hidden="true">↻</span>
           <span><b>Atualizar painel</b><small>Buscar os dados mais recentes</small></span>
         </button>
-        <a className="secondary" href="/sistema-completo">
-          <span className="optimized-action-icon" aria-hidden="true">⋯</span>
-          <span><b>Sistema completo</b><small>Abrir ferramentas adicionais</small></span>
-        </a>
       </nav>
 
       <section className="optimized-overview" aria-busy={loadingSummary}>
@@ -476,16 +480,71 @@ export default function NeutralDashboardClient({
           </div>
 
           {districtFilter && (
-            <div className="optimized-active-district" role="status">
-              <span>Bairro: <b>{districtFilter}</b></span>
+            <div
+              className="optimized-active-district"
+              role="status"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "10px",
+                padding: "10px 14px",
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                borderRadius: "12px",
+                marginBottom: "12px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ color: "#166534", fontWeight: 700 }}>
+                  Bairro: <b style={{ color: "#14532d", fontSize: "15px" }}>{districtFilter}</b>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDistrictFilter("");
+                    setPage(1);
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#475569",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remover filtro ×
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  setDistrictFilter("");
-                  setPage(1);
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("voto-forte:open-whatsapp-district-modal", {
+                      detail: { district: districtFilter },
+                    }),
+                  )
+                }
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "8px",
+                  background: "#16a34a",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "13px",
+                  border: 0,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(22, 163, 74, 0.28)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                Remover filtro de bairro
+                📲 Disparar WhatsApp para este bairro
               </button>
             </div>
           )}

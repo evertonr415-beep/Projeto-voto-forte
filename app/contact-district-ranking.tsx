@@ -273,8 +273,32 @@ export default function ContactDistrictRanking() {
   const panel = (
     <aside className="optimized-panel district-panel" aria-busy={loading}>
       <div className="district-panel-head">
-        <small>RELAÇÃO DE BAIRROS</small>
-        <h2>Bairros</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+          <div>
+            <small>RELAÇÃO DE BAIRROS</small>
+            <h2>Bairros</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whatsapp-district-modal"))}
+            style={{
+              padding: "6px 11px",
+              borderRadius: "8px",
+              background: "#16a34a",
+              color: "#ffffff",
+              fontSize: "11px",
+              fontWeight: 800,
+              border: 0,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+            }}
+          >
+            📲 Disparo
+          </button>
+        </div>
         <p>
           Quantidade de cadastros por bairro. {reached.toLocaleString("pt-BR")} bairros com registros neste escopo.
         </p>

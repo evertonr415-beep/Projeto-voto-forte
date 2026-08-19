@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
@@ -24,6 +25,7 @@ export default function MapToolsGate() {
 
   return (
     <>
+      {protectedAccessReady && <ContactWhatsappQuickQueue />}
       {protectedAccessReady && <MapContactLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
