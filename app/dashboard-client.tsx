@@ -576,22 +576,8 @@ export default function DashboardClient({
         isAdmin={isAdmin}
       />
     )
-  ) : view === "Agenda Inteligente" ? (
-    loadingMeetings && meetingsLoadedScope !== scope ? (
-      <div className="loading-state">Carregando agenda…</div>
-    ) : (
-      <Agenda
-        meetings={meetings}
-        tell={setNotice}
-        open={open}
-        updateMeeting={updateMeeting}
-        deleteMeeting={(id) => deleteRecord(id, "Reunião")}
-        isAdmin={isAdmin}
-        users={availableUsers}
-      />
-    )
-  ) : view === "Comunicação Institucional" ? (
-    <InstitutionalCommunicationClient embedded />
+  ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
+    <InstitutionalCommunicationClient />
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
