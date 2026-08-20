@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
 export type SystemNotification = {
@@ -29,6 +30,7 @@ function timeAgo(dateIso: string) {
 }
 
 export default function SystemNotificationsDrawer() {
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
@@ -45,6 +47,10 @@ export default function SystemNotificationsDrawer() {
 
   const initialLoaded = useRef(false);
   const previousCount = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load read notifications from localStorage
   useEffect(() => {
@@ -104,19 +110,31 @@ export default function SystemNotificationsDrawer() {
 
   const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
-  // Intercept and update existing topbar notification button
+  // Intercept and update existing topbar notification button with capturing document listener
   useEffect(() => {
     const handleOpen = () => setIsOpen(true);
     window.addEventListener("voto-forte:open-notifications", handleOpen);
+    (window as any).vfOpenNotifications = () => setIsOpen(true);
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      const notifBtn = target.closest<HTMLElement>(
+        ".notification, [aria-label='Notificações'], [data-action='notifications'], .vf-notif-trigger",
+      );
+      if (notifBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsOpen((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick, true);
 
     const updateButtons = () => {
       const btns = document.querySelectorAll<HTMLElement>(".notification, [aria-label='Notificações']");
       btns.forEach((btn) => {
-        btn.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsOpen(true);
-        };
+        btn.style.cursor = "pointer";
         const badge = btn.querySelector("i");
         if (badge) {
           if (unreadCount > 0) {
@@ -135,6 +153,7 @@ export default function SystemNotificationsDrawer() {
 
     return () => {
       window.removeEventListener("voto-forte:open-notifications", handleOpen);
+      document.removeEventListener("click", handleDocumentClick, true);
       obs.disconnect();
     };
   }, [unreadCount]);
@@ -184,7 +203,9 @@ export default function SystemNotificationsDrawer() {
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       {/* TOAST FLUTUANTE DE NOTIFICAÇÃO IMEDIATA */}
       {toastNotification && (
@@ -435,6 +456,7 @@ export default function SystemNotificationsDrawer() {
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }
