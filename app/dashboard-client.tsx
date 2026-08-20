@@ -307,13 +307,51 @@ export default function DashboardClient({
       const previewRecords = Array.isArray(meetingsData.records)
         ? (meetingsData.records as OwnedRecord[])
         : [];
-      setOverviewMeetings(
-        previewRecords.map((record) => ({
-          id: record.id,
-          ownerEmail: record.ownerEmail,
-          ...(record.payload as Meeting),
-        })),
-      );
+
+      let localEvents: any[] = [];
+      try {
+        const rawLocal = typeof window !== "undefined" ? localStorage.getItem("agenda-eleitoral-parana-2026-v1") : null;
+        if (rawLocal) {
+          const parsed = JSON.parse(rawLocal);
+          if (Array.isArray(parsed)) {
+            localEvents = parsed;
+          }
+        }
+      } catch {}
+
+      const convertedLocal = localEvents
+        .filter((ev: any) => !ev.done)
+        .map((ev: any) => {
+          const timeMatch = ev.desc?.match(/(\d{2}h\d{2}|\d{2}:\d{2})/);
+          const timeStr = timeMatch ? timeMatch[1].replace("h", ":") : "";
+          return {
+            id: `local-${ev.id}`,
+            title: ev.title,
+            date: ev.date,
+            time: timeStr,
+            place: ev.location || "Arapongas",
+            category: ev.category,
+            done: Boolean(ev.done),
+          };
+        });
+
+      const apiMeetings = previewRecords.map((record) => ({
+        id: String(record.id),
+        ownerEmail: record.ownerEmail,
+        ...(record.payload as Meeting),
+      }));
+
+      const allCombined = [...convertedLocal, ...apiMeetings];
+      allCombined.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+      setOverviewMeetings(allCombined);
+      setOverviewSummary({
+        total: Number(summaryData.total || 0),
+        voters: Number(summaryData.voters || 0),
+        leaders: Number(summaryData.leaders || 0),
+        meetings: allCombined.length || Number(summaryData.meetings || 0),
+        districtsReached: Number(summaryData.districtsReached || 0),
+      });
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -989,11 +1027,14 @@ function Overview({
                 const rawDate = String(meeting.date || "");
                 const cleanDate = rawDate.replace(/\s*·\s*\d{2}:\d{2}.*/, "").trim();
                 const rawTime = meeting.time || (rawDate.includes("·") ? rawDate.split("·").slice(1).join(" · ").trim() : "");
-                const place = meeting.place || meeting.address || "Local não informado";
+                const place = meeting.place || (meeting as any).address || "Local não informado";
+                const category = (meeting as any).category || "";
 
                 return (
                   <div
                     key={meeting.id}
+                    onClick={() => go("Agenda Inteligente")}
+                    title="Clique para abrir na Agenda Inteligente"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1002,6 +1043,8 @@ function Overview({
                       borderRadius: "12px",
                       background: "rgba(14, 28, 54, 0.85)",
                       border: "1px solid rgba(56, 189, 248, 0.14)",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
                     }}
                   >
                     <div
@@ -1027,13 +1070,18 @@ function Overview({
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", background: "rgba(56, 189, 248, 0.12)", padding: "2px 8px", borderRadius: "6px", display: "inline-block" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#38bdf8", background: "rgba(56, 189, 248, 0.12)", padding: "2px 8px", borderRadius: "6px" }}>
                           🗓️ {cleanDate || "Data a definir"}
                         </span>
                         {rawTime && (
-                          <span style={{ fontSize: "11px", fontWeight: 600, color: "#cbd5e1" }}>
+                          <span style={{ fontSize: "10.5px", fontWeight: 600, color: "#cbd5e1" }}>
                             ⏰ {rawTime}
+                          </span>
+                        )}
+                        {category && (
+                          <span style={{ fontSize: "9.5px", fontWeight: 650, color: "#fbbf24", background: "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.25)", padding: "2px 6px", borderRadius: "4px" }}>
+                            {category}
                           </span>
                         )}
                       </div>
