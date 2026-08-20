@@ -685,13 +685,10 @@ export default function DashboardClient({
                     closeMobileSidebar();
                     window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
                   }}
-                  title="Disparo em Massa Whaticket"
+                  title="Disparo em Massa"
                 >
                   <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
                   <span className="nav-name">Disparo em Massa</span>
-                  <em style={{ background: "rgba(45, 221, 127, 0.2)", color: "#2ddd7f", border: "1px solid rgba(45, 221, 127, 0.4)" }}>
-                    WHATICKET
-                  </em>
                 </button>
               )}
             </React.Fragment>

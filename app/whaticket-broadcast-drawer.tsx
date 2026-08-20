@@ -129,7 +129,7 @@ export default function WhaticketBroadcastDrawer() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "whaticket-broadcast-sidebar-btn";
-      btn.title = "Disparo em Massa Whaticket";
+      btn.title = "Disparo em Massa";
 
       const icon = document.createElement("span");
       icon.className = "nav-icon";
@@ -140,13 +140,7 @@ export default function WhaticketBroadcastDrawer() {
       name.className = "nav-name";
       name.textContent = "Disparo em Massa";
 
-      const badge = document.createElement("em");
-      badge.style.background = "rgba(45, 221, 127, 0.18)";
-      badge.style.color = "#2ddd7f";
-      badge.style.border = "1px solid rgba(45, 221, 127, 0.35)";
-      badge.textContent = "WHATICKET";
-
-      btn.append(icon, name, badge);
+      btn.append(icon, name);
       btn.addEventListener("click", () => {
         setIsOpen(true);
       });
