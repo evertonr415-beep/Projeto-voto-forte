@@ -964,7 +964,19 @@ function Overview({
         />
       </div>
       <div className="dashboard-grid">
-        <article className="panel">
+        <article
+          className="panel"
+          style={{
+            background: "rgba(13, 27, 51, 0.95)",
+            border: "1px solid rgba(56, 189, 248, 0.16)",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+          }}
+        >
           <PanelTitle
             title="Próximos compromissos"
             subtitle="Agenda do ambiente"
@@ -972,45 +984,186 @@ function Overview({
             onClick={() => go("Agenda Inteligente")}
           />
           {meetings.length ? (
-            meetings.slice(0, 3).map((meeting, index) => (
-              <div className="event" key={meeting.id}>
-                <div className="event-date">
-                  <b>{String(index + 1).padStart(2, "0")}</b>
-                  <small>AGENDA</small>
-                </div>
-                <div>
-                  <span>{meeting.date}</span>
-                  <b>{meeting.title}</b>
-                  <small>⌖ {meeting.place}</small>
-                </div>
-              </div>
-            ))
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {meetings.slice(0, 3).map((meeting, index) => {
+                const rawDate = String(meeting.date || "");
+                const cleanDate = rawDate.replace(/\s*·\s*\d{2}:\d{2}.*/, "").trim();
+                const rawTime = meeting.time || (rawDate.includes("·") ? rawDate.split("·").slice(1).join(" · ").trim() : "");
+                const place = meeting.place || meeting.address || "Local não informado";
+
+                return (
+                  <div
+                    key={meeting.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "14px",
+                      padding: "12px 14px",
+                      borderRadius: "12px",
+                      background: "rgba(14, 28, 54, 0.85)",
+                      border: "1px solid rgba(56, 189, 248, 0.14)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "42px",
+                        height: "42px",
+                        borderRadius: "10px",
+                        background: "rgba(56, 189, 248, 0.12)",
+                        border: "1px solid rgba(56, 189, 248, 0.25)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: "14px", fontWeight: 800, color: "#38bdf8", lineHeight: 1 }}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span style={{ fontSize: "7.5px", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5px", textTransform: "uppercase", marginTop: "2px" }}>
+                        AGENDA
+                      </span>
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 700, color: "#38bdf8", background: "rgba(56, 189, 248, 0.12)", padding: "2px 8px", borderRadius: "6px", display: "inline-block" }}>
+                          🗓️ {cleanDate || "Data a definir"}
+                        </span>
+                        {rawTime && (
+                          <span style={{ fontSize: "11px", fontWeight: 600, color: "#cbd5e1" }}>
+                            ⏰ {rawTime}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: "13.5px", fontWeight: 750, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: "2px" }}>
+                        {meeting.title}
+                      </div>
+
+                      <div style={{ fontSize: "11px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <span>📍</span>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{place}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <p className="empty-state">
+            <p className="empty-state" style={{ fontSize: "12px", color: "#94a3b8", padding: "16px", textAlign: "center" }}>
               Nenhum compromisso agendado neste ambiente.
             </p>
           )}
         </article>
-        <article className="panel activity">
+        <article
+          className="panel activity"
+          style={{
+            background: "rgba(13, 27, 51, 0.95)",
+            border: "1px solid rgba(56, 189, 248, 0.16)",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+          }}
+        >
           <PanelTitle
             title="Privacidade ativa"
             subtitle="Separação por identidade"
           />
-          <div className="activity-line">
-            <span className="dot d0" />
-            <div>
-              <small>SEGURANÇA</small>
-              <b>Dados vinculados ao usuário autenticado</b>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: "rgba(16, 185, 129, 0.05)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+              }}
+            >
+              <span
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: "#10b981",
+                  boxShadow: "0 0 0 3px rgba(16, 185, 129, 0.2)",
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "9px", fontWeight: 800, color: "#10b981", letterSpacing: "0.6px", textTransform: "uppercase", display: "block" }}>
+                  SEGURANÇA
+                </span>
+                <span style={{ fontSize: "12.5px", fontWeight: 700, color: "#f8fafc", display: "block" }}>
+                  Dados vinculados ao usuário autenticado
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: "10.5px",
+                  fontWeight: 750,
+                  color: "#34d399",
+                  background: "rgba(52, 211, 153, 0.15)",
+                  border: "1px solid rgba(52, 211, 153, 0.3)",
+                  borderRadius: "8px",
+                  padding: "3px 10px",
+                  flexShrink: 0,
+                }}
+              >
+                Ativo
+              </span>
             </div>
-            <time>Ativo</time>
-          </div>
-          <div className="activity-line">
-            <span className="dot d1" />
-            <div>
-              <small>AUDITORIA</small>
-              <b>Ações administrativas registradas</b>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: "rgba(56, 189, 248, 0.05)",
+                border: "1px solid rgba(56, 189, 248, 0.2)",
+              }}
+            >
+              <span
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: "#38bdf8",
+                  boxShadow: "0 0 0 3px rgba(56, 189, 248, 0.2)",
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "9px", fontWeight: 800, color: "#38bdf8", letterSpacing: "0.6px", textTransform: "uppercase", display: "block" }}>
+                  AUDITORIA
+                </span>
+                <span style={{ fontSize: "12.5px", fontWeight: 700, color: "#f8fafc", display: "block" }}>
+                  Ações administrativas registradas
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: "10.5px",
+                  fontWeight: 750,
+                  color: "#34d399",
+                  background: "rgba(52, 211, 153, 0.15)",
+                  border: "1px solid rgba(52, 211, 153, 0.3)",
+                  borderRadius: "8px",
+                  padding: "3px 10px",
+                  flexShrink: 0,
+                }}
+              >
+                Ativo
+              </span>
             </div>
-            <time>Ativo</time>
           </div>
         </article>
       </div>
