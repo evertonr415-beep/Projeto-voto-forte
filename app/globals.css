@@ -3803,3 +3803,9 @@ td {
     border-top-right-radius: 20px !important;
   }
 }
+
+/* Oculta qualquer tag/badge TSE residual no Painel Eleitoral */
+.sidebar nav button[title="Painel Eleitoral"] em,
+.sidebar nav button:has(span.nav-name:contains("Painel Eleitoral")) em {
+  display: none !important;
+}
