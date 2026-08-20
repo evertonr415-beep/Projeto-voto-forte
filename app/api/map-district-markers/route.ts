@@ -80,7 +80,7 @@ export async function GET(request: Request) {
   let scopeEmails = [account.email];
   let scope = account.email;
 
-  if (requestedOwner === "all" && isAdministrator(account.role)) {
+  if ((!requestedOwner || requestedOwner === "all") && isAdministrator(account.role)) {
     scopeEmails = allVisibleEmails;
     scope = "all";
   } else if (requestedOwner && allVisibleEmails.includes(requestedOwner)) {
