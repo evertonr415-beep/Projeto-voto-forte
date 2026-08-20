@@ -1177,6 +1177,8 @@ export default function InstitutionalCommunicationClient({
             </article>
           </div>
         </section>
+      </div>
+
       {/* MODAL DE DETALHES DOS COMPROMISSOS DO DIA SELECIONADO NO CALENDÁRIO */}
       {selectedDayEvents && (
         <div
