@@ -388,8 +388,8 @@ a {
   background-image: url("/banner-parana-araponga.png");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: center 30%;
-  opacity: 0.15;
+  background-position: center center;
+  opacity: 0.20;
   mix-blend-mode: luminosity;
   pointer-events: none;
   z-index: 0;
