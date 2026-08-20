@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
-import {
-  ARAPONGAS_POLLING_PLACES,
-  ARAPONGAS_HISTORICAL_ELECTIONS,
-  type PollingPlace,
-  type CandidateResult,
-} from "./electoral-tse-data";
 
 type DistrictItem = {
   district: string;
@@ -24,35 +18,16 @@ type SessionResponse = {
   user?: {
     email?: string;
     role?: string;
+    accessRole?: string;
   };
 };
 
-type PanelTab = "districts" | "colleges" | "elections";
 type OrderMode = "rank" | "alphabetical";
 type MobileSection = "contacts" | "sidebar";
 
 const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
 const DESKTOP_QUERY = "(min-width: 860px)";
 const MOBILE_QUERY = "(max-width: 760px)";
-const NUMBER = new Intl.NumberFormat("pt-BR");
-const PERCENT = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const PARTY_COLORS: Record<string, string> = {
-  PSD: "#1d4ed8",
-  PL: "#0284c7",
-  PP: "#0d9488",
-  PT: "#dc2626",
-  MDB: "#16a34a",
-  Republicanos: "#7c3aed",
-  União: "#2563eb",
-  "União Brasil": "#2563eb",
-  Podemos: "#0891b2",
-  PSC: "#475569",
-  PTB: "#ca8a04",
-  NOVO: "#ea580c",
-  PDT: "#b91c1c",
-  PSOL: "#e11d48",
-};
 
 function finiteNumber(value: unknown) {
   const numeric = Number(value);
@@ -62,7 +37,6 @@ function finiteNumber(value: unknown) {
 export default function ContactDistrictRanking() {
   const [scope, setScope] = useState("all");
   const [districts, setDistricts] = useState<DistrictItem[]>([]);
-  const [panelTab, setPanelTab] = useState<PanelTab>("districts");
   const [mode, setMode] = useState<OrderMode>("rank");
   const [showAll, setShowAll] = useState(false);
   const [mobileSection, setMobileSection] = useState<MobileSection>("contacts");
@@ -70,10 +44,6 @@ export default function ContactDistrictRanking() {
   const [error, setError] = useState("");
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const requestVersion = useRef(0);
-
-  // Filtros internos para a aba de eleições na barra lateral
-  const [selectedYear, setSelectedYear] = useState<number>(2024);
-  const [selectedOffice, setSelectedOffice] = useState<string>("prefeito");
 
   useEffect(() => {
     let cancelled = false;
@@ -95,9 +65,10 @@ export default function ContactDistrictRanking() {
           if (cancelled || !response.ok) return;
           const email = String(data.user?.email || "").trim().toLowerCase();
           const role = String(data.user?.role || "").trim().toLowerCase();
-          const accessRole = String((data.user as { accessRole?: string })?.accessRole || "").trim().toLowerCase();
+          const accessRole = String(data.user?.accessRole || "").trim().toLowerCase();
           if (!email) return;
-          const isAdmin = ADMIN_ROLES.has(role) || accessRole === "gestor" || accessRole === "adm";
+          const isAdmin =
+            ADMIN_ROLES.has(role) || accessRole === "gestor" || accessRole === "adm";
           setScope(isAdmin ? "all" : email);
         })
         .catch(() => {
@@ -185,6 +156,24 @@ export default function ContactDistrictRanking() {
     return () => target.classList.remove("mobile-show-districts");
   }, [mobileSection, target]);
 
+  useEffect(() => {
+    const hideDuplicatedTseShortcut = () => {
+      document
+        .querySelectorAll<HTMLButtonElement>(".optimized-active-district button")
+        .forEach((button) => {
+          if (!button.textContent?.includes("Colégios & Dados TSE")) return;
+          button.hidden = true;
+          button.setAttribute("aria-hidden", "true");
+          button.tabIndex = -1;
+        });
+    };
+
+    hideDuplicatedTseShortcut();
+    const observer = new MutationObserver(hideDuplicatedTseShortcut);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   const switchMobileSection = useCallback(
     (next: MobileSection) => {
       setMobileSection(next);
@@ -252,29 +241,6 @@ export default function ContactDistrictRanking() {
     };
   }, [load, scope]);
 
-  // Atualiza cargo padrão ao mudar de ano
-  useEffect(() => {
-    if (selectedYear === 2024 || selectedYear === 2020) {
-      setSelectedOffice("prefeito");
-    } else if (selectedYear === 2022) {
-      setSelectedOffice("presidente");
-    }
-  }, [selectedYear]);
-
-  const activeElectionData = useMemo(() => {
-    return (
-      ARAPONGAS_HISTORICAL_ELECTIONS.find((e) => e.year === selectedYear) ||
-      ARAPONGAS_HISTORICAL_ELECTIONS[0]
-    );
-  }, [selectedYear]);
-
-  const activeOfficeData = useMemo(() => {
-    return (
-      activeElectionData.offices.find((o) => o.office === selectedOffice) ||
-      activeElectionData.offices[0]
-    );
-  }, [activeElectionData, selectedOffice]);
-
   const ranked = useMemo(
     () =>
       [...districts].sort(
@@ -307,12 +273,8 @@ export default function ContactDistrictRanking() {
     switchMobileSection("contacts");
   };
 
-  const openDistrictDrawer = (district: string) => {
-    window.dispatchEvent(
-      new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-        detail: { district },
-      }),
-    );
+  const openElectoralPanel = () => {
+    window.dispatchEvent(new CustomEvent("voto-forte:navigate-electoral-panel"));
   };
 
   const mobileSwitch = (
@@ -331,513 +293,249 @@ export default function ContactDistrictRanking() {
         aria-pressed={mobileSection === "sidebar"}
         onClick={() => switchMobileSection("sidebar")}
       >
-        Bairros & Colégios TSE
+        Bairros
       </button>
     </nav>
   );
 
   const panel = (
     <aside className="optimized-panel district-panel" aria-busy={loading}>
-      {/* Cabeçalho da Barra Lateral Direita */}
       <div className="district-panel-head">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "8px",
+          }}
+        >
           <div>
-            <small style={{ color: "#0284c7", fontWeight: 800 }}>INTELIGÊNCIA TERRITORIAL</small>
-            <h2 style={{ fontSize: "18px", margin: "2px 0 0" }}>Painel Lateral</h2>
+            <small style={{ color: "#0284c7", fontWeight: 800 }}>
+              INTELIGÊNCIA TERRITORIAL
+            </small>
+            <h2 style={{ fontSize: "18px", margin: "2px 0 0" }}>Bairros</h2>
+            <span
+              style={{
+                display: "block",
+                marginTop: "3px",
+                color: "#64748b",
+                fontSize: "11px",
+              }}
+            >
+              {loading
+                ? "Atualizando…"
+                : `${reached.toLocaleString("pt-BR")} bairros com cadastros`}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whatsapp-district-modal"))}
+          <div
             style={{
-              padding: "6px 10px",
-              borderRadius: "8px",
-              background: "#16a34a",
-              color: "#ffffff",
-              fontSize: "11px",
-              fontWeight: 800,
-              border: 0,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+              display: "flex",
+              gap: "5px",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
             }}
           >
-            📲 Disparo
-          </button>
+            <button
+              type="button"
+              onClick={openElectoralPanel}
+              title="Abrir o Painel Eleitoral"
+              style={{
+                padding: "6px 9px",
+                borderRadius: "8px",
+                background: "#ffffff",
+                color: "#17345c",
+                fontSize: "10.5px",
+                fontWeight: 800,
+                border: "1px solid #cbd5e1",
+                cursor: "pointer",
+              }}
+            >
+              🗳️ Painel Eleitoral
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("voto-forte:open-whatsapp-district-modal"),
+                )
+              }
+              style={{
+                padding: "6px 9px",
+                borderRadius: "8px",
+                background: "#16a34a",
+                color: "#ffffff",
+                fontSize: "10.5px",
+                fontWeight: 800,
+                border: 0,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+              }}
+            >
+              📲 Disparo
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Abas Principais da Barra Lateral Direita */}
       <div
         className="district-tabs"
         role="tablist"
+        aria-label="Ordenação dos bairros"
         style={{
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
           margin: "8px 0 12px",
-          background: "#f1f5f9",
-          padding: "3px",
-          borderRadius: "10px",
         }}
       >
         <button
           type="button"
-          className={panelTab === "districts" ? "is-active" : ""}
-          onClick={() => setPanelTab("districts")}
-          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
+          className={mode === "rank" ? "is-active" : ""}
+          onClick={() => {
+            setMode("rank");
+            setShowAll(false);
+          }}
         >
-          📊 Bairros
+          Mais cadastros
         </button>
         <button
           type="button"
-          className={panelTab === "colleges" ? "is-active" : ""}
-          onClick={() => setPanelTab("colleges")}
-          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
+          className={mode === "alphabetical" ? "is-active" : ""}
+          onClick={() => {
+            setMode("alphabetical");
+            setShowAll(false);
+          }}
         >
-          🏫 Colégios
-        </button>
-        <button
-          type="button"
-          className={panelTab === "elections" ? "is-active" : ""}
-          onClick={() => setPanelTab("elections")}
-          style={{ fontSize: "11px", fontWeight: 800, padding: "7px 2px" }}
-        >
-          🗳️ Eleições
+          A–Z
         </button>
       </div>
 
-      {/* ======================================================== */}
-      {/* ABA 1: BAIRROS (RANKING)                                  */}
-      {/* ======================================================== */}
-      {panelTab === "districts" && (
+      {loading || !scope ? (
+        <p className="optimized-empty">Carregando bairros…</p>
+      ) : error ? (
+        <p className="optimized-empty">{error}</p>
+      ) : (
         <>
-          <div
-            className="district-tabs"
-            role="tablist"
-            aria-label="Ordenação dos bairros"
-            style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginBottom: "10px" }}
-          >
-            <button
-              type="button"
-              className={mode === "rank" ? "is-active" : ""}
-              onClick={() => {
-                setMode("rank");
-                setShowAll(false);
-              }}
-            >
-              Mais cadastros
-            </button>
-            <button
-              type="button"
-              className={mode === "alphabetical" ? "is-active" : ""}
-              onClick={() => {
-                setMode("alphabetical");
-                setShowAll(false);
-              }}
-            >
-              A–Z
-            </button>
-          </div>
-
-          {loading || !scope ? (
-            <p className="optimized-empty">Carregando bairros…</p>
-          ) : error ? (
-            <p className="optimized-empty">{error}</p>
-          ) : (
-            <>
-              <ol style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: "10px", maxHeight: "58vh", overflowY: "auto", paddingRight: "4px" }}>
-                {visibleRows.map((item) => (
-                  <li
-                    key={item.district}
-                    className={item.total === 0 ? "is-empty" : undefined}
-                    style={{
-                      background: "#ffffff",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "12px",
-                      padding: "10px 12px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "7px",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
-                    }}
-                  >
-                    {/* Header do Bairro com Contagem */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <span style={{ fontWeight: 800, fontSize: "13.5px", color: "#1e293b" }}>
-                        {item.district}
-                      </span>
-                      <strong style={{ fontSize: "14px", color: "#b45309", fontWeight: 850 }}>
-                        {item.total.toLocaleString("pt-BR")}
-                      </strong>
-                    </div>
-
-                    {/* Barra de Proporção */}
-                    <div className="district-bar" aria-hidden="true" style={{ height: "4px", background: "#f1f5f9", borderRadius: "99px", overflow: "hidden" }}>
-                      <i
-                        style={{
-                          display: "block",
-                          height: "100%",
-                          background: "#d97706",
-                          width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
-                          borderRadius: "99px",
-                        }}
-                      />
-                    </div>
-
-                    {/* Botões de Ação do Bairro */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "3px" }}>
-                      <button
-                        type="button"
-                        disabled={item.total <= 0}
-                        onClick={() => openDistrict(item.district)}
-                        title={`Abrir todos os contatos de ${item.district}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "4px",
-                          padding: "7px 8px",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          background: item.total > 0 ? "#f8fafc" : "#f1f5f9",
-                          color: item.total > 0 ? "#0f172a" : "#94a3b8",
-                          cursor: item.total > 0 ? "pointer" : "not-allowed",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <span>👥 Contatos</span>
-                      </button>
-
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.district + ", Arapongas - PR")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`Ver localização de ${item.district} no Google Maps`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "4px",
-                          padding: "7px 8px",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          borderRadius: "8px",
-                          border: "1px solid #bae6fd",
-                          background: "#f0f9ff",
-                          color: "#0369a1",
-                          textDecoration: "none",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <span>📍 Google Maps</span>
-                      </a>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              {!visibleRows.length && (
-                <p className="optimized-empty">Nenhum bairro disponível.</p>
-              )}
-              {rows.length > 12 && (
-                <button
-                  className="district-show-more"
-                  type="button"
-                  onClick={() => setShowAll((value) => !value)}
-                >
-                  {showAll
-                    ? "Mostrar menos"
-                    : `Ver todos (${rows.length.toLocaleString("pt-BR")})`}
-                </button>
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {/* ======================================================== */}
-      {/* ABA 2: COLÉGIOS DE VOTAÇÃO (TSE)                         */}
-      {/* ======================================================== */}
-      {panelTab === "colleges" && (
-        <div style={{ display: "grid", gap: "8px", maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-            <span style={{ fontSize: "11px", color: "#0369a1", fontWeight: 800 }}>
-              🏛️ Município: Arapongas - PR ({ARAPONGAS_POLLING_PLACES.length} Colégios · 61ª Zona):
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                    detail: { district: "Todos os Bairros", initialTab: "colleges" },
-                  }),
-                );
-              }}
-              style={{
-                fontSize: "11px",
-                fontWeight: 800,
-                color: "#0284c7",
-                background: "transparent",
-                border: 0,
-                cursor: "pointer",
-                padding: "2px 4px",
-              }}
-            >
-              Ver todos →
-            </button>
-          </div>
-
-          {ARAPONGAS_POLLING_PLACES.map((place: PollingPlace) => (
-            <div
-              key={place.id}
-              style={{
-                background: "#ffffff",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: "12px",
-                padding: "10px 12px",
-                display: "grid",
-                gap: "6px",
-                transition: "all 0.15s ease",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
-                <div>
-                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#0369a1", textTransform: "uppercase" }}>
-                    🏛️ Arapongas - PR
-                  </span>
-                  <strong style={{ display: "block", fontSize: "13px", color: "#0f172a", lineHeight: "1.2", marginTop: "1px" }}>
-                    {place.shortName || place.name}
-                  </strong>
-                </div>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    color: "#0369a1",
-                    background: "#e0f2fe",
-                    padding: "2px 6px",
-                    borderRadius: "999px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {NUMBER.format(place.totalVoters)} el.
-                </span>
-              </div>
-              <div style={{ fontSize: "11px", color: "#64748b" }}>
-                📍 Bairro: <b>{place.district}</b> · {place.sectionsCount} seções
-              </div>
-              <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                        detail: { district: place.district, initialTab: "electoral", pollingPlaceId: place.id },
-                      }),
-                    );
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: "6px 8px",
-                    borderRadius: "6px",
-                    background: "#0284c7",
-                    color: "#ffffff",
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    border: 0,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px",
-                  }}
-                >
-                  🗳️ Ver Apuração Deste Colégio →
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* ABA 3: ELEIÇÕES HISTÓRICAS DO TSE                        */}
-      {/* ======================================================== */}
-      {panelTab === "elections" && (
-        <div style={{ display: "grid", gap: "10px" }}>
-          {/* Botão de Destaque para o Painel Completo do TSE */}
-          <button
-            type="button"
-            onClick={() => {
-              window.dispatchEvent(
-                new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                  detail: { district: "Todos os Bairros", initialTab: "electoral" },
-                }),
-              );
-            }}
+          <ol
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #0d2342 0%, #0284c7 100%)",
-              color: "#ffffff",
-              fontSize: "12px",
-              fontWeight: 900,
-              border: 0,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
+              listStyle: "none",
+              padding: 0,
+              margin: "10px 0 0",
+              display: "grid",
+              gap: "10px",
+              maxHeight: "58vh",
+              overflowY: "auto",
+              paddingRight: "4px",
             }}
           >
-            🏛️ Abrir Painel Eleitoral Completo →
-          </button>
-
-          {/* Seletor de Ano */}
-          <div style={{ display: "flex", gap: "6px" }}>
-            {[2024, 2022, 2020].map((yr) => (
-              <button
-                key={yr}
-                type="button"
-                onClick={() => setSelectedYear(yr)}
+            {visibleRows.map((item) => (
+              <li
+                key={item.district}
+                className={item.total === 0 ? "is-empty" : undefined}
                 style={{
-                  flex: 1,
-                  padding: "6px",
-                  borderRadius: "8px",
-                  background: selectedYear === yr ? "#0d2342" : "#f1f5f9",
-                  color: selectedYear === yr ? "#ffffff" : "#475569",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  border: 0,
-                  cursor: "pointer",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "10px 12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "7px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
                 }}
               >
-                {yr}
-              </button>
-            ))}
-          </div>
-
-          {/* Seletor de Cargo na Sequência Exata Solicitada */}
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            {[
-              { id: "presidente", label: "Presidente", year: 2022 },
-              { id: "senador", label: "Senador", year: 2022 },
-              { id: "governador", label: "Governador", year: 2022 },
-              { id: "deputado_federal", label: "Dep. Federal", year: 2022 },
-              { id: "deputado_estadual", label: "Dep. Estadual", year: 2022 },
-              { id: "prefeito", label: "Prefeito", year: 2024 },
-              { id: "vereador", label: "Vereador", year: 2024 },
-            ].map((off) => {
-              const isSelected = selectedOffice === off.id;
-              return (
-                <button
-                  key={off.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedOffice(off.id);
-                    if (off.id === "prefeito" || off.id === "vereador") {
-                      if (selectedYear !== 2024 && selectedYear !== 2020) setSelectedYear(2024);
-                    } else {
-                      setSelectedYear(2022);
-                    }
-                  }}
+                <div
                   style={{
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    background: isSelected ? "#0284c7" : "#ffffff",
-                    color: isSelected ? "#ffffff" : "#0284c7",
-                    border: "1px solid #0284c7",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      fontSize: "13.5px",
+                      color: "#1e293b",
+                    }}
+                  >
+                    {item.district}
+                  </span>
+                  <strong
+                    style={{
+                      fontSize: "14px",
+                      color: "#b45309",
+                      fontWeight: 850,
+                    }}
+                  >
+                    {item.total.toLocaleString("pt-BR")}
+                  </strong>
+                </div>
+
+                <div
+                  className="district-bar"
+                  aria-hidden="true"
+                  style={{
+                    height: "4px",
+                    background: "#f1f5f9",
+                    borderRadius: "99px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <i
+                    style={{
+                      display: "block",
+                      height: "100%",
+                      background: "#d97706",
+                      width: `${
+                        item.total
+                          ? Math.max((item.total / maxTotal) * 100, 4)
+                          : 0
+                      }%`,
+                      borderRadius: "99px",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={item.total <= 0}
+                  onClick={() => openDistrict(item.district)}
+                  title={`Abrir todos os contatos de ${item.district}`}
+                  style={{
+                    width: "100%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "5px",
+                    padding: "8px 10px",
                     fontSize: "11px",
                     fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  {off.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Resumo de Votos e Candidatos */}
-          <div style={{ maxHeight: "300px", overflowY: "auto", display: "grid", gap: "6px", paddingRight: "2px" }}>
-            {activeOfficeData?.candidates?.slice(0, 6).map((c: CandidateResult, index: number) => {
-              const color = PARTY_COLORS[c.party] || "#2563eb";
-              return (
-                <div
-                  key={c.name}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    padding: "8px 10px",
-                    display: "grid",
-                    gap: "4px",
+                    border: "1px solid #cbd5e1",
+                    background: item.total > 0 ? "#f8fafc" : "#f1f5f9",
+                    color: item.total > 0 ? "#0f172a" : "#94a3b8",
+                    cursor: item.total > 0 ? "pointer" : "not-allowed",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <strong style={{ fontSize: "12px", color: "#0f172a" }}>
-                        {index + 1}. {c.name}
-                      </strong>
-                      <span
-                        style={{
-                          fontSize: "9px",
-                          fontWeight: 800,
-                          color: "#fff",
-                          background: color,
-                          padding: "1px 5px",
-                          borderRadius: "4px",
-                          marginLeft: "6px",
-                        }}
-                      >
-                        {c.party}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#0284c7" }}>
-                      {PERCENT.format(c.percentage)}%
-                    </span>
-                  </div>
-                  <div style={{ height: "5px", background: "#f1f5f9", borderRadius: "999px", overflow: "hidden" }}>
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${Math.min(100, Math.max(3, c.percentage))}%`,
-                        background: color,
-                        borderRadius: "999px",
-                      }}
-                    />
-                  </div>
-                  <small style={{ fontSize: "10px", color: "#64748b" }}>
-                    {NUMBER.format(c.votes)} votos nominais
-                  </small>
-                </div>
-              );
-            })}
-          </div>
+                  👥 Abrir contatos
+                </button>
+              </li>
+            ))}
+          </ol>
 
-          <button
-            type="button"
-            onClick={() => openDistrictDrawer("Centro")}
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: "8px",
-              background: "#0284c7",
-              color: "#ffffff",
-              fontSize: "11px",
-              fontWeight: 800,
-              border: 0,
-              cursor: "pointer",
-              marginTop: "4px",
-            }}
-          >
-            📊 Abrir Painel Completo de Apuração →
-          </button>
-        </div>
+          {!visibleRows.length && (
+            <p className="optimized-empty">Nenhum bairro disponível.</p>
+          )}
+
+          {rows.length > 12 && (
+            <button
+              className="district-show-more"
+              type="button"
+              onClick={() => setShowAll((value) => !value)}
+            >
+              {showAll
+                ? "Mostrar menos"
+                : `Ver todos (${rows.length.toLocaleString("pt-BR")})`}
+            </button>
+          )}
+        </>
       )}
     </aside>
   );
