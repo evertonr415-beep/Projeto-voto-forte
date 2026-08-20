@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import "./interactive-electoral-map.css";
 import { ARAPONGAS_DISTRICTS_GEO, matchDistrictGeo, DistrictGeometry } from "./arapongas-districts-geo";
+import { getPollingPlacesForDistrict, ARAPONGAS_POLLING_PLACES, PollingPlace } from "../electoral-tse-data";
 
 export type ContactRecord = {
   id: number;
@@ -54,6 +55,14 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function getBestPollingPlaceForDistrict(districtName: string): PollingPlace {
+  const matches = getPollingPlacesForDistrict(districtName);
+  if (matches && matches.length > 0) {
+    return matches[0];
+  }
+  return ARAPONGAS_POLLING_PLACES[0];
+}
+
 export default function InteractiveElectoralMap({
   initialContacts = [],
 }: {
@@ -74,7 +83,7 @@ export default function InteractiveElectoralMap({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const polygonsLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const labelsLayerRef = useRef<any>(null);
+  const districtPinsLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,6 +196,12 @@ export default function InteractiveElectoralMap({
     };
   }, [contacts, selectedDistrict, districtCounts]);
 
+  // Colégio eleitoral do bairro selecionado
+  const selectedDistrictPollingPlace = useMemo(() => {
+    if (selectedDistrict === "all") return null;
+    return getBestPollingPlaceForDistrict(selectedDistrict);
+  }, [selectedDistrict]);
+
   // Inicialização Ultra Segura do Leaflet
   useEffect(() => {
     let active = true;
@@ -241,7 +256,7 @@ export default function InteractiveElectoralMap({
         }).addTo(map);
 
         polygonsLayerRef.current = L.layerGroup().addTo(map);
-        labelsLayerRef.current = L.layerGroup().addTo(map);
+        districtPinsLayerRef.current = L.layerGroup().addTo(map);
         markersLayerRef.current = L.layerGroup().addTo(map);
 
         mapInstanceRef.current = map;
@@ -269,26 +284,63 @@ export default function InteractiveElectoralMap({
     };
   }, []);
 
-  // PASSO 1 & 2: RENDERIZAR POLÍGONOS DE BAIRROS E RÓTULOS COM CONTAGEM
+  // Selecionar bairro e focar no mapa
+  const selectDistrictAndFocus = useCallback((districtName: string) => {
+    setSelectedDistrict(districtName);
+    const geo = ARAPONGAS_DISTRICTS_GEO.find((g) => g.name === districtName);
+    if (geo && mapInstanceRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const L = (window as any).L;
+      if (L) {
+        mapInstanceRef.current.fitBounds(L.polygon(geo.polygon).getBounds(), {
+          padding: [40, 40],
+          maxZoom: 16,
+        });
+      }
+    }
+  }, []);
+
+  // Global listener para botões dentro de popups HTML gerados pelo Leaflet
+  useEffect(() => {
+    const handlePopupClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement)?.closest(".iem-filter-region-btn") as HTMLElement | null;
+      if (target) {
+        const districtName = target.getAttribute("data-district");
+        if (districtName) {
+          selectDistrictAndFocus(districtName);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.closePopup();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("click", handlePopupClick);
+    return () => {
+      document.removeEventListener("click", handlePopupClick);
+    };
+  }, [selectDistrictAndFocus]);
+
+  // RENDERIZAR POLÍGONOS E ALFINETES DOS BAIRROS COM BALÃO DO COLÉGIO ELEITORAL E ATALHO DE CONTATOS
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const L = (window as any).L;
-    if (!L || !mapInstanceRef.current || !polygonsLayerRef.current || !labelsLayerRef.current) return;
+    if (!L || !mapInstanceRef.current || !polygonsLayerRef.current || !districtPinsLayerRef.current) return;
 
     polygonsLayerRef.current.clearLayers();
-    labelsLayerRef.current.clearLayers();
+    districtPinsLayerRef.current.clearLayers();
 
     if (!showPolygons) return;
 
     ARAPONGAS_DISTRICTS_GEO.forEach((district: DistrictGeometry) => {
       const stats = districtCounts.get(district.name) || { total: 0, leaders: 0, voters: 0 };
       const isSelected = selectedDistrict === district.name;
-
-      // Densidade de cor dinâmica
-      const baseOpacity = isSelected ? 0.45 : stats.total > 0 ? 0.25 : 0.12;
-      const weight = isSelected ? 3.5 : 2;
+      const pollingPlace = getBestPollingPlaceForDistrict(district.name);
 
       // 1. Polígono do Bairro
+      const baseOpacity = isSelected ? 0.45 : stats.total > 0 ? 0.26 : 0.12;
+      const weight = isSelected ? 3.5 : 2;
+
       const poly = L.polygon(district.polygon, {
         color: isSelected ? "#38bdf8" : district.color,
         weight,
@@ -307,42 +359,67 @@ export default function InteractiveElectoralMap({
       });
 
       poly.on("click", () => {
-        setSelectedDistrict(district.name);
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.fitBounds(poly.getBounds(), { padding: [40, 40], maxZoom: 16 });
-        }
+        selectDistrictAndFocus(district.name);
       });
 
       poly.addTo(polygonsLayerRef.current);
 
-      // 2. Rótulo central com nome e contagem de eleitores
-      const labelHtml = `
-        <div class="iem-district-label" title="${district.name}: ${stats.total} cadastros">
-          <span>${district.name}</span>
-          <span class="iem-district-badge">👥 ${stats.total} (${stats.leaders} L / ${stats.voters} E)</span>
+      // 2. Alfinete do Bairro no Mapa com Balão de Informações do Colégio Eleitoral e Atalho de Contatos
+      const pinHtml = `
+        <div class="iem-district-pin" title="Clique para ver o colégio eleitoral e contatos de ${district.name}">
+          <span>📍 ${district.name}</span>
+          <span class="iem-district-pin-badge">👥 ${stats.total} cadastros</span>
         </div>
       `;
 
-      const labelIcon = L.divIcon({
+      const pinIcon = L.divIcon({
         className: "",
-        html: labelHtml,
-        iconSize: [110, 36],
-        iconAnchor: [55, 18],
+        html: pinHtml,
+        iconSize: [120, 42],
+        iconAnchor: [60, 21],
+        popupAnchor: [0, -22],
       });
 
-      const labelMarker = L.marker(district.centroid, { icon: labelIcon });
-      labelMarker.on("click", () => {
-        setSelectedDistrict(district.name);
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.fitBounds(poly.getBounds(), { padding: [40, 40], maxZoom: 16 });
-        }
+      const pinMarker = L.marker(district.centroid, { icon: pinIcon });
+
+      const popupContent = `
+        <div class="iem-district-popup">
+          <div class="iem-district-popup-header">
+            <h3>📍 Bairro ${district.name}</h3>
+            <div class="iem-district-popup-stats">
+              <div class="iem-district-popup-stat" style="color: #38bdf8;">👥 ${stats.total} total</div>
+              <div class="iem-district-popup-stat" style="color: #34d399;">🟢 ${stats.leaders} líderes</div>
+              <div class="iem-district-popup-stat" style="color: #60a5fa;">🔵 ${stats.voters} eleitores</div>
+            </div>
+          </div>
+
+          <div class="iem-polling-card">
+            <div class="iem-polling-title">🏛️ Colégio Eleitoral Oficial / Mais Próximo</div>
+            <div class="iem-polling-name">${pollingPlace.name}</div>
+            <div class="iem-polling-detail">
+              📍 <strong>Endereço:</strong> ${pollingPlace.address}<br />
+              🗳️ <strong>Zona:</strong> ${pollingPlace.zone} · <strong>Seções:</strong> ${pollingPlace.sectionsCount}<br />
+              📊 <strong>Eleitorado Oficial TSE:</strong> ${pollingPlace.totalVoters.toLocaleString("pt-BR")} eleitores aptos
+            </div>
+          </div>
+
+          <button type="button" class="iem-filter-region-btn" data-district="${district.name}">
+            👥 Abrir contatos desta região (${stats.total}) →
+          </button>
+        </div>
+      `;
+
+      pinMarker.bindPopup(popupContent, {
+        autoClose: true,
+        closeOnClick: true,
+        minWidth: 280,
       });
 
-      labelMarker.addTo(labelsLayerRef.current);
+      pinMarker.addTo(districtPinsLayerRef.current);
     });
-  }, [districtCounts, selectedDistrict, showPolygons]);
+  }, [districtCounts, selectedDistrict, showPolygons, selectDistrictAndFocus]);
 
-  // PASSO 3: RENDERIZAR PONTOS DE GEOLOCALIZAÇÃO INDIVIDUAIS DE CADA CONTATO
+  // RENDERIZAR PONTOS DE GEOLOCALIZAÇÃO INDIVIDUAIS DE CADA PESSOA CADASTRADA
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const L = (window as any).L;
@@ -366,9 +443,9 @@ export default function InteractiveElectoralMap({
       const icon = L.divIcon({
         className: "",
         html: `<div class="${pinClass}" title="${contact.name} (${contact.kind || "Eleitor"})"><span>${initials}</span></div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-        popupAnchor: [0, -15],
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14],
       });
 
       const marker = L.marker([lat, lng], { icon });
@@ -438,7 +515,7 @@ export default function InteractiveElectoralMap({
             <div>
               <h2>Regionalização Eleitoral de Arapongas</h2>
               <span>
-                {ARAPONGAS_DISTRICTS_GEO.length} bairros delimitados · {filteredContacts.length} pessoas mapeadas.
+                Alfinetes de bairros com dados do TSE e {filteredContacts.length} pessoas mapeadas.
               </span>
             </div>
           </div>
@@ -455,7 +532,7 @@ export default function InteractiveElectoralMap({
               className={`iem-btn ${showPins ? "active" : ""}`}
               onClick={() => setShowPins(!showPins)}
             >
-              📍 Pinos Individuais {showPins ? "✓" : "✕"}
+              📍 Pinos de Pessoas {showPins ? "✓" : "✕"}
             </button>
             <button type="button" className="iem-btn" onClick={viewArapongas}>
               🎯 Arapongas
@@ -513,7 +590,7 @@ export default function InteractiveElectoralMap({
               </div>
               <div>
                 <i className="iem-legend-dot polygon" />
-                <span>Divisão Bairros</span>
+                <span>Alfinete Bairro + TSE</span>
               </div>
             </div>
           )}
@@ -524,7 +601,7 @@ export default function InteractiveElectoralMap({
       <aside className="iem-sidebar">
         <div className="iem-sidebar-head">
           <h3>Regionalização por Bairro</h3>
-          <p>Selecione a região para ver os polígonos e os eleitores cadastrados.</p>
+          <p>Clique em um alfinete de bairro no mapa para ver o colégio eleitoral e filtrar contatos.</p>
         </div>
 
         {/* SELECT DE BAIRROS COM CONTAGEM */}
@@ -534,19 +611,10 @@ export default function InteractiveElectoralMap({
             value={selectedDistrict}
             onChange={(e) => {
               const val = e.target.value;
-              setSelectedDistrict(val);
-              if (val !== "all" && mapInstanceRef.current) {
-                const geo = ARAPONGAS_DISTRICTS_GEO.find((g) => g.name === val);
-                if (geo) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const L = (window as any).L;
-                  if (L) {
-                    mapInstanceRef.current.fitBounds(L.polygon(geo.polygon).getBounds(), {
-                      padding: [40, 40],
-                      maxZoom: 16,
-                    });
-                  }
-                }
+              if (val === "all") {
+                setSelectedDistrict("all");
+              } else {
+                selectDistrictAndFocus(val);
               }
             }}
           >
@@ -581,6 +649,20 @@ export default function InteractiveElectoralMap({
             <strong style={{ color: "#38bdf8" }}>{currentSelectionStats.voters}</strong>
           </div>
         </div>
+
+        {/* COLÉGIO ELEITORAL DE REFERÊNCIA DO BAIRRO SELECIONADO */}
+        {selectedDistrictPollingPlace && (
+          <div style={{ padding: "0 18px", marginTop: "10px" }}>
+            <div className="iem-polling-card" style={{ margin: "0" }}>
+              <div className="iem-polling-title">🏛️ Colégio Eleitoral do Bairro</div>
+              <div className="iem-polling-name">{selectedDistrictPollingPlace.name}</div>
+              <div className="iem-polling-detail">
+                📍 {selectedDistrictPollingPlace.address}<br />
+                🗳️ {selectedDistrictPollingPlace.zone} · {selectedDistrictPollingPlace.sectionsCount} seções ({selectedDistrictPollingPlace.totalVoters.toLocaleString("pt-BR")} eleitores aptos)
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* LISTAGEM DE PESSOAS NA REGIÃO */}
         <div className="iem-contact-list">
