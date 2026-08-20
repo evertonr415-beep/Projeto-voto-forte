@@ -280,7 +280,11 @@ function isoToDate(dateStr: string) {
   return new Date(dateStr + "T00:00:00").getTime();
 }
 
-export default function InstitutionalCommunicationClient() {
+export default function InstitutionalCommunicationClient({
+  onBackToDashboard,
+}: {
+  onBackToDashboard?: () => void;
+} = {}) {
   const [events, setEvents] = useState<CampaignEvent[]>(baseEvents);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [search, setSearch] = useState("");
@@ -288,6 +292,17 @@ export default function InstitutionalCommunicationClient() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("dateAsc");
   const [filterMonth, setFilterMonth] = useState<Date>(new Date("2026-08-01T00:00:00"));
+
+  const handleBackToDashboard = () => {
+    if (onBackToDashboard) {
+      onBackToDashboard();
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("voto-forte:navigate-overview"));
+    if (typeof window !== "undefined" && window.location.pathname.includes("comunicacao-institucional")) {
+      window.location.href = "/";
+    }
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -619,8 +634,8 @@ export default function InstitutionalCommunicationClient() {
             <button type="button" className="ae-btn" onClick={() => window.print()}>
               🖨️ Imprimir
             </button>
-            <button type="button" className="ae-btn ae-btn-good" onClick={resetBase}>
-              ↺ Restaurar modelo
+            <button type="button" className="ae-btn ae-btn-primary" onClick={handleBackToDashboard}>
+              ⬅ Voltar ao Dashboard
             </button>
           </div>
           <input

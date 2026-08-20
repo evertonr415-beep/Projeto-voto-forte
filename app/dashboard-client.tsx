@@ -207,9 +207,14 @@ export default function DashboardClient({
     const handleCloseMobile = () => {
       setCollapsed(false);
     };
+    const handleNavigateOverview = () => {
+      setView("Visão Geral");
+    };
     window.addEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
+    window.addEventListener("voto-forte:navigate-overview", handleNavigateOverview);
     return () => {
       window.removeEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
+      window.removeEventListener("voto-forte:navigate-overview", handleNavigateOverview);
     };
   }, []);
 
@@ -568,20 +573,8 @@ export default function DashboardClient({
         isAdmin={isAdmin}
       />
     )
-  ) : view === "Agenda Inteligente" ? (
-    loadingMeetings && meetingsLoadedScope !== scope ? (
-      <div className="loading-state">Carregando agenda…</div>
-    ) : (
-      <Agenda
-        meetings={meetings}
-        tell={setNotice}
-        open={setModal}
-        updateMeeting={updateMeeting}
-        deleteMeeting={(id) => deleteRecord(id, "Reunião")}
-        isAdmin={isAdmin}
-        users={availableUsers}
-      />
-    )
+  ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
+    <InstitutionalCommunicationClient onBackToDashboard={() => setView("Visão Geral")} />
   ) : view === "Mapa Eleitoral" ? (
     loadingContacts && contactsLoadedScope !== scope ? (
       <div className="loading-state">Carregando mapa eleitoral…</div>
