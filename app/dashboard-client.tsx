@@ -207,6 +207,11 @@ export default function DashboardClient({
     }
   }, []);
 
+  const toggleMobileSidebar = useCallback(() => {
+    closeMapPopup();
+    setCollapsed((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     const handleCloseMobile = () => {
       setCollapsed(false);
