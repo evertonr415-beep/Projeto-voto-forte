@@ -173,13 +173,12 @@ export default function SystemNotificationsDrawer() {
     };
 
     updateButtons();
-    const obs = new MutationObserver(updateButtons);
-    obs.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(updateButtons, 600);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("voto-forte:open-notifications", handleOpen);
       document.removeEventListener("click", handleDocumentClick, true);
-      obs.disconnect();
     };
   }, [unreadCount]);
 
