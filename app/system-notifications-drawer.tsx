@@ -32,18 +32,19 @@ function timeAgo(dateIso: string) {
 export default function SystemNotificationsDrawer() {
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"compose" | "history">("compose");
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const [canBroadcast, setCanBroadcast] = useState(false);
+  const [canBroadcast, setCanBroadcast] = useState(true);
   const [toastNotification, setToastNotification] = useState<SystemNotification | null>(null);
 
-  // Modal Master Composer
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  // Form de Envio de Comunicado
   const [cTitle, setCTitle] = useState("");
   const [cCategory, setCCategory] = useState<"urgente" | "comunicado" | "agenda" | "sistema">("comunicado");
   const [cMessage, setCMessage] = useState("");
   const [cPopupAlert, setCPopupAlert] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendSuccessMessage, setSendSuccessMessage] = useState("");
 
   const initialLoaded = useRef(false);
   const previousCount = useRef(0);
@@ -52,7 +53,7 @@ export default function SystemNotificationsDrawer() {
     setMounted(true);
   }, []);
 
-  // Load read notifications from localStorage
+  // Carrega notificações lidas do localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(READ_STORAGE_KEY);
@@ -80,9 +81,11 @@ export default function SystemNotificationsDrawer() {
       const data = await res.json();
       const list = (data.notifications || []) as SystemNotification[];
       setNotifications(list);
-      setCanBroadcast(Boolean(data.canBroadcast));
+      if (data.canBroadcast !== undefined) {
+        setCanBroadcast(Boolean(data.canBroadcast));
+      }
 
-      // Check if there is a new urgent notification for toast
+      // Alerta de novo comunicado
       if (initialLoaded.current && list.length > previousCount.current) {
         const newest = list[0];
         if (newest && !readIds.has(newest.id)) {
@@ -90,7 +93,6 @@ export default function SystemNotificationsDrawer() {
         }
       } else if (!initialLoaded.current) {
         initialLoaded.current = true;
-        // On initial login, if there is an unread urgent notification, show toast
         const unreadUrgent = list.find((n) => n.category === "urgente" && !readIds.has(n.id));
         if (unreadUrgent) {
           setToastNotification(unreadUrgent);
@@ -110,11 +112,16 @@ export default function SystemNotificationsDrawer() {
 
   const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
-  // Intercept and update existing topbar notification button with capturing document listener
+  // Intercepta qualquer clique no ícone do trevo / notificação
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = () => {
+      setIsOpen(true);
+      setActiveTab("compose");
+      setSendSuccessMessage("");
+    };
+
     window.addEventListener("voto-forte:open-notifications", handleOpen);
-    (window as any).vfOpenNotifications = () => setIsOpen(true);
+    (window as any).vfOpenNotifications = handleOpen;
 
     const handleDocumentClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
@@ -126,6 +133,8 @@ export default function SystemNotificationsDrawer() {
         event.preventDefault();
         event.stopPropagation();
         setIsOpen((prev) => !prev);
+        setActiveTab("compose");
+        setSendSuccessMessage("");
       }
     };
 
@@ -135,6 +144,7 @@ export default function SystemNotificationsDrawer() {
       const btns = document.querySelectorAll<HTMLElement>(".notification, [aria-label='Notificações']");
       btns.forEach((btn) => {
         btn.style.cursor = "pointer";
+        btn.title = "Disparar aviso para os usuários do sistema";
         const badge = btn.querySelector("i");
         if (badge) {
           if (unreadCount > 0) {
@@ -172,10 +182,11 @@ export default function SystemNotificationsDrawer() {
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cTitle.trim() || !cMessage.trim()) {
-      alert("Por favor, preencha o título e a mensagem.");
+      alert("Por favor, preencha o título e a mensagem do aviso.");
       return;
     }
     setSending(true);
+    setSendSuccessMessage("");
     try {
       const res = await apiFetch("/api/notifications", {
         method: "POST",
@@ -189,13 +200,12 @@ export default function SystemNotificationsDrawer() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Erro ao enviar notificação.");
+        throw new Error(data.error || "Erro ao disparar aviso.");
       }
       setCTitle("");
       setCMessage("");
-      setIsComposerOpen(false);
+      setSendSuccessMessage("✅ Notificação disparada com sucesso para todos os usuários logados!");
       void fetchNotifications();
-      alert("📢 Comunicado enviado com sucesso para todos os usuários logados!");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Erro ao enviar comunicado");
     } finally {
@@ -207,7 +217,7 @@ export default function SystemNotificationsDrawer() {
 
   return createPortal(
     <>
-      {/* TOAST FLUTUANTE DE NOTIFICAÇÃO IMEDIATA */}
+      {/* TOAST FLUTUANTE DE ALERTA IMEDIATO */}
       {toastNotification && (
         <div
           className="vf-notif-toast"
@@ -215,8 +225,9 @@ export default function SystemNotificationsDrawer() {
             markAsRead(toastNotification.id);
             setToastNotification(null);
             setIsOpen(true);
+            setActiveTab("history");
           }}
-          title="Clique para abrir"
+          title="Clique para abrir comunicado"
         >
           <div className="vf-notif-toast-icon">
             {toastNotification.category === "urgente"
@@ -249,210 +260,225 @@ export default function SystemNotificationsDrawer() {
         </div>
       )}
 
-      {/* DRAWER DA CENTRAL DE NOTIFICAÇÕES */}
+      {/* MODAL / DRAWER PRINCIPAL DE DISPARO DE AVISO E NOTIFICAÇÕES */}
       {isOpen && (
         <div
           className="vf-notif-backdrop"
           onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
         >
-          <div className="vf-notif-drawer">
-            {/* HEADER */}
+          <div className="vf-notif-drawer" style={{ maxWidth: "520px" }}>
+            {/* CABEÇALHO */}
             <div className="vf-notif-header">
               <div className="vf-notif-title-area">
-                <div className="vf-notif-icon-circle">♧</div>
+                <div className="vf-notif-icon-circle">♣</div>
                 <div>
-                  <h2>Central de Notificações</h2>
-                  <p>Avisos, comunicados e metas em tempo real</p>
+                  <h2>Disparo de Avisos & Notificações</h2>
+                  <p>Comunicação instantânea para todos os usuários</p>
                 </div>
               </div>
               <button
                 type="button"
                 className="vf-notif-close-btn"
                 onClick={() => setIsOpen(false)}
+                title="Fechar"
               >
                 ✕
               </button>
             </div>
 
-            {/* BOTÃO EXCLUSIVO MASTER PARA ENVIAR COMUNICADO */}
-            {canBroadcast && (
-              <div className="vf-notif-master-banner">
-                <button
-                  type="button"
-                  className="vf-notif-broadcast-btn"
-                  onClick={() => setIsComposerOpen(true)}
-                >
-                  📢 Enviar Comunicado Geral para Toda a Equipe
-                </button>
+            {/* ABAS DE NAVEGAÇÃO INTERNA */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", padding: "10px 16px", background: "#07111e", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("compose");
+                  setSendSuccessMessage("");
+                }}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  fontSize: "12.5px",
+                  fontWeight: 850,
+                  border: activeTab === "compose" ? "1px solid #eab308" : "1px solid rgba(255,255,255,0.08)",
+                  background: activeTab === "compose" ? "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)" : "transparent",
+                  color: activeTab === "compose" ? "#0f172a" : "#94a3b8",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
+                  boxShadow: activeTab === "compose" ? "0 4px 12px rgba(234, 179, 8, 0.3)" : "none",
+                }}
+              >
+                📢 Disparar Novo Aviso
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("history")}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  fontSize: "12.5px",
+                  fontWeight: 850,
+                  border: activeTab === "history" ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.08)",
+                  background: activeTab === "history" ? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)" : "transparent",
+                  color: activeTab === "history" ? "#ffffff" : "#94a3b8",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
+                  boxShadow: activeTab === "history" ? "0 4px 12px rgba(2, 132, 199, 0.3)" : "none",
+                }}
+              >
+                📬 Avisos ({unreadCount > 0 ? `${unreadCount} novos` : notifications.length})
+              </button>
+            </div>
+
+            {/* CONTEÚDO DA ABA 1: DISPARAR AVISO */}
+            {activeTab === "compose" && (
+              <div className="vf-notif-body" style={{ padding: "18px" }}>
+                {sendSuccessMessage && (
+                  <div style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(34, 197, 94, 0.15)", border: "1px solid #22c55e", color: "#86efac", fontSize: "0.85rem", fontWeight: 700 }}>
+                    {sendSuccessMessage}
+                  </div>
+                )}
+
+                <form onSubmit={handleSendBroadcast} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div className="vf-composer-field">
+                    <label>Título do Aviso / Comunicado</label>
+                    <input
+                      className="vf-composer-input"
+                      placeholder="Ex.: Reunião Geral de Alinhamento com a Equipe"
+                      value={cTitle}
+                      onChange={(e) => setCTitle(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="vf-composer-field">
+                    <label>Tipo / Prioridade do Aviso</label>
+                    <select
+                      className="vf-composer-select"
+                      value={cCategory}
+                      onChange={(e) => setCCategory(e.target.value as any)}
+                    >
+                      <option value="comunicado">📢 Comunicado Geral (Padrão)</option>
+                      <option value="urgente">⚡ Urgente / Prioritário</option>
+                      <option value="agenda">📅 Agenda / Evento de Campanha</option>
+                      <option value="sistema">🛡️ Alerta do Sistema</option>
+                    </select>
+                  </div>
+
+                  <div className="vf-composer-field">
+                    <label>Mensagem / Conteúdo para os Usuários</label>
+                    <textarea
+                      className="vf-composer-textarea"
+                      rows={5}
+                      placeholder="Escreva aqui a mensagem completa que aparecerá na tela de todos os usuários logados no sistema..."
+                      value={cMessage}
+                      onChange={(e) => setCMessage(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.84rem", color: "#cbd5e1", cursor: "pointer", marginTop: "2px" }}>
+                    <input
+                      type="checkbox"
+                      checked={cPopupAlert}
+                      onChange={(e) => setCPopupAlert(e.target.checked)}
+                    />
+                    <span>Exibir alerta flutuante (*pop-up*) na tela de quem estiver logado agora</span>
+                  </label>
+
+                  <button
+                    type="submit"
+                    className="vf-notif-broadcast-btn"
+                    style={{ marginTop: "10px", padding: "13px", fontSize: "0.95rem" }}
+                    disabled={sending}
+                  >
+                    {sending ? "Disparando aviso..." : "🚀 Disparar Aviso para Todos os Usuários"}
+                  </button>
+                </form>
               </div>
             )}
 
-            {/* BARRA DE AÇÕES */}
-            <div className="vf-notif-actions-bar">
-              <span className="vf-notif-badge-counter">
-                {unreadCount} não lida{unreadCount === 1 ? "" : "s"}
-              </span>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  className="vf-notif-mark-read-btn"
-                  onClick={markAllAsRead}
-                >
-                  ✓ Marcar todas como lidas
-                </button>
-              )}
-            </div>
-
-            {/* LISTA DE NOTIFICAÇÕES */}
-            <div className="vf-notif-body">
-              {notifications.length === 0 ? (
-                <div className="vf-notif-empty">
-                  <div className="vf-notif-empty-icon">🔔</div>
-                  <p>Nenhuma notificação no momento.</p>
-                </div>
-              ) : (
-                notifications.map((n) => {
-                  const isUnread = !readIds.has(n.id);
-                  return (
-                    <article
-                      key={n.id}
-                      className={`vf-notif-card ${isUnread ? "is-unread" : ""}`}
-                      onClick={() => isUnread && markAsRead(n.id)}
-                      style={{ cursor: isUnread ? "pointer" : "default" }}
+            {/* CONTEÚDO DA ABA 2: HISTÓRICO DE AVISOS */}
+            {activeTab === "history" && (
+              <>
+                <div className="vf-notif-actions-bar">
+                  <span className="vf-notif-badge-counter">
+                    {unreadCount} aviso{unreadCount === 1 ? "" : "s"} não lido{unreadCount === 1 ? "" : "s"}
+                  </span>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      className="vf-notif-mark-read-btn"
+                      onClick={markAllAsRead}
                     >
-                      <div className="vf-notif-card-head">
-                        <span className={`vf-notif-tag ${n.category}`}>
-                          {n.category === "urgente" && "⚡ Urgente"}
-                          {n.category === "comunicado" && "📢 Comunicado"}
-                          {n.category === "agenda" && "📅 Agenda"}
-                          {n.category === "sistema" && "🛡️ Sistema"}
-                        </span>
-                        <span className="vf-notif-time">{timeAgo(n.created_at)}</span>
-                      </div>
-
-                      <h3 className="vf-notif-card-title">{n.title}</h3>
-                      <p className="vf-notif-card-message">{n.message}</p>
-
-                      <div className="vf-notif-card-footer">
-                        <span className="vf-notif-sender">
-                          👤 {n.sender_name} ({n.sender_role})
-                        </span>
-                        {isUnread ? (
-                          <button
-                            type="button"
-                            className="vf-notif-mark-read-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markAsRead(n.id);
-                            }}
-                          >
-                            Marcar lida
-                          </button>
-                        ) : (
-                          <span style={{ color: "#64748b" }}>✓ Lida</span>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DE COMPOSIÇÃO DE COMUNICADO PARA USUÁRIOS MASTER */}
-      {isComposerOpen && (
-        <div
-          className="vf-composer-modal"
-          onClick={(e) => e.target === e.currentTarget && setIsComposerOpen(false)}
-        >
-          <div className="vf-composer-card">
-            <div className="vf-composer-head">
-              <div>
-                <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#fde047" }}>
-                  📢 Novo Comunicado Geral da Coordenação (Master)
-                </h2>
-                <small style={{ color: "#94a3b8" }}>
-                  Esta mensagem será notificada a todos os usuários conectados na plataforma.
-                </small>
-              </div>
-              <button
-                type="button"
-                className="vf-notif-close-btn"
-                onClick={() => setIsComposerOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSendBroadcast}>
-              <div className="vf-composer-body">
-                <div className="vf-composer-field">
-                  <label>Título do Comunicado</label>
-                  <input
-                    className="vf-composer-input"
-                    placeholder="Ex.: Reunião Geral de Alinhamento / Meta da Semana..."
-                    value={cTitle}
-                    onChange={(e) => setCTitle(e.target.value)}
-                    required
-                  />
+                      ✓ Marcar todos como lidos
+                    </button>
+                  )}
                 </div>
 
-                <div className="vf-composer-field">
-                  <label>Tipo / Prioridade</label>
-                  <select
-                    className="vf-composer-select"
-                    value={cCategory}
-                    onChange={(e) => setCCategory(e.target.value as any)}
-                  >
-                    <option value="comunicado">📢 Comunicado Geral</option>
-                    <option value="urgente">⚡ Urgente / Prioritário</option>
-                    <option value="agenda">📅 Agenda / Evento</option>
-                    <option value="sistema">🛡️ Alerta do Sistema</option>
-                  </select>
+                <div className="vf-notif-body">
+                  {notifications.length === 0 ? (
+                    <div className="vf-notif-empty">
+                      <div className="vf-notif-empty-icon">🔔</div>
+                      <p>Nenhum comunicado no histórico.</p>
+                    </div>
+                  ) : (
+                    notifications.map((n) => {
+                      const isUnread = !readIds.has(n.id);
+                      return (
+                        <article
+                          key={n.id}
+                          className={`vf-notif-card ${isUnread ? "is-unread" : ""}`}
+                          onClick={() => isUnread && markAsRead(n.id)}
+                          style={{ cursor: isUnread ? "pointer" : "default" }}
+                        >
+                          <div className="vf-notif-card-head">
+                            <span className={`vf-notif-tag ${n.category}`}>
+                              {n.category === "urgente" && "⚡ Urgente"}
+                              {n.category === "comunicado" && "📢 Comunicado"}
+                              {n.category === "agenda" && "📅 Agenda"}
+                              {n.category === "sistema" && "🛡️ Sistema"}
+                            </span>
+                            <span className="vf-notif-time">{timeAgo(n.created_at)}</span>
+                          </div>
+
+                          <h3 className="vf-notif-card-title">{n.title}</h3>
+                          <p className="vf-notif-card-message">{n.message}</p>
+
+                          <div className="vf-notif-card-footer">
+                            <span className="vf-notif-sender">
+                              👤 {n.sender_name} ({n.sender_role})
+                            </span>
+                            {isUnread ? (
+                              <button
+                                type="button"
+                                className="vf-notif-mark-read-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(n.id);
+                                }}
+                              >
+                                Marcar como lida
+                              </button>
+                            ) : (
+                              <span style={{ color: "#64748b" }}>✓ Lida</span>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })
+                  )}
                 </div>
-
-                <div className="vf-composer-field">
-                  <label>Mensagem / Conteúdo</label>
-                  <textarea
-                    className="vf-composer-textarea"
-                    rows={4}
-                    placeholder="Digite aqui as orientações, diretrizes ou comunicado para a equipe..."
-                    value={cMessage}
-                    onChange={(e) => setCMessage(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.84rem", color: "#cbd5e1", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={cPopupAlert}
-                    onChange={(e) => setCPopupAlert(e.target.checked)}
-                  />
-                  <span>Exibir alerta flutuante imediato na tela dos usuários logados</span>
-                </label>
-              </div>
-
-              <div className="vf-composer-actions">
-                <button
-                  type="button"
-                  className="vf-notif-close-btn"
-                  style={{ width: "auto", padding: "0 14px", height: "38px" }}
-                  onClick={() => setIsComposerOpen(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="vf-notif-broadcast-btn"
-                  style={{ width: "auto", padding: "10px 20px" }}
-                  disabled={sending}
-                >
-                  {sending ? "Enviando..." : "🚀 Publicar e Notificar Equipe"}
-                </button>
-              </div>
-            </form>
+              </>
+            )}
           </div>
         </div>
       )}
