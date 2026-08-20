@@ -1348,7 +1348,7 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
     setLocationMessage(`${valid.length} alfinete(s) centralizado(s)`);
   }
   return (
-    <div className="city-map real-city-map">
+    <div className="city-map real-city-map full-map">
       <div
         ref={mapElement}
         className="leaflet-map"

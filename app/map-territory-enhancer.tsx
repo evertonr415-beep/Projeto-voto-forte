@@ -127,7 +127,11 @@ export default function MapTerritoryEnhancer() {
 
     const setupMap = (map: any) => {
       const container = map?.getContainer?.() as HTMLElement | undefined;
-      if (cancelled || !container?.closest(".full-map") || map._vfDistrictPoints)
+      if (
+        cancelled ||
+        !container?.closest(".full-map, .city-map, .real-city-map, .leaflet-container") ||
+        map._vfDistrictPoints
+      )
         return false;
 
       const L = (window as any).L;

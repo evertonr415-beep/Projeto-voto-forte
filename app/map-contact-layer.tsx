@@ -91,7 +91,7 @@ function currentScope() {
 
 function isElectoralMapContainer(map: any) {
   const container = map?.getContainer?.() as HTMLElement | undefined;
-  return Boolean(container?.closest(".full-map"));
+  return Boolean(container?.closest(".full-map, .city-map, .real-city-map, .leaflet-container"));
 }
 
 function removeLegacyContactPins(map: any) {
