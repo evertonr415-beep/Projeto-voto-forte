@@ -34,7 +34,6 @@ export default function MapToolsGate() {
       {protectedAccessReady && <NeighborhoodElectoralDrawer />}
       {protectedAccessReady && <ContactWhatsappQuickQueue />}
       {protectedAccessReady && <MapContactLayer />}
-      {protectedAccessReady && <MapDistrictMarkerLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
       {protectedAccessReady && <TerritorialPendingCenter />}

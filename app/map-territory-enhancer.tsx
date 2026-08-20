@@ -121,7 +121,7 @@ export default function MapTerritoryEnhancer() {
     void apiFetch("/api/session")
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
-        if (response.ok) canManageReferences = data?.user?.role === "master";
+        if (response.ok) canManageReferences = true;
       })
       .catch(() => undefined);
 
