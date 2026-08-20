@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import { apiFetch } from "./supabase-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -73,7 +73,7 @@ function iconSize(total: number): [number, number] {
 }
 
 export default function MapCityMarkers() {
-  useLayoutEffect(() => {
+  useEffect(() => {
     installStyles();
     let cancelled = false;
     let layerGroup: any = null;
