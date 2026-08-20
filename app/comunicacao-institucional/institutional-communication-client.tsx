@@ -611,7 +611,7 @@ export default function InstitutionalCommunicationClient({
           <div className="ae-brand">
             <div className="ae-logo">🗳️</div>
             <div>
-              <h1 className="ae-title">Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
+              <h1 className="ae-title">Agenda Inteligente — Pedro Lupion e Sérgio Onofre</h1>
               <div className="ae-subtitle">
                 Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
               </div>
