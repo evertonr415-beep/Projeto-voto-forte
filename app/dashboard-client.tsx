@@ -4,6 +4,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import { apiFetch, supabase } from "./supabase-client";
 import MeetingInteractiveCalendar from "./meeting-interactive-calendar";
 import InstitutionalCommunicationClient from "./comunicacao-institucional/institutional-communication-client";
+import InteractiveElectoralMap from "./electoral-map/interactive-electoral-map";
 
 type View =
   | "Visão Geral"
@@ -322,7 +323,7 @@ export default function DashboardClient({
 
   useEffect(() => {
     if (
-      view !== "Contatos" ||
+      (view !== "Contatos" && view !== "Mapa Eleitoral") ||
       contactsLoadedScope === scope
     )
       return;
@@ -580,11 +581,7 @@ export default function DashboardClient({
   ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
     <InstitutionalCommunicationClient />
   ) : view === "Mapa Eleitoral" ? (
-    loadingContacts && contactsLoadedScope !== scope ? (
-      <div className="loading-state">Carregando mapa eleitoral…</div>
-    ) : (
-      <ElectoralMap open={open} contacts={contacts} />
-    )
+    <InteractiveElectoralMap initialContacts={contacts} />
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
