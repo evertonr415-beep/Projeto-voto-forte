@@ -6,6 +6,7 @@ import "./coverage-clarity.css";
 import "./contact-quality-label.css";
 import "./whatsapp-quick-queue.css";
 import "./contacts-ux.css";
+import "./hide-meetings-kpi.css";
 
 export default function ContactsPage() {
   return (
