@@ -590,40 +590,38 @@ export default function InstitutionalCommunicationClient() {
 
   return (
     <div className={`ae-root ${theme === "light" ? "light-mode" : ""}`} data-theme={theme}>
-      <div className="shell">
-        {/* TOPBAR ROBUSTA */}
-        <header className="topbar">
-          <div className="topbar-main">
-            <div className="brand">
-              <div className="logo">🗳️</div>
-              <div>
-                <h1>Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
-                <div className="subtitle">
-                  Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
-                </div>
+      <div className="ae-shell">
+        {/* TOPBAR ROBUSTA COM CLASSES ISOLADAS */}
+        <header className="ae-topbar">
+          <div className="ae-brand">
+            <div className="ae-logo">🗳️</div>
+            <div>
+              <h1 className="ae-title">Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
+              <div className="ae-subtitle">
+                Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
               </div>
             </div>
-            <div className="toolbar">
-              <button type="button" className="btn ghost" onClick={toggleTheme}>
-                {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                ⬆️ Importar JSON
-              </button>
-              <button type="button" className="btn" onClick={exportJson}>
-                ⬇️ Exportar JSON
-              </button>
-              <button type="button" className="btn" onClick={() => window.print()}>
-                🖨️ Imprimir
-              </button>
-              <button type="button" className="btn good" onClick={resetBase}>
-                ↺ Restaurar modelo
-              </button>
-            </div>
+          </div>
+          <div className="ae-toolbar">
+            <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme}>
+              {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+            </button>
+            <button
+              type="button"
+              className="ae-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              ⬆️ Importar JSON
+            </button>
+            <button type="button" className="ae-btn" onClick={exportJson}>
+              ⬇️ Exportar JSON
+            </button>
+            <button type="button" className="ae-btn" onClick={() => window.print()}>
+              🖨️ Imprimir
+            </button>
+            <button type="button" className="ae-btn ae-btn-good" onClick={resetBase}>
+              ↺ Restaurar modelo
+            </button>
           </div>
           <input
             ref={fileInputRef}
@@ -635,25 +633,25 @@ export default function InstitutionalCommunicationClient() {
         </header>
 
         {/* STATS BAR DE ALTO CONTRASTE */}
-        <section className="stats">
-          <div className="stat">
-            <div className="label">Total de eventos</div>
-            <div className="value" style={{ color: "var(--accent)" }}>{stats.total}</div>
-            <div className="hint">marcos no calendário</div>
+        <section className="ae-stats">
+          <div className="ae-stat">
+            <div className="ae-stat-label">Total de eventos</div>
+            <div className="ae-stat-value" style={{ color: "var(--ae-accent)" }}>{stats.total}</div>
+            <div className="ae-stat-hint">marcos no calendário</div>
           </div>
-          <div className="stat">
-            <div className="label">Pendentes</div>
-            <div className="value" style={{ color: "var(--warn)" }}>{stats.pending}</div>
-            <div className="hint">ainda exigem acompanhamento</div>
+          <div className="ae-stat">
+            <div className="ae-stat-label">Pendentes</div>
+            <div className="ae-stat-value" style={{ color: "var(--ae-warn)" }}>{stats.pending}</div>
+            <div className="ae-stat-hint">ainda exigem acompanhamento</div>
           </div>
-          <div className="stat">
-            <div className="label">Concluídos</div>
-            <div className="value" style={{ color: "var(--ok)" }}>{stats.done}</div>
-            <div className="hint">marcados como finalizados</div>
+          <div className="ae-stat">
+            <div className="ae-stat-label">Concluídos</div>
+            <div className="ae-stat-value" style={{ color: "var(--ae-ok)" }}>{stats.done}</div>
+            <div className="ae-stat-hint">marcados como finalizados</div>
           </div>
-          <div className="stat">
-            <div className="label">Próximo marco</div>
-            <div className="value" style={{ color: "var(--text)" }}>
+          <div className="ae-stat">
+            <div className="ae-stat-label">Próximo marco</div>
+            <div className="ae-stat-value" style={{ color: "var(--ae-text)" }}>
               {stats.nextDays !== null
                 ? stats.nextDays < 0
                   ? `Há ${Math.abs(stats.nextDays)} dias`
@@ -662,46 +660,46 @@ export default function InstitutionalCommunicationClient() {
                     : `${stats.nextDays} dia${stats.nextDays === 1 ? "" : "s"}`
                 : "Tudo em dia!"}
             </div>
-            <div className="hint">
+            <div className="ae-stat-hint">
               {stats.next ? `${stats.next.title} • ${dateLabel(stats.next.date)}` : "Nenhum evento pendente"}
             </div>
           </div>
         </section>
 
         {/* LAYOUT PRINCIPAL */}
-        <section className="layout">
+        <section className="ae-layout">
           {/* COLUNA ESQUERDA: TABELA & CONTROLES */}
-          <div className="grid">
-            <article className="card">
-              <div className="card-head">
+          <div className="ae-grid">
+            <article className="ae-card">
+              <div className="ae-card-head">
                 <div>
                   <h2>Agenda de Compromissos</h2>
-                  <div className="footer-note">
+                  <div className="ae-footer-note">
                     Use os filtros, marque como concluído, edite eventos e adicione novos marcos eleitorais.
                   </div>
                 </div>
-                <div className="split">
+                <div className="ae-split">
                   <button
                     type="button"
-                    className="btn primary"
+                    className="ae-btn ae-btn-primary"
                     onClick={() => openModal(null)}
                   >
                     ＋ Novo evento
                   </button>
                 </div>
               </div>
-              <div className="card-body">
-                <div className="controls">
-                  <div className="searchwrap">
+              <div className="ae-card-body">
+                <div className="ae-controls">
+                  <div className="ae-searchwrap">
                     <input
-                      className="search"
+                      className="ae-search"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Pesquisar por data, título, categoria, nota..."
                     />
                   </div>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
                   >
@@ -713,7 +711,7 @@ export default function InstitutionalCommunicationClient() {
                     ))}
                   </select>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
@@ -723,7 +721,7 @@ export default function InstitutionalCommunicationClient() {
                     <option value="important">Importantes</option>
                   </select>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                   >
@@ -734,104 +732,104 @@ export default function InstitutionalCommunicationClient() {
                   </select>
                 </div>
 
-                <div className="table-wrap">
-                  <table>
+                <div className="ae-table-wrap">
+                  <table className="ae-table">
                     <thead>
                       <tr>
-                        <th style={{ width: "13%" }}>Data</th>
-                        <th style={{ width: "19%" }}>Categoria</th>
-                        <th>Título</th>
-                        <th style={{ width: "11%" }}>Contagem</th>
-                        <th style={{ width: "11%" }}>Status</th>
-                        <th style={{ width: "12%" }}>Responsável</th>
-                        <th style={{ width: "11%" }}>Local</th>
-                        <th style={{ width: "13%" }}>Ações</th>
+                        <th className="ae-th" style={{ width: "13%" }}>Data</th>
+                        <th className="ae-th" style={{ width: "19%" }}>Categoria</th>
+                        <th className="ae-th">Título</th>
+                        <th className="ae-th" style={{ width: "11%" }}>Contagem</th>
+                        <th className="ae-th" style={{ width: "11%" }}>Status</th>
+                        <th className="ae-th" style={{ width: "12%" }}>Responsável</th>
+                        <th className="ae-th" style={{ width: "11%" }}>Local</th>
+                        <th className="ae-th" style={{ width: "13%" }}>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredEvents.length === 0 ? (
                         <tr>
-                          <td colSpan={8}>
-                            <div className="empty">Nenhum evento encontrado com esses filtros.</div>
+                          <td className="ae-td" colSpan={8}>
+                            <div className="ae-empty">Nenhum evento encontrado com esses filtros.</div>
                           </td>
                         </tr>
                       ) : (
                         filteredEvents.map((ev) => {
                           const d = daysUntil(ev.date);
                           return (
-                            <tr key={ev.id} className={ev.done ? "row-done" : ""}>
-                              <td data-label="Data">
+                            <tr key={ev.id} className={ev.done ? "ae-row-done" : ""}>
+                              <td className="ae-td" data-label="Data">
                                 <div>
-                                  <strong style={{ color: "var(--text)" }}>{dateLabel(ev.date)}</strong>
+                                  <strong style={{ color: "var(--ae-text)" }}>{dateLabel(ev.date)}</strong>
                                 </div>
-                                <div className="footer-note">{weekdayLabel(ev.date)}</div>
+                                <div className="ae-footer-note">{weekdayLabel(ev.date)}</div>
                               </td>
-                              <td data-label="Categoria">
-                                <span className="badge">{ev.category}</span>
+                              <td className="ae-td" data-label="Categoria">
+                                <span className="ae-badge">{ev.category}</span>
                               </td>
-                              <td data-label="Título">
+                              <td className="ae-td" data-label="Título">
                                 <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                                   <strong>{ev.title}</strong>
-                                  {ev.important && <span className="badge danger">★ importante</span>}
+                                  {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
                                 </div>
-                                <div className="footer-note">{ev.desc}</div>
+                                <div className="ae-footer-note">{ev.desc}</div>
                               </td>
-                              <td data-label="Contagem">
+                              <td className="ae-td" data-label="Contagem">
                                 {ev.done ? (
-                                  <span className="badge ok">✓ concluído</span>
+                                  <span className="ae-badge ae-badge-ok">✓ concluído</span>
                                 ) : d < 0 ? (
-                                  <span className="badge danger">atrasado ({Math.abs(d)}d)</span>
+                                  <span className="ae-badge ae-badge-danger">atrasado ({Math.abs(d)}d)</span>
                                 ) : d === 0 ? (
-                                  <span className="badge danger">hoje</span>
+                                  <span className="ae-badge ae-badge-danger">hoje</span>
                                 ) : d <= 7 ? (
-                                  <span className="badge danger">{d} dia{d === 1 ? "" : "s"}</span>
+                                  <span className="ae-badge ae-badge-danger">{d} dia{d === 1 ? "" : "s"}</span>
                                 ) : d <= 30 ? (
-                                  <span className="badge warn">{d} dias</span>
+                                  <span className="ae-badge ae-badge-warn">{d} dias</span>
                                 ) : (
-                                  <span className="badge">{d} dias</span>
+                                  <span className="ae-badge">{d} dias</span>
                                 )}
                               </td>
-                              <td data-label="Status">
+                              <td className="ae-td" data-label="Status">
                                 {ev.done ? (
-                                  <span className="badge ok">Concluído</span>
+                                  <span className="ae-badge ae-badge-ok">Concluído</span>
                                 ) : ev.important ? (
-                                  <span className="badge warn">Importante</span>
+                                  <span className="ae-badge ae-badge-warn">Importante</span>
                                 ) : (
-                                  <span className="badge">Pendente</span>
+                                  <span className="ae-badge">Pendente</span>
                                 )}
                               </td>
-                              <td data-label="Responsável">
-                                <span className="badge">{ev.responsible || "—"}</span>
+                              <td className="ae-td" data-label="Responsável">
+                                <span className="ae-badge">{ev.responsible || "—"}</span>
                               </td>
-                              <td data-label="Local">
-                                <span className="badge">{ev.location || "—"}</span>
+                              <td className="ae-td" data-label="Local">
+                                <span className="ae-badge">{ev.location || "—"}</span>
                               </td>
-                              <td data-label="Ações">
-                                <div className="actions">
+                              <td className="ae-td" data-label="Ações">
+                                <div className="ae-actions">
                                   <button
                                     type="button"
-                                    className="mini-btn"
+                                    className="ae-mini-btn"
                                     onClick={() => toggleDone(ev.id)}
                                   >
                                     {ev.done ? "↩ Reabrir" : "✓ Concluir"}
                                   </button>
                                   <button
                                     type="button"
-                                    className="mini-btn"
+                                    className="ae-mini-btn"
                                     onClick={() => openModal(ev)}
                                   >
                                     ✎ Editar
                                   </button>
                                   <button
                                     type="button"
-                                    className="mini-btn"
+                                    className="ae-mini-btn"
                                     onClick={() => duplicateEvent(ev.id)}
                                   >
                                     ⧉ Copiar
                                   </button>
                                   <button
                                     type="button"
-                                    className="mini-btn"
+                                    className="ae-mini-btn"
                                     onClick={() => deleteEvent(ev.id)}
                                   >
                                     🗑 Excluir
@@ -850,24 +848,24 @@ export default function InstitutionalCommunicationClient() {
           </div>
 
           {/* COLUNA DIREITA: RESUMO RÁPIDO & CALENDÁRIO */}
-          <div className="sidebar-panel">
-            <article className="card">
-              <div className="card-head">
+          <div className="ae-sidebar-panel">
+            <article className="ae-card">
+              <div className="ae-card-head">
                 <div>
                   <h3>Resumo Rápido</h3>
-                  <div className="footer-note">Próximos marcos, visão geral e calendário mensal.</div>
+                  <div className="ae-footer-note">Próximos marcos, visão geral e calendário mensal.</div>
                 </div>
               </div>
-              <div className="card-body sidebar-panel">
+              <div className="ae-card-body ae-sidebar-panel">
                 {/* CONTAGEM REGRESSIVA */}
-                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
-                  <div className="card-body">
-                    <div className="countdown">
+                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
+                  <div className="ae-card-body">
+                    <div className="ae-countdown">
                       {upcomingCountdowns.map((ev) => {
                         const d = daysUntil(ev.date);
                         return (
-                          <div key={ev.id} className="countbox">
-                            <div className="big">
+                          <div key={ev.id} className="ae-countbox">
+                            <div className="ae-countbox-big">
                               {ev.done
                                 ? "OK"
                                 : d < 0
@@ -876,8 +874,8 @@ export default function InstitutionalCommunicationClient() {
                                     ? "Hoje"
                                     : `${d}d`}
                             </div>
-                            <div className="small">
-                              <strong style={{ color: "var(--text)" }}>{ev.title}</strong>
+                            <div className="ae-countbox-small">
+                              <strong style={{ color: "var(--ae-text)" }}>{ev.title}</strong>
                               <br />
                               {dateLabel(ev.date)} · {ev.category}
                             </div>
@@ -889,18 +887,18 @@ export default function InstitutionalCommunicationClient() {
                 </div>
 
                 {/* CALENDÁRIO MENSAL */}
-                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
-                  <div className="card-body">
-                    <div className="calendar">
-                      <div className="cal-head">
+                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
+                  <div className="ae-card-body">
+                    <div className="ae-calendar">
+                      <div className="ae-cal-head">
                         <strong>
                           {calendarData.monthLabel.charAt(0).toUpperCase() +
                             calendarData.monthLabel.slice(1)}
                         </strong>
-                        <div className="actions">
+                        <div className="ae-actions">
                           <button
                             type="button"
-                            className="mini-btn"
+                            className="ae-mini-btn"
                             onClick={() =>
                               setFilterMonth(
                                 new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1),
@@ -911,7 +909,7 @@ export default function InstitutionalCommunicationClient() {
                           </button>
                           <button
                             type="button"
-                            className="mini-btn"
+                            className="ae-mini-btn"
                             onClick={() =>
                               setFilterMonth(
                                 new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -922,7 +920,7 @@ export default function InstitutionalCommunicationClient() {
                           </button>
                           <button
                             type="button"
-                            className="mini-btn"
+                            className="ae-mini-btn"
                             onClick={() =>
                               setFilterMonth(
                                 new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1),
@@ -933,32 +931,32 @@ export default function InstitutionalCommunicationClient() {
                           </button>
                         </div>
                       </div>
-                      <div className="legend">
-                        <span className="badge ok">● concluído</span>
-                        <span className="badge warn">● pendente</span>
-                        <span className="badge danger">● hoje / urgente</span>
+                      <div className="ae-legend">
+                        <span className="ae-badge ae-badge-ok">● concluído</span>
+                        <span className="ae-badge ae-badge-warn">● pendente</span>
+                        <span className="ae-badge ae-badge-danger">● hoje / urgente</span>
                       </div>
-                      <div className="month-grid">
+                      <div className="ae-month-grid">
                         {dowLabels.map((d) => (
-                          <div key={d} className="dow">
+                          <div key={d} className="ae-dow">
                             {d}
                           </div>
                         ))}
                       </div>
-                      <div className="month-grid">
+                      <div className="ae-month-grid">
                         {calendarData.cells.map((cell, idx) => (
                           <div
                             key={idx}
-                            className={`day ${cell.inMonth ? "" : "muted"}`}
+                            className={`ae-day ${cell.inMonth ? "" : "muted"}`}
                             title={cell.iso}
                           >
-                            <div className="num">{cell.dateNumber}</div>
+                            <div className="ae-day-num">{cell.dateNumber}</div>
                             {cell.eventCount > 0 ? (
-                              <div className={`badge ${cell.highlight}`}>
+                              <div className={`ae-badge ae-badge-${cell.highlight || "warn"}`}>
                                 {cell.eventCount} evento{cell.eventCount === 1 ? "" : "s"}
                               </div>
                             ) : (
-                              <div className="footer-note">&nbsp;</div>
+                              <div className="ae-footer-note">&nbsp;</div>
                             )}
                           </div>
                         ))}
@@ -968,10 +966,10 @@ export default function InstitutionalCommunicationClient() {
                 </div>
 
                 {/* NOTAS E ORIENTAÇÕES */}
-                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
-                  <div className="card-body">
+                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
+                  <div className="ae-card-body">
                     <h3 style={{ marginBottom: "10px" }}>Notas e Orientações</h3>
-                    <div className="footer-note">
+                    <div className="ae-footer-note">
                       <div>
                         <strong>Agenda pronta para uso offline:</strong> os dados ficam no seu navegador. Você pode editar, importar e exportar sem internet.
                       </div>
@@ -985,7 +983,7 @@ export default function InstitutionalCommunicationClient() {
                         <strong>Conteúdo carregado:</strong> Fase 1 — alinhamento interno; Fase 2 — início da campanha; lançamento oficial; adesivaço; Café da Manhã no Comércio.
                       </div>
                       {upcomingReminders.length > 0 && (
-                        <div style={{ marginTop: "10px", color: "var(--warn)" }}>
+                        <div style={{ marginTop: "10px", color: "var(--ae-warn)" }}>
                           <strong>Eventos próximos:</strong>{" "}
                           {upcomingReminders
                             .map(
@@ -1006,23 +1004,23 @@ export default function InstitutionalCommunicationClient() {
 
       {/* MODAL DE ADICIONAR / EDITAR EVENTO */}
       {isModalOpen && (
-        <div className="modal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="modal-card">
-            <div className="card-head">
+        <div className="ae-modal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className="ae-modal-card">
+            <div className="ae-card-head">
               <div>
                 <h2>{editingId !== null ? "Editar evento" : "Novo evento"}</h2>
-                <div className="footer-note">Os dados ficam salvos localmente no navegador.</div>
+                <div className="ae-footer-note">Os dados ficam salvos localmente no navegador.</div>
               </div>
-              <button type="button" className="mini-btn" onClick={closeModal}>
+              <button type="button" className="ae-mini-btn" onClick={closeModal}>
                 ✕
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-grid">
+            <div className="ae-modal-body">
+              <div className="ae-form-grid">
                 <div>
                   <label>Data</label>
                   <input
-                    className="field"
+                    className="ae-field"
                     type="date"
                     value={fDate}
                     onChange={(e) => setFDate(e.target.value)}
@@ -1031,7 +1029,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Categoria</label>
                   <input
-                    className="field"
+                    className="ae-field"
                     placeholder="Ex.: Campanha, Jurídico, Agenda"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
@@ -1040,7 +1038,7 @@ export default function InstitutionalCommunicationClient() {
                 <div className="full">
                   <label>Título</label>
                   <input
-                    className="field"
+                    className="ae-field"
                     placeholder="Ex.: Último dia para convenção"
                     value={fTitle}
                     onChange={(e) => setFTitle(e.target.value)}
@@ -1049,7 +1047,7 @@ export default function InstitutionalCommunicationClient() {
                 <div className="full">
                   <label>Descrição / lembrete</label>
                   <textarea
-                    className="textarea"
+                    className="ae-textarea"
                     placeholder="Detalhes, tarefas e observações"
                     value={fDesc}
                     onChange={(e) => setFDesc(e.target.value)}
@@ -1058,7 +1056,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Responsável</label>
                   <input
-                    className="field"
+                    className="ae-field"
                     placeholder="Ex.: Coordenação geral"
                     value={fResponsible}
                     onChange={(e) => setFResponsible(e.target.value)}
@@ -1067,7 +1065,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Local</label>
                   <input
-                    className="field"
+                    className="ae-field"
                     placeholder="Ex.: Arapongas"
                     value={fLocation}
                     onChange={(e) => setFLocation(e.target.value)}
@@ -1076,7 +1074,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Prioridade</label>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={String(fPriority)}
                     onChange={(e) => setFPriority(Number(e.target.value))}
                   >
@@ -1088,7 +1086,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Status</label>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={String(fDone)}
                     onChange={(e) => setFDone(e.target.value === "true")}
                   >
@@ -1099,7 +1097,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Importante</label>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={String(fImportant)}
                     onChange={(e) => setFImportant(e.target.value === "true")}
                   >
@@ -1110,7 +1108,7 @@ export default function InstitutionalCommunicationClient() {
                 <div>
                   <label>Notificar antes</label>
                   <select
-                    className="select"
+                    className="ae-select"
                     value={String(fReminder)}
                     onChange={(e) => setFReminder(Number(e.target.value))}
                   >
@@ -1122,11 +1120,11 @@ export default function InstitutionalCommunicationClient() {
                   </select>
                 </div>
               </div>
-              <div className="actions" style={{ justifyContent: "flex-end", marginTop: "6px" }}>
-                <button type="button" className="btn" onClick={closeModal}>
+              <div className="ae-actions" style={{ justifyContent: "flex-end", marginTop: "6px" }}>
+                <button type="button" className="ae-btn" onClick={closeModal}>
                   Cancelar
                 </button>
-                <button type="button" className="btn primary" onClick={saveFromModal}>
+                <button type="button" className="ae-btn ae-btn-primary" onClick={saveFromModal}>
                   Salvar evento
                 </button>
               </div>
