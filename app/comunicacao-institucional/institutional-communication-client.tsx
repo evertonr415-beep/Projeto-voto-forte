@@ -1,1346 +1,1117 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./institutional-communication.css";
 
-const STORAGE_KEY = "pc_dashboard_state_v2";
-const THEME_KEY = "pc_dashboard_theme_v1";
-
-export type PriorityItem = {
-  title: string;
-  body: string;
-};
-
-export type AgendaItem = {
+export type CampaignEvent = {
+  id: number;
   date: string;
-  type: string;
-  desc: string;
-  status: "Pendente" | "Em andamento" | "Confirmado" | "Concluído";
-  owner: string;
-};
-
-export type TerritoryItem = {
-  region: string;
-  priority: "Alta" | "Média" | "Baixa";
-  demands: string;
-};
-
-export type AudienceItem = {
+  category: string;
   title: string;
-  body: string;
+  desc: string;
+  priority: number;
+  done: boolean;
+  important: boolean;
+  reminder: number;
+  location: string;
+  responsible: string;
 };
 
-export type ContentItem = {
-  format: string;
-  theme: string;
-  objective: string;
-  channel: string;
-  due: string;
-};
+const STORAGE_KEY = "agenda-eleitoral-parana-2026-v1";
+const THEME_KEY = "agenda-eleitoral-theme-v1";
 
-export type ComplianceItem = {
-  text: string;
-  ok: boolean;
-};
+const baseEvents: CampaignEvent[] = [
+  {
+    id: 1,
+    date: "2026-08-01",
+    category: "FASE 1 — Alinhamento interno",
+    title: "Reunião com Secretários Municipais",
+    desc: "09h00 · Alinhamento da organização da campanha, calendário geral, comunicação interna, definição das equipes e identificação de lideranças, classificação e criação de células.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 7,
+    location: "Arapongas",
+    responsible: "Coordenação geral",
+  },
+  {
+    id: 2,
+    date: "2026-08-03",
+    category: "FASE 1 — Alinhamento interno",
+    title: "Reunião com a Secretaria Municipal de Saúde",
+    desc: "19h30 · Organização da equipe, cronograma interno, comunicação, participação em eventos, planejamento operacional e identificação de lideranças, classificação e criação de células.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Arapongas",
+    responsible: "Coordenação setorial",
+  },
+  {
+    id: 3,
+    date: "2026-08-04",
+    category: "FASE 1 — Alinhamento interno",
+    title: "Reunião com a Secretaria Municipal de Educação",
+    desc: "19h30 · Organização das equipes, calendário, comunicação interna, logística e identificação de lideranças, classificação e criação de células.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Arapongas",
+    responsible: "Coordenação setorial",
+  },
+  {
+    id: 4,
+    date: "2026-08-05",
+    category: "FASE 1 — Alinhamento interno",
+    title: "Reunião com a Secretaria Municipal de Assistência Social",
+    desc: "19h30 · Identificação de lideranças, classificação e criação de células.",
+    priority: 2,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Arapongas",
+    responsible: "Coordenação setorial",
+  },
+  {
+    id: 5,
+    date: "2026-08-06",
+    category: "FASE 1 — Alinhamento interno",
+    title: "Reunião com as demais Secretarias e Autarquias",
+    desc: "19h30 · Integração entre equipes, cronograma, fluxo operacional, definição dos responsáveis e identificação de lideranças, classificação e criação de células.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Arapongas",
+    responsible: "Coordenação geral",
+  },
+  {
+    id: 6,
+    date: "2026-08-21",
+    category: "FASE 2 — Início da campanha",
+    title: "Lançamento Oficial da Campanha",
+    desc: "19h00 · Pedro Lupion, Sérgio Onofre, convidados, Prefeito de Arapongas, vereadores, apoiadores, Alexandre Cury, Ratinho e demais lideranças. Local: Comitê Tucanos. Responsáveis: Comitê Tucanos e Escritório Athenas.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 7,
+    location: "Comitê Tucanos",
+    responsible: "Comitê Tucanos e Escritório Athenas",
+  },
+  {
+    id: 7,
+    date: "2026-08-22",
+    category: "FASE 2 — Início da campanha",
+    title: "Adesivaço Pedro e Sérgio",
+    desc: "10h00 · Ação para 500 carros. Coordenação Atenas / Tucanos - Edmar Camparoto.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Arapongas",
+    responsible: "Atenas / Tucanos",
+  },
+  {
+    id: 8,
+    date: "2026-08-24",
+    category: "FASE 2 — Início da campanha",
+    title: "Início do projeto Café da Manhã no Comércio",
+    desc: "Coordenação: Sonia Passoni. Objetivos operacionais: a definir.",
+    priority: 2,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Comércio local",
+    responsible: "Sonia Passoni",
+  },
+  {
+    id: 9,
+    date: "2026-08-16",
+    category: "Campanha",
+    title: "Início oficial da campanha",
+    desc: "Liberar peças, agenda pública, reuniões e comunicação eleitoral permitida.",
+    priority: 2,
+    done: false,
+    important: true,
+    reminder: 7,
+    location: "Paraná",
+    responsible: "Equipe de campanha",
+  },
+  {
+    id: 10,
+    date: "2026-08-16",
+    category: "Jurídico",
+    title: "Divulgação oficial das candidaturas",
+    desc: "Acompanhar publicação e conferência dos registros.",
+    priority: 2,
+    done: false,
+    important: false,
+    reminder: 3,
+    location: "TRE-PR",
+    responsible: "Jurídico",
+  },
+  {
+    id: 11,
+    date: "2026-09-26",
+    category: "Propaganda",
+    title: "Último dia de propaganda sonora",
+    desc: "Encerrar conteúdos e ações com restrição de horário.",
+    priority: 2,
+    done: false,
+    important: false,
+    reminder: 3,
+    location: "Paraná",
+    responsible: "Comunicação",
+  },
+  {
+    id: 12,
+    date: "2026-10-02",
+    category: "Agenda",
+    title: "Último dia para comícios",
+    desc: "Fechar a agenda presencial antes da votação.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 1,
+    location: "Paraná",
+    responsible: "Coordenação geral",
+  },
+  {
+    id: 13,
+    date: "2026-10-04",
+    category: "Eleição",
+    title: "1º turno",
+    desc: "Dia da votação em todo o Paraná.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 1,
+    location: "Paraná",
+    responsible: "Toda a campanha",
+  },
+  {
+    id: 14,
+    date: "2026-10-06",
+    category: "Jurídico",
+    title: "Resultado oficial do 1º turno",
+    desc: "Acompanhar apuração e eventuais recursos.",
+    priority: 2,
+    done: false,
+    important: false,
+    reminder: 1,
+    location: "TRE-PR",
+    responsible: "Jurídico",
+  },
+  {
+    id: 15,
+    date: "2026-11-22",
+    category: "Eleição",
+    title: "2º turno",
+    desc: "Se necessário, votação de segundo turno.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 3,
+    location: "Paraná",
+    responsible: "Toda a campanha",
+  },
+  {
+    id: 16,
+    date: "2026-12-19",
+    category: "Diplomação",
+    title: "Diplomação dos eleitos",
+    desc: "Fechar a fase pós-eleitoral e documentação final.",
+    priority: 2,
+    done: false,
+    important: false,
+    reminder: 7,
+    location: "TRE-PR",
+    responsible: "Jurídico",
+  },
+  {
+    id: 17,
+    date: "2027-01-01",
+    category: "Posse",
+    title: "Posse do Governador e Vice",
+    desc: "Início do mandato executivo estadual.",
+    priority: 3,
+    done: false,
+    important: true,
+    reminder: 15,
+    location: "Curitiba",
+    responsible: "Cerimonial",
+  },
+  {
+    id: 18,
+    date: "2027-01-01",
+    category: "Posse",
+    title: "Posse dos deputados estaduais e federais",
+    desc: "Conferir agenda de cerimônia e compromissos institucionais.",
+    priority: 2,
+    done: false,
+    important: false,
+    reminder: 15,
+    location: "Curitiba",
+    responsible: "Cerimonial",
+  },
+];
 
-export type InstitutionalState = {
-  overviewGoal: string;
-  overviewMessage: string;
-  priorities: PriorityItem[];
-  agenda: AgendaItem[];
-  territory: TerritoryItem[];
-  audiences: AudienceItem[];
-  contents: ContentItem[];
-  compliance: ComplianceItem[];
-  cand1Name: string;
-  cand1Role: string;
-  cand1Bio: string;
-  cand1Tone: string;
-  cand2Name: string;
-  cand2Role: string;
-  cand2Bio: string;
-  cand2Tone: string;
-  msg1: string;
-  msg2: string;
-  editorNotes: string;
-  theme: "dark" | "light";
-  lastSaved: string | null;
-};
+const dowLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-const defaultState: InstitutionalState = {
-  overviewGoal:
-    "Consolidar a comunicação institucional e estratégica do mandato em Arapongas e no Norte do Paraná, com foco em prestação de contas, proximidade com a população, transparência de recursos públicos e fortalecimento das lideranças municipais.",
-  overviewMessage:
-    "Compromisso permanente com o desenvolvimento de Arapongas: valorização do polo moveleiro, investimentos contínuos na saúde regional (Honpar), segurança pública preventiva e infraestrutura urbana de qualidade para todos os bairros.",
-  priorities: [
-    {
-      title: "Articulação de Recursos para o Hospital Honpar",
-      body: "Acompanhar a liberação de R$ 8,5 milhões em emendas de custeio e novos leitos de UTI para atender Arapongas e mais 21 municípios da macrorregião Norte.",
-    },
-    {
-      title: "Plano de Modernização e Apoio ao Polo Moveleiro",
-      body: "Estruturar junto ao SIMA (Sindicato das Indústrias Moveleiras) e SENAI o programa de capacitação técnica, incentivos fiscais e escoamento logístico na PR-444.",
-    },
-    {
-      title: "Giro nos Bairros e Escuta Popular (Arapongas Ativa)",
-      body: "Intensificar a presença nos distritos de Aricanduva, Flamingos, Petrópolis e San Raphael para mapear demandas de recape asfáltico, drenagem e iluminação pública LED.",
-    },
-    {
-      title: "Segurança Pública e Iluminação nos Bairros",
-      body: "Fiscalizar o plano de expansão do videomonitoramento inteligente (Muralha Digital) integrado com as forças policiais e Guarda Municipal de Arapongas.",
-    },
-    {
-      title: "Comunicação e Prestação de Contas Digital",
-      body: "Publicar quinzenalmente o boletim oficial de ações e projetos votados na Assembleia Legislativa e na Câmara dos Deputados com linguagem clara e acessível.",
-    },
-  ],
-  agenda: [
-    {
-      date: "Seg 08:00",
-      type: "Reunião de Gabinete",
-      desc: "Alinhamento semanal com a coordenação política, assessoria de imprensa e líderes comunitários de Arapongas.",
-      status: "Concluído",
-      owner: "Coordenação Geral",
-    },
-    {
-      date: "Seg 14:30",
-      type: "Gravação & Mídia",
-      desc: "Gravação do podcast e vídeos informativos sobre as novas conquistas para a saúde e educação de Arapongas.",
-      status: "Concluído",
-      owner: "Equipe de Comunicação",
-    },
-    {
-      date: "Ter 09:30",
-      type: "Visita Técnica",
-      desc: "Vistoria técnica nas obras de pavimentação asfáltica e drenagem nos bairros Flamingos e Jardim Petrópolis.",
-      status: "Em andamento",
-      owner: "Engenharia & Gabinete",
-    },
-    {
-      date: "Ter 16:00",
-      type: "Setor Produtivo",
-      desc: "Reunião executiva na sede do SIMA com empresários do setor moveleiro e representantes da ACIA.",
-      status: "Confirmado",
-      owner: "Desenvolvimento Regional",
-    },
-    {
-      date: "Qua 10:00",
-      type: "Sessão Plenária",
-      desc: "Votação em plenário do projeto de lei de apoio à inovação tecnológica industrial e incentivos ao Norte do Paraná.",
-      status: "Confirmado",
-      owner: "Assessoria Parlamentar",
-    },
-    {
-      date: "Qua 19:30",
-      type: "Plenária Comunitária",
-      desc: "Encontro aberto com presidentes de associações de moradores e lideranças de bairros no Centro Social.",
-      status: "Confirmado",
-      owner: "Mobilização Popular",
-    },
-    {
-      date: "Qui 08:30",
-      type: "Entrevista de Rádio",
-      desc: "Entrevista ao vivo na Rádio Arapongas e emissoras do Vale do Ivaí prestando contas das ações do mandato.",
-      status: "Confirmado",
-      owner: "Assessoria de Imprensa",
-    },
-    {
-      date: "Qui 15:00",
-      type: "Fiscalização",
-      desc: "Visita ao canteiro de obras da nova Unidade Básica de Saúde (UBS) do Jardim Aeroporto.",
-      status: "Pendente",
-      owner: "Comissão de Saúde",
-    },
-    {
-      date: "Sex 10:30",
-      type: "Articulação Federal",
-      desc: "Videoconferência com ministérios e secretarias estaduais para liberação de convênios de infraestrutura urbana.",
-      status: "Pendente",
-      owner: "Relações Institucionais",
-    },
-    {
-      date: "Sex 17:00",
-      type: "Relatório de Gestão",
-      desc: "Fechamento e aprovação do boletim informativo quinzenal para envio por WhatsApp e listas de transmissão.",
-      status: "Pendente",
-      owner: "Comunicação Digital",
-    },
-    {
-      date: "Sáb 09:00",
-      type: "Ação de Campo",
-      desc: "Caminhada e conversa com comerciantes, feirantes e moradores no Distrito de Aricanduva e feira do Centro.",
-      status: "Confirmado",
-      owner: "Equipe de Campo",
-    },
-  ],
-  territory: [
-    {
-      region: "Núcleo Urbano & Centro Comercial",
-      priority: "Alta",
-      demands: "Revitalização do calçadão, segurança noturna reforçada, estacionamento rotativo moderno e apoio ao comércio lojista.",
-    },
-    {
-      region: "Conjunto Flamingos & San Raphael",
-      priority: "Alta",
-      demands: "Ampliação dos horários de atendimento do posto de saúde, pavimentação das vias coletoras e reforma de praças esportivas.",
-    },
-    {
-      region: "Vila Aparecida & Jardim Petrópolis",
-      priority: "Alta",
-      demands: "Obras de drenagem pluvial, regularização fundiária urbana, iluminação LED e policiamento preventivo nas escolas.",
-    },
-    {
-      region: "Parque Industrial I, II, III & Polo Moveleiro",
-      priority: "Alta",
-      demands: "Melhorias nos acessos à PR-444, cursos técnicos gratuitos SENAI/SENAC, internet fibra rápida e incentivos fiscais.",
-    },
-    {
-      region: "Distrito de Aricanduva & Zona Rural",
-      priority: "Média",
-      demands: "Patrulha rural ativa, cascalhamento de estradas vicinais, pontes seguras, transporte escolar eficiente e apoio aos produtores rurais.",
-    },
-    {
-      region: "Jardim Aeroporto & Região Sul",
-      priority: "Média",
-      demands: "Aceleração da construção da nova UBS, linhas de ônibus circulares integradas e creches em período integral.",
-    },
-    {
-      region: "Jardim Panorama & Interlagos",
-      priority: "Média",
-      demands: "Recape asfáltico completo, instalação de academia ao ar livre e ampliação de vagas nos centros de educação infantil.",
-    },
-  ],
-  audiences: [
-    {
-      title: "Lideranças Comunitárias & Presidentes de Bairro",
-      body: "Mapeamento permanente de mais de 80 líderes comunitários de Arapongas com canal de escuta ágil para encaminhamento de solicitações e fiscalização de obras.",
-    },
-    {
-      title: "Setor Moveleiro, Comércio & Empresários (ACIA / SIMA)",
-      body: "Diálogo mensal com industriais e comerciantes para defender pautas de desoneração, crédito produtivo e valorização do principal polo moveleiro do estado.",
-    },
-    {
-      title: "Profissionais da Saúde & Servidores Públicos",
-      body: "Apoio contínuo às equipes médicas do Honpar e postos de saúde, valorização das carreiras da enfermagem, professores e agentes comunitários.",
-    },
-    {
-      title: "Juventude, Universitários & Primeiro Emprego",
-      body: "Programas de incentivo a bolsas de estudo, hubs de tecnologia regional, qualificação em inteligência artificial e apoio a eventos esportivos e culturais.",
-    },
-    {
-      title: "Terceira Idade & Aposentados",
-      body: "Fortalecimento dos Centros de Convivência dos Idosos (CCI), oficinas de saúde preventiva, hidroginástica gratuita e mobilidade com calçadas acessíveis.",
-    },
-    {
-      title: "Agricultores Familiares & Produtores Rurais",
-      body: "Apoio à feira do produtor rural, cooperativismo, fornecimento de calcário, maquinário agrícola compartilhado e segurança no campo.",
-    },
-  ],
-  contents: [
-    {
-      format: "Carrossel Informativo",
-      theme: "Saúde Regional: Conquistas do Honpar",
-      objective: "Apresentar prestação de contas com gráficos dos novos leitos e recursos federais/estaduais destinados a Arapongas.",
-      channel: "Instagram / Facebook / WhatsApp",
-      due: "Segunda",
-    },
-    {
-      format: "Vídeo Curto (Reels / TikTok)",
-      theme: "Giro nos Bairros: Obras no Flamingos",
-      objective: "Mostrar o andamento do recapeamento asfáltico e ouvir depoimentos de moradores e comerciantes locais.",
-      channel: "Reels / TikTok / Shorts",
-      due: "Terça",
-    },
-    {
-      format: "Card de Posicionamento",
-      theme: "Votação na Assembleia: Incentivo ao Moveleiro",
-      objective: "Explicar como o projeto de lei aprovado protege os empregos e a competitividade das indústrias de Arapongas.",
-      channel: "Instagram / LinkedIn / X",
-      due: "Quarta",
-    },
-    {
-      format: "Infográfico em PDF",
-      theme: "Relatório de Gestão Semestral",
-      objective: "Documento oficial completo para download com todas as emendas, projetos e atendimentos realizados no período.",
-      channel: "WhatsApp Listas / Site Oficial",
-      due: "Quinta",
-    },
-    {
-      format: "Vídeo Depoimento",
-      theme: "A Força do Trabalhador de Arapongas",
-      objective: "Série documental valorizando os operários, marceneiros e costureiras da indústria moveleira da nossa cidade.",
-      channel: "YouTube / Instagram / Facebook",
-      due: "Sexta",
-    },
-    {
-      format: "Boletim de Áudio (Podcast)",
-      theme: "Giro de Notícias do Norte do Paraná",
-      objective: "Resumo em áudio de 3 minutos enviado diretamente para rádios comunitárias e lideranças do interior.",
-      channel: "WhatsApp Broadcast / Rádio",
-      due: "Sábado",
-    },
-    {
-      format: "Stories com Enquete",
-      theme: "Você Decide: Prioridades para 2027",
-      objective: "Enquete interativa para a população votar nas áreas prioritárias de investimento no seu bairro.",
-      channel: "Instagram Stories",
-      due: "Domingo",
-    },
-  ],
-  compliance: [
-    {
-      text: "Revisar rigorosamente ortografia, nomes de autoridades, siglas e cargos antes de qualquer publicação ou disparo.",
-      ok: true,
-    },
-    {
-      text: "Checar autorização de uso de imagem e termos de consentimento assinados com moradores e crianças em vídeos/fotos.",
-      ok: true,
-    },
-    {
-      text: "Validar valores exatos de emendas, convênios e números orçamentários com as secretarias competentes e Portal da Transparência.",
-      ok: true,
-    },
-    {
-      text: "Garantir aplicação fiel do manual de identidade visual institucional (paleta oficial, tipografia e contraste acessível).",
-      ok: true,
-    },
-    {
-      text: "Proibir termos e expressões de autopromoção vedadas pela legislação eleitoral e manter tom estritamente informativo e transparente.",
-      ok: true,
-    },
-    {
-      text: "Inserir créditos obrigatórios de fotografia, filmagem e fontes estatísticas oficiais (TSE, IBGE, IPARDES).",
-      ok: true,
-    },
-    {
-      text: "Respeitar rigorosamente a LGPD (Lei Geral de Proteção de Dados) na gestão da base de contatos e cadastros de lideranças.",
-      ok: true,
-    },
-    {
-      text: "Registrar e arquivar termos de homologação da assessoria jurídica antes de campanhas institucionais de rádio/TV.",
-      ok: true,
-    },
-  ],
-  cand1Name: "Deputado Estadual pelo Paraná",
-  cand1Role: "Mandato Legislativo · Representação de Arapongas e Região Norte",
-  cand1Bio: "Parlamentar com sólida trajetória de defesa dos municípios do Norte do Paraná e do Vale do Ivaí. Atuação destacada na destinação de recursos para a infraestrutura urbana, duplicação e segurança da PR-444, custeio do Hospital Honpar e fortalecimento do polo industrial moveleiro de Arapongas. Defensor da desburocratização, transparência pública e valorização dos servidores municipais.",
-  cand1Tone: "Proximidade comunitária, clareza, prestação de contas objetiva e firmeza na defesa dos interesses regionais.",
-  cand2Name: "Deputado Federal / Bancada Paranaense",
-  cand2Role: "Congresso Nacional · Articulação Federal e Orçamento da União",
-  cand2Bio: "Representante de Arapongas e do Paraná em Brasília, com foco na atração de verbas ministeriais para saúde de alta complexidade, saneamento básico, habitação popular e incentivo à exportação das empresas moveleiras e agrícolas paranaenses. Membro ativo das frentes parlamentares da indústria e da saúde.",
-  cand2Tone: "Institucional, técnico, propositivo, fundamentado em dados e de fácil compreensão pelo cidadão comum.",
-  msg1: "Arapongas merece representação forte, séria e comprometida com entregas reais. Cada recurso destinado ao nosso município transforma-se em atendimento digno na saúde, ruas asfaltadas e mais oportunidades de trabalho para as nossas famílias.",
-  msg2: "O nosso mandato é construído ouvindo as pessoas em cada bairro e distrito. Transparência não é promessa, é dever diário: prestamos contas de cada projeto e de cada centavo investido no desenvolvimento da nossa terra.",
-  editorNotes: "• CRONOGRAMA DA SEMANA:\n  - Segunda-feira: Disparo do relatório de saúde para as lideranças via WhatsApp.\n  - Terça-feira: Equipe de vídeo no Conjunto Flamingos às 09:00 para captar depoimentos sobre as novas obras.\n  - Quarta-feira: Acompanhamento da votação na ALEP às 14:30 com transmissão ao vivo.\n  - Quinta-feira: Envio de release à imprensa regional sobre as emendas do Honpar.\n  - Sexta-feira: Gravação no Parque Industrial com trabalhadores do setor moveleiro.\n  - Sábado: Cobertura da plenária de Aricanduva com fotos e lista de presença digital.\n\n• DIRETRIZES DA COORDENAÇÃO:\n  1. Manter tempo de resposta de no máximo 2 horas para mensagens de lideranças cadastradas.\n  2. Checar todos os dados com o portal da transparência antes de postar cards orçamentários.\n  3. Priorizar vídeos com depoimentos reais da comunidade em vez de discursos longos de gabinete.",
-  theme: "dark",
-  lastSaved: null,
-};
+function daysUntil(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - t.getTime()) / 86400000);
+}
 
-function clone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
+function dateLabel(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("pt-BR");
+}
+
+function weekdayLabel(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("pt-BR", { weekday: "long" });
+}
+
+function isoToDate(dateStr: string) {
+  return new Date(dateStr + "T00:00:00").getTime();
 }
 
 export default function InstitutionalCommunicationClient() {
-  const [state, setState] = useState<InstitutionalState>(defaultState);
-  const [activeTab, setActiveTab] = useState<
-    "visao" | "perfil" | "agenda" | "territorio" | "conteudo" | "compliance" | "exportacao"
-  >("visao");
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [events, setEvents] = useState<CampaignEvent[]>(baseEvents);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("dateAsc");
+  const [filterMonth, setFilterMonth] = useState<Date>(new Date("2026-08-01T00:00:00"));
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [fDate, setFDate] = useState("2026-08-16");
+  const [fCategory, setFCategory] = useState("Agenda");
+  const [fTitle, setFTitle] = useState("");
+  const [fDesc, setFDesc] = useState("");
+  const [fResponsible, setFResponsible] = useState("");
+  const [fLocation, setFLocation] = useState("");
+  const [fPriority, setFPriority] = useState(2);
+  const [fDone, setFDone] = useState(false);
+  const [fImportant, setFImportant] = useState(false);
+  const [fReminder, setFReminder] = useState(3);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Inicialização e Carregamento LocalStorage
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
       const savedTheme = (localStorage.getItem(THEME_KEY) as "dark" | "light") || "dark";
+      setTheme(savedTheme);
+
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        setState({ ...clone(defaultState), ...parsed, theme: savedTheme });
-      } else {
-        setState((prev) => ({ ...prev, theme: savedTheme }));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setEvents(parsed);
+        }
       }
     } catch {
       // Fallback
-    } finally {
-      setIsLoaded(true);
     }
   }, []);
 
-  const saveToStorage = useCallback((nextState: InstitutionalState) => {
-    const timestamp = new Date().toLocaleString("pt-BR");
-    const updated = { ...nextState, lastSaved: timestamp };
-    setState(updated);
+  const saveEvents = useCallback((newEvents: CampaignEvent[]) => {
+    setEvents(newEvents);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      localStorage.setItem(THEME_KEY, updated.theme);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newEvents));
     } catch {}
   }, []);
 
-  const updateField = useCallback(
-    <K extends keyof InstitutionalState>(field: K, value: InstitutionalState[K]) => {
-      setState((prev) => {
-        const next = { ...prev, [field]: value };
-        saveToStorage(next);
-        return next;
-      });
-    },
-    [saveToStorage],
-  );
-
   const toggleTheme = useCallback(() => {
-    setState((prev) => {
-      const nextTheme = prev.theme === "light" ? "dark" : "light";
-      const next = { ...prev, theme: nextTheme };
-      saveToStorage(next);
+    setTheme((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {}
       return next;
     });
-  }, [saveToStorage]);
+  }, []);
 
-  const resetToDefault = useCallback(() => {
-    if (window.confirm("Deseja carregar a base de dados oficial completa de Arapongas e do mandato?")) {
-      saveToStorage(clone(defaultState));
+  const categories = useMemo(() => {
+    return Array.from(new Set(events.map((e) => e.category))).sort((a, b) =>
+      a.localeCompare(b, "pt-BR"),
+    );
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = events.filter((ev) => {
+      const hay = `${ev.date} ${ev.category} ${ev.title} ${ev.desc} ${ev.responsible} ${ev.location}`.toLowerCase();
+      const okQ = !q || hay.includes(q);
+      const okCat = filterCategory === "all" || ev.category === filterCategory;
+      const okStatus =
+        filterStatus === "all" ||
+        (filterStatus === "pending" && !ev.done) ||
+        (filterStatus === "done" && ev.done) ||
+        (filterStatus === "important" && ev.important);
+      return okQ && okCat && okStatus;
+    });
+
+    list.sort((a, b) => {
+      if (sortBy === "dateDesc") return isoToDate(b.date) - isoToDate(a.date);
+      if (sortBy === "title") return a.title.localeCompare(b.title, "pt-BR");
+      if (sortBy === "priority")
+        return b.priority - a.priority || isoToDate(a.date) - isoToDate(b.date);
+      return isoToDate(a.date) - isoToDate(b.date);
+    });
+
+    return list;
+  }, [events, search, filterCategory, filterStatus, sortBy]);
+
+  // Estatísticas
+  const stats = useMemo(() => {
+    const total = events.length;
+    const pending = events.filter((e) => !e.done).length;
+    const done = events.filter((e) => e.done).length;
+    const next = [...events]
+      .filter((e) => !e.done)
+      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date))[0];
+    const nextDays = next ? daysUntil(next.date) : null;
+
+    return { total, pending, done, next, nextDays };
+  }, [events]);
+
+  // Próximos 4 eventos para contagem regressiva
+  const upcomingCountdowns = useMemo(() => {
+    return [...events]
+      .filter((e) => !e.done)
+      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date))
+      .slice(0, 4);
+  }, [events]);
+
+  // Lembretes próximos
+  const upcomingReminders = useMemo(() => {
+    return events
+      .filter(
+        (ev) =>
+          !ev.done &&
+          daysUntil(ev.date) >= 0 &&
+          daysUntil(ev.date) <= Math.max(1, ev.reminder || 0),
+      )
+      .slice(0, 4);
+  }, [events]);
+
+  // Ações CRUD
+  const toggleDone = (id: number) => {
+    const updated = events.map((ev) => (ev.id === id ? { ...ev, done: !ev.done } : ev));
+    saveEvents(updated);
+  };
+
+  const duplicateEvent = (id: number) => {
+    const src = events.find((ev) => ev.id === id);
+    if (!src) return;
+    const nextId = Math.max(0, ...events.map((e) => e.id)) + 1;
+    const copy: CampaignEvent = {
+      ...src,
+      id: nextId,
+      title: `${src.title} (cópia)`,
+      done: false,
+    };
+    saveEvents([...events, copy]);
+  };
+
+  const deleteEvent = (id: number) => {
+    const target = events.find((e) => e.id === id);
+    if (!target) return;
+    if (window.confirm(`Deseja excluir "${target.title}"?`)) {
+      saveEvents(events.filter((e) => e.id !== id));
     }
-  }, [saveToStorage]);
+  };
 
-  const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const openModal = (ev: CampaignEvent | null = null) => {
+    if (ev) {
+      setEditingId(ev.id);
+      setFDate(ev.date);
+      setFCategory(ev.category);
+      setFTitle(ev.title);
+      setFDesc(ev.desc);
+      setFResponsible(ev.responsible || "");
+      setFLocation(ev.location || "");
+      setFPriority(ev.priority ?? 2);
+      setFDone(Boolean(ev.done));
+      setFImportant(Boolean(ev.important));
+      setFReminder(ev.reminder ?? 3);
+    } else {
+      setEditingId(null);
+      setFDate("2026-08-16");
+      setFCategory("Agenda");
+      setFTitle("");
+      setFDesc("");
+      setFResponsible("");
+      setFLocation("");
+      setFPriority(2);
+      setFDone(false);
+      setFImportant(false);
+      setFReminder(3);
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+  };
+
+  const saveFromModal = () => {
+    if (!fDate || !fTitle.trim() || !fCategory.trim()) {
+      alert("Preencha data, título e categoria.");
+      return;
+    }
+
+    const payload: Omit<CampaignEvent, "id"> = {
+      date: fDate,
+      category: fCategory.trim(),
+      title: fTitle.trim(),
+      desc: fDesc.trim(),
+      responsible: fResponsible.trim(),
+      location: fLocation.trim(),
+      priority: Number(fPriority),
+      done: fDone,
+      important: fImportant,
+      reminder: Number(fReminder),
+    };
+
+    if (editingId !== null) {
+      saveEvents(events.map((x) => (x.id === editingId ? { ...x, ...payload } : x)));
+    } else {
+      const nextId = Math.max(0, ...events.map((e) => e.id)) + 1;
+      saveEvents([...events, { id: nextId, ...payload }]);
+    }
+    closeModal();
+  };
+
+  // Exportar JSON
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "painel-comunicacao-arapongas.json";
+    a.download = "agenda-eleitoral-pedro-lupion-sergio-onofre-2026.json";
     a.click();
-    URL.revokeObjectURL(url);
-  }, [state]);
-
-  const pendingAlertsCount = useMemo(
-    () => state.compliance.filter((c) => !c.ok).length,
-    [state.compliance],
-  );
-
-  // Handlers de Prioridades
-  const addPriority = () => {
-    updateField("priorities", [
-      ...state.priorities,
-      { title: "Nova prioridade estratégica", body: "Descreva aqui o objetivo e ações prioritárias." },
-    ]);
-  };
-  const removePriority = (index: number) => {
-    updateField(
-      "priorities",
-      state.priorities.filter((_, i) => i !== index),
-    );
-  };
-  const editPriority = (index: number, key: keyof PriorityItem, val: string) => {
-    const next = [...state.priorities];
-    next[index] = { ...next[index], [key]: val };
-    updateField("priorities", next);
+    setTimeout(() => URL.revokeObjectURL(url), 500);
   };
 
-  // Handlers de Agenda
-  const addAgendaItem = () => {
-    updateField("agenda", [
-      ...state.agenda,
-      { date: "Nova data/hora", type: "Compromisso", desc: "Descreva o compromisso ou pauta", status: "Pendente", owner: "Responsável" },
-    ]);
-  };
-  const removeAgendaItem = (index: number) => {
-    updateField(
-      "agenda",
-      state.agenda.filter((_, i) => i !== index),
-    );
-  };
-  const editAgendaItem = (index: number, key: keyof AgendaItem, val: string) => {
-    const next = [...state.agenda];
-    next[index] = { ...next[index], [key]: val };
-    updateField("agenda", next);
-  };
-
-  // Handlers de Território
-  const addTerritoryItem = () => {
-    updateField("territory", [
-      ...state.territory,
-      { region: "Novo bairro ou região", priority: "Alta", demands: "Descreva as demandas levantadas" },
-    ]);
-  };
-  const removeTerritoryItem = (index: number) => {
-    updateField(
-      "territory",
-      state.territory.filter((_, i) => i !== index),
-    );
-  };
-  const editTerritoryItem = (index: number, key: keyof TerritoryItem, val: string) => {
-    const next = [...state.territory];
-    next[index] = { ...next[index], [key]: val };
-    updateField("territory", next);
+  // Importar JSON
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (!Array.isArray(parsed)) throw new Error("Formato inválido");
+        const imported: CampaignEvent[] = parsed.map((item, idx) => ({
+          id: item.id ?? idx + 1,
+          date: item.date,
+          category: item.category || "Agenda",
+          title: item.title || "Sem título",
+          desc: item.desc || "",
+          responsible: item.responsible || "",
+          location: item.location || "",
+          priority: Number(item.priority ?? 2),
+          done: Boolean(item.done),
+          important: Boolean(item.important),
+          reminder: Number(item.reminder ?? 3),
+        }));
+        saveEvents(imported);
+        alert("Agenda importada com sucesso!");
+      } catch {
+        alert("Não foi possível importar o arquivo JSON.");
+      }
+    };
+    reader.readAsText(file);
   };
 
-  // Handlers de Audiência
-  const addAudienceItem = () => {
-    updateField("audiences", [
-      ...state.audiences,
-      { title: "Novo segmento ou interlocutor", body: "Descreva o público e a estratégia de diálogo." },
-    ]);
-  };
-  const removeAudienceItem = (index: number) => {
-    updateField(
-      "audiences",
-      state.audiences.filter((_, i) => i !== index),
-    );
-  };
-  const editAudienceItem = (index: number, key: keyof AudienceItem, val: string) => {
-    const next = [...state.audiences];
-    next[index] = { ...next[index], [key]: val };
-    updateField("audiences", next);
+  // Restaurar Base Original
+  const resetBase = () => {
+    if (window.confirm("Restaurar o modelo original da campanha de Pedro Lupion e Sérgio Onofre?")) {
+      saveEvents(JSON.parse(JSON.stringify(baseEvents)));
+    }
   };
 
-  // Handlers de Conteúdo
-  const addContentItem = () => {
-    updateField("contents", [
-      ...state.contents,
-      { format: "Formato", theme: "Tema da peça", objective: "Objetivo", channel: "Canais", due: "Prazo" },
-    ]);
-  };
-  const removeContentItem = (index: number) => {
-    updateField(
-      "contents",
-      state.contents.filter((_, i) => i !== index),
-    );
-  };
-  const editContentItem = (index: number, key: keyof ContentItem, val: string) => {
-    const next = [...state.contents];
-    next[index] = { ...next[index], [key]: val };
-    updateField("contents", next);
-  };
+  // Funções de Calendário
+  const calendarData = useMemo(() => {
+    const y = filterMonth.getFullYear();
+    const m = filterMonth.getMonth();
+    const first = new Date(y, m, 1);
+    const start = new Date(first);
+    start.setDate(1 - first.getDay());
 
-  // Handlers de Compliance
-  const addComplianceItem = () => {
-    updateField("compliance", [
-      ...state.compliance,
-      { text: "Novo item de checagem jurídica e editorial", ok: false },
-    ]);
-  };
-  const toggleComplianceItem = (index: number) => {
-    const next = [...state.compliance];
-    next[index] = { ...next[index], ok: !next[index].ok };
-    updateField("compliance", next);
-  };
-  const removeComplianceItem = (index: number) => {
-    updateField(
-      "compliance",
-      state.compliance.filter((_, i) => i !== index),
-    );
-  };
-  const editComplianceItem = (index: number, val: string) => {
-    const next = [...state.compliance];
-    next[index] = { ...next[index], text: val };
-    updateField("compliance", next);
-  };
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      const inMonth = d.getMonth() === m;
+      const dayEvents = events.filter((ev) => ev.date === iso);
+      const highlight = dayEvents.some((ev) => ev.done)
+        ? "ok"
+        : dayEvents.length
+          ? dayEvents.some((ev) => ev.important)
+            ? "danger"
+            : "warn"
+          : "";
 
-  if (!isLoaded) {
-    return (
-      <div className="pc-embedded-container" style={{ display: "grid", placeItems: "center", minHeight: "400px" }}>
-        <p style={{ color: "var(--pc-muted)" }}>Carregando Painel Institucional…</p>
-      </div>
-    );
-  }
+      cells.push({
+        dateNumber: d.getDate(),
+        iso,
+        inMonth,
+        eventCount: dayEvents.length,
+        highlight,
+      });
+    }
+
+    return {
+      monthLabel: filterMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
+      cells,
+    };
+  }, [filterMonth, events]);
 
   return (
-    <div
-      className={`pc-embedded-container ${state.theme === "light" ? "pc-theme-light" : ""}`}
-      data-theme={state.theme}
-    >
-      {/* SUB-HEADER ELEGANTE */}
-      <div className="pc-embedded-header">
-        <div className="pc-embedded-title">
-          <div className="pc-logo-mini">PC</div>
-          <div>
-            <h2>Painel de Comunicação & Gestão Institucional</h2>
-            <p>Organização de conteúdo, agenda, território e conformidade — Arapongas e Paraná.</p>
-          </div>
-        </div>
-        <div className="pc-embedded-actions">
-          <span className="pc-chip">
-            <span className="dot" /> {state.lastSaved ? `Salvo: ${state.lastSaved}` : "Base oficial ativa"}
-          </span>
-          <button type="button" className="pc-btn ghost" onClick={toggleTheme}>
-            {state.theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
-          </button>
-          <button type="button" className="pc-btn" onClick={exportJson}>
-            📥 Exportar JSON
-          </button>
-          <button type="button" className="pc-btn success" onClick={resetToDefault}>
-            🔄 Restaurar base oficial
-          </button>
-        </div>
-      </div>
-
-      {/* ABAS HORIZONTAIS DE ALTA USABILIDADE */}
-      <nav className="pc-horizontal-tabs" role="tablist">
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "visao" ? "active" : ""}`}
-          onClick={() => setActiveTab("visao")}
-        >
-          📊 Visão Geral ({state.priorities.length} prioridades)
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "perfil" ? "active" : ""}`}
-          onClick={() => setActiveTab("perfil")}
-        >
-          👤 Perfil & Mandatos
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "agenda" ? "active" : ""}`}
-          onClick={() => setActiveTab("agenda")}
-        >
-          📅 Agenda & Entregas ({state.agenda.length} itens)
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "territorio" ? "active" : ""}`}
-          onClick={() => setActiveTab("territorio")}
-        >
-          📍 Território & Bairros ({state.territory.length} regiões)
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "conteudo" ? "active" : ""}`}
-          onClick={() => setActiveTab("conteudo")}
-        >
-          🎬 Conteúdo & Peças ({state.contents.length} peças)
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "compliance" ? "active" : ""}`}
-          onClick={() => setActiveTab("compliance")}
-        >
-          ✅ Compliance {pendingAlertsCount > 0 ? `(${pendingAlertsCount} pendentes)` : "(100% OK)"}
-        </button>
-        <button
-          type="button"
-          className={`pc-tab-pill ${activeTab === "exportacao" ? "active" : ""}`}
-          onClick={() => setActiveTab("exportacao")}
-        >
-          💾 Exportação & Backup
-        </button>
-      </nav>
-
-      {/* ÁREA DE CONTEÚDO */}
-      <div className="pc-tab-content-area">
-        {/* 1. VISÃO GERAL */}
-        {activeTab === "visao" && (
-          <>
-            <div className="pc-hero">
-              <div className="pc-hero-banner">
-                <div className="pc-status-tag">
-                  <span className="dot" /> Arapongas e Norte do Paraná · Monitoramento em Tempo Real
-                </div>
-                <h3>Comunicação clara, moderna e orientada a informação pública</h3>
-                <p>
-                  Organização estratégica da presença pública: gestão de prioridades do mandato, agenda de fiscalização,
-                  produção de conteúdo institucional e atendimento às demandas dos bairros de Arapongas.
-                </p>
-                <div className="pc-hero-kpis">
-                  <div className="pc-kpi">
-                    <strong>2</strong>
-                    <span>Frentes Parlamentares Ativas</span>
-                  </div>
-                  <div className="pc-kpi">
-                    <strong>{state.agenda.length}</strong>
-                    <span>Compromissos na Semana</span>
-                  </div>
-                  <div className="pc-kpi">
-                    <strong>{state.territory.length}</strong>
-                    <span>Regiões & Bairros Mapeados</span>
-                  </div>
-                </div>
-              </div>
-              <div className="pc-hero-side">
-                <div className="pc-mini-stat">
-                  <div className="label">Status da Operação</div>
-                  <div className="value" style={{ color: "var(--pc-accent-2)" }}>Ativo e Operacional</div>
-                </div>
-                <div className="pc-mini-stat">
-                  <div className="label">Último salvamento</div>
-                  <div className="value" style={{ fontSize: "0.92rem" }}>
-                    {state.lastSaved || "Base oficial sincronizada"}
-                  </div>
-                </div>
-                <div className="pc-mini-stat">
-                  <div className="label">Conformidade Editorial</div>
-                  <div className="value" style={{ color: pendingAlertsCount === 0 ? "var(--pc-success)" : "var(--pc-warning)" }}>
-                    {pendingAlertsCount === 0 ? "100% Homologado" : `${pendingAlertsCount} pendências`}
-                  </div>
-                </div>
+    <div className={`ae-root ${theme === "light" ? "light-mode" : ""}`} data-theme={theme}>
+      <div className="shell">
+        {/* TOPBAR */}
+        <header className="topbar">
+          <div className="brand">
+            <div className="logo">🗳️</div>
+            <div>
+              <h1>Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
+              <div className="footer-note">
+                Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
               </div>
             </div>
+          </div>
+          <div className="toolbar">
+            <button type="button" className="btn ghost" onClick={toggleTheme}>
+              {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              ⬆️ Importar JSON
+            </button>
+            <button type="button" className="btn" onClick={exportJson}>
+              ⬇️ Exportar JSON
+            </button>
+            <button type="button" className="btn" onClick={() => window.print()}>
+              🖨️ Imprimir
+            </button>
+            <button type="button" className="btn good" onClick={resetBase}>
+              ↺ Restaurar modelo
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            hidden
+            onChange={handleImportFile}
+          />
+        </header>
 
-            <div className="pc-grid-3">
-              <div className="pc-card">
-                <h4>🎯 Resumo Estratégico do Mandato</h4>
-                <div className="pc-field">
-                  <label>Objetivo Editorial & Institucional</label>
-                  <textarea
-                    value={state.overviewGoal}
-                    onChange={(e) => updateField("overviewGoal", e.target.value)}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Mensagem Central e Posicionamento</label>
-                  <textarea
-                    value={state.overviewMessage}
-                    onChange={(e) => updateField("overviewMessage", e.target.value)}
-                  />
-                </div>
-              </div>
+        {/* STATS BAR */}
+        <section className="stats">
+          <div className="stat">
+            <div className="label">Total de eventos</div>
+            <div className="value">{stats.total}</div>
+            <div className="hint">marcos no calendário</div>
+          </div>
+          <div className="stat">
+            <div className="label">Pendentes</div>
+            <div className="value">{stats.pending}</div>
+            <div className="hint">ainda exigem acompanhamento</div>
+          </div>
+          <div className="stat">
+            <div className="label">Concluídos</div>
+            <div className="value">{stats.done}</div>
+            <div className="hint">marcados como finalizados</div>
+          </div>
+          <div className="stat">
+            <div className="label">Próximo marco</div>
+            <div className="value">
+              {stats.nextDays !== null
+                ? `${Math.abs(stats.nextDays)} dia${Math.abs(stats.nextDays) === 1 ? "" : "s"}`
+                : "—"}
+            </div>
+            <div className="hint">
+              {stats.next ? `${stats.next.title} • ${dateLabel(stats.next.date)}` : "Sem eventos"}
+            </div>
+          </div>
+        </section>
 
-              <div className="pc-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                  <h4 style={{ margin: 0 }}>⚡ Prioridades do Período ({state.priorities.length})</h4>
+        {/* LAYOUT PRINCIPAL */}
+        <section className="layout">
+          {/* COLUNA ESQUERDA: TABELA & CONTROLES */}
+          <div className="grid">
+            <article className="card">
+              <div className="card-head">
+                <div>
+                  <h2>Agenda</h2>
+                  <div className="footer-note">
+                    Use os filtros, marque como concluído, edite eventos e adicione novos marcos eleitorais.
+                  </div>
+                </div>
+                <div className="split">
                   <button
                     type="button"
-                    className="pc-btn primary"
-                    style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                    onClick={addPriority}
+                    className="btn primary"
+                    onClick={() => openModal(null)}
                   >
-                    + Nova prioridade
+                    ＋ Novo evento
                   </button>
                 </div>
-                <div className="pc-list">
-                  {state.priorities.map((item, i) => (
-                    <div key={i} className="pc-list-item">
-                      <div className="pc-list-item-main">
-                        <strong>
-                          <input
-                            value={item.title}
-                            onChange={(e) => editPriority(i, "title", e.target.value)}
-                            style={{
-                              width: "100%",
-                              font: "inherit",
-                              fontWeight: 800,
-                              background: "transparent",
-                              border: "none",
-                              outline: "none",
-                              color: "inherit",
-                              padding: 0,
-                              margin: "0 0 4px",
-                            }}
-                          />
-                        </strong>
-                        <p>
-                          <textarea
-                            value={item.body}
-                            onChange={(e) => editPriority(i, "body", e.target.value)}
-                            style={{
-                              width: "100%",
-                              minHeight: "54px",
-                              font: "inherit",
-                              background: "transparent",
-                              border: "none",
-                              outline: "none",
-                              color: "var(--pc-muted)",
-                              resize: "vertical",
-                              padding: 0,
-                            }}
-                          />
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="pc-btn danger"
-                        onClick={() => removePriority(i)}
-                        style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                      >
-                        Remover
-                      </button>
+              </div>
+              <div className="card-body">
+                <div className="controls">
+                  <div className="searchwrap">
+                    <input
+                      className="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Pesquisar por data, título, categoria, nota..."
+                    />
+                  </div>
+                  <select
+                    className="select"
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <option value="all">Todas as categorias</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="select"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                  >
+                    <option value="all">Todos os status</option>
+                    <option value="pending">Pendentes</option>
+                    <option value="done">Concluídos</option>
+                    <option value="important">Importantes</option>
+                  </select>
+                  <select
+                    className="select"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    <option value="dateAsc">Ordenar por data ↑</option>
+                    <option value="dateDesc">Ordenar por data ↓</option>
+                    <option value="priority">Prioridade</option>
+                    <option value="title">Título</option>
+                  </select>
+                </div>
+
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style={{ width: "14%" }}>Data</th>
+                        <th style={{ width: "18%" }}>Categoria</th>
+                        <th>Título</th>
+                        <th style={{ width: "10%" }}>Contagem</th>
+                        <th style={{ width: "11%" }}>Status</th>
+                        <th style={{ width: "12%" }}>Responsável</th>
+                        <th style={{ width: "12%" }}>Local</th>
+                        <th style={{ width: "13%" }}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEvents.length === 0 ? (
+                        <tr>
+                          <td colSpan={8}>
+                            <div className="empty">Nenhum evento encontrado com esses filtros.</div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredEvents.map((ev) => {
+                          const d = daysUntil(ev.date);
+                          return (
+                            <tr key={ev.id} className={ev.done ? "row-done" : ""}>
+                              <td data-label="Data">
+                                <div>
+                                  <strong>{dateLabel(ev.date)}</strong>
+                                </div>
+                                <div className="footer-note">{weekdayLabel(ev.date)}</div>
+                              </td>
+                              <td data-label="Categoria">
+                                <span className="badge">{ev.category}</span>
+                              </td>
+                              <td data-label="Título">
+                                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                                  <strong>{ev.title}</strong>
+                                  {ev.important && <span className="badge danger">★ importante</span>}
+                                </div>
+                                <div className="footer-note">{ev.desc}</div>
+                              </td>
+                              <td data-label="Contagem">
+                                {ev.done ? (
+                                  <span className="badge ok">✓ concluído</span>
+                                ) : d < 0 ? (
+                                  <span className="badge danger">atrasado</span>
+                                ) : d === 0 ? (
+                                  <span className="badge danger">hoje</span>
+                                ) : d <= 7 ? (
+                                  <span className="badge danger">{d} dia{d === 1 ? "" : "s"}</span>
+                                ) : d <= 30 ? (
+                                  <span className="badge warn">{d} dias</span>
+                                ) : (
+                                  <span className="badge">{d} dias</span>
+                                )}
+                              </td>
+                              <td data-label="Status">
+                                {ev.done ? (
+                                  <span className="badge ok">Concluído</span>
+                                ) : ev.important ? (
+                                  <span className="badge warn">Importante</span>
+                                ) : (
+                                  <span className="badge">Pendente</span>
+                                )}
+                              </td>
+                              <td data-label="Responsável">
+                                <span className="badge">{ev.responsible || "—"}</span>
+                              </td>
+                              <td data-label="Local">
+                                <span className="badge">{ev.location || "—"}</span>
+                              </td>
+                              <td data-label="Ações">
+                                <div className="actions">
+                                  <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => toggleDone(ev.id)}
+                                  >
+                                    {ev.done ? "↩ Reabrir" : "✓ Concluir"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => openModal(ev)}
+                                  >
+                                    ✎ Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => duplicateEvent(ev.id)}
+                                  >
+                                    ⧉ Copiar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => deleteEvent(ev.id)}
+                                  >
+                                    🗑 Excluir
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          {/* COLUNA DIREITA: RESUMO RÁPIDO & CALENDÁRIO */}
+          <div className="sidebar-panel">
+            <article className="card">
+              <div className="card-head">
+                <div>
+                  <h3>Resumo rápido</h3>
+                  <div className="footer-note">Próximos marcos, visão geral e calendário mensal.</div>
+                </div>
+              </div>
+              <div className="card-body sidebar-panel">
+                {/* CONTAGEM REGRESSIVA */}
+                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                  <div className="card-body">
+                    <div className="countdown">
+                      {upcomingCountdowns.map((ev) => {
+                        const d = daysUntil(ev.date);
+                        return (
+                          <div key={ev.id} className="countbox">
+                            <div className="big">{d < 0 ? "—" : d}</div>
+                            <div className="small">
+                              <strong>{ev.title}</strong>
+                              <br />
+                              {dateLabel(ev.date)} · {ev.category}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pc-card">
-                <h4>📈 Ritmo da Operação</h4>
-                <div className="pc-mini-stat" style={{ marginBottom: "10px" }}>
-                  <div className="label">Peças e Publicações Ativas</div>
-                  <div className="value" style={{ color: "var(--pc-accent)" }}>
-                    {state.contents.length} formatos
                   </div>
                 </div>
-                <div className="pc-mini-stat" style={{ marginBottom: "10px" }}>
-                  <div className="label">Agendas e Vistorias Programadas</div>
-                  <div className="value" style={{ color: "var(--pc-accent-2)" }}>
-                    {state.agenda.length} ações
-                  </div>
-                </div>
-                <div className="pc-mini-stat">
-                  <div className="label">Conformidade e Checagens LGPD</div>
-                  <div className="value" style={{ color: pendingAlertsCount > 0 ? "var(--pc-warning)" : "var(--pc-success)" }}>
-                    {state.compliance.length} itens verificados
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
 
-        {/* 2. PERFIL & POSICIONAMENTO */}
-        {activeTab === "perfil" && (
-          <div className="pc-section">
-            <div className="pc-section-head">
-              <div>
-                <h3>Perfil e Posicionamento Parlamentar</h3>
-                <p>Estrutura de biografia, atuação, tom de voz e alinhamento institucional.</p>
-              </div>
-              <span className="pc-tag blue">Base Oficial Paraná</span>
-            </div>
-            <div className="pc-profile-grid">
-              <div className="pc-card">
-                <h4>🏛️ Frente 1 · Mandato Estadual</h4>
-                <div className="pc-field">
-                  <label>Nome / Cargo</label>
-                  <input
-                    value={state.cand1Name}
-                    onChange={(e) => updateField("cand1Name", e.target.value)}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Esfera / Foco de Atuação</label>
-                  <input
-                    value={state.cand1Role}
-                    onChange={(e) => updateField("cand1Role", e.target.value)}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Biografia Resumida & Conquistas</label>
-                  <textarea
-                    value={state.cand1Bio}
-                    onChange={(e) => updateField("cand1Bio", e.target.value)}
-                    style={{ minHeight: "120px" }}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Tom de Comunicação</label>
-                  <input
-                    value={state.cand1Tone}
-                    onChange={(e) => updateField("cand1Tone", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="pc-card">
-                <h4>🏛️ Frente 2 · Mandato Federal</h4>
-                <div className="pc-field">
-                  <label>Nome / Cargo</label>
-                  <input
-                    value={state.cand2Name}
-                    onChange={(e) => updateField("cand2Name", e.target.value)}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Esfera / Foco de Atuação</label>
-                  <input
-                    value={state.cand2Role}
-                    onChange={(e) => updateField("cand2Role", e.target.value)}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Biografia Resumida & Conquistas</label>
-                  <textarea
-                    value={state.cand2Bio}
-                    onChange={(e) => updateField("cand2Bio", e.target.value)}
-                    style={{ minHeight: "120px" }}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Tom de Comunicação</label>
-                  <input
-                    value={state.cand2Tone}
-                    onChange={(e) => updateField("cand2Tone", e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pc-section" style={{ marginTop: "16px" }}>
-              <div className="pc-section-head">
-                <div>
-                  <h3>Mensagens-Chave Oficiais</h3>
-                  <p>Texto-base institucional padronizado para entrevistas, site, PDF e redes sociais.</p>
-                </div>
-                <span className="pc-tag green">Diretriz de Discurso</span>
-              </div>
-              <div className="pc-grid-2">
-                <div className="pc-field">
-                  <label>Mensagem 1 · Compromisso com Arapongas</label>
-                  <textarea
-                    value={state.msg1}
-                    onChange={(e) => updateField("msg1", e.target.value)}
-                    style={{ minHeight: "100px" }}
-                  />
-                </div>
-                <div className="pc-field">
-                  <label>Mensagem 2 · Transparência e Prestação de Contas</label>
-                  <textarea
-                    value={state.msg2}
-                    onChange={(e) => updateField("msg2", e.target.value)}
-                    style={{ minHeight: "100px" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3. AGENDA & ENTREGAS */}
-        {activeTab === "agenda" && (
-          <div className="pc-section">
-            <div className="pc-section-head">
-              <div>
-                <h3>Agenda & Entregas da Semana ({state.agenda.length} compromissos)</h3>
-                <p>Planejamento semanal de ações, visitas técnicas, sessões plenárias e entrevistas.</p>
-              </div>
-              <button type="button" className="pc-btn primary" onClick={addAgendaItem}>
-                + Novo Compromisso
-              </button>
-            </div>
-            <div className="pc-table-wrap">
-              <table className="pc-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "120px" }}>DATA/HORA</th>
-                    <th style={{ width: "140px" }}>TIPO</th>
-                    <th>DESCRIÇÃO DO COMPROMISSO</th>
-                    <th style={{ width: "150px" }}>STATUS</th>
-                    <th style={{ width: "160px" }}>RESPONSÁVEL</th>
-                    <th style={{ width: "40px" }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {state.agenda.map((row, i) => (
-                    <tr key={i}>
-                      <td>
-                        <input
-                          value={row.date}
-                          onChange={(e) => editAgendaItem(i, "date", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={row.type}
-                          onChange={(e) => editAgendaItem(i, "type", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
-                        />
-                      </td>
-                      <td>
-                        <textarea
-                          value={row.desc}
-                          onChange={(e) => editAgendaItem(i, "desc", e.target.value)}
-                          style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={row.status}
-                          onChange={(e) => editAgendaItem(i, "status", e.target.value as AgendaItem["status"])}
-                          style={{ padding: "6px 8px" }}
-                        >
-                          {["Pendente", "Em andamento", "Confirmado", "Concluído"].map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          value={row.owner}
-                          onChange={(e) => editAgendaItem(i, "owner", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
-                        />
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="pc-btn danger"
-                          onClick={() => removeAgendaItem(i)}
-                          style={{ padding: "4px 8px" }}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 4. TERRITÓRIO & PÚBLICO */}
-        {activeTab === "territorio" && (
-          <div className="pc-grid-2">
-            <div className="pc-section">
-              <div className="pc-section-head">
-                <div>
-                  <h3>Território & Bairros de Arapongas ({state.territory.length})</h3>
-                  <p>Mapeamento de prioridades, bairros, distritos e demandas comunitárias.</p>
-                </div>
-                <button type="button" className="pc-btn primary" onClick={addTerritoryItem}>
-                  + Adicionar Região
-                </button>
-              </div>
-              <div className="pc-table-wrap">
-                <table className="pc-table">
-                  <thead>
-                    <tr>
-                      <th>REGIÃO / BAIRRO</th>
-                      <th style={{ width: "100px" }}>PRIORIDADE</th>
-                      <th>DEMANDAS & REIVINDICAÇÕES</th>
-                      <th style={{ width: "40px" }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {state.territory.map((row, i) => (
-                      <tr key={i}>
-                        <td>
-                          <input
-                            value={row.region}
-                            onChange={(e) => editTerritoryItem(i, "region", e.target.value)}
-                            style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
-                          />
-                        </td>
-                        <td>
-                          <select
-                            value={row.priority}
-                            onChange={(e) => editTerritoryItem(i, "priority", e.target.value as TerritoryItem["priority"])}
-                            style={{ padding: "6px" }}
-                          >
-                            {["Alta", "Média", "Baixa"].map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <textarea
-                            value={row.demands}
-                            onChange={(e) => editTerritoryItem(i, "demands", e.target.value)}
-                            style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
-                          />
-                        </td>
-                        <td>
+                {/* CALENDÁRIO MENSAL */}
+                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                  <div className="card-body">
+                    <div className="calendar">
+                      <div className="cal-head">
+                        <strong>
+                          {calendarData.monthLabel.charAt(0).toUpperCase() +
+                            calendarData.monthLabel.slice(1)}
+                        </strong>
+                        <div className="actions">
                           <button
                             type="button"
-                            className="pc-btn danger"
-                            onClick={() => removeTerritoryItem(i)}
-                            style={{ padding: "4px 8px" }}
+                            className="mini-btn"
+                            onClick={() =>
+                              setFilterMonth(
+                                new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1),
+                              )
+                            }
                           >
-                            ✕
+                            ◀
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="pc-section">
-              <div className="pc-section-head">
-                <div>
-                  <h3>Segmentos de Atenção & Interlocutores ({state.audiences.length})</h3>
-                  <p>Organização estratégica de diálogo por setores da sociedade de Arapongas.</p>
-                </div>
-                <button type="button" className="pc-btn primary" onClick={addAudienceItem}>
-                  + Novo Segmento
-                </button>
-              </div>
-              <div className="pc-list">
-                {state.audiences.map((item, i) => (
-                  <div key={i} className="pc-list-item">
-                    <div className="pc-list-item-main">
-                      <strong>
-                        <input
-                          value={item.title}
-                          onChange={(e) => editAudienceItem(i, "title", e.target.value)}
-                          style={{
-                            width: "100%",
-                            font: "inherit",
-                            fontWeight: 800,
-                            background: "transparent",
-                            border: "none",
-                            outline: "none",
-                            color: "inherit",
-                            padding: 0,
-                            margin: "0 0 4px",
-                          }}
-                        />
-                      </strong>
-                      <p>
-                        <textarea
-                          value={item.body}
-                          onChange={(e) => editAudienceItem(i, "body", e.target.value)}
-                          style={{
-                            width: "100%",
-                            minHeight: "50px",
-                            font: "inherit",
-                            background: "transparent",
-                            border: "none",
-                            outline: "none",
-                            color: "var(--pc-muted)",
-                            resize: "vertical",
-                            padding: 0,
-                          }}
-                        />
-                      </p>
+                          <button
+                            type="button"
+                            className="mini-btn"
+                            onClick={() =>
+                              setFilterMonth(
+                                new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                              )
+                            }
+                          >
+                            Hoje
+                          </button>
+                          <button
+                            type="button"
+                            className="mini-btn"
+                            onClick={() =>
+                              setFilterMonth(
+                                new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1),
+                              )
+                            }
+                          >
+                            ▶
+                          </button>
+                        </div>
+                      </div>
+                      <div className="legend">
+                        <span className="badge ok">● concluído</span>
+                        <span className="badge warn">● pendente</span>
+                        <span className="badge danger">● hoje / urgente</span>
+                      </div>
+                      <div className="month-grid">
+                        {dowLabels.map((d) => (
+                          <div key={d} className="dow">
+                            {d}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="month-grid">
+                        {calendarData.cells.map((cell, idx) => (
+                          <div
+                            key={idx}
+                            className={`day ${cell.inMonth ? "" : "muted"}`}
+                            title={cell.iso}
+                          >
+                            <div className="num">{cell.dateNumber}</div>
+                            {cell.eventCount > 0 ? (
+                              <div className={`badge ${cell.highlight}`}>
+                                {cell.eventCount} evento{cell.eventCount === 1 ? "" : "s"}
+                              </div>
+                            ) : (
+                              <div className="footer-note">&nbsp;</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className="pc-btn danger"
-                      onClick={() => removeAudienceItem(i)}
-                      style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                    >
-                      Remover
-                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                </div>
 
-        {/* 5. CONTEÚDO & PEÇAS */}
-        {activeTab === "conteudo" && (
-          <div className="pc-section">
-            <div className="pc-section-head">
-              <div>
-                <h3>Conteúdo & Peças em Produção ({state.contents.length} publicações)</h3>
-                <p>Planejamento de vídeos curtos, carrosséis, PDFs, podcasts e matérias de imprensa.</p>
+                {/* NOTAS E ORIENTAÇÕES */}
+                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                  <div className="card-body">
+                    <h3 style={{ marginBottom: "10px" }}>Notas e orientações</h3>
+                    <div className="footer-note">
+                      <div>
+                        <strong>Agenda pronta para uso offline:</strong> os dados ficam no seu navegador. Você pode editar, importar e exportar sem internet.
+                      </div>
+                      <div style={{ marginTop: "8px" }}>
+                        <strong>Observação:</strong> confira sempre o calendário oficial do TSE/TRE-PR para validação final de prazos.
+                      </div>
+                      <div style={{ marginTop: "8px" }}>
+                        <strong>Atalhos:</strong> usar busca para localizar temas, marcar concluído, e imprimir para levar ao campo.
+                      </div>
+                      <div style={{ marginTop: "8px" }}>
+                        <strong>Conteúdo carregado:</strong> Fase 1 — alinhamento interno; Fase 2 — início da campanha; lançamento oficial; adesivaço; Café da Manhã no Comércio.
+                      </div>
+                      {upcomingReminders.length > 0 && (
+                        <div style={{ marginTop: "10px", color: "var(--warn)" }}>
+                          <strong>Eventos próximos:</strong>{" "}
+                          {upcomingReminders
+                            .map(
+                              (e) =>
+                                `${e.title} (${daysUntil(e.date)} dia${daysUntil(e.date) === 1 ? "" : "s"})`,
+                            )
+                            .join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button type="button" className="pc-btn primary" onClick={addContentItem}>
-                + Nova Peça
+            </article>
+          </div>
+        </section>
+      </div>
+
+      {/* MODAL DE ADICIONAR / EDITAR EVENTO */}
+      {isModalOpen && (
+        <div className="modal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+          <div className="modal-card">
+            <div className="card-head">
+              <div>
+                <h2>{editingId !== null ? "Editar evento" : "Novo evento"}</h2>
+                <div className="footer-note">Os dados ficam salvos localmente no navegador.</div>
+              </div>
+              <button type="button" className="mini-btn" onClick={closeModal}>
+                ✕
               </button>
             </div>
-            <div className="pc-table-wrap">
-              <table className="pc-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "160px" }}>FORMATO</th>
-                    <th style={{ width: "200px" }}>TEMA DA PEÇA</th>
-                    <th>OBJETIVO ESTRATÉGICO</th>
-                    <th style={{ width: "170px" }}>CANAL DE DISTRIBUIÇÃO</th>
-                    <th style={{ width: "110px" }}>PRAZO</th>
-                    <th style={{ width: "40px" }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {state.contents.map((row, i) => (
-                    <tr key={i}>
-                      <td>
-                        <input
-                          value={row.format}
-                          onChange={(e) => editContentItem(i, "format", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit", fontWeight: 700 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={row.theme}
-                          onChange={(e) => editContentItem(i, "theme", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
-                        />
-                      </td>
-                      <td>
-                        <textarea
-                          value={row.objective}
-                          onChange={(e) => editContentItem(i, "objective", e.target.value)}
-                          style={{ width: "100%", minHeight: "45px", background: "transparent", border: "none", color: "inherit", resize: "vertical" }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={row.channel}
-                          onChange={(e) => editContentItem(i, "channel", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          value={row.due}
-                          onChange={(e) => editContentItem(i, "due", e.target.value)}
-                          style={{ width: "100%", background: "transparent", border: "none", color: "inherit" }}
-                        />
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="pc-btn danger"
-                          onClick={() => removeContentItem(i)}
-                          style={{ padding: "4px 8px" }}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 6. COMPLIANCE */}
-        {activeTab === "compliance" && (
-          <div className="pc-grid-2">
-            <div className="pc-section">
-              <div className="pc-section-head">
+            <div className="modal-body">
+              <div className="form-grid">
                 <div>
-                  <h3>Checklist de Conformidade & LGPD ({state.compliance.length} itens)</h3>
-                  <p>Normas editoriais, validação de fontes e verificação prévia de publicação.</p>
+                  <label>Data</label>
+                  <input
+                    className="field"
+                    type="date"
+                    value={fDate}
+                    onChange={(e) => setFDate(e.target.value)}
+                  />
                 </div>
-                <button type="button" className="pc-btn primary" onClick={addComplianceItem}>
-                  + Novo Item
+                <div>
+                  <label>Categoria</label>
+                  <input
+                    className="field"
+                    placeholder="Ex.: Campanha, Jurídico, Agenda"
+                    value={fCategory}
+                    onChange={(e) => setFCategory(e.target.value)}
+                  />
+                </div>
+                <div className="full">
+                  <label>Título</label>
+                  <input
+                    className="field"
+                    placeholder="Ex.: Último dia para convenção"
+                    value={fTitle}
+                    onChange={(e) => setFTitle(e.target.value)}
+                  />
+                </div>
+                <div className="full">
+                  <label>Descrição / lembrete</label>
+                  <textarea
+                    className="textarea"
+                    placeholder="Detalhes, tarefas e observações"
+                    value={fDesc}
+                    onChange={(e) => setFDesc(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Responsável</label>
+                  <input
+                    className="field"
+                    placeholder="Ex.: Coordenação geral"
+                    value={fResponsible}
+                    onChange={(e) => setFResponsible(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Local</label>
+                  <input
+                    className="field"
+                    placeholder="Ex.: Arapongas"
+                    value={fLocation}
+                    onChange={(e) => setFLocation(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Prioridade</label>
+                  <select
+                    className="select"
+                    value={String(fPriority)}
+                    onChange={(e) => setFPriority(Number(e.target.value))}
+                  >
+                    <option value="1">Baixa</option>
+                    <option value="2">Média</option>
+                    <option value="3">Alta</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Status</label>
+                  <select
+                    className="select"
+                    value={String(fDone)}
+                    onChange={(e) => setFDone(e.target.value === "true")}
+                  >
+                    <option value="false">Pendente</option>
+                    <option value="true">Concluído</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Importante</label>
+                  <select
+                    className="select"
+                    value={String(fImportant)}
+                    onChange={(e) => setFImportant(e.target.value === "true")}
+                  >
+                    <option value="false">Não</option>
+                    <option value="true">Sim</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Notificar antes</label>
+                  <select
+                    className="select"
+                    value={String(fReminder)}
+                    onChange={(e) => setFReminder(Number(e.target.value))}
+                  >
+                    <option value="0">Sem lembrete</option>
+                    <option value="1">1 dia antes</option>
+                    <option value="3">3 dias antes</option>
+                    <option value="7">7 dias antes</option>
+                    <option value="15">15 dias antes</option>
+                  </select>
+                </div>
+              </div>
+              <div className="actions" style={{ justifyContent: "flex-end", marginTop: "6px" }}>
+                <button type="button" className="btn" onClick={closeModal}>
+                  Cancelar
+                </button>
+                <button type="button" className="btn primary" onClick={saveFromModal}>
+                  Salvar evento
                 </button>
               </div>
-              <div className="pc-list">
-                {state.compliance.map((item, i) => (
-                  <div key={i} className="pc-list-item">
-                    <div className="pc-list-item-main">
-                      <strong>
-                        <input
-                          value={item.text}
-                          onChange={(e) => editComplianceItem(i, e.target.value)}
-                          style={{
-                            width: "100%",
-                            font: "inherit",
-                            fontWeight: 700,
-                            background: "transparent",
-                            border: "none",
-                            outline: "none",
-                            color: "inherit",
-                            padding: 0,
-                            margin: "0 0 4px",
-                          }}
-                        />
-                      </strong>
-                      <p>
-                        Status da verificação:{" "}
-                        {item.ok ? (
-                          <span className="pc-tag green">✓ Homologado</span>
-                        ) : (
-                          <span className="pc-tag orange">⚠ Pendente de checagem</span>
-                        )}
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      <button
-                        type="button"
-                        className={`pc-btn ${item.ok ? "ghost" : "success"}`}
-                        onClick={() => toggleComplianceItem(i)}
-                        style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-                      >
-                        {item.ok ? "Desmarcar" : "Marcar OK"}
-                      </button>
-                      <button
-                        type="button"
-                        className="pc-btn danger"
-                        onClick={() => removeComplianceItem(i)}
-                        style={{ padding: "6px 8px" }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pc-section">
-              <div className="pc-section-head">
-                <div>
-                  <h3>Anotações Editoriais da Coordenação</h3>
-                  <p>Diretrizes semanais, pautas prioritárias e orientações para a equipe de campo.</p>
-                </div>
-                <span className="pc-tag blue">Gabinete Arapongas</span>
-              </div>
-              <div className="pc-field">
-                <label>Notas Oficiais & Planejamento Operacional</label>
-                <textarea
-                  value={state.editorNotes}
-                  onChange={(e) => updateField("editorNotes", e.target.value)}
-                  style={{ minHeight: "380px", lineHeight: "1.6", fontFamily: "inherit" }}
-                />
-              </div>
             </div>
           </div>
-        )}
-
-        {/* 7. EXPORTAÇÃO */}
-        {activeTab === "exportacao" && (
-          <div className="pc-grid-2">
-            <div className="pc-section">
-              <div className="pc-section-head">
-                <div>
-                  <h3>Exportação e Backup Estratégico</h3>
-                  <p>Baixe a base de dados completa em formato JSON seguro.</p>
-                </div>
-                <span className="pc-tag blue">Arapongas 2026</span>
-              </div>
-              <div className="pc-field">
-                <label>Dados Estruturados em JSON</label>
-                <textarea
-                  value={JSON.stringify(state, null, 2)}
-                  readOnly
-                  style={{ minHeight: "360px", fontFamily: "monospace", fontSize: "0.82rem", color: "#69e2c4", background: "rgba(0,0,0,0.3)" }}
-                />
-              </div>
-            </div>
-
-            <div className="pc-section">
-              <div className="pc-section-head">
-                <div>
-                  <h3>Ações Rápidas de Backup</h3>
-                  <p>Download, restauração da base oficial e controle de tema.</p>
-                </div>
-              </div>
-              <div className="pc-list">
-                <div className="pc-list-item">
-                  <div className="pc-list-item-main">
-                    <strong>📥 Exportar JSON</strong>
-                    <p>Gera um arquivo de backup completo com todas as abas e configurações.</p>
-                  </div>
-                  <button type="button" className="pc-btn primary" onClick={exportJson}>
-                    Baixar Backup
-                  </button>
-                </div>
-                <div className="pc-list-item">
-                  <div className="pc-list-item-main">
-                    <strong>🔄 Restaurar Base Oficial</strong>
-                    <p>Recarrega todos os dados completos e oficiais de Arapongas e do mandato.</p>
-                  </div>
-                  <button type="button" className="pc-btn success" onClick={resetToDefault}>
-                    Restaurar
-                  </button>
-                </div>
-                <div className="pc-list-item">
-                  <div className="pc-list-item-main">
-                    <strong>🌓 Alternar Tema Visual</strong>
-                    <p>Troca instantaneamente entre o modo escuro de alta legibilidade e o modo claro.</p>
-                  </div>
-                  <button type="button" className="pc-btn ghost" onClick={toggleTheme}>
-                    Alternar Tema
-                  </button>
-                </div>
-              </div>
-              <div className="pc-footer-note">
-                <strong>Base de Dados Voto Forte:</strong> Dados sincronizados localmente e protegidos de acordo com as normas de conformidade institucional e LGPD.
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
