@@ -385,7 +385,7 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/banner-parana-araponga.png");
+  background-image: url("/banner-parana-araponga.jpg");
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
@@ -393,6 +393,7 @@ a {
   mix-blend-mode: luminosity;
   pointer-events: none;
   z-index: 0;
+  will-change: opacity;
 }
 .welcome-copy,
 .welcome-actions {

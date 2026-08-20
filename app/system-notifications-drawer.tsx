@@ -106,8 +106,23 @@ export default function SystemNotificationsDrawer() {
 
   useEffect(() => {
     void fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void fetchNotifications();
+      }
+    }, 20000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void fetchNotifications();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchNotifications]);
 
   const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;

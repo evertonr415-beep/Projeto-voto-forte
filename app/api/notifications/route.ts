@@ -40,6 +40,10 @@ const memoryNotifications: SystemNotification[] = [
   },
 ];
 
+let lastFetchTime = 0;
+let cachedDbNotifications: SystemNotification[] = [];
+const CACHE_TTL_MS = 20000; // 20 segundos de cache
+
 function isMaster(role: string, email: string) {
   const r = (role || "").toLowerCase();
   const e = (email || "").toLowerCase();
@@ -60,9 +64,10 @@ export async function GET(request: Request) {
     console.warn("getAccount error in notifications GET:", err);
   }
 
-  // Try fetching notifications from database (vf_audit_logs or custom table)
-  let dbNotifications: SystemNotification[] = [];
-  if (account?.supabase) {
+  // Fast in-memory cache check
+  const now = Date.now();
+  let dbNotifications = cachedDbNotifications;
+  if (now - lastFetchTime > CACHE_TTL_MS && account?.supabase) {
     try {
       const { data: auditData } = await account.supabase
         .from("vf_audit_logs")
@@ -100,6 +105,8 @@ export async function GET(request: Request) {
             };
           }
         });
+        cachedDbNotifications = dbNotifications;
+        lastFetchTime = now;
       }
     } catch (err) {
       console.warn("Could not query notifications from audit logs:", err);
@@ -180,6 +187,8 @@ export async function POST(request: Request) {
 
   // Add to memory list
   memoryNotifications.unshift(newNotification);
+  lastFetchTime = 0;
+  cachedDbNotifications = [];
 
   // Persist to audit logs for permanence across cold boots
   try {
