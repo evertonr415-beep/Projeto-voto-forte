@@ -88,6 +88,7 @@ export default function MunicipalityContextEnhancer() {
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1000px)");
     let frameId = 0;
+    let generatedSidebarHost: HTMLElement | null = null;
 
     const findHosts = () => {
       if (media.matches) {
@@ -95,13 +96,31 @@ export default function MunicipalityContextEnhancer() {
           ".top-actions, .optimized-hero-controls",
         );
         setHeaderHost((current) => (current === topHost ? current : topHost));
-      } else {
-        setHeaderHost(null);
+        setSidebarHost(null);
+        generatedSidebarHost?.remove();
+        generatedSidebarHost = null;
+        return;
       }
 
-      const sideHost = document.querySelector<HTMLElement>(
+      setHeaderHost(null);
+
+      let sideHost = document.querySelector<HTMLElement>(
         "#vf-sidebar-municipality-host",
       );
+
+      if (!sideHost) {
+        const menuLabel = document.querySelector<HTMLElement>(
+          ".sidebar > .menu-label",
+        );
+        if (menuLabel?.parentElement) {
+          sideHost = document.createElement("div");
+          sideHost.id = "vf-sidebar-municipality-host";
+          sideHost.className = "vf-sidebar-municipality-host";
+          menuLabel.parentElement.insertBefore(sideHost, menuLabel);
+          generatedSidebarHost = sideHost;
+        }
+      }
+
       setSidebarHost((current) => (current === sideHost ? current : sideHost));
     };
 
@@ -120,6 +139,7 @@ export default function MunicipalityContextEnhancer() {
       if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
       media.removeEventListener("change", findHosts);
+      generatedSidebarHost?.remove();
     };
   }, []);
 

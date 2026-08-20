@@ -96,7 +96,7 @@ export default function MapCityMarkers() {
         const params = new URLSearchParams();
         if (scope) params.set("owner", scope);
 
-        const res = await apiFetch(`/api/map-district-markers?${params.toString()}`);
+        const res = await apiFetch(`/api/map-city-markers?${params.toString()}`);
         const data = (await res.json()) as { markers?: CityMarker[] };
         if (cancelled || !Array.isArray(data.markers)) return;
 

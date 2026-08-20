@@ -100,6 +100,64 @@ export default function GestorAccessUi() {
             if (button.textContent?.includes("Banco de Dados e Backup"))
               button.hidden = true;
           });
+
+        document
+          .querySelectorAll<HTMLElement>(".admin-kpis > article")
+          .forEach((card) => {
+            const label = card
+              .querySelector("small")
+              ?.textContent?.trim()
+              .toUpperCase();
+            if (label === "ADMINISTRADORES") card.hidden = true;
+          });
+
+        document
+          .querySelectorAll<HTMLElement>(".security-banner")
+          .forEach((banner) => {
+            const paragraph = banner.querySelector<HTMLElement>("p");
+            if (paragraph?.textContent?.includes("Administradores")) {
+              paragraph.textContent =
+                "As consultas e gravações usam o e-mail autenticado como proprietário. Cada ambiente permanece isolado conforme as permissões da equipe.";
+            }
+          });
+
+        const hierarchyPanel = document.querySelector<HTMLElement>(
+          ".vf-hierarchy-panel",
+        );
+        if (hierarchyPanel) {
+          const hierarchyDescription =
+            hierarchyPanel.querySelector<HTMLElement>("header p");
+          const gestorHierarchy =
+            "Gestor → Master → Liderança → Liderado → Eleitor.";
+          if (
+            hierarchyDescription &&
+            hierarchyDescription.textContent !== gestorHierarchy
+          ) {
+            hierarchyDescription.textContent = gestorHierarchy;
+          }
+
+          hierarchyPanel
+            .querySelectorAll<HTMLElement>(".vf-hierarchy-summary > article")
+            .forEach((card) => {
+              const label = card
+                .querySelector("small")
+                ?.textContent?.trim()
+                .toUpperCase();
+              if (label === "ADM") card.hidden = true;
+            });
+
+          hierarchyPanel
+            .querySelectorAll<HTMLElement>(".vf-hierarchy-help")
+            .forEach((node) => {
+              node.hidden = true;
+            });
+
+          hierarchyPanel
+            .querySelectorAll<HTMLElement>(".vf-hierarchy-user.role-adm")
+            .forEach((node) => {
+              node.hidden = true;
+            });
+        }
       }
 
       if (accessRole === "adm") {
