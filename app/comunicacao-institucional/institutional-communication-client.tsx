@@ -318,6 +318,12 @@ export default function InstitutionalCommunicationClient({
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
 
+  // Reagendamento Rápido
+  const [rescheduleEvent, setRescheduleEvent] = useState<CampaignEvent | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleLocation, setRescheduleLocation] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Inicialização e Carregamento LocalStorage
@@ -452,6 +458,44 @@ export default function InstitutionalCommunicationClient({
     if (window.confirm(`Deseja excluir "${target.title}"?`)) {
       saveEvents(events.filter((e) => e.id !== id));
     }
+  };
+
+  const openRescheduleModal = (ev: CampaignEvent) => {
+    setRescheduleEvent(ev);
+    setRescheduleDate(ev.date || "2026-08-16");
+    const timeMatch = ev.desc.match(/(\d{2}h\d{2})/);
+    setRescheduleTime(timeMatch ? timeMatch[1].replace("h", ":") : "19:30");
+    setRescheduleLocation(ev.location || "");
+  };
+
+  const handleConfirmReschedule = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!rescheduleEvent || !rescheduleDate) return;
+
+    const formattedTime = rescheduleTime ? `${rescheduleTime.replace(":", "h")}` : "";
+    let updatedDesc = rescheduleEvent.desc;
+    if (formattedTime) {
+      if (updatedDesc.match(/\d{2}h\d{2}/)) {
+        updatedDesc = updatedDesc.replace(/\d{2}h\d{2}/, formattedTime);
+      } else {
+        updatedDesc = `${formattedTime} · ${updatedDesc}`;
+      }
+    }
+
+    const updatedEvents = events.map((ev) =>
+      ev.id === rescheduleEvent.id
+        ? {
+            ...ev,
+            date: rescheduleDate,
+            desc: updatedDesc,
+            location: rescheduleLocation || ev.location,
+            done: false, // Ao reagendar, volta como pendente
+          }
+        : ev
+    );
+
+    saveEvents(updatedEvents);
+    setRescheduleEvent(null);
   };
 
   const openModal = (ev: CampaignEvent | null = null) => {
@@ -758,20 +802,17 @@ export default function InstitutionalCommunicationClient({
                   <table className="ae-table">
                     <thead>
                       <tr>
-                        <th className="ae-th" style={{ width: "13%" }}>Data</th>
-                        <th className="ae-th" style={{ width: "19%" }}>Categoria</th>
-                        <th className="ae-th">Título</th>
-                        <th className="ae-th" style={{ width: "11%" }}>Contagem</th>
-                        <th className="ae-th" style={{ width: "11%" }}>Status</th>
-                        <th className="ae-th" style={{ width: "12%" }}>Responsável</th>
-                        <th className="ae-th" style={{ width: "11%" }}>Local</th>
-                        <th className="ae-th" style={{ width: "13%" }}>Ações</th>
+                        <th className="ae-th" style={{ width: "15%" }}>Data & Horário</th>
+                        <th className="ae-th" style={{ width: "18%" }}>Categoria</th>
+                        <th className="ae-th">Reunião / Compromisso</th>
+                        <th className="ae-th" style={{ width: "14%" }}>Status</th>
+                        <th className="ae-th" style={{ width: "24%", minWidth: "200px" }}>Ações Rápidas</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredEvents.length === 0 ? (
                         <tr>
-                          <td className="ae-td" colSpan={8}>
+                          <td className="ae-td" colSpan={5}>
                             <div className="ae-empty">Nenhum evento encontrado com esses filtros.</div>
                           </td>
                         </tr>
@@ -780,81 +821,82 @@ export default function InstitutionalCommunicationClient({
                           const d = daysUntil(ev.date);
                           return (
                             <tr key={ev.id} className={ev.done ? "ae-row-done" : ""}>
-                              <td className="ae-td" data-label="Data">
-                                <div>
-                                  <strong style={{ color: "var(--ae-text)" }}>{dateLabel(ev.date)}</strong>
+                              <td className="ae-td" data-label="Data & Horário">
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                  <strong style={{ color: "var(--ae-text)", fontSize: "0.86rem" }}>{dateLabel(ev.date)}</strong>
+                                  <span className="ae-footer-note" style={{ fontSize: "0.75rem" }}>{weekdayLabel(ev.date)}</span>
                                 </div>
-                                <div className="ae-footer-note">{weekdayLabel(ev.date)}</div>
                               </td>
                               <td className="ae-td" data-label="Categoria">
                                 <span className="ae-badge">{ev.category}</span>
                               </td>
-                              <td className="ae-td" data-label="Título">
-                                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                                  <strong>{ev.title}</strong>
-                                  {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
+                              <td className="ae-td" data-label="Reunião / Compromisso">
+                                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                                    <strong style={{ fontSize: "0.88rem" }}>{ev.title}</strong>
+                                    {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
+                                  </div>
+                                  <div className="ae-footer-note" style={{ fontSize: "0.78rem" }}>{ev.desc}</div>
+                                  {(ev.responsible || ev.location) && (
+                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                                      {ev.responsible && (
+                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>👤 {ev.responsible}</span>
+                                      )}
+                                      {ev.location && (
+                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>📍 {ev.location}</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="ae-footer-note">{ev.desc}</div>
-                              </td>
-                              <td className="ae-td" data-label="Contagem">
-                                {ev.done ? (
-                                  <span className="ae-badge ae-badge-ok">✓ concluído</span>
-                                ) : d < 0 ? (
-                                  <span className="ae-badge ae-badge-danger">atrasado ({Math.abs(d)}d)</span>
-                                ) : d === 0 ? (
-                                  <span className="ae-badge ae-badge-danger">hoje</span>
-                                ) : d <= 7 ? (
-                                  <span className="ae-badge ae-badge-danger">{d} dia{d === 1 ? "" : "s"}</span>
-                                ) : d <= 30 ? (
-                                  <span className="ae-badge ae-badge-warn">{d} dias</span>
-                                ) : (
-                                  <span className="ae-badge">{d} dias</span>
-                                )}
                               </td>
                               <td className="ae-td" data-label="Status">
-                                {ev.done ? (
-                                  <span className="ae-badge ae-badge-ok">Concluído</span>
-                                ) : ev.important ? (
-                                  <span className="ae-badge ae-badge-warn">Importante</span>
-                                ) : (
-                                  <span className="ae-badge">Pendente</span>
-                                )}
-                              </td>
-                              <td className="ae-td" data-label="Responsável">
-                                <span className="ae-badge">{ev.responsible || "—"}</span>
-                              </td>
-                              <td className="ae-td" data-label="Local">
-                                <span className="ae-badge">{ev.location || "—"}</span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                                  {ev.done ? (
+                                    <span className="ae-badge ae-badge-ok">✅ Realizada</span>
+                                  ) : d < 0 ? (
+                                    <span className="ae-badge ae-badge-danger">⚠️ Atrasado ({Math.abs(d)}d)</span>
+                                  ) : d === 0 ? (
+                                    <span className="ae-badge ae-badge-danger">🔥 Hoje</span>
+                                  ) : d <= 7 ? (
+                                    <span className="ae-badge ae-badge-warn">⏳ Em {d} dia{d === 1 ? "" : "s"}</span>
+                                  ) : (
+                                    <span className="ae-badge">⏳ Agendada ({d}d)</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="ae-td" data-label="Ações">
                                 <div className="ae-actions">
                                   <button
                                     type="button"
-                                    className="ae-mini-btn"
+                                    className={`ae-mini-btn ${ev.done ? "ae-btn-done-active" : "ae-btn-done-action"}`}
                                     onClick={() => toggleDone(ev.id)}
+                                    title={ev.done ? "Reabrir reunião como pendente" : "Dar baixa e marcar como realizada"}
                                   >
-                                    {ev.done ? "↩ Reabrir" : "✓ Concluir"}
+                                    {ev.done ? "↩ Desmarcar" : "✅ Realizada"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ae-mini-btn ae-btn-reschedule"
+                                    onClick={() => openRescheduleModal(ev)}
+                                    title="Reagendar reunião para outra data"
+                                  >
+                                    📅 Reagendar
                                   </button>
                                   <button
                                     type="button"
                                     className="ae-mini-btn"
                                     onClick={() => openModal(ev)}
+                                    title="Editar compromisso completo"
                                   >
-                                    ✎ Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ae-mini-btn"
-                                    onClick={() => duplicateEvent(ev.id)}
-                                  >
-                                    ⧉ Copiar
+                                    ✎
                                   </button>
                                   <button
                                     type="button"
                                     className="ae-mini-btn"
                                     onClick={() => deleteEvent(ev.id)}
+                                    title="Excluir reunião"
                                   >
-                                    🗑 Excluir
+                                    🗑
                                   </button>
                                 </div>
                               </td>
@@ -1023,6 +1065,79 @@ export default function InstitutionalCommunicationClient({
           </div>
         </section>
       </div>
+
+      {/* MODAL DE REAGENDAMENTO RÁPIDO */}
+      {rescheduleEvent && (
+        <div
+          className="ae-modal"
+          onClick={(e) => e.target === e.currentTarget && setRescheduleEvent(null)}
+        >
+          <div className="ae-modal-card" style={{ maxWidth: "480px" }}>
+            <div className="ae-card-head">
+              <div>
+                <h2>📅 Reagendar Compromisso</h2>
+                <div className="ae-footer-note">
+                  Escolha a nova data e horário para: <strong>{rescheduleEvent.title}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="ae-mini-btn"
+                onClick={() => setRescheduleEvent(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleConfirmReschedule} className="ae-modal-body">
+              <div className="ae-form-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                <div>
+                  <label>Nova Data</label>
+                  <input
+                    className="ae-field"
+                    type="date"
+                    required
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Novo Horário</label>
+                  <input
+                    className="ae-field"
+                    type="time"
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label>Local / Onde vai ser</label>
+                  <input
+                    className="ae-field"
+                    placeholder="Ex.: Centro de Arapongas, Sede..."
+                    value={rescheduleLocation}
+                    onChange={(e) => setRescheduleLocation(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div
+                className="ae-actions"
+                style={{ justifyContent: "flex-end", marginTop: "16px" }}
+              >
+                <button
+                  type="button"
+                  className="ae-btn"
+                  onClick={() => setRescheduleEvent(null)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="ae-btn ae-btn-primary">
+                  💾 Confirmar Reagendamento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE ADICIONAR / EDITAR EVENTO */}
       {isModalOpen && (
