@@ -93,11 +93,9 @@ export async function getAccountForAuthenticatedUser(
 
     if (byEmail) {
       account = byEmail;
-      // Auto-vincula o auth_user_id caso ainda não estivesse vinculado
-      void supabase
-        .from("vf_users")
-        .update({ auth_user_id: user.id })
-        .eq("id", byEmail.id);
+      // O vínculo persistente entre Auth e perfil deve ser reconciliado pela
+      // rotina administrativa própria; a leitura da sessão não altera campos
+      // protegidos do perfil.
     }
   }
 
@@ -136,33 +134,11 @@ export async function getAccountForAuthenticatedUser(
   if (!account || account.status === "blocked") return null;
 
   const isGestor = isGestorEmail(email);
-  if (account && isGestor) {
+  if (isGestor) {
+    // Compatibilidade temporária de leitura para contas já conhecidas.
+    // Não persistimos role/access_role nem vínculos municipais durante login.
     account.role = "gestor";
     account.access_role = "gestor";
-    void (async () => {
-      await supabase
-        .from("vf_users")
-        .update({ role: "gestor", access_role: "gestor" })
-        .eq("id", account.id);
-
-      const { data: municipalities } = await supabase
-        .from("vf_municipalities")
-        .select("id")
-        .eq("status", "active");
-
-      if (Array.isArray(municipalities) && municipalities.length > 0) {
-        const rows = municipalities.map((m, index) => ({
-          user_id: account.id,
-          municipality_id: Number(m.id),
-          access_role: "gestor",
-          status: "active",
-          is_default: index === 0,
-        }));
-        await supabase
-          .from("vf_user_municipalities")
-          .upsert(rows, { onConflict: "user_id,municipality_id" });
-      }
-    })();
   }
 
   const finalRole: UserRole = isGestor ? "gestor" : (account.role as UserRole);
