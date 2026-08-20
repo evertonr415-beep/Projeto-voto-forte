@@ -20,6 +20,7 @@ export type CampaignEvent = {
 
 const STORAGE_KEY = "agenda-eleitoral-parana-2026-v1";
 const THEME_KEY = "agenda-eleitoral-theme-v1";
+const ELECTION_DATE = new Date("2026-10-04T08:00:00-03:00").getTime();
 
 // COMPONENTES DE ÍCONES SVG VETORIAIS PROFISSIONAIS
 const IconCalendar = () => (
@@ -157,7 +158,7 @@ const IconLocation = () => (
 
 const IconUser = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 1 2-2h8a4 4 0 0 1 4 4v2" />
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
@@ -541,6 +542,22 @@ export default function InstitutionalCommunicationClient({
   const [fDone, setFDone] = useState(false);
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
+
+  // Contagem regressiva até o 1º turno, atualizada somente no cliente para evitar divergência de hidratação.
+  const [electionCountdown, setElectionCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isPast: false,
+  });
+
+  useEffect(() => {
+    const updateCountdown = () => setElectionCountdown(getInitialElectionCountdown());
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Carregamento LocalStorage
   useEffect(() => {
