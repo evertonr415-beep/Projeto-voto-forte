@@ -99,14 +99,6 @@ const IconSun = () => (
   </svg>
 );
 
-const IconUpload = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-);
-
 const IconDownload = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -133,18 +125,6 @@ const IconArrowLeft = () => (
 const IconStar = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const IconChevronLeft = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 18 9 12 15 6" />
-  </svg>
-);
-
-const IconChevronRight = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
   </svg>
 );
 
@@ -181,6 +161,13 @@ const IconKanban = () => (
     <rect x="3" y="3" width="5" height="18" rx="1" />
     <rect x="12" y="3" width="5" height="12" rx="1" />
     <rect x="21" y="3" width="5" height="8" rx="1" />
+  </svg>
+);
+
+const IconSettings = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
@@ -434,6 +421,7 @@ const baseEvents: CampaignEvent[] = [
 ];
 
 const dowLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const ELECTION_DATE = new Date("2026-10-04T08:00:00-03:00").getTime();
 
 function daysUntil(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -462,11 +450,29 @@ function getInitialElectionCountdown() {
 
 function weekdayLabel(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("pt-BR", { weekday: "long" });
+  return d.toLocaleDateString("pt-BR", { weekday: "short" }).toUpperCase();
+}
+
+function monthShortLabel(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase();
+}
+
+function dayNumber(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return String(d.getDate()).padStart(2, "0");
 }
 
 function isoToDate(dateStr: string) {
   return new Date(dateStr + "T00:00:00").getTime();
+}
+
+function getCategoryColor(category: string) {
+  if (category.includes("FASE 1")) return { bg: "rgba(251, 191, 36, 0.12)", border: "rgba(251, 191, 36, 0.3)", text: "#fcd34d" };
+  if (category.includes("FASE 2")) return { bg: "rgba(56, 189, 248, 0.12)", border: "rgba(56, 189, 248, 0.3)", text: "#38bdf8" };
+  if (category.includes("Jurídico") || category.includes("Propaganda")) return { bg: "rgba(168, 85, 247, 0.12)", border: "rgba(168, 85, 247, 0.3)", text: "#c084fc" };
+  if (category.includes("Eleição") || category.includes("Diplomação") || category.includes("Posse")) return { bg: "rgba(99, 102, 241, 0.12)", border: "rgba(99, 102, 241, 0.3)", text: "#818cf8" };
+  return { bg: "rgba(52, 211, 153, 0.12)", border: "rgba(52, 211, 153, 0.3)", text: "#34d399" };
 }
 
 // GERADOR DE ARQUIVO ICAL (.ICS)
@@ -504,6 +510,7 @@ export default function InstitutionalCommunicationClient({
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDate, setFilterDate] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("dateAsc");
   const [filterMonth, setFilterMonth] = useState<Date>(new Date("2026-08-01T00:00:00"));
 
@@ -512,23 +519,9 @@ export default function InstitutionalCommunicationClient({
   const [activeMobileTab, setActiveMobileTab] = useState<"agenda" | "calendario" | "resumo">("agenda");
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [isMetricsExpanded, setIsMetricsExpanded] = useState(false);
-  const [visibleCountMobile, setVisibleCountMobile] = useState(6);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
 
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleBackToDashboard = () => {
-    if (onBackToDashboard) {
-      onBackToDashboard();
-      return;
-    }
-    window.dispatchEvent(new CustomEvent("voto-forte:navigate-overview"));
-    if (typeof window !== "undefined" && window.location.pathname.includes("comunicacao-institucional")) {
-      window.location.href = "/";
-    }
-  };
-
-  // Modal State
+  // MODAIS
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [fDate, setFDate] = useState("2026-08-16");
@@ -542,11 +535,37 @@ export default function InstitutionalCommunicationClient({
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
 
-  // Carregamento LocalStorage
+  // CONTAGEM REGRESSIVA PARA 04 DE OUTUBRO DE 2026
+  const [countdown, setCountdown] = useState(getInitialElectionCountdown);
+
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const toolsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleBackToDashboard = () => {
+    if (onBackToDashboard) {
+      onBackToDashboard();
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(getInitialElectionCountdown());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // CARREGAR DADOS SALVOS NO LOCALSTORAGE
   useEffect(() => {
     try {
-      const savedTheme = (localStorage.getItem(THEME_KEY) as "dark" | "light") || "dark";
-      setTheme(savedTheme);
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setTheme(savedTheme);
+      }
 
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -555,9 +574,18 @@ export default function InstitutionalCommunicationClient({
           setEvents(parsed);
         }
       }
-    } catch {
-      // Fallback
-    }
+    } catch {}
+  }, []);
+
+  // FECHAR MENU DE FERRAMENTAS AO CLICAR FORA
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target as Node)) {
+        setIsToolsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // ATALHOS DE TECLADO RÁPIDOS
@@ -580,6 +608,7 @@ export default function InstitutionalCommunicationClient({
       } else if (e.key === "Escape") {
         setIsModalOpen(false);
         setSearch("");
+        setFilterDate(null);
       }
     };
 
@@ -616,12 +645,13 @@ export default function InstitutionalCommunicationClient({
       const hay = `${ev.date} ${ev.category} ${ev.title} ${ev.desc} ${ev.responsible} ${ev.location}`.toLowerCase();
       const okQ = !q || hay.includes(q);
       const okCat = filterCategory === "all" || ev.category === filterCategory;
+      const okDate = !filterDate || ev.date === filterDate;
       const okStatus =
         filterStatus === "all" ||
         (filterStatus === "pending" && !ev.done) ||
         (filterStatus === "done" && ev.done) ||
         (filterStatus === "important" && ev.important);
-      return okQ && okCat && okStatus;
+      return okQ && okCat && okDate && okStatus;
     });
 
     list.sort((a, b) => {
@@ -633,7 +663,7 @@ export default function InstitutionalCommunicationClient({
     });
 
     return list;
-  }, [events, search, filterCategory, filterStatus, sortBy]);
+  }, [events, search, filterCategory, filterDate, filterStatus, sortBy]);
 
   // EVENTO SELECIONADO PARA INSPEÇÃO MASTER-DETAIL
   const selectedEvent = useMemo(() => {
@@ -678,7 +708,6 @@ export default function InstitutionalCommunicationClient({
     const pending = events.filter((e) => !e.done).length;
     const done = events.filter((e) => e.done).length;
     
-    // Próximo marco pendente
     const pendingUpcoming = [...events]
       .filter((e) => !e.done)
       .sort((a, b) => isoToDate(a.date) - isoToDate(b.date));
@@ -687,18 +716,6 @@ export default function InstitutionalCommunicationClient({
     const nextDays = next ? daysUntil(next.date) : null;
 
     return { total, pending, done, next, nextDays };
-  }, [events]);
-
-  // Próximos 4 eventos para contagem regressiva
-  const upcomingCountdowns = useMemo(() => {
-    const pendingList = [...events]
-      .filter((e) => !e.done)
-      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date));
-    
-    if (pendingList.length > 0) {
-      return pendingList.slice(0, 4);
-    }
-    return events.slice(0, 4);
   }, [events]);
 
   // Ações CRUD
@@ -729,65 +746,27 @@ export default function InstitutionalCommunicationClient({
     }
   };
 
-  const openRescheduleModal = (ev: CampaignEvent) => {
-    setRescheduleEvent(ev);
-    setRescheduleDate(ev.date || "2026-08-16");
-    const timeMatch = ev.desc.match(/(\d{2}h\d{2})/);
-    setRescheduleTime(timeMatch ? timeMatch[1].replace("h", ":") : "19:30");
-    setRescheduleLocation(ev.location || "");
-  };
-
-  const handleConfirmReschedule = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!rescheduleEvent || !rescheduleDate) return;
-
-    const formattedTime = rescheduleTime ? `${rescheduleTime.replace(":", "h")}` : "";
-    let updatedDesc = rescheduleEvent.desc;
-    if (formattedTime) {
-      if (updatedDesc.match(/\d{2}h\d{2}/)) {
-        updatedDesc = updatedDesc.replace(/\d{2}h\d{2}/, formattedTime);
-      } else {
-        updatedDesc = `${formattedTime} · ${updatedDesc}`;
-      }
-    }
-
-    const updatedEvents = events.map((ev) =>
-      ev.id === rescheduleEvent.id
-        ? {
-            ...ev,
-            date: rescheduleDate,
-            desc: updatedDesc,
-            location: rescheduleLocation || ev.location,
-            done: false, // Ao reagendar, volta como pendente
-          }
-        : ev
-    );
-
-    saveEvents(updatedEvents);
-    setRescheduleEvent(null);
-  };
-
-  const openModal = (ev: CampaignEvent | null = null) => {
+  const openModal = (ev?: CampaignEvent | null) => {
     if (ev) {
       setEditingId(ev.id);
       setFDate(ev.date);
       setFCategory(ev.category);
       setFTitle(ev.title);
       setFDesc(ev.desc);
-      setFResponsible(ev.responsible || "");
-      setFLocation(ev.location || "");
-      setFPriority(ev.priority ?? 2);
-      setFDone(Boolean(ev.done));
-      setFImportant(Boolean(ev.important));
-      setFReminder(ev.reminder ?? 3);
+      setFResponsible(ev.responsible);
+      setFLocation(ev.location);
+      setFPriority(ev.priority);
+      setFDone(ev.done);
+      setFImportant(ev.important);
+      setFReminder(ev.reminder);
     } else {
       setEditingId(null);
-      setFDate("2026-08-16");
-      setFCategory("Agenda");
+      setFDate(new Date().toISOString().slice(0, 10));
+      setFCategory("FASE 1 — Alinhamento interno");
       setFTitle("");
       setFDesc("");
-      setFResponsible("");
-      setFLocation("");
+      setFResponsible("Coordenação geral");
+      setFLocation("Arapongas");
       setFPriority(2);
       setFDone(false);
       setFImportant(false);
@@ -916,14 +895,10 @@ export default function InstitutionalCommunicationClient({
     };
   }, [filterMonth, events]);
 
-  const visibleEventsMobile = useMemo(() => {
-    return filteredEvents.slice(0, visibleCountMobile);
-  }, [filteredEvents, visibleCountMobile]);
-
   return (
     <div className={`ae-root ${theme === "light" ? "light-mode" : ""}`} data-theme={theme}>
       <div className="ae-shell">
-        {/* TOPBAR EXECUTIVA COM SELETOR DE VISÃO */}
+        {/* TOPBAR EXECUTIVA DE ALTO IMPACTO */}
         <header className="ae-topbar">
           <div className="ae-brand">
             <div className="ae-logo">
@@ -935,9 +910,9 @@ export default function InstitutionalCommunicationClient({
               />
             </div>
             <div>
-              <h1 className="ae-title">Agenda Inteligente — Pedro Lupion e Sérgio Onofre</h1>
+              <h1 className="ae-title">Agenda Inteligente — Pedro Lupion & Sérgio Onofre</h1>
               <div className="ae-subtitle">
-                Cronograma operacional da campanha • Arapongas 2026 • atalhos `/` busca, `N` novo evento.
+                Cronograma operacional da campanha • Arapongas — PR • Pressione `/` busca, `N` novo evento.
               </div>
             </div>
           </div>
@@ -973,35 +948,54 @@ export default function InstitutionalCommunicationClient({
               </button>
             </div>
 
-            <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme} title="Alternar tema de cores">
-              {theme === "light" ? <IconMoon /> : <IconSun />}
-              <span>{theme === "light" ? "Escuro" : "Claro"}</span>
-            </button>
             <button
               type="button"
-              className="ae-btn"
-              onClick={() => exportIcal(events)}
-              title="Exportar para Google Calendar / Apple iCal (.ics)"
+              className="ae-btn ae-btn-primary"
+              onClick={() => openModal(null)}
+              title="Cadastrar novo compromisso na agenda (N)"
             >
-              <IconDownload />
-              <span>Agenda iCal (.ics)</span>
+              <IconPlus />
+              <span>+ Novo Evento</span>
             </button>
-            <button
-              type="button"
-              className="ae-btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Icons.Upload size={15} />
-              <span>Importar JSON</span>
-            </button>
-            <button type="button" className="ae-btn" onClick={exportJson} title="Exportar JSON">
-              <IconDownload />
-              <span>JSON</span>
-            </button>
-            <button type="button" className="ae-btn" onClick={() => window.print()} title="Imprimir cronograma">
-              <IconPrinter />
-            </button>
-            <button type="button" className="ae-btn ae-btn-primary" onClick={handleBackToDashboard}>
+
+            {/* MENU DROPDOWN DE FERRAMENTAS E OPÇÕES */}
+            <div className="ae-dropdown-wrap" ref={toolsMenuRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="ae-btn"
+                onClick={() => setIsToolsOpen(!isToolsOpen)}
+                title="Ferramentas e Opções da Agenda"
+              >
+                <IconSettings />
+                <span>Opções</span>
+                <IconChevronDown />
+              </button>
+              {isToolsOpen && (
+                <div className="ae-dropdown-menu">
+                  <button type="button" onClick={() => { exportIcal(events); setIsToolsOpen(false); }}>
+                    <IconDownload /> Agenda iCal (.ics)
+                  </button>
+                  <button type="button" onClick={() => { fileInputRef.current?.click(); setIsToolsOpen(false); }}>
+                    <Icons.Upload size={14} /> Importar JSON
+                  </button>
+                  <button type="button" onClick={() => { exportJson(); setIsToolsOpen(false); }}>
+                    <IconDownload /> Exportar JSON
+                  </button>
+                  <button type="button" onClick={() => { window.print(); setIsToolsOpen(false); }}>
+                    <IconPrinter /> Imprimir Cronograma
+                  </button>
+                  <button type="button" onClick={() => { toggleTheme(); setIsToolsOpen(false); }}>
+                    {theme === "light" ? <IconMoon /> : <IconSun />} {theme === "light" ? "Modo Escuro" : "Modo Claro"}
+                  </button>
+                  <div className="ae-dropdown-divider" />
+                  <button type="button" onClick={() => { resetBase(); setIsToolsOpen(false); }} style={{ color: "var(--ae-danger)" }}>
+                    <IconTrash /> Resetar Modelo Inicial
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button type="button" className="ae-btn ae-btn-ghost" onClick={handleBackToDashboard} title="Voltar para a Visão Geral">
               <IconArrowLeft />
               <span>Dashboard</span>
             </button>
@@ -1015,39 +1009,55 @@ export default function InstitutionalCommunicationClient({
           />
         </header>
 
-        {/* BARRA DE METRICAS RETRÁTIL / COMPACTA EM ACCORDION NO MOBILE */}
-        <section className="ae-stats-container">
-          <div className="ae-stats-mobile-bar" onClick={() => setIsMetricsExpanded(!isMetricsExpanded)}>
-            <div className="ae-stats-mobile-summary">
-              <span className="ae-accent">{stats.total} Total</span> ·{" "}
-              <span className="ae-warn">{stats.pending} Pendentes</span> ·{" "}
-              <span>Próximo: {stats.nextDays !== null ? (stats.nextDays === 0 ? "Hoje" : `${stats.nextDays}d`) : "—"}</span>
+        {/* UNIFIED HERO BANNER: CONTAGEM REGRESSIVA + 4 CARTÕES DE MÉTRICAS */}
+        <section className="ae-hero-banner">
+          <div className="ae-hero-countdown">
+            <div className="ae-hero-badge">🗳️ ELEIÇÕES 2026 — 1º TURNO</div>
+            <div className="ae-hero-target">
+              Votação Geral: <strong>04 de Outubro de 2026</strong>
             </div>
-            <button type="button" className="ae-mini-btn">
-              {isMetricsExpanded ? <IconChevronUp /> : <IconChevronDown />}
-              <span>{isMetricsExpanded ? "Ocultar" : "Métricas"}</span>
-            </button>
+            <div className="ae-countdown-boxes">
+              <div className="ae-cbox">
+                <strong>{countdown.days}</strong>
+                <small>DIAS</small>
+              </div>
+              <div className="ae-cbox-sep">:</div>
+              <div className="ae-cbox">
+                <strong>{String(countdown.hours).padStart(2, "0")}</strong>
+                <small>HORAS</small>
+              </div>
+              <div className="ae-cbox-sep">:</div>
+              <div className="ae-cbox">
+                <strong>{String(countdown.minutes).padStart(2, "0")}</strong>
+                <small>MINUTOS</small>
+              </div>
+              <div className="ae-cbox-sep">:</div>
+              <div className="ae-cbox">
+                <strong>{String(countdown.seconds).padStart(2, "0")}</strong>
+                <small>SEGUNDOS</small>
+              </div>
+            </div>
           </div>
 
-          <div className={`ae-stats ${isMetricsExpanded ? "expanded" : ""}`}>
-            <div className="ae-stat">
-              <div className="ae-stat-label">Total de Eventos</div>
-              <div className="ae-stat-value" style={{ color: "var(--ae-accent)" }}>{stats.total}</div>
-              <div className="ae-stat-hint">marcos operacionais no calendário</div>
+          <div className="ae-hero-metrics">
+            <div className="ae-hstat">
+              <div className="ae-hstat-label">Total de Eventos</div>
+              <div className="ae-hstat-val" style={{ color: "#38bdf8" }}>{stats.total}</div>
+              <div className="ae-hstat-sub">marcos operacionais</div>
             </div>
-            <div className="ae-stat">
-              <div className="ae-stat-label">Pendentes</div>
-              <div className="ae-stat-value" style={{ color: "var(--ae-warn)" }}>{stats.pending}</div>
-              <div className="ae-stat-hint">exigem acompanhamento ativo</div>
+            <div className="ae-hstat">
+              <div className="ae-hstat-label">Pendentes</div>
+              <div className="ae-hstat-val" style={{ color: "#fbbf24" }}>{stats.pending}</div>
+              <div className="ae-hstat-sub">exigem ação</div>
             </div>
-            <div className="ae-stat">
-              <div className="ae-stat-label">Concluídos</div>
-              <div className="ae-stat-value" style={{ color: "var(--ae-ok)" }}>{stats.done}</div>
-              <div className="ae-stat-hint">finalizados pela equipe</div>
+            <div className="ae-hstat">
+              <div className="ae-hstat-label">Concluídos</div>
+              <div className="ae-hstat-val" style={{ color: "#34d399" }}>{stats.done}</div>
+              <div className="ae-hstat-sub">finalizados</div>
             </div>
-            <div className="ae-stat">
-              <div className="ae-stat-label">Próximo Marco</div>
-              <div className="ae-stat-value" style={{ color: "var(--ae-text)" }}>
+            <div className="ae-hstat">
+              <div className="ae-hstat-label">Próximo Marco</div>
+              <div className="ae-hstat-val" style={{ fontSize: "1.25rem", color: "#f8fafc" }}>
                 {stats.nextDays !== null
                   ? stats.nextDays < 0
                     ? `Há ${Math.abs(stats.nextDays)}d`
@@ -1056,8 +1066,8 @@ export default function InstitutionalCommunicationClient({
                       : `${stats.nextDays} dias`
                   : "Concluído"}
               </div>
-              <div className="ae-stat-hint">
-                {stats.next ? `${stats.next.title} (${dateLabel(stats.next.date)})` : "Nenhum evento pendente"}
+              <div className="ae-hstat-sub" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {stats.next ? stats.next.title : "Sem pendências"}
               </div>
             </div>
           </div>
@@ -1102,52 +1112,35 @@ export default function InstitutionalCommunicationClient({
                 </div>
                 <div className="ae-kanban-body">
                   {groupEvents.length === 0 ? (
-                    <div className="ae-empty-sm">Nenhum marco nesta fase.</div>
+                    <div className="ae-empty-sm">Nenhum evento registrado</div>
                   ) : (
-                    groupEvents.map((ev) => {
-                      const d = daysUntil(ev.date);
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`ae-kcard ${ev.done ? "done" : ""} ${selectedEventId === ev.id ? "selected" : ""}`}
-                          onClick={() => setSelectedEventId(ev.id)}
-                        >
-                          <div className="ae-kcard-head">
-                            <span className="ae-badge ae-badge-date">{dateLabel(ev.date)}</span>
-                            {ev.important && <span className="ae-badge ae-badge-danger"><IconStar /></span>}
-                          </div>
-                          <h4 className="ae-kcard-title">{ev.title}</h4>
-                          <p className="ae-kcard-desc">{ev.desc}</p>
-                          <div className="ae-kcard-foot">
-                            <span className={`ae-badge ae-badge-${ev.done ? "ok" : d <= 3 ? "danger" : "warn"}`}>
-                              {ev.done ? "Concluído" : d === 0 ? "Hoje" : `${d}d`}
-                            </span>
-                            <div className="ae-actions">
-                              <button
-                                type="button"
-                                className="ae-mini-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleDone(ev.id);
-                                }}
-                              >
-                                {ev.done ? <IconUndo /> : <IconCheck />}
-                              </button>
-                              <button
-                                type="button"
-                                className="ae-mini-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openModal(ev);
-                                }}
-                              >
-                                <IconEdit />
-                              </button>
-                            </div>
-                          </div>
+                    groupEvents.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className={`ae-kcard ${ev.done ? "done" : ""} ${selectedEvent?.id === ev.id ? "selected" : ""}`}
+                        onClick={() => setSelectedEventId(ev.id)}
+                      >
+                        <div className="ae-kcard-head">
+                          <span className="ae-badge" style={{ background: getCategoryColor(ev.category).bg, color: getCategoryColor(ev.category).text, borderColor: getCategoryColor(ev.category).border }}>
+                            {dateLabel(ev.date)}
+                          </span>
+                          {ev.important && <span style={{ color: "#fbbf24" }}><IconStar /></span>}
                         </div>
-                      );
-                    })
+                        <h4 className="ae-kcard-title">{ev.title}</h4>
+                        <p className="ae-kcard-desc">{ev.desc}</p>
+                        <div className="ae-kcard-foot">
+                          <span className="ae-badge">{ev.location}</span>
+                          <button
+                            type="button"
+                            className="ae-mini-btn"
+                            onClick={(e) => { e.stopPropagation(); toggleDone(ev.id); }}
+                          >
+                            {ev.done ? <IconUndo /> : <IconCheck />}
+                            <span>{ev.done ? "Desfazer" : "Concluir"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
@@ -1155,41 +1148,97 @@ export default function InstitutionalCommunicationClient({
           </section>
         )}
 
-        {/* MODO LISTA E CALENDÁRIO COM LAYOUT MASTER-DETAIL */}
-        {viewMode !== "kanban" && (
-          <section className={`ae-layout ae-show-mobile-${activeMobileTab}`}>
-            {/* COLUNA ESQUERDA: CONTROLES & EVENTOS */}
-            <div className="ae-grid ae-col-main">
-              <article className="ae-card">
+        {/* MODO CALENDÁRIO MÊS COMPLETO */}
+        {viewMode === "calendar" && (
+          <section className="ae-card" style={{ padding: "20px" }}>
+            <div className="ae-cal-head" style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: 800, margin: 0 }}>{calendarData.monthLabel}</h2>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  <button
+                    type="button"
+                    className="ae-mini-btn"
+                    onClick={() => setFilterMonth(new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1))}
+                  >
+                    ‹ Anterior
+                  </button>
+                  <button
+                    type="button"
+                    className="ae-mini-btn"
+                    onClick={() => setFilterMonth(new Date())}
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    className="ae-mini-btn"
+                    onClick={() => setFilterMonth(new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1))}
+                  >
+                    Próximo ›
+                  </button>
+                </div>
+              </div>
+              <div className="ae-legend">
+                <span className="ae-badge ae-badge-ok">Concluído</span>
+                <span className="ae-badge ae-badge-warn">Pendente</span>
+                <span className="ae-badge ae-badge-danger">Importante</span>
+              </div>
+            </div>
+
+            <div className="ae-month-grid">
+              {dowLabels.map((dow) => (
+                <div key={dow} className="ae-dow">{dow}</div>
+              ))}
+              {calendarData.cells.map((cell, idx) => (
+                <div
+                  key={idx}
+                  className={`ae-day ${cell.inMonth ? "" : "muted"} ${filterDate === cell.iso ? "selected" : ""}`}
+                  onClick={() => setFilterDate(filterDate === cell.iso ? null : cell.iso)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="ae-day-num">{cell.dateNumber}</div>
+                  {cell.eventCount > 0 && (
+                    <span className={`ae-badge ${cell.highlight === "ok" ? "ae-badge-ok" : cell.highlight === "danger" ? "ae-badge-danger" : "ae-badge-warn"}`}>
+                      {cell.eventCount} {cell.eventCount === 1 ? "evento" : "eventos"}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* VISÃO LISTA MASTER-DETAIL (PADRÃO) */}
+        {viewMode === "list" && (
+          <div className={`ae-layout ${activeMobileTab === "agenda" ? "ae-show-mobile-agenda" : activeMobileTab === "calendario" ? "ae-show-mobile-calendario" : "ae-show-mobile-resumo"}`}>
+            {/* COLUNA ESQUERDA: FILTROS + TIMELINE DE COMPROMISSOS */}
+            <div className="ae-col-main ae-grid">
+              <section className="ae-card">
                 <div className="ae-card-head">
                   <div>
                     <h2>Agenda de Compromissos</h2>
-                    <div className="ae-footer-note">
+                    <p style={{ margin: "4px 0 0 0", fontSize: "0.82rem", color: "var(--ae-muted)" }}>
                       Pressione <kbd className="ae-kbd">/</kbd> para pesquisar ou <kbd className="ae-kbd">N</kbd> para novo evento.
-                    </div>
+                    </p>
                   </div>
-                  <div className="ae-split">
-                    <button
-                      type="button"
-                      className="ae-btn ae-btn-primary ae-btn-touch"
-                      onClick={() => openModal(null)}
-                    >
-                      <IconPlus />
-                      <span>Novo Evento</span>
+                  {filterDate && (
+                    <button type="button" className="ae-mini-btn ae-btn-trash" onClick={() => setFilterDate(null)}>
+                      <IconClose /> Limpar Filtro por Data ({dateLabel(filterDate)})
                     </button>
-                  </div>
+                  )}
                 </div>
                 <div className="ae-card-body">
-                  {/* CONTROLES E FILTROS */}
+                  {/* BARRA DE CONTROLES E PESQUISA */}
                   <div className="ae-controls">
                     <div className="ae-searchwrap">
-                      <span className="ae-searchicon"><IconSearch /></span>
+                      <div className="ae-searchicon"><IconSearch /></div>
                       <input
                         ref={searchInputRef}
+                        type="text"
                         className="ae-search"
+                        placeholder="Pesquisar por título, responsável, local ou descrição…"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Pesquisar por data, título, responsável, local (pressione /)..."
                       />
                     </div>
                     <select
@@ -1197,36 +1246,24 @@ export default function InstitutionalCommunicationClient({
                       value={filterCategory}
                       onChange={(e) => setFilterCategory(e.target.value)}
                     >
-                      <option value="all">Todas as Categorias</option>
+                      <option value="all">Todas as Categorias ({categories.length})</option>
                       {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
+                        <option key={cat} value={cat}>{cat}</option>
                       ))}
-                    </select>
-                    <select
-                      className="ae-select"
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                    >
-                      <option value="all">Todos os Status</option>
-                      <option value="pending">Pendentes</option>
-                      <option value="done">Concluídos</option>
-                      <option value="important">Importantes</option>
                     </select>
                     <select
                       className="ae-select"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                     >
-                      <option value="dateAsc">Data (mais recente ↑)</option>
-                      <option value="dateDesc">Data (mais antiga ↓)</option>
+                      <option value="dateAsc">Data (mais antiga ➔ recente)</option>
+                      <option value="dateDesc">Data (mais recente ➔ antiga)</option>
                       <option value="priority">Prioridade</option>
-                      <option value="title">Título</option>
+                      <option value="title">Título A-Z</option>
                     </select>
                   </div>
 
-                  {/* PILULAS DE FILTRO RÁPIDO */}
+                  {/* PÍLULAS DE FILTRO RÁPIDO */}
                   <div className="ae-pills-bar">
                     <button
                       type="button"
@@ -1254,561 +1291,342 @@ export default function InstitutionalCommunicationClient({
                       className={`ae-pill ${filterStatus === "important" ? "active" : ""}`}
                       onClick={() => setFilterStatus("important")}
                     >
-                      Importantes
+                      ★ Importantes ({events.filter((e) => e.important).length})
                     </button>
                   </div>
 
-                  {/* CARDS RESPONSIVOS PARA MOBILE (TOUCH OPTIMIZED) */}
-                  <div className="ae-mobile-cards">
-                    {visibleEventsMobile.length === 0 ? (
-                      <div className="ae-empty">Nenhum evento encontrado com os filtros selecionados.</div>
+                  {/* TIMELINE DE COMPROMISSOS (REPROJETADA) */}
+                  <div className="ae-timeline-list">
+                    {filteredEvents.length === 0 ? (
+                      <div className="ae-empty">
+                        Nenhum compromisso encontrado para os filtros selecionados.
+                      </div>
                     ) : (
-                      visibleEventsMobile.map((ev) => {
-                        const d = daysUntil(ev.date);
+                      filteredEvents.map((ev) => {
+                        const catStyle = getCategoryColor(ev.category);
+                        const isSelected = selectedEvent?.id === ev.id;
+
                         return (
                           <div
                             key={ev.id}
-                            className={`ae-mcard ${ev.done ? "ae-mcard-done" : ""} ${selectedEventId === ev.id ? "selected" : ""}`}
+                            className={`ae-timeline-item ${ev.done ? "done" : ""} ${isSelected ? "selected" : ""}`}
                             onClick={() => setSelectedEventId(ev.id)}
                           >
-                            <div className="ae-mcard-header">
-                              <div className="ae-mcard-date-badge">
-                                <IconCalendar />
-                                <span>{dateLabel(ev.date)} ({weekdayLabel(ev.date)})</span>
-                              </div>
-                              {ev.important && (
-                                <span className="ae-badge ae-badge-danger">
-                                  <IconStar /> Importante
-                                </span>
-                              )}
+                            {/* BADGE DE DATA TIMELINE */}
+                            <div className="ae-date-block">
+                              <div className="ae-date-day">{dayNumber(ev.date)}</div>
+                              <div className="ae-date-month">{monthShortLabel(ev.date)}</div>
+                              <div className="ae-date-dow">{weekdayLabel(ev.date)}</div>
                             </div>
 
-                            <h3 className="ae-mcard-title">{ev.title}</h3>
-                            <div className="ae-mcard-desc">{ev.desc}</div>
-
-                            <div className="ae-mcard-meta">
-                              <span className="ae-badge ae-badge-cat">{ev.category}</span>
-                              {ev.location && (
-                                <span className="ae-badge ae-badge-loc">
-                                  <IconLocation /> {ev.location}
+                            {/* CONTEÚDO PRINCIPAL DO CARD */}
+                            <div className="ae-event-content">
+                              <div className="ae-event-top">
+                                <span className="ae-cat-badge" style={{ background: catStyle.bg, color: catStyle.text, borderColor: catStyle.border }}>
+                                  {ev.category}
                                 </span>
-                              )}
-                              {ev.responsible && (
-                                <span className="ae-badge ae-badge-resp">
-                                  <IconUser /> {ev.responsible}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="ae-mcard-footer">
-                              <div className="ae-mcard-status">
-                                {ev.done ? (
-                                  <span className="ae-badge ae-badge-ok"><IconCheck /> Concluído</span>
-                                ) : d < 0 ? (
-                                  <span className="ae-badge ae-badge-danger">Atrasado ({Math.abs(d)}d)</span>
-                                ) : d === 0 ? (
-                                  <span className="ae-badge ae-badge-danger">Hoje</span>
-                                ) : (
-                                  <span className="ae-badge ae-badge-warn">{d} dia{d === 1 ? "" : "s"}</span>
+                                {ev.important && (
+                                  <span className="ae-important-star" title="Compromisso prioritário/importante">
+                                    <IconStar /> Importante
+                                  </span>
                                 )}
                               </div>
 
-                              <div className="ae-mcard-actions">
-                                <button
-                                  type="button"
-                                  className={`ae-mini-btn ${ev.done ? "ae-btn-undo" : "ae-btn-check"}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleDone(ev.id);
-                                  }}
-                                >
-                                  {ev.done ? <IconUndo /> : <IconCheck />}
-                                  <span>{ev.done ? "Reabrir" : "Concluir"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ae-mini-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openModal(ev);
-                                  }}
-                                >
-                                  <IconEdit />
-                                  <span>Editar</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ae-mini-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    duplicateEvent(ev.id);
-                                  }}
-                                >
-                                  <IconCopy />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ae-mini-btn ae-btn-trash"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteEvent(ev.id);
-                                  }}
-                                >
-                                  <IconTrash />
-                                </button>
+                              <h3 className="ae-event-title">{ev.title}</h3>
+                              <p className="ae-event-desc">{ev.desc}</p>
+
+                              <div className="ae-event-meta">
+                                {ev.location && (
+                                  <span className="ae-meta-item">
+                                    <IconLocation /> {ev.location}
+                                  </span>
+                                )}
+                                {ev.responsible && (
+                                  <span className="ae-meta-item">
+                                    <IconUser /> {ev.responsible}
+                                  </span>
+                                )}
                               </div>
+                            </div>
+
+                            {/* AÇÕES NO CARD */}
+                            <div className="ae-event-actions">
+                              <button
+                                type="button"
+                                className={`ae-mini-btn ${ev.done ? "" : "ae-btn-primary"}`}
+                                onClick={(e) => { e.stopPropagation(); toggleDone(ev.id); }}
+                                title={ev.done ? "Marcar como pendente" : "Marcar como concluído"}
+                              >
+                                {ev.done ? <IconUndo /> : <IconCheck />}
+                                <span>{ev.done ? "Desfazer" : "Concluir"}</span>
+                              </button>
                             </div>
                           </div>
                         );
                       })
                     )}
-
-                    {filteredEvents.length > visibleCountMobile && (
-                      <button
-                        type="button"
-                        className="ae-btn ae-btn-touch ae-btn-more"
-                        onClick={() => setVisibleCountMobile((prev) => prev + 6)}
-                      >
-                        Carregar Mais Compromissos ({filteredEvents.length - visibleCountMobile} restantes)
-                      </button>
-                    )}
-                  </div>
-
-                  {/* TABELA DE EVENTOS PARA DESKTOP */}
-                  <div className="ae-table-wrap">
-                    <table className="ae-table">
-                      <thead>
-                        <tr>
-                          <th className="ae-th" style={{ width: "13%" }}>Data</th>
-                          <th className="ae-th" style={{ width: "18%" }}>Categoria</th>
-                          <th className="ae-th">Título / Descrição</th>
-                          <th className="ae-th" style={{ width: "11%" }}>Prazo</th>
-                          <th className="ae-th" style={{ width: "11%" }}>Status</th>
-                          <th className="ae-th" style={{ width: "12%" }}>Responsável</th>
-                          <th className="ae-th" style={{ width: "11%" }}>Local</th>
-                          <th className="ae-th" style={{ width: "14%" }}>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredEvents.length === 0 ? (
-                          <tr>
-                            <td className="ae-td" colSpan={8}>
-                              <div className="ae-empty">Nenhum evento encontrado com os filtros selecionados.</div>
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredEvents.map((ev) => {
-                            const d = daysUntil(ev.date);
-                            const isSelected = selectedEventId === ev.id;
-                            return (
-                              <tr
-                                key={ev.id}
-                                className={`${ev.done ? "ae-row-done" : ""} ${isSelected ? "ae-row-selected" : ""}`}
-                                onClick={() => setSelectedEventId(ev.id)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                <td className="ae-td" data-label="Data">
-                                  <div>
-                                    <strong style={{ color: "var(--ae-text)" }}>{dateLabel(ev.date)}</strong>
-                                  </div>
-                                  <div className="ae-footer-note">{weekdayLabel(ev.date)}</div>
-                                </td>
-                                <td className="ae-td" data-label="Categoria">
-                                  <span className="ae-badge">{ev.category}</span>
-                                </td>
-                                <td className="ae-td" data-label="Título">
-                                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                                    <strong>{ev.title}</strong>
-                                    {ev.important && (
-                                      <span className="ae-badge ae-badge-danger">
-                                        <IconStar /> Importante
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="ae-footer-note">{ev.desc}</div>
-                                </td>
-                                <td className="ae-td" data-label="Prazo">
-                                  {ev.done ? (
-                                    <span className="ae-badge ae-badge-ok">Concluído</span>
-                                  ) : d < 0 ? (
-                                    <span className="ae-badge ae-badge-danger">Atrasado ({Math.abs(d)}d)</span>
-                                  ) : d === 0 ? (
-                                    <span className="ae-badge ae-badge-danger">Hoje</span>
-                                  ) : d <= 7 ? (
-                                    <span className="ae-badge ae-badge-danger">{d} dia{d === 1 ? "" : "s"}</span>
-                                  ) : (
-                                    <span className="ae-badge ae-badge-warn">{d} dias</span>
-                                  )}
-                                </td>
-                                <td className="ae-td" data-label="Status">
-                                  {ev.done ? (
-                                    <span className="ae-badge ae-badge-ok">Concluído</span>
-                                  ) : ev.important ? (
-                                    <span className="ae-badge ae-badge-warn">Importante</span>
-                                  ) : (
-                                    <span className="ae-badge">Pendente</span>
-                                  )}
-                                </td>
-                                <td className="ae-td" data-label="Responsável">
-                                  <span className="ae-badge">{ev.responsible || "—"}</span>
-                                </td>
-                                <td className="ae-td" data-label="Local">
-                                  <span className="ae-badge">{ev.location || "—"}</span>
-                                </td>
-                                <td className="ae-td" data-label="Ações">
-                                  <div className="ae-actions">
-                                    <button
-                                      type="button"
-                                      className="ae-mini-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleDone(ev.id);
-                                      }}
-                                      title={ev.done ? "Reabrir evento" : "Marcar como concluído"}
-                                    >
-                                      {ev.done ? <IconUndo /> : <IconCheck />}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="ae-mini-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openModal(ev);
-                                      }}
-                                      title="Editar evento"
-                                    >
-                                      <IconEdit />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="ae-mini-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        duplicateEvent(ev.id);
-                                      }}
-                                      title="Duplicar evento"
-                                    >
-                                      <IconCopy />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="ae-mini-btn ae-btn-trash"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        deleteEvent(ev.id);
-                                      }}
-                                      title="Excluir evento"
-                                    >
-                                      <IconTrash />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
                   </div>
                 </div>
-              </article>
+              </section>
             </div>
 
-            {/* COLUNA DIREITA: INSPECTOR MASTER-DETAIL & CALENDÁRIO */}
-            <div className="ae-sidebar-panel ae-col-side">
-              {/* INSPECTOR DE DETALHES MASTER-DETAIL */}
+            {/* COLUNA DIREITA: INSPECTOR MASTER-DETAIL + CALENDÁRIO */}
+            <div className="ae-col-side ae-sidebar-panel">
+              {/* CARTÃO DO EVENTO SELECIONADO (INSPECTOR) */}
               {selectedEvent && (
-                <article className="ae-card ae-inspector-card">
+                <section className="ae-card ae-inspector-card">
                   <div className="ae-card-head">
-                    <div>
-                      <h3>Detalhes do Compromisso</h3>
-                      <div className="ae-footer-note">Informações completas do evento selecionado.</div>
+                    <div className="ae-badge" style={{ background: getCategoryColor(selectedEvent.category).bg, color: getCategoryColor(selectedEvent.category).text, borderColor: getCategoryColor(selectedEvent.category).border }}>
+                      {selectedEvent.category}
                     </div>
-                    <div className="ae-actions">
-                      <button
-                        type="button"
-                        className="ae-mini-btn"
-                        onClick={() => openModal(selectedEvent)}
-                      >
-                        <IconEdit /> Editar
-                      </button>
-                    </div>
+                    <span className={`ae-badge ${selectedEvent.done ? "ae-badge-ok" : "ae-badge-warn"}`}>
+                      {selectedEvent.done ? "✓ Concluído" : "⏱ Pendente"}
+                    </span>
                   </div>
                   <div className="ae-card-body">
                     <div className="ae-inspector-title">
                       <h2>{selectedEvent.title}</h2>
-                      <span className={`ae-badge ae-badge-${selectedEvent.done ? "ok" : "warn"}`}>
-                        {selectedEvent.done ? "Concluído" : "Pendente"}
-                      </span>
                     </div>
-
-                    <p className="ae-inspector-desc">{selectedEvent.desc || "Sem observações adicionais."}</p>
+                    <p className="ae-inspector-desc">{selectedEvent.desc}</p>
 
                     <div className="ae-inspector-grid">
                       <div className="ae-inspector-item">
                         <span className="label"><IconCalendar /> Data</span>
-                        <strong className="val">{dateLabel(selectedEvent.date)} ({weekdayLabel(selectedEvent.date)})</strong>
-                      </div>
-                      <div className="ae-inspector-item">
-                        <span className="label"><IconStar /> Categoria</span>
-                        <strong className="val">{selectedEvent.category}</strong>
-                      </div>
-                      <div className="ae-inspector-item">
-                        <span className="label"><IconUser /> Responsável</span>
-                        <strong className="val">{selectedEvent.responsible || "Não atribuído"}</strong>
+                        <span className="val"><strong>{dateLabel(selectedEvent.date)}</strong> ({weekdayLabel(selectedEvent.date)})</span>
                       </div>
                       <div className="ae-inspector-item">
                         <span className="label"><IconLocation /> Local</span>
-                        <strong className="val">{selectedEvent.location || "Não especificado"}</strong>
+                        <span className="val">{selectedEvent.location || "Arapongas"}</span>
+                      </div>
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconUser /> Responsável</span>
+                        <span className="val">{selectedEvent.responsible || "Coordenação"}</span>
+                      </div>
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconStar /> Prioridade</span>
+                        <span className="val">P{selectedEvent.priority} {selectedEvent.important ? "· Importante" : ""}</span>
                       </div>
                     </div>
 
                     <div className="ae-inspector-actions">
                       <button
                         type="button"
-                        className={`ae-btn ${selectedEvent.done ? "ae-btn-undo" : "ae-btn-primary"}`}
+                        className="ae-btn ae-btn-primary"
                         onClick={() => toggleDone(selectedEvent.id)}
                       >
                         {selectedEvent.done ? <IconUndo /> : <IconCheck />}
-                        <span>{selectedEvent.done ? "Reabrir Compromisso" : "Marcar como Concluído"}</span>
+                        <span>{selectedEvent.done ? "Reabrir Evento" : "Marcar como Concluído"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="ae-btn"
+                        onClick={() => openModal(selectedEvent)}
+                      >
+                        <IconEdit /> Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="ae-btn"
+                        onClick={() => duplicateEvent(selectedEvent.id)}
+                      >
+                        <IconCopy /> Duplicar
+                      </button>
+                      <button
+                        type="button"
+                        className="ae-btn ae-btn-trash"
+                        onClick={() => deleteEvent(selectedEvent.id)}
+                      >
+                        <IconTrash /> Excluir
                       </button>
                     </div>
                   </div>
-                </article>
+                </section>
               )}
 
-              {/* CALENDÁRIO MENSAL */}
-              <article className="ae-card">
+              {/* CALENDÁRIO MENSAUL INTERATIVO */}
+              <section className="ae-card">
                 <div className="ae-card-head">
-                  <div>
-                    <h3>Calendário Mensal</h3>
-                    <div className="ae-footer-note">Visão global dos eventos por dia.</div>
+                  <h3>Calendário Mensal</h3>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      type="button"
+                      className="ae-mini-btn"
+                      onClick={() => setFilterMonth(new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1))}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="ae-mini-btn"
+                      onClick={() => setFilterMonth(new Date())}
+                    >
+                      Hoje
+                    </button>
+                    <button
+                      type="button"
+                      className="ae-mini-btn"
+                      onClick={() => setFilterMonth(new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1))}
+                    >
+                      ›
+                    </button>
                   </div>
                 </div>
-                <div className="ae-card-body">
-                  <div className="ae-calendar">
-                    <div className="ae-cal-head">
-                      <strong>
-                        {calendarData.monthLabel.charAt(0).toUpperCase() +
-                          calendarData.monthLabel.slice(1)}
-                      </strong>
-                      <div className="ae-actions">
-                        <button
-                          type="button"
-                          className="ae-mini-btn"
-                          onClick={() =>
-                            setFilterMonth(
-                              new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1),
-                            )
-                          }
-                          title="Mês anterior"
-                        >
-                          <IconChevronLeft />
-                        </button>
-                        <button
-                          type="button"
-                          className="ae-mini-btn"
-                          onClick={() =>
-                            setFilterMonth(
-                              new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-                            )
-                          }
-                          title="Mês atual"
-                        >
-                          Hoje
-                        </button>
-                        <button
-                          type="button"
-                          className="ae-mini-btn"
-                          onClick={() =>
-                            setFilterMonth(
-                              new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1),
-                            )
-                          }
-                          title="Próximo mês"
-                        >
-                          <IconChevronRight />
-                        </button>
+                <div className="ae-card-body" style={{ padding: "12px" }}>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 700, marginBottom: "8px", textTransform: "capitalize", color: "var(--ae-text)" }}>
+                    {calendarData.monthLabel}
+                  </div>
+
+                  <div className="ae-month-grid">
+                    {dowLabels.map((dow) => (
+                      <div key={dow} className="ae-dow">{dow}</div>
+                    ))}
+                    {calendarData.cells.map((cell, idx) => (
+                      <div
+                        key={idx}
+                        className={`ae-day ${cell.inMonth ? "" : "muted"} ${filterDate === cell.iso ? "selected" : ""}`}
+                        onClick={() => setFilterDate(filterDate === cell.iso ? null : cell.iso)}
+                        style={{ cursor: "pointer", position: "relative" }}
+                        title={cell.eventCount > 0 ? `${cell.eventCount} eventos nesta data` : ""}
+                      >
+                        <div className="ae-day-num">{cell.dateNumber}</div>
+                        {cell.eventCount > 0 && (
+                          <div
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: cell.highlight === "ok" ? "#34d399" : cell.highlight === "danger" ? "#f87171" : "#fbbf24",
+                              margin: "2px auto 0 auto",
+                            }}
+                          />
+                        )}
                       </div>
-                    </div>
-                    <div className="ae-legend">
-                      <span className="ae-badge ae-badge-ok">Concluído</span>
-                      <span className="ae-badge ae-badge-warn">Pendente</span>
-                      <span className="ae-badge ae-badge-danger">Urgente</span>
-                    </div>
-                    <div className="ae-month-grid">
-                      {dowLabels.map((d) => (
-                        <div key={d} className="ae-dow">
-                          {d}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="ae-month-grid">
-                      {calendarData.cells.map((cell, idx) => (
-                        <div
-                          key={idx}
-                          className={`ae-day ${cell.inMonth ? "" : "muted"}`}
-                          title={cell.iso}
-                        >
-                          <div className="ae-day-num">{cell.dateNumber}</div>
-                          {cell.eventCount > 0 ? (
-                            <div className={`ae-badge ae-badge-${cell.highlight || "warn"}`}>
-                              {cell.eventCount} {cell.eventCount === 1 ? "evt" : "evts"}
-                            </div>
-                          ) : (
-                            <div className="ae-footer-note">&nbsp;</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 </div>
-              </article>
+              </section>
             </div>
-          </section>
+          </div>
         )}
-      </div>
 
-      {/* BOTÃO FLUTUANTE (FAB) PARA CELULAR */}
-      <button
-        type="button"
-        className="ae-fab-btn"
-        onClick={() => openModal(null)}
-        title="Cadastrar Novo Evento"
-      >
-        <IconPlus />
-      </button>
+        {/* BOTÃO FLUTUANTE (FAB) PARA CADASTRAR EM MOBILE */}
+        <button
+          type="button"
+          className="ae-fab-btn"
+          onClick={() => openModal(null)}
+          title="Cadastrar compromisso (+)"
+        >
+          <IconPlus />
+        </button>
 
-      {/* MODAL BOTTOM SHEET TOUCH FRIENDLY */}
-      {isModalOpen && (
-        <div className="ae-modal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="ae-modal-card ae-modal-bottom-sheet">
-            <div className="ae-card-head">
-              <div>
-                <h2>{editingId !== null ? "Editar Evento" : "Novo Evento"}</h2>
-                <div className="ae-footer-note">Armazenado com segurança no navegador.</div>
+        {/* MODAL DE CRIAÇÃO / EDIÇÃO */}
+        {isModalOpen && (
+          <div className="ae-modal">
+            <div className="ae-modal-card ae-modal-bottom-sheet">
+              <div className="ae-card-head">
+                <h2>{editingId !== null ? "Editar Compromisso" : "Novo Compromisso"}</h2>
+                <button type="button" className="ae-mini-btn" onClick={closeModal}><IconClose /></button>
               </div>
-              <button type="button" className="ae-mini-btn" onClick={closeModal}>
-                ✕
-              </button>
-            </div>
-            <div className="ae-modal-body">
-              <div className="ae-form-grid">
-                <div>
-                  <label>Data</label>
-                  <input
-                    className="ae-field"
-                    type="date"
-                    value={fDate}
-                    onChange={(e) => setFDate(e.target.value)}
-                  />
+              <div className="ae-modal-body">
+                <div className="ae-form-grid">
+                  <div>
+                    <label>Data *</label>
+                    <input
+                      type="date"
+                      className="ae-field"
+                      value={fDate}
+                      onChange={(e) => setFDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Categoria / Fase *</label>
+                    <input
+                      type="text"
+                      className="ae-field"
+                      list="categories-list"
+                      placeholder="Ex: FASE 1 — Alinhamento interno"
+                      value={fCategory}
+                      onChange={(e) => setFCategory(e.target.value)}
+                    />
+                    <datalist id="categories-list">
+                      {categories.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="full">
+                    <label>Título do Compromisso *</label>
+                    <input
+                      type="text"
+                      className="ae-field"
+                      placeholder="Ex: Reunião com lideranças de bairro"
+                      value={fTitle}
+                      onChange={(e) => setFTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="full">
+                    <label>Descrição Operacional</label>
+                    <textarea
+                      className="ae-textarea"
+                      placeholder="Detalhes, horários, pauta da reunião…"
+                      value={fDesc}
+                      onChange={(e) => setFDesc(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Localização</label>
+                    <input
+                      type="text"
+                      className="ae-field"
+                      placeholder="Ex: Arapongas"
+                      value={fLocation}
+                      onChange={(e) => setFLocation(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Responsável</label>
+                    <input
+                      type="text"
+                      className="ae-field"
+                      placeholder="Ex: Coordenação"
+                      value={fResponsible}
+                      onChange={(e) => setFResponsible(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label>Prioridade</label>
+                    <select
+                      className="ae-select"
+                      value={fPriority}
+                      onChange={(e) => setFPriority(Number(e.target.value))}
+                    >
+                      <option value={1}>P1 — Baixa</option>
+                      <option value={2}>P2 — Média</option>
+                      <option value={3}>P3 — Alta</option>
+                    </select>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", paddingTop: "18px" }}>
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={fImportant}
+                        onChange={(e) => setFImportant(e.target.checked)}
+                      />
+                      <span>Compromisso Importante (★)</span>
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <label>Categoria</label>
-                  <input
-                    className="ae-field"
-                    placeholder="Ex.: Campanha, Jurídico, Agenda"
-                    value={fCategory}
-                    onChange={(e) => setFCategory(e.target.value)}
-                  />
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "14px" }}>
+                  <button type="button" className="ae-btn" onClick={closeModal}>Cancelar</button>
+                  <button type="button" className="ae-btn ae-btn-primary" onClick={saveFromModal}>
+                    {editingId !== null ? "Salvar Alterações" : "Cadastrar Evento"}
+                  </button>
                 </div>
-                <div className="full">
-                  <label>Título</label>
-                  <input
-                    className="ae-field"
-                    placeholder="Ex.: Último dia para convenção"
-                    value={fTitle}
-                    onChange={(e) => setFTitle(e.target.value)}
-                  />
-                </div>
-                <div className="full">
-                  <label>Descrição / lembrete</label>
-                  <textarea
-                    className="ae-textarea"
-                    placeholder="Detalhes, tarefas e observações"
-                    value={fDesc}
-                    onChange={(e) => setFDesc(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Responsável</label>
-                  <input
-                    className="ae-field"
-                    placeholder="Ex.: Coordenação geral"
-                    value={fResponsible}
-                    onChange={(e) => setFResponsible(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Local</label>
-                  <input
-                    className="ae-field"
-                    placeholder="Ex.: Arapongas"
-                    value={fLocation}
-                    onChange={(e) => setFLocation(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Prioridade</label>
-                  <select
-                    className="ae-select"
-                    value={String(fPriority)}
-                    onChange={(e) => setFPriority(Number(e.target.value))}
-                  >
-                    <option value="1">Baixa</option>
-                    <option value="2">Média</option>
-                    <option value="3">Alta</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Status</label>
-                  <select
-                    className="ae-select"
-                    value={String(fDone)}
-                    onChange={(e) => setFDone(e.target.value === "true")}
-                  >
-                    <option value="false">Pendente</option>
-                    <option value="true">Concluído</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Importante</label>
-                  <select
-                    className="ae-select"
-                    value={String(fImportant)}
-                    onChange={(e) => setFImportant(e.target.value === "true")}
-                  >
-                    <option value="false">Não</option>
-                    <option value="true">Sim</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Notificar antes</label>
-                  <select
-                    className="ae-select"
-                    value={String(fReminder)}
-                    onChange={(e) => setFReminder(Number(e.target.value))}
-                  >
-                    <option value="0">Sem lembrete</option>
-                    <option value="1">1 dia antes</option>
-                    <option value="3">3 dias antes</option>
-                    <option value="7">7 dias antes</option>
-                    <option value="15">15 dias antes</option>
-                  </select>
-                </div>
-              </div>
-              <div className="ae-actions" style={{ justifyContent: "flex-end", marginTop: "6px" }}>
-                <button type="button" className="ae-btn" onClick={closeModal}>
-                  Cancelar
-                </button>
-                <button type="button" className="ae-btn ae-btn-primary" onClick={saveFromModal}>
-                  Salvar evento
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
