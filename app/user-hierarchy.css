@@ -87,7 +87,7 @@
 
 .vf-hierarchy-summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -165,6 +165,7 @@
 }
 
 .vf-hierarchy-user.role-adm { border-left-color: #8b5e12; }
+.vf-hierarchy-user.role-gestor { border-left-color: #6f4ba2; }
 .vf-hierarchy-user.role-master { border-left-color: #c9973f; }
 .vf-hierarchy-user.role-lideranca { border-left-color: #1c5f9f; }
 .vf-hierarchy-user.role-liderado { border-left-color: #3c8b63; }
@@ -399,11 +400,13 @@
   border-bottom: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .vf-hierarchy-summary {
     grid-template-columns: repeat(3, 1fr);
   }
+}
 
+@media (max-width: 900px) {
   .vf-access-invitations > div,
   .vf-access-audit-list > div {
     grid-template-columns: 1fr 1fr;
