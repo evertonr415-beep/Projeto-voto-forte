@@ -18,7 +18,7 @@ export default function TseSidebarEnhancer() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tse-info-sidebar-btn";
-      btn.title = "Informações TSE";
+      btn.title = "Painel Eleitoral";
       btn.style.cursor = "pointer";
 
       const icon = document.createElement("span");
@@ -28,7 +28,7 @@ export default function TseSidebarEnhancer() {
 
       const name = document.createElement("span");
       name.className = "nav-name";
-      name.textContent = "Informações TSE";
+      name.textContent = "Painel Eleitoral";
 
       const badge = document.createElement("em");
       badge.style.background = "rgba(56, 189, 248, 0.2)";

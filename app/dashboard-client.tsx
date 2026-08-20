@@ -686,10 +686,10 @@ export default function DashboardClient({
                         }),
                       );
                     }}
-                    title="Informações TSE"
+                    title="Painel Eleitoral"
                   >
                     <span className="nav-icon" style={{ color: "#38bdf8" }}>🏛️</span>
-                    <span className="nav-name">Informações TSE</span>
+                    <span className="nav-name">Painel Eleitoral</span>
                     <em style={{ background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.4)" }}>
                       TSE
                     </em>
