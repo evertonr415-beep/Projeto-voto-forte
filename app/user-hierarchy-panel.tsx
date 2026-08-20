@@ -154,11 +154,27 @@ export default function UserHierarchyPanel() {
     }));
   }, [options, form.accessRole]);
 
-  const userIds = useMemo(() => new Set(users.map((user) => user.id)), [users]);
-  const roots = useMemo(
-    () => users.filter((user) => user.parentUserId == null || !userIds.has(user.parentUserId)),
-    [users, userIds],
+  const isGestor = options?.currentUser.accessRole === "gestor";
+  const visibleRoleOrder = useMemo(
+    () => (isGestor ? roleOrder.filter((role) => role !== "adm") : roleOrder),
+    [isGestor],
   );
+  const visibleInvitations = useMemo(
+    () =>
+      isGestor
+        ? invitations.filter((invitation) => !["adm", "gestor"].includes(invitation.accessRole))
+        : invitations,
+    [invitations, isGestor],
+  );
+
+  const userIds = useMemo(() => new Set(users.map((user) => user.id)), [users]);
+  const roots = useMemo(() => {
+    if (isGestor && options?.currentUser.id) {
+      const current = users.find((user) => user.id === options.currentUser.id);
+      return current ? [current] : [];
+    }
+    return users.filter((user) => user.parentUserId == null || !userIds.has(user.parentUserId));
+  }, [users, userIds, isGestor, options?.currentUser.id]);
   const childrenByParent = useMemo(() => {
     const map = new Map<number, User[]>();
     for (const user of users) {
@@ -282,7 +298,11 @@ export default function UserHierarchyPanel() {
         <div>
           <small>ADMINISTRAÇÃO DE ACESSOS</small>
           <h3>Usuários, convites e hierarquia</h3>
-          <p>ADM → Gestor → Master → Liderança → Liderado → Eleitor.</p>
+          <p>
+            {isGestor
+              ? "Gestor → Master → Liderança → Liderado → Eleitor."
+              : "ADM → Gestor → Master → Liderança → Liderado → Eleitor."}
+          </p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}>
           {loading ? "Atualizando..." : "Atualizar"}
@@ -309,7 +329,7 @@ export default function UserHierarchyPanel() {
       {activeSection === "users" && (
         <>
           <div className="vf-hierarchy-summary">
-            {roleOrder.map((role) => (
+            {visibleRoleOrder.map((role) => (
               <article key={role} data-vf-gestor-summary={role === "gestor" ? "true" : undefined}>
                 <small>{labels[role].toUpperCase()}</small>
                 <b>{users.filter((user) => user.accessRole === role && user.status === "active").length}</b>
@@ -317,7 +337,10 @@ export default function UserHierarchyPanel() {
             ))}
           </div>
           <div className="vf-hierarchy-help">
-            <b>Hierarquia protegida:</b> cada usuário visualiza somente o escopo permitido pelo seu nível. O ADM mantém a visão administrativa completa.
+            <b>Hierarquia protegida:</b>{" "}
+            {isGestor
+              ? "você visualiza e administra somente o seu próprio escopo e os níveis abaixo de Gestor."
+              : "cada usuário visualiza somente o escopo permitido pelo seu nível. O ADM mantém a visão administrativa completa."}
           </div>
           <div className="vf-hierarchy-tree">
             {roots.length ? roots.map((user) => renderUser(user)) : !loading && <p>Nenhum usuário encontrado.</p>}
@@ -382,10 +405,10 @@ export default function UserHierarchyPanel() {
 
       {activeSection === "invitations" && (
         <article className="vf-access-list-card">
-          <header><div><small>CONVITES</small><h4>Acessos preparados</h4></div><span>{invitations.length}</span></header>
-          {invitations.length ? (
+          <header><div><small>CONVITES</small><h4>Acessos preparados</h4></div><span>{visibleInvitations.length}</span></header>
+          {visibleInvitations.length ? (
             <div className="vf-access-invitations">
-              {invitations.map((invitation) => (
+              {visibleInvitations.map((invitation) => (
                 <div key={invitation.id}>
                   <div><strong>{invitation.name}</strong><small>{invitation.email}</small></div>
                   <span>{labels[invitation.accessRole]}</span>
