@@ -97,16 +97,25 @@
 }
 
 .ae-logo {
-  width: 48px !important;
-  height: 48px !important;
+  width: 52px !important;
+  height: 52px !important;
   border-radius: 14px !important;
   display: grid !important;
   place-items: center !important;
-  background: linear-gradient(135deg, var(--ae-accent), var(--ae-accent2)) !important;
-  color: white !important;
-  font-size: 24px !important;
-  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25) !important;
+  background: #081326 !important;
+  border: 1px solid var(--ae-line-strong) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
   flex-shrink: 0 !important;
+  overflow: hidden !important;
+  padding: 3px !important;
+}
+
+.ae-logo-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 10px !important;
+  display: block !important;
 }
 
 .ae-title {

@@ -609,7 +609,14 @@ export default function InstitutionalCommunicationClient({
         {/* TOPBAR ROBUSTA COM CLASSES ISOLADAS */}
         <header className="ae-topbar">
           <div className="ae-brand">
-            <div className="ae-logo">🗳️</div>
+            <div className="ae-logo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/agenda-parana-icon.png"
+                alt="Paraná"
+                className="ae-logo-img"
+              />
+            </div>
             <div>
               <h1 className="ae-title">Agenda Inteligente — Pedro Lupion e Sérgio Onofre</h1>
               <div className="ae-subtitle">
