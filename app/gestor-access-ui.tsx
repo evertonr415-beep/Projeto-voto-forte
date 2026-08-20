@@ -26,15 +26,9 @@ type GestorUser = {
   municipalityIds?: number[];
 };
 
-type Invitation = {
-  email?: string;
-  accessRole?: string;
-};
-
 type UsersPayload = {
   users?: GestorUser[];
   municipalities?: Municipality[];
-  invitations?: Invitation[];
 };
 
 export default function GestorAccessUi() {
@@ -42,7 +36,6 @@ export default function GestorAccessUi() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [users, setUsers] = useState<GestorUser[]>([]);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
-  const [gestorInvitationEmails, setGestorInvitationEmails] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<Record<number, number[]>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
@@ -60,12 +53,6 @@ export default function GestorAccessUi() {
     setUsers(gestores);
     setMunicipalities(
       (data.municipalities || []).filter((item) => item.status === "active"),
-    );
-    setGestorInvitationEmails(
-      (data.invitations || [])
-        .filter((item) => item.accessRole === "gestor")
-        .map((item) => String(item.email || "").toLowerCase())
-        .filter(Boolean),
     );
     setDrafts(
       Object.fromEntries(
@@ -99,74 +86,7 @@ export default function GestorAccessUi() {
   useEffect(() => {
     if (!accessRole) return;
 
-    const decorateHierarchy = () => {
-      const hierarchyDescription = document.querySelector<HTMLElement>(
-        ".vf-hierarchy-panel > header p",
-      );
-      if (
-        hierarchyDescription &&
-        hierarchyDescription.textContent !==
-          "ADM → Gestor → Master → Liderança → Liderado → Eleitor."
-      ) {
-        hierarchyDescription.textContent =
-          "ADM → Gestor → Master → Liderança → Liderado → Eleitor.";
-      }
-
-      document
-        .querySelectorAll<HTMLElement>(".vf-hierarchy-user.role-gestor")
-        .forEach((card) => {
-          const role = card.querySelector<HTMLElement>(
-            ".vf-hierarchy-tags span",
-          );
-          if (role && role.textContent !== "Gestor") role.textContent = "Gestor";
-          if (accessRole === "gestor") {
-            card
-              .querySelector<HTMLButtonElement>(".vf-access-status-button")
-              ?.setAttribute("hidden", "true");
-          }
-        });
-
-      document
-        .querySelectorAll<HTMLOptionElement>(
-          ".vf-access-create-card select option",
-        )
-        .forEach((option) => {
-          if (option.textContent?.trim().endsWith("—")) {
-            option.textContent = `${option.textContent.trim()} Gestor`;
-          }
-        });
-
-      const summary = document.querySelector<HTMLElement>(
-        ".vf-hierarchy-summary",
-      );
-      if (summary && !summary.querySelector("[data-vf-gestor-summary]")) {
-        const article = document.createElement("article");
-        article.dataset.vfGestorSummary = "true";
-        const count = document.querySelectorAll(
-          ".vf-hierarchy-user.role-gestor .vf-hierarchy-tags .active",
-        ).length;
-        article.innerHTML = `<small>GESTOR</small><b>${count}</b>`;
-        const admCard = summary.firstElementChild;
-        if (admCard) admCard.insertAdjacentElement("afterend", article);
-        else summary.appendChild(article);
-      }
-
-      if (gestorInvitationEmails.length) {
-        document
-          .querySelectorAll<HTMLElement>(".vf-access-invitations > div")
-          .forEach((row) => {
-            const text = row.textContent?.toLowerCase() || "";
-            if (!gestorInvitationEmails.some((email) => text.includes(email)))
-              return;
-            const role = row.querySelector<HTMLElement>(":scope > span");
-            if (role && role.textContent !== "Gestor") role.textContent = "Gestor";
-          });
-      }
-    };
-
     const decorate = () => {
-      decorateHierarchy();
-
       if (accessRole === "gestor") {
         document
           .querySelectorAll<HTMLElement>(".profile small")
@@ -205,7 +125,7 @@ export default function GestorAccessUi() {
     const observer = new MutationObserver(decorate);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [accessRole, gestorInvitationEmails]);
+  }, [accessRole]);
 
   useEffect(() => {
     if (accessRole !== "adm") return;

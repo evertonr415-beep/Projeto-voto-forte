@@ -15,7 +15,6 @@ import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import GestorAccessGate from "./gestor-access-gate";
 import RuntimeVersionGuard from "./runtime-version-guard";
-import UserHierarchyRemountGuard from "./user-hierarchy-remount-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
@@ -95,7 +94,6 @@ export default function RootLayout({
         <ImportCompletionEnhancer />
         <ContactExportEnhancer />
         <IntelligenceNavigation />
-        <UserHierarchyRemountGuard />
         <AuthReconciliationEnhancer />
         <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />

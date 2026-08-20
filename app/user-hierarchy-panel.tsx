@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
-type AccessRole = "adm" | "master" | "lideranca" | "liderado" | "eleitor";
+type AccessRole = "adm" | "gestor" | "master" | "lideranca" | "liderado" | "eleitor";
 type Status = "active" | "blocked";
 type SectionKey = "users" | "create" | "invitations" | "audit";
 
@@ -19,14 +19,14 @@ type User = {
 };
 
 type RoleOption = {
-  value: Exclude<AccessRole, "adm">;
+  value: AccessRole;
   label: string;
   parentRole: AccessRole;
   parentRequired: boolean;
 };
 
 type ParentOption = {
-  forRole: Exclude<AccessRole, "adm">;
+  forRole: AccessRole;
   id: number;
   name: string;
   email: string;
@@ -46,7 +46,7 @@ type Invitation = {
   id: number;
   email: string;
   name: string;
-  accessRole: Exclude<AccessRole, "adm">;
+  accessRole: AccessRole;
   parentUserId: number;
   status: "pending" | "claimed" | "expired" | "revoked";
   expiresAt: string;
@@ -63,13 +63,14 @@ type AuditLog = {
 
 const labels: Record<AccessRole, string> = {
   adm: "ADM",
+  gestor: "Gestor",
   master: "Master",
   lideranca: "Liderança",
   liderado: "Liderado",
   eleitor: "Eleitor",
 };
 
-const roleOrder: AccessRole[] = ["adm", "master", "lideranca", "liderado", "eleitor"];
+const roleOrder: AccessRole[] = ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"];
 
 function initials(name: string) {
   return name
@@ -100,7 +101,7 @@ export default function UserHierarchyPanel() {
   const [form, setForm] = useState<{
     name: string;
     email: string;
-    accessRole: Exclude<AccessRole, "adm"> | "";
+    accessRole: AccessRole | "";
     parentUserId: number | "";
   }>({ name: "", email: "", accessRole: "", parentUserId: "" });
 
@@ -171,7 +172,7 @@ export default function UserHierarchyPanel() {
   const selectedRole = options?.roleOptions.find((role) => role.value === form.accessRole);
   const validParents = options?.parentOptions.filter((parent) => parent.forRole === form.accessRole) || [];
 
-  function selectRole(value: Exclude<AccessRole, "adm">) {
+  function selectRole(value: AccessRole) {
     const role = options?.roleOptions.find((item) => item.value === value);
     const parents = options?.parentOptions.filter((parent) => parent.forRole === value) || [];
     setForm((current) => ({
@@ -238,7 +239,10 @@ export default function UserHierarchyPanel() {
   function renderUser(user: User, depth = 0): React.ReactNode {
     const children = childrenByParent.get(user.id) || [];
     const canChangeStatus =
-      options?.currentUser.id !== user.id && user.accessRole !== "adm" && options?.canOpenAdministration;
+      Boolean(options?.canOpenAdministration) &&
+      options?.currentUser.id !== user.id &&
+      user.accessRole !== "adm" &&
+      !(options?.currentUser.accessRole === "gestor" && user.accessRole === "gestor");
     return (
       <div className="vf-hierarchy-branch" key={user.id} style={{ "--depth": depth } as React.CSSProperties}>
         <article className={`vf-hierarchy-user role-${user.accessRole}`}>
@@ -278,7 +282,7 @@ export default function UserHierarchyPanel() {
         <div>
           <small>ADMINISTRAÇÃO DE ACESSOS</small>
           <h3>Usuários, convites e hierarquia</h3>
-          <p>ADM → Master → Liderança → Liderado → Eleitor.</p>
+          <p>ADM → Gestor → Master → Liderança → Liderado → Eleitor.</p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}>
           {loading ? "Atualizando..." : "Atualizar"}
@@ -306,7 +310,7 @@ export default function UserHierarchyPanel() {
         <>
           <div className="vf-hierarchy-summary">
             {roleOrder.map((role) => (
-              <article key={role}>
+              <article key={role} data-vf-gestor-summary={role === "gestor" ? "true" : undefined}>
                 <small>{labels[role].toUpperCase()}</small>
                 <b>{users.filter((user) => user.accessRole === role && user.status === "active").length}</b>
               </article>
@@ -340,7 +344,7 @@ export default function UserHierarchyPanel() {
               </label>
               <label>
                 Nível de acesso
-                <select required value={form.accessRole} onChange={(event) => selectRole(event.target.value as Exclude<AccessRole, "adm">)}>
+                <select required value={form.accessRole} onChange={(event) => selectRole(event.target.value as AccessRole)}>
                   {options.roleOptions.map((role) => <option value={role.value} key={role.value}>{role.label}</option>)}
                 </select>
               </label>
