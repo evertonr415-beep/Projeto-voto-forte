@@ -2,72 +2,14 @@ import {
   getAccount,
   getVisibleUsers,
   isAdministrator,
-} from "../../server-identity";
+} from "../../../server-identity";
 
-type DistrictSummaryItem = {
-  district?: string;
-  total?: number | string;
-};
+export const dynamic = "force-dynamic";
 
-type DistrictGeocodeItem = {
-  canonical_name?: string;
-  latitude?: number | string | null;
-  longitude?: number | string | null;
-};
-
-type CachedDistrictMarkerItem = {
-  district?: string;
-  total?: number | string;
-  latitude?: number | string | null;
-  longitude?: number | string | null;
-};
-
-type ScopeStatsItem = {
-  total_contacts?: number | string;
-};
-
-type DistrictMarker = {
-  district: string;
-  total: number;
-  latitude: number;
-  longitude: number;
-};
-
-type MunicipalityItem = {
-  id?: number | string;
-  name?: string;
-  state?: string;
-};
-
-type MunicipalityContext = {
-  currentMunicipalityId?: number | string;
-  municipalities?: MunicipalityItem[];
-};
-
-function normalizeDistrict(value: unknown) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, " ")
-    .trim()
-    .toUpperCase();
-}
-
-function isArapongas(name: unknown) {
-  return String(name ?? "").trim().toLocaleLowerCase("pt-BR") === "arapongas";
-}
-
-async function visibleEmails(
-  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
-) {
-  const users = await getVisibleUsers(account);
-  const emails = users
-    .filter((user) => user.status === "active")
-    .map((user) => String(user.email).trim().toLowerCase());
-  if (!emails.includes(account.email)) emails.push(account.email);
-  return emails;
-}
-
+/**
+ * Returns one marker per city (município) with total contact count
+ * and approximate geographic center for the electoral map.
+ */
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -75,303 +17,99 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const requestedOwner = url.searchParams.get("owner")?.trim().toLowerCase();
-  const allVisibleEmails = await visibleEmails(account);
 
-  let scopeEmails = [account.email];
-  let scope = account.email;
+  const users = await getVisibleUsers(account);
+  const emails = users
+    .filter((user) => user.status === "active")
+    .map((user) => String(user.email).trim().toLowerCase());
+  if (!emails.includes(account.email)) emails.push(account.email);
 
-  if ((!requestedOwner || requestedOwner === "all") && isAdministrator(account.role)) {
-    scopeEmails = allVisibleEmails;
-    scope = "all";
-  } else if (requestedOwner && allVisibleEmails.includes(requestedOwner)) {
+  const isAdmin = isAdministrator(account.role) || account.accessRole === "adm" || account.accessRole === "gestor";
+  let scopeEmails = isAdmin ? emails : [account.email];
+
+  if (requestedOwner && requestedOwner !== "all" && emails.includes(requestedOwner)) {
     scopeEmails = [requestedOwner];
-    scope = requestedOwner;
-  } else if (requestedOwner && requestedOwner !== account.email) {
-    return Response.json(
-      { error: "Você não possui acesso a este ambiente" },
-      { status: 403 },
-    );
   }
 
-  const contextResult = await account.supabase.rpc("vf_municipality_context");
-  if (contextResult.error) {
-    console.error("Failed to load municipality context for map", contextResult.error);
+  // Try RPC first for efficiency
+  try {
+    const { data, error } = await account.supabase.rpc(
+      "vf_map_city_markers",
+      { p_owner_emails: scopeEmails },
+    );
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return Response.json(
+        { markers: data },
+        { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=300" } },
+      );
+    }
+  } catch {
+    // Fallback to manual aggregation
+  }
+
+  // Fallback: aggregate from vf_owned_records manually
+  let query = account.supabase
+    .from("vf_owned_records")
+    .select("payload")
+    .eq("kind", "contact");
+
+  if (!isAdmin) {
+    query = query.in("owner_email", scopeEmails);
+  }
+
+  const { data: records, error: queryError } = await query.limit(10000);
+  if (queryError) {
     return Response.json(
-      { error: "Não foi possível identificar o município do mapa agora." },
+      { error: "Não foi possível carregar os marcadores do mapa." },
       { status: 500 },
     );
   }
 
-  const context = (contextResult.data || {}) as MunicipalityContext;
-  const currentMunicipality = (context.municipalities || []).find(
-    (item) => Number(item.id) === Number(context.currentMunicipalityId),
-  );
-  if (!currentMunicipality) {
-    return Response.json(
-      { error: "Município atual não encontrado." },
-      { status: 400 },
-    );
-  }
+  // Aggregate by city
+  const cityMap = new Map<
+    string,
+    { city: string; total: number; voters: number; leaders: number; latitude: number; longitude: number }
+  >();
 
-  const arapongas = isArapongas(currentMunicipality.name);
-  const statsPromise = account.supabase.rpc("vf_map_scope_stats", {
-    p_owner_emails: scopeEmails,
-    p_profile: null,
-  });
+  for (const record of records ?? []) {
+    const payload = record.payload as Record<string, unknown> | null;
+    if (!payload) continue;
+    const city = String(payload.city || "").trim();
+    if (!city) continue;
 
-  if (arapongas) {
-    // Arapongas keeps a trigger-maintained district summary. Reading this
-    // compact table avoids re-normalizing the entire contact base on every map
-    // opening while preserving the existing RLS owner scope.
-    const markersPromise = account.supabase.rpc("vf_map_cached_district_markers", {
-      p_owner_emails: scopeEmails,
-    });
-    const liveSummaryPromise = account.supabase.rpc("vf_map_district_summary", {
-      p_owner_emails: scopeEmails,
-    });
+    const lat = Number(payload.latitude);
+    const lng = Number(payload.longitude);
+    const isLeader = String(payload.kind || "").toLowerCase() === "liderança";
 
-    const [markersResult, statsResult, liveSummaryResult] = await Promise.all([
-      markersPromise,
-      statsPromise,
-      liveSummaryPromise,
-    ]);
-
-    if (markersResult.error) {
-      console.error("Failed to load cached district markers", markersResult.error);
-      return Response.json(
-        { error: "Não foi possível carregar os totais dos bairros agora." },
-        { status: 500 },
-      );
-    }
-    if (statsResult.error) {
-      console.error("Failed to load map scope totals", statsResult.error);
-      return Response.json(
-        { error: "Não foi possível carregar o total de contatos agora." },
-        { status: 500 },
-      );
-    }
-
-    const cachedRows = Array.isArray(markersResult.data)
-      ? (markersResult.data as CachedDistrictMarkerItem[])
-      : [];
-
-    const liveRows = Array.isArray(liveSummaryResult.data)
-      ? (liveSummaryResult.data as { district?: string; total?: number; latitude?: number; longitude?: number }[])
-      : [];
-
-    // Mapeamento dinâmico: une os bairros catalogados com qualquer novo bairro importado
-    const districtMap = new Map<string, { district: string; total: number; latitude?: number; longitude?: number }>();
-
-    // 1. Insere referências catalogadas de Arapongas
-    for (const row of cachedRows) {
-      const name = String(row.district || "").trim();
-      const norm = normalizeDistrict(name);
-      if (!name || !norm) continue;
-      districtMap.set(norm, {
-        district: name,
-        total: Math.max(0, Number(row.total || 0)),
-        latitude: Number(row.latitude),
-        longitude: Number(row.longitude),
+    const existing = cityMap.get(city);
+    if (existing) {
+      existing.total++;
+      if (isLeader) existing.leaders++;
+      else existing.voters++;
+      // Keep first valid coordinates found
+      if ((!Number.isFinite(existing.latitude) || existing.latitude === 0) && Number.isFinite(lat)) {
+        existing.latitude = lat;
+        existing.longitude = lng;
+      }
+    } else {
+      cityMap.set(city, {
+        city,
+        total: 1,
+        voters: isLeader ? 0 : 1,
+        leaders: isLeader ? 1 : 0,
+        latitude: Number.isFinite(lat) ? lat : 0,
+        longitude: Number.isFinite(lng) ? lng : 0,
       });
     }
-
-    // 2. Atualiza ou adiciona dinamicamente qualquer novo bairro vindo dos contatos importados
-    for (const row of liveRows) {
-      const name = String(row.district || "").trim();
-      const norm = normalizeDistrict(name);
-      const total = Math.max(0, Number(row.total || 0));
-      if (!name || !norm || total <= 0) continue;
-
-      const existing = districtMap.get(norm);
-      if (existing) {
-        // Atualiza para o total real caso haja contatos novos importados
-        existing.total = Math.max(existing.total, total);
-        if (Number.isFinite(row.latitude) && Number.isFinite(row.longitude)) {
-          existing.latitude = Number(row.latitude);
-          existing.longitude = Number(row.longitude);
-        }
-      } else {
-        // Novo bairro detectado automaticamente nos dados importados!
-        districtMap.set(norm, {
-          district: name,
-          total,
-          latitude: Number.isFinite(row.latitude) ? Number(row.latitude) : -23.414,
-          longitude: Number.isFinite(row.longitude) ? Number(row.longitude) : -51.425,
-        });
-      }
-    }
-
-    const mergedItems = Array.from(districtMap.values());
-
-    const districts = mergedItems
-      .filter((item) => item.total > 0)
-      .map((item) => ({
-        district: item.district,
-        total: item.total,
-      }))
-      .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
-
-    const markers: DistrictMarker[] = mergedItems
-      .filter(
-        (item) =>
-          item.total > 0 &&
-          Number.isFinite(item.latitude) &&
-          Number.isFinite(item.longitude),
-      )
-      .map((item) => ({
-        district: item.district,
-        total: item.total,
-        latitude: Number(item.latitude),
-        longitude: Number(item.longitude),
-      }))
-      .sort(
-        (left, right) =>
-          right.total - left.total ||
-          left.district.localeCompare(right.district, "pt-BR"),
-      );
-
-    const statsRow = Array.isArray(statsResult.data)
-      ? (statsResult.data[0] as ScopeStatsItem | undefined)
-      : undefined;
-    const totalContacts = Math.max(
-      Number(statsRow?.total_contacts || 0),
-      districts.reduce((sum, d) => sum + d.total, 0),
-    );
-
-    return Response.json(
-      {
-        scope,
-        municipality: {
-          id: Number(currentMunicipality.id),
-          name: String(currentMunicipality.name || ""),
-          state: String(currentMunicipality.state || ""),
-          usesLegacyArapongasReferences: true,
-        },
-        totalContacts,
-        districts,
-        markers,
-        resolvedDistricts: markers.length,
-        representedContacts: markers.reduce(
-          (sum, marker) => sum + marker.total,
-          0,
-        ),
-        availableGeocodes: markers.length,
-      },
-      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
-    );
   }
 
-  const summaryPromise = account.supabase.rpc(
-    "vf_current_municipality_map_district_summary",
-    { p_owner_emails: scopeEmails },
-  );
-  const geocodePromise = Promise.resolve({
-    data: [] as DistrictGeocodeItem[],
-    error: null,
-  });
-
-  const [summaryResult, geocodeResult, statsResult] = await Promise.all([
-    summaryPromise,
-    geocodePromise,
-    statsPromise,
-  ]);
-
-  if (summaryResult.error) {
-    console.error("Failed to load district map summary", summaryResult.error);
-    return Response.json(
-      { error: "Não foi possível carregar os totais dos bairros agora." },
-      { status: 500 },
-    );
-  }
-
-  if (geocodeResult.error) {
-    console.error("Failed to load validated district geocodes", geocodeResult.error);
-    return Response.json(
-      { error: "Não foi possível carregar as referências territoriais agora." },
-      { status: 500 },
-    );
-  }
-
-  if (statsResult.error) {
-    console.error("Failed to load map scope totals", statsResult.error);
-    return Response.json(
-      { error: "Não foi possível carregar o total de contatos agora." },
-      { status: 500 },
-    );
-  }
-
-  const summaryRows = Array.isArray(summaryResult.data)
-    ? (summaryResult.data as DistrictSummaryItem[])
-    : [];
-  const districts = summaryRows
-    .map((item) => ({
-      district: String(item.district || "").trim(),
-      total: Math.max(0, Number(item.total || 0)),
-    }))
-    .filter((item) => item.district && normalizeDistrict(item.district));
-  const totals = new Map<string, { district: string; total: number }>();
-
-  for (const item of districts) {
-    totals.set(normalizeDistrict(item.district), item);
-  }
-
-  const markers: DistrictMarker[] = [];
-  const geocodeRows = Array.isArray(geocodeResult.data) ? geocodeResult.data : [];
-
-  for (const rawItem of geocodeRows) {
-    const item = (rawItem ?? {}) as DistrictGeocodeItem;
-    const key = normalizeDistrict(item.canonical_name);
-    const summaryItem = totals.get(key);
-    const latitude = Number(item.latitude);
-    const longitude = Number(item.longitude);
-
-    if (
-      !summaryItem ||
-      !key ||
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude)
-    ) {
-      continue;
-    }
-
-    markers.push({
-      district: summaryItem.district,
-      total: summaryItem.total,
-      latitude,
-      longitude,
-    });
-  }
-
-  markers.sort(
-    (left, right) =>
-      right.total - left.total ||
-      left.district.localeCompare(right.district, "pt-BR"),
-  );
-
-  const statsRow = Array.isArray(statsResult.data)
-    ? (statsResult.data[0] as ScopeStatsItem | undefined)
-    : undefined;
-  const totalContacts = Math.max(0, Number(statsRow?.total_contacts || 0));
+  const markers = Array.from(cityMap.values())
+    .filter((m) => m.latitude !== 0 && m.longitude !== 0)
+    .sort((a, b) => b.total - a.total);
 
   return Response.json(
-    {
-      scope,
-      municipality: {
-        id: Number(currentMunicipality.id),
-        name: String(currentMunicipality.name || ""),
-        state: String(currentMunicipality.state || ""),
-        usesLegacyArapongasReferences: false,
-      },
-      totalContacts,
-      districts,
-      markers,
-      resolvedDistricts: markers.length,
-      representedContacts: markers.reduce(
-        (sum, marker) => sum + marker.total,
-        0,
-      ),
-      availableGeocodes: geocodeRows.length,
-    },
-    { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    { markers },
+    { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=300" } },
   );
 }
