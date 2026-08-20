@@ -4,7 +4,6 @@ import {
 } from "../../../server-identity";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
 
 type SeedContact = {
   name: string;
