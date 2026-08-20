@@ -43,6 +43,9 @@ html, body {
 .issues-scroll-area,
 .optimized-table-wrap,
 .ae-table-wrap,
+.table-wrap,
+.ae-shell,
+.sys-notif-drawer-body,
 .tse-table-container,
 .wt-drawer-body {
   -webkit-overflow-scrolling: touch;

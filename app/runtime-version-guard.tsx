@@ -46,10 +46,11 @@ export default function RuntimeVersionGuard() {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") void checkVersion();
     };
-    const timer = window.setInterval(
-      () => void checkVersion(),
-      VERSION_CHECK_INTERVAL_MS,
-    );
+    const timer = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void checkVersion();
+      }
+    }, VERSION_CHECK_INTERVAL_MS);
 
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);

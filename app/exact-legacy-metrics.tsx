@@ -109,7 +109,11 @@ export default function ExactLegacyMetrics() {
     window.addEventListener("voto-forte:geocoding-complete", handleRefresh);
 
     refresh();
-    const interval = window.setInterval(handleRefresh, REFRESH_INTERVAL_MS);
+    const interval = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        handleRefresh();
+      }
+    }, REFRESH_INTERVAL_MS);
 
     return () => {
       window.clearInterval(interval);
