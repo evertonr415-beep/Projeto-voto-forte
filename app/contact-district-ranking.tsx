@@ -694,7 +694,7 @@ export default function ContactDistrictRanking() {
               boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
             }}
           >
-            🏛️ Abrir Painel Completo TSE (7 Cargos) →
+            🏛️ Abrir Painel Eleitoral Completo →
           </button>
 
           {/* Seletor de Ano */}
