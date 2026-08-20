@@ -20,6 +20,7 @@ import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
+import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
@@ -71,8 +72,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "VOTO FORTE PARANÁ",
   description: "Gestão inteligente de campanha em todo o Paraná.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "VOTO FORTE",
+    startupImage: ["/voto-forte-bandeira-icon.jpg"],
+  },
   other: {
     "codex-preview": "development",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
   },
   icons: {
     icon: "/voto-forte-bandeira-icon.jpg",
@@ -89,6 +100,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <PwaInstaller />
         <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
         <MunicipalityContextEnhancer />
