@@ -738,36 +738,47 @@ export default function DashboardClient({
       </aside>
       <main className="main">
         <header className="topbar">
-          <div className="topbar-left">
+          <div className="page-id">
             <button
-              className="sidebar-mobile-toggle"
-              aria-label="Abrir navegação principal"
-              onClick={toggleMobileSidebar}
+              type="button"
+              className="mobile-menu"
+              onClick={() => {
+                closeMapPopup();
+                setCollapsed(!collapsed);
+              }}
+              aria-label="Abrir menu de navegação"
+              title="Abrir menu"
             >
-              ≡
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="4.5" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+                <rect x="3" y="10.75" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+                <rect x="3" y="17" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+              </svg>
             </button>
-            <div className="header-titles">
-              <span className="header-kicker">
+            <div>
+              <small>
                 {isAdmin
                   ? "VISÃO ADMINISTRATIVA · AMBIENTES PROTEGIDOS"
                   : "MEU AMBIENTE · DADOS PRIVATIVOS"}
-              </span>
+              </small>
               <h1>{view}</h1>
             </div>
           </div>
-          <div className="actions">
+          <div className="top-actions">
             {isAdmin && (
               <label className="scope-picker">
-                <span className="sr-only">Visualizando registros por</span>
+                <span>Visualizando</span>
                 <select
                   aria-label="Visualizando registros por"
                   value={scope}
-                  onChange={(e) => setScope(e.target.value)}
+                  onChange={(event) => {
+                    setScope(event.target.value);
+                  }}
                 >
-                  <option value="all">VISUALIZANDO: Todos os usuários</option>
+                  <option value="all">Todos os usuários</option>
                   {availableUsers.map((user) => (
-                    <option key={user.email} value={user.email}>
-                      VISUALIZANDO: {user.name} ({user.email})
+                    <option value={user.email} key={user.email}>
+                      {user.name}
                     </option>
                   ))}
                 </select>
