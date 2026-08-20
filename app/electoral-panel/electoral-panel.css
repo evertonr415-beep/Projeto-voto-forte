@@ -581,3 +581,97 @@
     color: #000000 !important;
   }
 }
+
+/* RESPONSIVIDADE MODERNA MOBILE - PAINEL ELEITORAL */
+@media (max-width: 860px) {
+  .tse-panel-shell {
+    padding: 12px 10px !important;
+  }
+  
+  .tse-panel-topbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+    gap: 14px !important;
+    border-radius: 14px !important;
+  }
+  
+  .tse-panel-brand {
+    gap: 12px !important;
+  }
+  
+  .tse-panel-title {
+    font-size: 1.15rem !important;
+    flex-wrap: wrap !important;
+  }
+  
+  .tse-panel-subtitle {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .tse-panel-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  .tse-panel-actions .vf-back-dashboard-btn {
+    grid-column: 1 / -1 !important;
+  }
+  
+  .tse-filters-bar {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+  
+  .tse-years-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  
+  .tse-years-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  .tse-year-btn {
+    flex-shrink: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 0.82rem !important;
+  }
+  
+  .tse-kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  
+  .tse-kpi-card {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+  
+  .tse-kpi-val {
+    font-size: 1.3rem !important;
+  }
+  
+  .tse-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+  }
+  
+  .tse-table {
+    min-width: 600px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .tse-stations-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}

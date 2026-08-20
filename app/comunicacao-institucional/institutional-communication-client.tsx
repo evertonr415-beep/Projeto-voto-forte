@@ -685,8 +685,9 @@ export default function InstitutionalCommunicationClient({
             <button type="button" className="ae-btn" onClick={() => window.print()}>
               🖨️ Imprimir
             </button>
-            <button type="button" className="ae-btn ae-btn-primary" onClick={handleBackToDashboard}>
-              ⬅ Voltar ao Dashboard
+            <button type="button" className="vf-back-dashboard-btn" onClick={handleBackToDashboard} title="Voltar ao Dashboard Principal">
+              <span className="vf-back-arrow" aria-hidden="true">←</span>
+              <span>Voltar ao Sistema</span>
             </button>
           </div>
           <input

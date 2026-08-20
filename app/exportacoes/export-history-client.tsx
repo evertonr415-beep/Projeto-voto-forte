@@ -73,8 +73,14 @@ export default function ExportHistoryClient() {
           </div>
         </div>
         <div className="vf-export-page-actions">
-          <button type="button" onClick={() => router.push("/sistema-completo")}>
-            Voltar ao sistema
+          <button
+            type="button"
+            className="vf-back-dashboard-btn"
+            onClick={() => router.push("/sistema-completo")}
+            title="Voltar ao Dashboard Principal"
+          >
+            <span className="vf-back-arrow" aria-hidden="true">←</span>
+            <span>Voltar ao Sistema</span>
           </button>
           <button type="button" onClick={() => void load()} disabled={loading}>
             {loading ? "Atualizando…" : "Atualizar"}
