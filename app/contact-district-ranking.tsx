@@ -445,28 +445,96 @@ export default function ContactDistrictRanking() {
             <p className="optimized-empty">{error}</p>
           ) : (
             <>
-              <ol>
+              <ol style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: "10px", maxHeight: "58vh", overflowY: "auto", paddingRight: "4px" }}>
                 {visibleRows.map((item) => (
-                  <li key={item.district} className={item.total === 0 ? "is-empty" : undefined}>
-                    <button
-                      type="button"
-                      className="district-row-button"
-                      disabled={item.total <= 0}
-                      onClick={() => openDistrict(item.district)}
-                      title={`Abrir contatos de ${item.district}`}
-                    >
-                      <span className="district-name">
-                        <span>{item.district}</span>
-                        <span className="district-bar" aria-hidden="true">
-                          <i
-                            style={{
-                              width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
-                            }}
-                          />
-                        </span>
+                  <li
+                    key={item.district}
+                    className={item.total === 0 ? "is-empty" : undefined}
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "12px",
+                      padding: "10px 12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "7px",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+                    }}
+                  >
+                    {/* Header do Bairro com Contagem */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <span style={{ fontWeight: 800, fontSize: "13.5px", color: "#1e293b" }}>
+                        {item.district}
                       </span>
-                      <b>{item.total.toLocaleString("pt-BR")}</b>
-                    </button>
+                      <strong style={{ fontSize: "14px", color: "#b45309", fontWeight: 850 }}>
+                        {item.total.toLocaleString("pt-BR")}
+                      </strong>
+                    </div>
+
+                    {/* Barra de Proporção */}
+                    <div className="district-bar" aria-hidden="true" style={{ height: "4px", background: "#f1f5f9", borderRadius: "99px", overflow: "hidden" }}>
+                      <i
+                        style={{
+                          display: "block",
+                          height: "100%",
+                          background: "#d97706",
+                          width: `${item.total ? Math.max((item.total / maxTotal) * 100, 4) : 0}%`,
+                          borderRadius: "99px",
+                        }}
+                      />
+                    </div>
+
+                    {/* Botões de Ação do Bairro */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "3px" }}>
+                      <button
+                        type="button"
+                        disabled={item.total <= 0}
+                        onClick={() => openDistrict(item.district)}
+                        title={`Abrir todos os contatos de ${item.district}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          padding: "7px 8px",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          borderRadius: "8px",
+                          border: "1px solid #cbd5e1",
+                          background: item.total > 0 ? "#f8fafc" : "#f1f5f9",
+                          color: item.total > 0 ? "#0f172a" : "#94a3b8",
+                          cursor: item.total > 0 ? "pointer" : "not-allowed",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <span>👥 Contatos</span>
+                      </button>
+
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.district + ", Arapongas - PR")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Ver localização de ${item.district} no Google Maps`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          padding: "7px 8px",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          borderRadius: "8px",
+                          border: "1px solid #bae6fd",
+                          background: "#f0f9ff",
+                          color: "#0369a1",
+                          textDecoration: "none",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <span>📍 Google Maps</span>
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ol>
