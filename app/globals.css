@@ -54,10 +54,27 @@ a {
   padding: 26px 18px 15px;
   color: white;
   background:
-    linear-gradient(180deg, rgba(5, 25, 41, 0.97), rgba(7, 42, 48, 0.96)),
+    linear-gradient(180deg, rgba(5, 25, 41, 0.96), rgba(7, 42, 48, 0.95)),
     radial-gradient(circle at 30% 78%, #1e7260, transparent 45%);
   box-shadow: 9px 0 35px rgba(5, 25, 41, 0.16);
   overflow: hidden;
+}
+.sidebar:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/araponga-bg.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 25%;
+  opacity: 0.20;
+  mix-blend-mode: luminosity;
+  pointer-events: none;
+  z-index: 0;
+}
+.sidebar > * {
+  position: relative;
+  z-index: 1;
 }
 .sidebar:after {
   content: "";
@@ -72,6 +89,7 @@ a {
     0 0 0 30px rgba(255, 255, 255, 0.015),
     0 0 0 65px rgba(255, 255, 255, 0.01);
   pointer-events: none;
+  z-index: 0;
 }
 .brand-button {
   position: relative;
