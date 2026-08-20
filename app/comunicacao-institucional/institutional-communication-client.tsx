@@ -20,7 +20,181 @@ export type CampaignEvent = {
 
 const STORAGE_KEY = "agenda-eleitoral-parana-2026-v1";
 const THEME_KEY = "agenda-eleitoral-theme-v1";
-const ELECTION_DATE = new Date("2026-10-04T08:00:00-03:00").getTime();
+
+// COMPONENTES DE ÍCONES SVG VETORIAIS PROFISSIONAIS
+const IconCalendar = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const IconPlus = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const IconSearch = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const IconUndo = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+
+const IconEdit = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const IconCopy = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+const IconMoon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+
+const IconSun = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+const IconUpload = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const IconDownload = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const IconPrinter = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
+  </svg>
+);
+
+const IconArrowLeft = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
+const IconStar = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);
+
+const IconChevronLeft = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const IconChevronRight = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+const IconLocation = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const IconUser = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const IconClock = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const IconClose = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const IconKanban = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="5" height="18" rx="1" />
+    <rect x="12" y="3" width="5" height="12" rx="1" />
+    <rect x="21" y="3" width="5" height="8" rx="1" />
+  </svg>
+);
+
+const IconChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+const IconChevronUp = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
 
 const baseEvents: CampaignEvent[] = [
   {
@@ -295,6 +469,31 @@ function isoToDate(dateStr: string) {
   return new Date(dateStr + "T00:00:00").getTime();
 }
 
+// GERADOR DE ARQUIVO ICAL (.ICS)
+function exportIcal(events: CampaignEvent[]) {
+  let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Voto Certo//Agenda Eleitoral 2026//PT-BR\r\nCALSCALE:GREGORIAN\r\n";
+  events.forEach((ev) => {
+    const dStr = ev.date.replace(/-/g, "");
+    ics += "BEGIN:VEVENT\r\n";
+    ics += `UID:event-${ev.id}-voto-certo@parana2026\r\n`;
+    ics += `SUMMARY:${ev.title.replace(/\n/g, " ")}\r\n`;
+    ics += `DESCRIPTION:${(ev.desc || "").replace(/\n/g, " ")} - Resp: ${ev.responsible || "—"}\r\n`;
+    if (ev.location) ics += `LOCATION:${ev.location.replace(/\n/g, " ")}\r\n`;
+    ics += `DTSTART;VALUE=DATE:${dStr}\r\n`;
+    ics += `DTEND;VALUE=DATE:${dStr}\r\n`;
+    ics += "END:VEVENT\r\n";
+  });
+  ics += "END:VCALENDAR\r\n";
+
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "agenda-eleitoral-parana-2026.ics";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
 export default function InstitutionalCommunicationClient({
   onBackToDashboard,
 }: {
@@ -307,6 +506,16 @@ export default function InstitutionalCommunicationClient({
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("dateAsc");
   const [filterMonth, setFilterMonth] = useState<Date>(new Date("2026-08-01T00:00:00"));
+
+  // VISÕES E NAVEGAÇÃO
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">("list");
+  const [activeMobileTab, setActiveMobileTab] = useState<"agenda" | "calendario" | "resumo">("agenda");
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [isMetricsExpanded, setIsMetricsExpanded] = useState(false);
+  const [visibleCountMobile, setVisibleCountMobile] = useState(6);
+
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleBackToDashboard = () => {
     if (onBackToDashboard) {
@@ -333,62 +542,7 @@ export default function InstitutionalCommunicationClient({
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
 
-  // Cronômetro Regressivo Intermitente até a Eleição (04 de Outubro de 2026)
-  const [electionCountdown, setElectionCountdown] = useState(getInitialElectionCountdown);
-
-  useEffect(() => {
-    const updateCountdown = () => {
-      const now = Date.now();
-      const diff = ELECTION_DATE - now;
-      if (diff <= 0) {
-        setElectionCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setElectionCountdown({ days, hours, minutes, seconds, isPast: false });
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Reagendamento Rápido
-  const [rescheduleEvent, setRescheduleEvent] = useState<CampaignEvent | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
-  const [rescheduleLocation, setRescheduleLocation] = useState("");
-
-  // Detalhes dos Eventos ao Clicar no Dia/Balão do Calendário
-  const [selectedDayEvents, setSelectedDayEvents] = useState<{
-    iso: string;
-    dateLabel: string;
-    events: CampaignEvent[];
-  } | null>(null);
-
-  const handleCalendarDayClick = (cell: { iso: string; dateNumber: number; inMonth: boolean; eventCount?: number }) => {
-    const dayEvents = events.filter((e) => e.date === cell.iso);
-    const d = new Date(cell.iso + "T00:00:00");
-    const formattedDate = d.toLocaleDateString("pt-BR", { dateStyle: "full" });
-
-    if (dayEvents.length > 0) {
-      setSelectedDayEvents({
-        iso: cell.iso,
-        dateLabel: formattedDate,
-        events: dayEvents,
-      });
-    } else {
-      openModal(null);
-      setFDate(cell.iso);
-    }
-  };
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Inicialização e Carregamento LocalStorage
+  // Carregamento LocalStorage
   useEffect(() => {
     try {
       const savedTheme = (localStorage.getItem(THEME_KEY) as "dark" | "light") || "dark";
@@ -404,6 +558,33 @@ export default function InstitutionalCommunicationClient({
     } catch {
       // Fallback
     }
+  }, []);
+
+  // ATALHOS DE TECLADO RÁPIDOS
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
+        if (e.key === "Escape") {
+          (document.activeElement as HTMLElement)?.blur();
+        }
+        return;
+      }
+
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        openModal(null);
+      } else if (e.key === "Escape") {
+        setIsModalOpen(false);
+        setSearch("");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const saveEvents = useCallback((newEvents: CampaignEvent[]) => {
@@ -454,7 +635,44 @@ export default function InstitutionalCommunicationClient({
     return list;
   }, [events, search, filterCategory, filterStatus, sortBy]);
 
-  // Estatísticas com visualização clara
+  // EVENTO SELECIONADO PARA INSPEÇÃO MASTER-DETAIL
+  const selectedEvent = useMemo(() => {
+    if (selectedEventId !== null) {
+      const found = events.find((e) => e.id === selectedEventId);
+      if (found) return found;
+    }
+    return filteredEvents[0] || events[0] || null;
+  }, [events, filteredEvents, selectedEventId]);
+
+  // GRUPOS PARA QUADRO KANBAN
+  const kanbanGroups = useMemo(() => {
+    const map: Record<string, CampaignEvent[]> = {
+      "FASE 1 — Alinhamento interno": [],
+      "FASE 2 — Início da campanha": [],
+      "Campanha Geral": [],
+      "Jurídico & Comunicação": [],
+      "Eleição, Diplomação & Posse": [],
+    };
+
+    events.forEach((ev) => {
+      const cat = ev.category;
+      if (cat.includes("FASE 1")) {
+        map["FASE 1 — Alinhamento interno"].push(ev);
+      } else if (cat.includes("FASE 2")) {
+        map["FASE 2 — Início da campanha"].push(ev);
+      } else if (cat.includes("Jurídico") || cat.includes("Propaganda")) {
+        map["Jurídico & Comunicação"].push(ev);
+      } else if (cat.includes("Eleição") || cat.includes("Diplomação") || cat.includes("Posse")) {
+        map["Eleição, Diplomação & Posse"].push(ev);
+      } else {
+        map["Campanha Geral"].push(ev);
+      }
+    });
+
+    return map;
+  }, [events]);
+
+  // Estatísticas
   const stats = useMemo(() => {
     const total = events.length;
     const pending = events.filter((e) => !e.done).length;
@@ -483,18 +701,6 @@ export default function InstitutionalCommunicationClient({
     return events.slice(0, 4);
   }, [events]);
 
-  // Lembretes próximos
-  const upcomingReminders = useMemo(() => {
-    return events
-      .filter(
-        (ev) =>
-          !ev.done &&
-          daysUntil(ev.date) >= 0 &&
-          daysUntil(ev.date) <= Math.max(1, ev.reminder || 0),
-      )
-      .slice(0, 4);
-  }, [events]);
-
   // Ações CRUD
   const toggleDone = (id: number) => {
     const updated = events.map((ev) => (ev.id === id ? { ...ev, done: !ev.done } : ev));
@@ -519,6 +725,7 @@ export default function InstitutionalCommunicationClient({
     if (!target) return;
     if (window.confirm(`Deseja excluir "${target.title}"?`)) {
       saveEvents(events.filter((e) => e.id !== id));
+      if (selectedEventId === id) setSelectedEventId(null);
     }
   };
 
@@ -709,10 +916,14 @@ export default function InstitutionalCommunicationClient({
     };
   }, [filterMonth, events]);
 
+  const visibleEventsMobile = useMemo(() => {
+    return filteredEvents.slice(0, visibleCountMobile);
+  }, [filteredEvents, visibleCountMobile]);
+
   return (
     <div className={`ae-root ${theme === "light" ? "light-mode" : ""}`} data-theme={theme}>
       <div className="ae-shell">
-        {/* TOPBAR ROBUSTA COM CLASSES ISOLADAS */}
+        {/* TOPBAR EXECUTIVA COM SELETOR DE VISÃO */}
         <header className="ae-topbar">
           <div className="ae-brand">
             <div className="ae-logo">
@@ -726,23 +937,54 @@ export default function InstitutionalCommunicationClient({
             <div>
               <h1 className="ae-title">Agenda Inteligente — Pedro Lupion e Sérgio Onofre</h1>
               <div className="ae-subtitle">
-                Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
+                Cronograma operacional da campanha • Arapongas 2026 • atalhos `/` busca, `N` novo evento.
               </div>
             </div>
           </div>
           <div className="ae-toolbar">
-            <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme}>
-              {theme === "light" ? (
-                <>
-                  <Icons.Moon size={15} />
-                  <span>Modo Escuro</span>
-                </>
-              ) : (
-                <>
-                  <Icons.Sun size={15} />
-                  <span>Modo Claro</span>
-                </>
-              )}
+            {/* SELETOR DE VISÕES NO DESKTOP */}
+            <div className="ae-view-switcher">
+              <button
+                type="button"
+                className={`ae-view-btn ${viewMode === "list" ? "active" : ""}`}
+                onClick={() => setViewMode("list")}
+                title="Visão em Lista / Tabela"
+              >
+                <IconCalendar />
+                <span>Lista</span>
+              </button>
+              <button
+                type="button"
+                className={`ae-view-btn ${viewMode === "kanban" ? "active" : ""}`}
+                onClick={() => setViewMode("kanban")}
+                title="Visão Kanban por Fases Estratégicas"
+              >
+                <IconKanban />
+                <span>Quadro Fases</span>
+              </button>
+              <button
+                type="button"
+                className={`ae-view-btn ${viewMode === "calendar" ? "active" : ""}`}
+                onClick={() => setViewMode("calendar")}
+                title="Visão de Calendário Mês Inteiro"
+              >
+                <IconClock />
+                <span>Calendário</span>
+              </button>
+            </div>
+
+            <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme} title="Alternar tema de cores">
+              {theme === "light" ? <IconMoon /> : <IconSun />}
+              <span>{theme === "light" ? "Escuro" : "Claro"}</span>
+            </button>
+            <button
+              type="button"
+              className="ae-btn"
+              onClick={() => exportIcal(events)}
+              title="Exportar para Google Calendar / Apple iCal (.ics)"
+            >
+              <IconDownload />
+              <span>Agenda iCal (.ics)</span>
             </button>
             <button
               type="button"
@@ -752,17 +994,16 @@ export default function InstitutionalCommunicationClient({
               <Icons.Upload size={15} />
               <span>Importar JSON</span>
             </button>
-            <button type="button" className="ae-btn" onClick={exportJson}>
-              <Icons.Download size={15} />
-              <span>Exportar JSON</span>
+            <button type="button" className="ae-btn" onClick={exportJson} title="Exportar JSON">
+              <IconDownload />
+              <span>JSON</span>
             </button>
-            <button type="button" className="ae-btn" onClick={() => window.print()}>
-              <Icons.Printer size={15} />
-              <span>Imprimir</span>
+            <button type="button" className="ae-btn" onClick={() => window.print()} title="Imprimir cronograma">
+              <IconPrinter />
             </button>
-            <button type="button" className="vf-back-dashboard-btn" onClick={handleBackToDashboard} title="Voltar ao Dashboard Principal">
-              <span className="vf-back-arrow" aria-hidden="true">←</span>
-              <span>Voltar ao Sistema</span>
+            <button type="button" className="ae-btn ae-btn-primary" onClick={handleBackToDashboard}>
+              <IconArrowLeft />
+              <span>Dashboard</span>
             </button>
           </div>
           <input
@@ -774,740 +1015,678 @@ export default function InstitutionalCommunicationClient({
           />
         </header>
 
-        {/* CRONÔMETRO INTERMITENTE ATÉ A ELEIÇÃO (04 DE OUTUBRO DE 2026) */}
-        <section className="ae-election-countdown" aria-label="Contagem regressiva para as Eleições 2026">
-          <div className="ae-countdown-left">
-            <div className="ae-countdown-badge">
-              <span className="ae-countdown-pulse" aria-hidden="true" />
-              <span>CONTAGEM REGRESSIVA PARA AS ELEIÇÕES 2026</span>
+        {/* BARRA DE METRICAS RETRÁTIL / COMPACTA EM ACCORDION NO MOBILE */}
+        <section className="ae-stats-container">
+          <div className="ae-stats-mobile-bar" onClick={() => setIsMetricsExpanded(!isMetricsExpanded)}>
+            <div className="ae-stats-mobile-summary">
+              <span className="ae-accent">{stats.total} Total</span> ·{" "}
+              <span className="ae-warn">{stats.pending} Pendentes</span> ·{" "}
+              <span>Próximo: {stats.nextDays !== null ? (stats.nextDays === 0 ? "Hoje" : `${stats.nextDays}d`) : "—"}</span>
             </div>
-            <h2 className="ae-countdown-title">
-              1º Turno das Eleições Gerais • <strong>04 de Outubro de 2026</strong>
-            </h2>
-            <p className="ae-countdown-desc">
-              Tempo restante para a abertura oficial das urnas em todo o Estado do Paraná (08h00 — Horário de Brasília).
-            </p>
+            <button type="button" className="ae-mini-btn">
+              {isMetricsExpanded ? <IconChevronUp /> : <IconChevronDown />}
+              <span>{isMetricsExpanded ? "Ocultar" : "Métricas"}</span>
+            </button>
           </div>
 
-          <div className="ae-countdown-boxes">
-            <div className="ae-count-unit">
-              <div className="ae-count-num">{String(electionCountdown.days).padStart(2, "0")}</div>
-              <div className="ae-count-label">DIAS</div>
+          <div className={`ae-stats ${isMetricsExpanded ? "expanded" : ""}`}>
+            <div className="ae-stat">
+              <div className="ae-stat-label">Total de Eventos</div>
+              <div className="ae-stat-value" style={{ color: "var(--ae-accent)" }}>{stats.total}</div>
+              <div className="ae-stat-hint">marcos operacionais no calendário</div>
             </div>
-            <div className="ae-count-sep">:</div>
-            <div className="ae-count-unit">
-              <div className="ae-count-num">{String(electionCountdown.hours).padStart(2, "0")}</div>
-              <div className="ae-count-label">HORAS</div>
+            <div className="ae-stat">
+              <div className="ae-stat-label">Pendentes</div>
+              <div className="ae-stat-value" style={{ color: "var(--ae-warn)" }}>{stats.pending}</div>
+              <div className="ae-stat-hint">exigem acompanhamento ativo</div>
             </div>
-            <div className="ae-count-sep">:</div>
-            <div className="ae-count-unit">
-              <div className="ae-count-num">{String(electionCountdown.minutes).padStart(2, "0")}</div>
-              <div className="ae-count-label">MINUTOS</div>
+            <div className="ae-stat">
+              <div className="ae-stat-label">Concluídos</div>
+              <div className="ae-stat-value" style={{ color: "var(--ae-ok)" }}>{stats.done}</div>
+              <div className="ae-stat-hint">finalizados pela equipe</div>
             </div>
-            <div className="ae-count-sep">:</div>
-            <div className="ae-count-unit is-seconds">
-              <div className="ae-count-num">{String(electionCountdown.seconds).padStart(2, "0")}</div>
-              <div className="ae-count-label">SEGUNDOS</div>
+            <div className="ae-stat">
+              <div className="ae-stat-label">Próximo Marco</div>
+              <div className="ae-stat-value" style={{ color: "var(--ae-text)" }}>
+                {stats.nextDays !== null
+                  ? stats.nextDays < 0
+                    ? `Há ${Math.abs(stats.nextDays)}d`
+                    : stats.nextDays === 0
+                      ? "Hoje"
+                      : `${stats.nextDays} dias`
+                  : "Concluído"}
+              </div>
+              <div className="ae-stat-hint">
+                {stats.next ? `${stats.next.title} (${dateLabel(stats.next.date)})` : "Nenhum evento pendente"}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* STATS BAR DE ALTO CONTRASTE */}
-        <section className="ae-stats">
-          <div className="ae-stat">
-            <div className="ae-stat-label">Total de eventos</div>
-            <div className="ae-stat-value" style={{ color: "var(--ae-accent)" }}>{stats.total}</div>
-            <div className="ae-stat-hint">marcos no calendário</div>
-          </div>
-          <div className="ae-stat">
-            <div className="ae-stat-label">Pendentes</div>
-            <div className="ae-stat-value" style={{ color: "var(--ae-warn)" }}>{stats.pending}</div>
-            <div className="ae-stat-hint">ainda exigem acompanhamento</div>
-          </div>
-          <div className="ae-stat">
-            <div className="ae-stat-label">Concluídos</div>
-            <div className="ae-stat-value" style={{ color: "var(--ae-ok)" }}>{stats.done}</div>
-            <div className="ae-stat-hint">marcados como finalizados</div>
-          </div>
-          <div className="ae-stat">
-            <div className="ae-stat-label">Próximo marco</div>
-            <div className="ae-stat-value" style={{ color: "var(--ae-text)" }}>
-              {stats.nextDays !== null
-                ? stats.nextDays < 0
-                  ? `Há ${Math.abs(stats.nextDays)} dias`
-                  : stats.nextDays === 0
-                    ? "Hoje!"
-                    : `${stats.nextDays} dia${stats.nextDays === 1 ? "" : "s"}`
-                : "Tudo em dia!"}
-            </div>
-            <div className="ae-stat-hint">
-              {stats.next ? `${stats.next.title} • ${dateLabel(stats.next.date)}` : "Nenhum evento pendente"}
-            </div>
-          </div>
-        </section>
+        {/* NAVEGAÇÃO DE ABAS NO MOBILE */}
+        <div className="ae-mobile-tabs" role="tablist">
+          <button
+            type="button"
+            className={`ae-mobile-tab ${activeMobileTab === "agenda" ? "active" : ""}`}
+            onClick={() => setActiveMobileTab("agenda")}
+          >
+            <IconCalendar />
+            <span>Lista</span>
+          </button>
+          <button
+            type="button"
+            className={`ae-mobile-tab ${activeMobileTab === "calendario" ? "active" : ""}`}
+            onClick={() => setActiveMobileTab("calendario")}
+          >
+            <IconClock />
+            <span>Calendário</span>
+          </button>
+          <button
+            type="button"
+            className={`ae-mobile-tab ${activeMobileTab === "resumo" ? "active" : ""}`}
+            onClick={() => setActiveMobileTab("resumo")}
+          >
+            <IconStar />
+            <span>Resumo</span>
+          </button>
+        </div>
 
-        {/* LAYOUT PRINCIPAL */}
-        <section className="ae-layout">
-          {/* COLUNA ESQUERDA: TABELA & CONTROLES */}
-          <div className="ae-grid">
-            <article className="ae-card">
-              <div className="ae-card-head">
-                <div>
-                  <h2>Agenda de Compromissos</h2>
-                  <div className="ae-footer-note">
-                    Use os filtros, marque como concluído, edite eventos e adicione novos marcos eleitorais.
+        {/* MODO QUADRO KANBAN POR FASES DA CAMPANHA */}
+        {viewMode === "kanban" && (
+          <section className="ae-kanban-board">
+            {Object.entries(kanbanGroups).map(([phaseName, groupEvents]) => (
+              <div key={phaseName} className="ae-kanban-column">
+                <div className="ae-kanban-head">
+                  <h3>{phaseName}</h3>
+                  <span className="ae-badge">{groupEvents.length}</span>
+                </div>
+                <div className="ae-kanban-body">
+                  {groupEvents.length === 0 ? (
+                    <div className="ae-empty-sm">Nenhum marco nesta fase.</div>
+                  ) : (
+                    groupEvents.map((ev) => {
+                      const d = daysUntil(ev.date);
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`ae-kcard ${ev.done ? "done" : ""} ${selectedEventId === ev.id ? "selected" : ""}`}
+                          onClick={() => setSelectedEventId(ev.id)}
+                        >
+                          <div className="ae-kcard-head">
+                            <span className="ae-badge ae-badge-date">{dateLabel(ev.date)}</span>
+                            {ev.important && <span className="ae-badge ae-badge-danger"><IconStar /></span>}
+                          </div>
+                          <h4 className="ae-kcard-title">{ev.title}</h4>
+                          <p className="ae-kcard-desc">{ev.desc}</p>
+                          <div className="ae-kcard-foot">
+                            <span className={`ae-badge ae-badge-${ev.done ? "ok" : d <= 3 ? "danger" : "warn"}`}>
+                              {ev.done ? "Concluído" : d === 0 ? "Hoje" : `${d}d`}
+                            </span>
+                            <div className="ae-actions">
+                              <button
+                                type="button"
+                                className="ae-mini-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleDone(ev.id);
+                                }}
+                              >
+                                {ev.done ? <IconUndo /> : <IconCheck />}
+                              </button>
+                              <button
+                                type="button"
+                                className="ae-mini-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openModal(ev);
+                                }}
+                              >
+                                <IconEdit />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* MODO LISTA E CALENDÁRIO COM LAYOUT MASTER-DETAIL */}
+        {viewMode !== "kanban" && (
+          <section className={`ae-layout ae-show-mobile-${activeMobileTab}`}>
+            {/* COLUNA ESQUERDA: CONTROLES & EVENTOS */}
+            <div className="ae-grid ae-col-main">
+              <article className="ae-card">
+                <div className="ae-card-head">
+                  <div>
+                    <h2>Agenda de Compromissos</h2>
+                    <div className="ae-footer-note">
+                      Pressione <kbd className="ae-kbd">/</kbd> para pesquisar ou <kbd className="ae-kbd">N</kbd> para novo evento.
+                    </div>
+                  </div>
+                  <div className="ae-split">
+                    <button
+                      type="button"
+                      className="ae-btn ae-btn-primary ae-btn-touch"
+                      onClick={() => openModal(null)}
+                    >
+                      <IconPlus />
+                      <span>Novo Evento</span>
+                    </button>
                   </div>
                 </div>
-                <div className="ae-split">
-                  <button
-                    type="button"
-                    className="ae-btn ae-btn-primary"
-                    onClick={() => openModal(null)}
-                  >
-                    ＋ Novo evento
-                  </button>
-                </div>
-              </div>
-              <div className="ae-card-body">
-                <div className="ae-controls">
-                  <div className="ae-searchwrap">
-                    <input
-                      className="ae-search"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Pesquisar por data, título, categoria, nota..."
-                    />
+                <div className="ae-card-body">
+                  {/* CONTROLES E FILTROS */}
+                  <div className="ae-controls">
+                    <div className="ae-searchwrap">
+                      <span className="ae-searchicon"><IconSearch /></span>
+                      <input
+                        ref={searchInputRef}
+                        className="ae-search"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Pesquisar por data, título, responsável, local (pressione /)..."
+                      />
+                    </div>
+                    <select
+                      className="ae-select"
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                    >
+                      <option value="all">Todas as Categorias</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="ae-select"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                      <option value="all">Todos os Status</option>
+                      <option value="pending">Pendentes</option>
+                      <option value="done">Concluídos</option>
+                      <option value="important">Importantes</option>
+                    </select>
+                    <select
+                      className="ae-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      <option value="dateAsc">Data (mais recente ↑)</option>
+                      <option value="dateDesc">Data (mais antiga ↓)</option>
+                      <option value="priority">Prioridade</option>
+                      <option value="title">Título</option>
+                    </select>
                   </div>
-                  <select
-                    className="ae-select"
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                  >
-                    <option value="all">Todas as categorias</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="ae-select"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                  >
-                    <option value="all">Todos os status</option>
-                    <option value="pending">Pendentes</option>
-                    <option value="done">Concluídos</option>
-                    <option value="important">Importantes</option>
-                  </select>
-                  <select
-                    className="ae-select"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <option value="dateAsc">Ordenar por data ↑</option>
-                    <option value="dateDesc">Ordenar por data ↓</option>
-                    <option value="priority">Prioridade</option>
-                    <option value="title">Título</option>
-                  </select>
-                </div>
 
-                <div className="ae-table-wrap">
-                  <table className="ae-table">
-                    <thead>
-                      <tr>
-                        <th className="ae-th" style={{ width: "15%" }}>Data & Horário</th>
-                        <th className="ae-th" style={{ width: "18%" }}>Categoria</th>
-                        <th className="ae-th">Reunião / Compromisso</th>
-                        <th className="ae-th" style={{ width: "14%" }}>Status</th>
-                        <th className="ae-th" style={{ width: "24%", minWidth: "200px" }}>Ações Rápidas</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredEvents.length === 0 ? (
-                        <tr>
-                          <td className="ae-td" colSpan={5}>
-                            <div className="ae-empty">Nenhum evento encontrado com esses filtros.</div>
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredEvents.map((ev) => {
-                          const d = daysUntil(ev.date);
-                          return (
-                            <tr key={ev.id} className={ev.done ? "ae-row-done" : ""}>
-                              <td className="ae-td" data-label="Data & Horário">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                                  <strong style={{ color: "var(--ae-text)", fontSize: "0.86rem" }}>{dateLabel(ev.date)}</strong>
-                                  <span className="ae-footer-note" style={{ fontSize: "0.75rem" }}>{weekdayLabel(ev.date)}</span>
-                                </div>
-                              </td>
-                              <td className="ae-td" data-label="Categoria">
-                                <span className="ae-badge">{ev.category}</span>
-                              </td>
-                              <td className="ae-td" data-label="Reunião / Compromisso">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                                    <strong style={{ fontSize: "0.92rem", color: ev.done ? "#64748b" : "var(--ae-text)", textDecoration: ev.done ? "line-through" : "none" }}>
-                                      {ev.title}
-                                    </strong>
-                                    {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
-                                  </div>
-                                  <div className="ae-footer-note" style={{ fontSize: "0.80rem" }}>{ev.desc}</div>
-                                  {(ev.responsible || ev.location) && (
-                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "1px" }}>
-                                      {ev.responsible && (
-                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>👤 {ev.responsible}</span>
-                                      )}
-                                      {ev.location && (
-                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>📍 {ev.location}</span>
-                                      )}
-                                    </div>
-                                  )}
+                  {/* PILULAS DE FILTRO RÁPIDO */}
+                  <div className="ae-pills-bar">
+                    <button
+                      type="button"
+                      className={`ae-pill ${filterStatus === "all" ? "active" : ""}`}
+                      onClick={() => setFilterStatus("all")}
+                    >
+                      Todos ({events.length})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ae-pill ${filterStatus === "pending" ? "active" : ""}`}
+                      onClick={() => setFilterStatus("pending")}
+                    >
+                      Pendentes ({stats.pending})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ae-pill ${filterStatus === "done" ? "active" : ""}`}
+                      onClick={() => setFilterStatus("done")}
+                    >
+                      Concluídos ({stats.done})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ae-pill ${filterStatus === "important" ? "active" : ""}`}
+                      onClick={() => setFilterStatus("important")}
+                    >
+                      Importantes
+                    </button>
+                  </div>
 
-                                  {/* BOTÕES DIRETOS DE AÇÃO NA LINHA DA REUNIÃO */}
-                                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleDone(ev.id)}
-                                      title={ev.done ? "Reabrir reunião como pendente" : "Dizer que a reunião foi concluída com sucesso"}
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 12px",
-                                        fontSize: "11.5px",
-                                        fontWeight: 800,
-                                        borderRadius: "8px",
-                                        border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
-                                        background: ev.done ? "#f0fdf4" : "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
-                                        color: ev.done ? "#166534" : "#ffffff",
-                                        cursor: "pointer",
-                                        boxShadow: ev.done ? "none" : "0 2px 6px rgba(22, 163, 74, 0.25)",
-                                        transition: "all 0.15s ease",
-                                      }}
-                                    >
-                                      {ev.done ? "✓ Concluída com Sucesso (Reabrir)" : "✅ Concluir Reunião com Sucesso"}
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => openRescheduleModal(ev)}
-                                      title="Reagendar esta reunião para outra data ou horário"
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 12px",
-                                        fontSize: "11.5px",
-                                        fontWeight: 800,
-                                        borderRadius: "8px",
-                                        border: "1px solid #0284c7",
-                                        background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-                                        color: "#ffffff",
-                                        cursor: "pointer",
-                                        boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)",
-                                        transition: "all 0.15s ease",
-                                      }}
-                                    >
-                                      📅 Reagendar Reunião
-                                    </button>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="ae-td" data-label="Status">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                                  {ev.done ? (
-                                    <span className="ae-badge ae-badge-ok">✅ Realizada</span>
-                                  ) : d < 0 ? (
-                                    <span className="ae-badge ae-badge-danger">⚠️ Atrasado ({Math.abs(d)}d)</span>
-                                  ) : d === 0 ? (
-                                    <span className="ae-badge ae-badge-danger">🔥 Hoje</span>
-                                  ) : d <= 7 ? (
-                                    <span className="ae-badge ae-badge-warn">⏳ Em {d} dia{d === 1 ? "" : "s"}</span>
-                                  ) : (
-                                    <span className="ae-badge">⏳ Agendada ({d}d)</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="ae-td" data-label="Ações">
-                                <div className="ae-actions">
-                                  <button
-                                    type="button"
-                                    className="ae-mini-btn"
-                                    onClick={() => openModal(ev)}
-                                    title="Editar compromisso completo"
-                                  >
-                                    ✎ Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ae-mini-btn"
-                                    onClick={() => deleteEvent(ev.id)}
-                                    title="Excluir reunião"
-                                  >
-                                    🗑 Excluir
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          {/* COLUNA DIREITA: RESUMO RÁPIDO & CALENDÁRIO */}
-          <div className="ae-sidebar-panel">
-            <article className="ae-card">
-              <div className="ae-card-head">
-                <div>
-                  <h3>Resumo Rápido</h3>
-                  <div className="ae-footer-note">Próximos marcos, visão geral e calendário mensal.</div>
-                </div>
-              </div>
-              <div className="ae-card-body ae-sidebar-panel">
-                {/* CONTAGEM REGRESSIVA */}
-                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
-                  <div className="ae-card-body">
-                    <div className="ae-countdown">
-                      {upcomingCountdowns.map((ev) => {
+                  {/* CARDS RESPONSIVOS PARA MOBILE (TOUCH OPTIMIZED) */}
+                  <div className="ae-mobile-cards">
+                    {visibleEventsMobile.length === 0 ? (
+                      <div className="ae-empty">Nenhum evento encontrado com os filtros selecionados.</div>
+                    ) : (
+                      visibleEventsMobile.map((ev) => {
                         const d = daysUntil(ev.date);
                         return (
-                          <div key={ev.id} className="ae-countbox">
-                            <div className="ae-countbox-big">
-                              {ev.done
-                                ? "OK"
-                                : d < 0
-                                  ? `-${Math.abs(d)}d`
-                                  : d === 0
-                                    ? "Hoje"
-                                    : `${d}d`}
-                            </div>
-                            <div className="ae-countbox-small" style={{ flex: 1 }}>
-                              <strong style={{ color: "var(--ae-text)", fontSize: "0.85rem" }}>{ev.title}</strong>
-                              <div style={{ fontSize: "0.75rem", color: "var(--ae-muted)", margin: "2px 0 6px" }}>
-                                {dateLabel(ev.date)} · {ev.category}
+                          <div
+                            key={ev.id}
+                            className={`ae-mcard ${ev.done ? "ae-mcard-done" : ""} ${selectedEventId === ev.id ? "selected" : ""}`}
+                            onClick={() => setSelectedEventId(ev.id)}
+                          >
+                            <div className="ae-mcard-header">
+                              <div className="ae-mcard-date-badge">
+                                <IconCalendar />
+                                <span>{dateLabel(ev.date)} ({weekdayLabel(ev.date)})</span>
                               </div>
-                              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                              {ev.important && (
+                                <span className="ae-badge ae-badge-danger">
+                                  <IconStar /> Importante
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="ae-mcard-title">{ev.title}</h3>
+                            <div className="ae-mcard-desc">{ev.desc}</div>
+
+                            <div className="ae-mcard-meta">
+                              <span className="ae-badge ae-badge-cat">{ev.category}</span>
+                              {ev.location && (
+                                <span className="ae-badge ae-badge-loc">
+                                  <IconLocation /> {ev.location}
+                                </span>
+                              )}
+                              {ev.responsible && (
+                                <span className="ae-badge ae-badge-resp">
+                                  <IconUser /> {ev.responsible}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="ae-mcard-footer">
+                              <div className="ae-mcard-status">
+                                {ev.done ? (
+                                  <span className="ae-badge ae-badge-ok"><IconCheck /> Concluído</span>
+                                ) : d < 0 ? (
+                                  <span className="ae-badge ae-badge-danger">Atrasado ({Math.abs(d)}d)</span>
+                                ) : d === 0 ? (
+                                  <span className="ae-badge ae-badge-danger">Hoje</span>
+                                ) : (
+                                  <span className="ae-badge ae-badge-warn">{d} dia{d === 1 ? "" : "s"}</span>
+                                )}
+                              </div>
+
+                              <div className="ae-mcard-actions">
                                 <button
                                   type="button"
-                                  onClick={() => toggleDone(ev.id)}
-                                  style={{
-                                    padding: "4px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11px",
-                                    fontWeight: 800,
-                                    border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
-                                    background: ev.done ? "#f0fdf4" : "#16a34a",
-                                    color: ev.done ? "#166534" : "#ffffff",
-                                    cursor: "pointer",
+                                  className={`ae-mini-btn ${ev.done ? "ae-btn-undo" : "ae-btn-check"}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleDone(ev.id);
                                   }}
                                 >
-                                  {ev.done ? "✓ Concluída" : "✅ Concluir"}
+                                  {ev.done ? <IconUndo /> : <IconCheck />}
+                                  <span>{ev.done ? "Reabrir" : "Concluir"}</span>
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => openRescheduleModal(ev)}
-                                  style={{
-                                    padding: "4px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11px",
-                                    fontWeight: 800,
-                                    border: "1px solid #0284c7",
-                                    background: "#0284c7",
-                                    color: "#ffffff",
-                                    cursor: "pointer",
+                                  className="ae-mini-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openModal(ev);
                                   }}
                                 >
-                                  📅 Reagendar
+                                  <IconEdit />
+                                  <span>Editar</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ae-mini-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicateEvent(ev.id);
+                                  }}
+                                >
+                                  <IconCopy />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ae-mini-btn ae-btn-trash"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteEvent(ev.id);
+                                  }}
+                                >
+                                  <IconTrash />
                                 </button>
                               </div>
                             </div>
                           </div>
                         );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                      })
+                    )}
 
-                {/* CALENDÁRIO MENSAL */}
-                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
-                  <div className="ae-card-body">
-                    <div className="ae-calendar">
-                      <div className="ae-cal-head">
-                        <strong>
-                          {calendarData.monthLabel.charAt(0).toUpperCase() +
-                            calendarData.monthLabel.slice(1)}
-                        </strong>
-                        <div className="ae-actions">
-                          <button
-                            type="button"
-                            className="ae-mini-btn"
-                            onClick={() =>
-                              setFilterMonth(
-                                new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1),
-                              )
-                            }
-                          >
-                            ◀
-                          </button>
-                          <button
-                            type="button"
-                            className="ae-mini-btn"
-                            onClick={() =>
-                              setFilterMonth(
-                                new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-                              )
-                            }
-                          >
-                            Hoje
-                          </button>
-                          <button
-                            type="button"
-                            className="ae-mini-btn"
-                            onClick={() =>
-                              setFilterMonth(
-                                new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1),
-                              )
-                            }
-                          >
-                            ▶
-                          </button>
-                        </div>
-                      </div>
-                      <div className="ae-legend">
-                        <span className="ae-badge ae-badge-ok">● concluído</span>
-                        <span className="ae-badge ae-badge-warn">● pendente</span>
-                        <span className="ae-badge ae-badge-danger">● hoje / urgente</span>
-                      </div>
-                      <div className="ae-month-grid">
-                        {dowLabels.map((d) => (
-                          <div key={d} className="ae-dow">
-                            {d}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="ae-month-grid">
-                        {calendarData.cells.map((cell, idx) => (
-                          <div
-                            key={idx}
-                            className={`ae-day ${cell.inMonth ? "" : "muted"} ${cell.eventCount > 0 ? "has-events" : ""}`}
-                            title={cell.eventCount > 0 ? `Clique para ver ${cell.eventCount} compromisso(s) de ${cell.iso}` : `Clique para agendar novo evento em ${cell.iso}`}
-                            onClick={() => handleCalendarDayClick(cell)}
-                            style={{ cursor: "pointer", transition: "all 0.15s ease" }}
-                          >
-                            <div className="ae-day-num">{cell.dateNumber}</div>
-                            {cell.eventCount > 0 ? (
-                              <button
-                                type="button"
-                                className={`ae-badge ae-badge-${cell.highlight || "warn"}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCalendarDayClick(cell);
-                                }}
-                                style={{
-                                  border: 0,
-                                  cursor: "pointer",
-                                  width: "100%",
-                                  textAlign: "center",
-                                  font: "inherit",
-                                  display: "block",
-                                }}
-                                title={`Clique para abrir o compromisso de ${cell.iso}`}
-                              >
-                                {cell.eventCount} evento{cell.eventCount === 1 ? "" : "s"}
-                              </button>
-                            ) : (
-                              <div className="ae-footer-note">&nbsp;</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* NOTAS E ORIENTAÇÕES */}
-                <div className="ae-card" style={{ background: "var(--ae-card-solid)", borderColor: "var(--ae-line)" }}>
-                  <div className="ae-card-body">
-                    <h3 style={{ marginBottom: "10px" }}>Notas e Orientações</h3>
-                    <div className="ae-footer-note">
-                      <div>
-                        <strong>Agenda pronta para uso offline:</strong> os dados ficam no seu navegador. Você pode editar, importar e exportar sem internet.
-                      </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <strong>Observação:</strong> confira sempre o calendário oficial do TSE/TRE-PR para validação final de prazos.
-                      </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <strong>Atalhos:</strong> usar busca para localizar temas, marcar concluído, e imprimir para levar ao campo.
-                      </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <strong>Conteúdo carregado:</strong> Fase 1 — alinhamento interno; Fase 2 — início da campanha; lançamento oficial; adesivaço; Café da Manhã no Comércio.
-                      </div>
-                      {upcomingReminders.length > 0 && (
-                        <div style={{ marginTop: "10px", color: "var(--ae-warn)" }}>
-                          <strong>Eventos próximos:</strong>{" "}
-                          {upcomingReminders
-                            .map(
-                              (e) =>
-                                `${e.title} (${daysUntil(e.date)} dia${daysUntil(e.date) === 1 ? "" : "s"})`,
-                            )
-                            .join(" · ")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-      </div>
-
-      {/* MODAL DE DETALHES DOS COMPROMISSOS DO DIA SELECIONADO NO CALENDÁRIO */}
-      {selectedDayEvents && (
-        <div
-          className="ae-modal"
-          onClick={(e) => e.target === e.currentTarget && setSelectedDayEvents(null)}
-        >
-          <div className="ae-modal-card" style={{ maxWidth: "560px" }}>
-            <div className="ae-card-head">
-              <div>
-                <h2>📅 Compromissos de {selectedDayEvents.dateLabel}</h2>
-                <div className="ae-footer-note">
-                  {selectedDayEvents.events.length} reunião(ões) ou evento(s) agendado(s) para este dia.
-                </div>
-              </div>
-              <button
-                type="button"
-                className="ae-mini-btn"
-                onClick={() => setSelectedDayEvents(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="ae-modal-body" style={{ display: "grid", gap: "12px", maxHeight: "65vh", overflowY: "auto", padding: "16px" }}>
-              {selectedDayEvents.events.map((ev) => (
-                <div
-                  key={ev.id}
-                  style={{
-                    background: "var(--ae-surface)",
-                    border: "1px solid var(--ae-line)",
-                    borderRadius: "12px",
-                    padding: "14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                    <div>
-                      <span className="ae-badge" style={{ marginBottom: "4px" }}>{ev.category}</span>
-                      <strong style={{ display: "block", fontSize: "1rem", color: "var(--ae-text)", marginTop: "2px" }}>
-                        {ev.title}
-                      </strong>
-                    </div>
-                    {ev.done ? (
-                      <span className="ae-badge ae-badge-ok">✅ Realizada</span>
-                    ) : (
-                      <span className="ae-badge ae-badge-warn">⏳ Pendente</span>
+                    {filteredEvents.length > visibleCountMobile && (
+                      <button
+                        type="button"
+                        className="ae-btn ae-btn-touch ae-btn-more"
+                        onClick={() => setVisibleCountMobile((prev) => prev + 6)}
+                      >
+                        Carregar Mais Compromissos ({filteredEvents.length - visibleCountMobile} restantes)
+                      </button>
                     )}
                   </div>
 
-                  <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--ae-muted)", lineHeight: 1.45 }}>
-                    {ev.desc}
-                  </p>
-
-                  {(ev.responsible || ev.location) && (
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      {ev.responsible && <span className="ae-badge" style={{ fontSize: "0.72rem" }}>👤 {ev.responsible}</span>}
-                      {ev.location && <span className="ae-badge" style={{ fontSize: "0.72rem" }}>📍 {ev.location}</span>}
-                    </div>
-                  )}
-
-                  {/* AÇÕES DIRETAS NO MODAL DO BALÃO DO CALENDÁRIO */}
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px", paddingTop: "8px", borderTop: "1px solid var(--ae-line)" }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        toggleDone(ev.id);
-                        setSelectedDayEvents((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                events: prev.events.map((e) => (e.id === ev.id ? { ...e, done: !e.done } : e)),
-                              }
-                            : null,
-                        );
-                      }}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        fontSize: "11.5px",
-                        fontWeight: 800,
-                        border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
-                        background: ev.done ? "#f0fdf4" : "#16a34a",
-                        color: ev.done ? "#166534" : "#ffffff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {ev.done ? "✓ Concluída (Reabrir)" : "✅ Concluir Reunião"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedDayEvents(null);
-                        openRescheduleModal(ev);
-                      }}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        fontSize: "11.5px",
-                        fontWeight: 800,
-                        border: "1px solid #0284c7",
-                        background: "#0284c7",
-                        color: "#ffffff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      📅 Reagendar
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedDayEvents(null);
-                        openModal(ev);
-                      }}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        fontSize: "11.5px",
-                        fontWeight: 800,
-                        border: "1px solid var(--ae-line)",
-                        background: "transparent",
-                        color: "var(--ae-text)",
-                        cursor: "pointer",
-                        marginLeft: "auto",
-                      }}
-                    >
-                      ✎ Editar
-                    </button>
+                  {/* TABELA DE EVENTOS PARA DESKTOP */}
+                  <div className="ae-table-wrap">
+                    <table className="ae-table">
+                      <thead>
+                        <tr>
+                          <th className="ae-th" style={{ width: "13%" }}>Data</th>
+                          <th className="ae-th" style={{ width: "18%" }}>Categoria</th>
+                          <th className="ae-th">Título / Descrição</th>
+                          <th className="ae-th" style={{ width: "11%" }}>Prazo</th>
+                          <th className="ae-th" style={{ width: "11%" }}>Status</th>
+                          <th className="ae-th" style={{ width: "12%" }}>Responsável</th>
+                          <th className="ae-th" style={{ width: "11%" }}>Local</th>
+                          <th className="ae-th" style={{ width: "14%" }}>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredEvents.length === 0 ? (
+                          <tr>
+                            <td className="ae-td" colSpan={8}>
+                              <div className="ae-empty">Nenhum evento encontrado com os filtros selecionados.</div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredEvents.map((ev) => {
+                            const d = daysUntil(ev.date);
+                            const isSelected = selectedEventId === ev.id;
+                            return (
+                              <tr
+                                key={ev.id}
+                                className={`${ev.done ? "ae-row-done" : ""} ${isSelected ? "ae-row-selected" : ""}`}
+                                onClick={() => setSelectedEventId(ev.id)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <td className="ae-td" data-label="Data">
+                                  <div>
+                                    <strong style={{ color: "var(--ae-text)" }}>{dateLabel(ev.date)}</strong>
+                                  </div>
+                                  <div className="ae-footer-note">{weekdayLabel(ev.date)}</div>
+                                </td>
+                                <td className="ae-td" data-label="Categoria">
+                                  <span className="ae-badge">{ev.category}</span>
+                                </td>
+                                <td className="ae-td" data-label="Título">
+                                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                                    <strong>{ev.title}</strong>
+                                    {ev.important && (
+                                      <span className="ae-badge ae-badge-danger">
+                                        <IconStar /> Importante
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="ae-footer-note">{ev.desc}</div>
+                                </td>
+                                <td className="ae-td" data-label="Prazo">
+                                  {ev.done ? (
+                                    <span className="ae-badge ae-badge-ok">Concluído</span>
+                                  ) : d < 0 ? (
+                                    <span className="ae-badge ae-badge-danger">Atrasado ({Math.abs(d)}d)</span>
+                                  ) : d === 0 ? (
+                                    <span className="ae-badge ae-badge-danger">Hoje</span>
+                                  ) : d <= 7 ? (
+                                    <span className="ae-badge ae-badge-danger">{d} dia{d === 1 ? "" : "s"}</span>
+                                  ) : (
+                                    <span className="ae-badge ae-badge-warn">{d} dias</span>
+                                  )}
+                                </td>
+                                <td className="ae-td" data-label="Status">
+                                  {ev.done ? (
+                                    <span className="ae-badge ae-badge-ok">Concluído</span>
+                                  ) : ev.important ? (
+                                    <span className="ae-badge ae-badge-warn">Importante</span>
+                                  ) : (
+                                    <span className="ae-badge">Pendente</span>
+                                  )}
+                                </td>
+                                <td className="ae-td" data-label="Responsável">
+                                  <span className="ae-badge">{ev.responsible || "—"}</span>
+                                </td>
+                                <td className="ae-td" data-label="Local">
+                                  <span className="ae-badge">{ev.location || "—"}</span>
+                                </td>
+                                <td className="ae-td" data-label="Ações">
+                                  <div className="ae-actions">
+                                    <button
+                                      type="button"
+                                      className="ae-mini-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleDone(ev.id);
+                                      }}
+                                      title={ev.done ? "Reabrir evento" : "Marcar como concluído"}
+                                    >
+                                      {ev.done ? <IconUndo /> : <IconCheck />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ae-mini-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openModal(ev);
+                                      }}
+                                      title="Editar evento"
+                                    >
+                                      <IconEdit />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ae-mini-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        duplicateEvent(ev.id);
+                                      }}
+                                      title="Duplicar evento"
+                                    >
+                                      <IconCopy />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ae-mini-btn ae-btn-trash"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteEvent(ev.id);
+                                      }}
+                                      title="Excluir evento"
+                                    >
+                                      <IconTrash />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              ))}
+              </article>
             </div>
-            <div className="ae-actions" style={{ justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid var(--ae-line)" }}>
-              <button
-                type="button"
-                className="ae-btn"
-                onClick={() => {
-                  const dateToNew = selectedDayEvents.iso;
-                  setSelectedDayEvents(null);
-                  openModal(null);
-                  setFDate(dateToNew);
-                }}
-              >
-                ＋ Adicionar Outro Evento Neste Dia
-              </button>
-              <button
-                type="button"
-                className="ae-btn ae-btn-primary"
-                onClick={() => setSelectedDayEvents(null)}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL DE REAGENDAMENTO RÁPIDO */}
-      {rescheduleEvent && (
-        <div
-          className="ae-modal"
-          onClick={(e) => e.target === e.currentTarget && setRescheduleEvent(null)}
-        >
-          <div className="ae-modal-card" style={{ maxWidth: "480px" }}>
-            <div className="ae-card-head">
-              <div>
-                <h2>📅 Reagendar Compromisso</h2>
-                <div className="ae-footer-note">
-                  Escolha a nova data e horário para: <strong>{rescheduleEvent.title}</strong>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="ae-mini-btn"
-                onClick={() => setRescheduleEvent(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleConfirmReschedule} className="ae-modal-body">
-              <div className="ae-form-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                <div>
-                  <label>Nova Data</label>
-                  <input
-                    className="ae-field"
-                    type="date"
-                    required
-                    value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Novo Horário</label>
-                  <input
-                    className="ae-field"
-                    type="time"
-                    value={rescheduleTime}
-                    onChange={(e) => setRescheduleTime(e.target.value)}
-                  />
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label>Local / Onde vai ser</label>
-                  <input
-                    className="ae-field"
-                    placeholder="Ex.: Centro de Arapongas, Sede..."
-                    value={rescheduleLocation}
-                    onChange={(e) => setRescheduleLocation(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div
-                className="ae-actions"
-                style={{ justifyContent: "flex-end", marginTop: "16px" }}
-              >
-                <button
-                  type="button"
-                  className="ae-btn"
-                  onClick={() => setRescheduleEvent(null)}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="ae-btn ae-btn-primary">
-                  💾 Confirmar Reagendamento
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            {/* COLUNA DIREITA: INSPECTOR MASTER-DETAIL & CALENDÁRIO */}
+            <div className="ae-sidebar-panel ae-col-side">
+              {/* INSPECTOR DE DETALHES MASTER-DETAIL */}
+              {selectedEvent && (
+                <article className="ae-card ae-inspector-card">
+                  <div className="ae-card-head">
+                    <div>
+                      <h3>Detalhes do Compromisso</h3>
+                      <div className="ae-footer-note">Informações completas do evento selecionado.</div>
+                    </div>
+                    <div className="ae-actions">
+                      <button
+                        type="button"
+                        className="ae-mini-btn"
+                        onClick={() => openModal(selectedEvent)}
+                      >
+                        <IconEdit /> Editar
+                      </button>
+                    </div>
+                  </div>
+                  <div className="ae-card-body">
+                    <div className="ae-inspector-title">
+                      <h2>{selectedEvent.title}</h2>
+                      <span className={`ae-badge ae-badge-${selectedEvent.done ? "ok" : "warn"}`}>
+                        {selectedEvent.done ? "Concluído" : "Pendente"}
+                      </span>
+                    </div>
 
-      {/* MODAL DE ADICIONAR / EDITAR EVENTO */}
+                    <p className="ae-inspector-desc">{selectedEvent.desc || "Sem observações adicionais."}</p>
+
+                    <div className="ae-inspector-grid">
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconCalendar /> Data</span>
+                        <strong className="val">{dateLabel(selectedEvent.date)} ({weekdayLabel(selectedEvent.date)})</strong>
+                      </div>
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconStar /> Categoria</span>
+                        <strong className="val">{selectedEvent.category}</strong>
+                      </div>
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconUser /> Responsável</span>
+                        <strong className="val">{selectedEvent.responsible || "Não atribuído"}</strong>
+                      </div>
+                      <div className="ae-inspector-item">
+                        <span className="label"><IconLocation /> Local</span>
+                        <strong className="val">{selectedEvent.location || "Não especificado"}</strong>
+                      </div>
+                    </div>
+
+                    <div className="ae-inspector-actions">
+                      <button
+                        type="button"
+                        className={`ae-btn ${selectedEvent.done ? "ae-btn-undo" : "ae-btn-primary"}`}
+                        onClick={() => toggleDone(selectedEvent.id)}
+                      >
+                        {selectedEvent.done ? <IconUndo /> : <IconCheck />}
+                        <span>{selectedEvent.done ? "Reabrir Compromisso" : "Marcar como Concluído"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )}
+
+              {/* CALENDÁRIO MENSAL */}
+              <article className="ae-card">
+                <div className="ae-card-head">
+                  <div>
+                    <h3>Calendário Mensal</h3>
+                    <div className="ae-footer-note">Visão global dos eventos por dia.</div>
+                  </div>
+                </div>
+                <div className="ae-card-body">
+                  <div className="ae-calendar">
+                    <div className="ae-cal-head">
+                      <strong>
+                        {calendarData.monthLabel.charAt(0).toUpperCase() +
+                          calendarData.monthLabel.slice(1)}
+                      </strong>
+                      <div className="ae-actions">
+                        <button
+                          type="button"
+                          className="ae-mini-btn"
+                          onClick={() =>
+                            setFilterMonth(
+                              new Date(filterMonth.getFullYear(), filterMonth.getMonth() - 1, 1),
+                            )
+                          }
+                          title="Mês anterior"
+                        >
+                          <IconChevronLeft />
+                        </button>
+                        <button
+                          type="button"
+                          className="ae-mini-btn"
+                          onClick={() =>
+                            setFilterMonth(
+                              new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                            )
+                          }
+                          title="Mês atual"
+                        >
+                          Hoje
+                        </button>
+                        <button
+                          type="button"
+                          className="ae-mini-btn"
+                          onClick={() =>
+                            setFilterMonth(
+                              new Date(filterMonth.getFullYear(), filterMonth.getMonth() + 1, 1),
+                            )
+                          }
+                          title="Próximo mês"
+                        >
+                          <IconChevronRight />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="ae-legend">
+                      <span className="ae-badge ae-badge-ok">Concluído</span>
+                      <span className="ae-badge ae-badge-warn">Pendente</span>
+                      <span className="ae-badge ae-badge-danger">Urgente</span>
+                    </div>
+                    <div className="ae-month-grid">
+                      {dowLabels.map((d) => (
+                        <div key={d} className="ae-dow">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="ae-month-grid">
+                      {calendarData.cells.map((cell, idx) => (
+                        <div
+                          key={idx}
+                          className={`ae-day ${cell.inMonth ? "" : "muted"}`}
+                          title={cell.iso}
+                        >
+                          <div className="ae-day-num">{cell.dateNumber}</div>
+                          {cell.eventCount > 0 ? (
+                            <div className={`ae-badge ae-badge-${cell.highlight || "warn"}`}>
+                              {cell.eventCount} {cell.eventCount === 1 ? "evt" : "evts"}
+                            </div>
+                          ) : (
+                            <div className="ae-footer-note">&nbsp;</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* BOTÃO FLUTUANTE (FAB) PARA CELULAR */}
+      <button
+        type="button"
+        className="ae-fab-btn"
+        onClick={() => openModal(null)}
+        title="Cadastrar Novo Evento"
+      >
+        <IconPlus />
+      </button>
+
+      {/* MODAL BOTTOM SHEET TOUCH FRIENDLY */}
       {isModalOpen && (
         <div className="ae-modal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="ae-modal-card">
+          <div className="ae-modal-card ae-modal-bottom-sheet">
             <div className="ae-card-head">
               <div>
-                <h2>{editingId !== null ? "Editar evento" : "Novo evento"}</h2>
-                <div className="ae-footer-note">Os dados ficam salvos localmente no navegador.</div>
+                <h2>{editingId !== null ? "Editar Evento" : "Novo Evento"}</h2>
+                <div className="ae-footer-note">Armazenado com segurança no navegador.</div>
               </div>
               <button type="button" className="ae-mini-btn" onClick={closeModal}>
                 ✕

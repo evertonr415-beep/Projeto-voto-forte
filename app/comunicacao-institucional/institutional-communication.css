@@ -1,4 +1,4 @@
-/* AGENDA ELEITORAL - PEDRO LUPION E SÉRGIO ONOFRE - TOTALMENTE ISOLADO E PADRONIZADO */
+/* AGENDA ELEITORAL - ESTILOS AVANÇADOS MOBILE & DESKTOP (ISOLADOS) */
 
 .ae-root {
   --ae-bg: #07111f;
@@ -63,10 +63,10 @@
   margin: 0 auto !important;
   padding: 4px 0 24px !important;
   display: grid !important;
-  gap: 18px !important;
+  gap: 16px !important;
 }
 
-/* TOPBAR CUSTOMIZADA (SEM CONFLITO COM GLOBALS.CSS) */
+/* TOPBAR EXECUTIVA COM SELETOR DE VISÃO */
 .ae-topbar {
   display: flex !important;
   flex-direction: row !important;
@@ -78,7 +78,7 @@
   -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid var(--ae-line) !important;
   border-radius: var(--ae-radius) !important;
-  padding: 18px 20px !important;
+  padding: 16px 20px !important;
   box-shadow: var(--ae-shadow) !important;
   height: auto !important;
   min-height: auto !important;
@@ -97,8 +97,8 @@
 }
 
 .ae-logo {
-  width: 52px !important;
-  height: 52px !important;
+  width: 50px !important;
+  height: 50px !important;
   border-radius: 14px !important;
   display: grid !important;
   place-items: center !important;
@@ -120,7 +120,7 @@
 
 .ae-title {
   margin: 0 !important;
-  font-size: 1.25rem !important;
+  font-size: 1.22rem !important;
   line-height: 1.2 !important;
   font-weight: 800 !important;
   color: var(--ae-text) !important;
@@ -130,7 +130,7 @@
 .ae-subtitle {
   margin: 4px 0 0 !important;
   color: var(--ae-muted) !important;
-  font-size: 0.84rem !important;
+  font-size: 0.82rem !important;
   line-height: 1.4 !important;
 }
 
@@ -142,11 +142,42 @@
   justify-content: flex-end !important;
 }
 
+/* SELETOR DE VISÕES (LISTA | KANBAN | CALENDÁRIO) */
+.ae-view-switcher {
+  display: flex !important;
+  background: var(--ae-card-solid) !important;
+  border: 1px solid var(--ae-line) !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  gap: 3px !important;
+}
+
+.ae-view-btn {
+  border: none !important;
+  background: transparent !important;
+  color: var(--ae-muted) !important;
+  padding: 7px 11px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-size: 0.82rem !important;
+  font-weight: 650 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+.ae-view-btn.active {
+  background: var(--ae-chip) !important;
+  color: var(--ae-accent) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
 .ae-btn {
   border: 1px solid var(--ae-line) !important;
   background: var(--ae-card-solid) !important;
   color: var(--ae-text) !important;
-  padding: 9px 13px !important;
+  padding: 8px 12px !important;
   border-radius: 10px !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
@@ -154,7 +185,7 @@
   align-items: center !important;
   gap: 6px !important;
   font-weight: 650 !important;
-  font-size: 0.85rem !important;
+  font-size: 0.84rem !important;
   text-decoration: none !important;
   white-space: nowrap !important;
   font-family: inherit !important;
@@ -166,16 +197,6 @@
   background: var(--ae-card-hover) !important;
 }
 
-.ae-btn:focus,
-.ae-field:focus,
-.ae-select:focus,
-.ae-textarea:focus,
-.ae-search:focus {
-  outline: none !important;
-  box-shadow: var(--ae-focus) !important;
-  border-color: var(--ae-accent) !important;
-}
-
 .ae-btn-primary {
   background: linear-gradient(135deg, #0284c7, #2563eb) !important;
   color: white !important;
@@ -183,178 +204,41 @@
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
 }
 
-.ae-btn-good {
-  background: linear-gradient(135deg, #059669, #10b981) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
-}
-
 .ae-btn-ghost {
   background: transparent !important;
 }
 
-/* CRONÔMETRO REGRESSIVO INTERMITENTE ELEIÇÕES 2026 */
-.ae-election-countdown {
+/* BARRA DE ESTATÍSTICAS E ACCORDION MOBILE */
+.ae-stats-container {
   display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.ae-stats-mobile-bar {
+  display: none !important;
   justify-content: space-between !important;
   align-items: center !important;
-  gap: 20px !important;
-  background: linear-gradient(135deg, rgba(14, 30, 56, 0.95) 0%, rgba(8, 20, 38, 0.98) 100%) !important;
-  border: 1px solid rgba(212, 171, 100, 0.35) !important;
-  border-radius: var(--ae-radius) !important;
-  padding: 16px 22px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(212, 171, 100, 0.08) !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.ae-election-countdown::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 3px !important;
-  background: linear-gradient(90deg, #38bdf8 0%, #d4ab64 50%, #22c55e 100%) !important;
-}
-
-.ae-countdown-left {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  min-width: 0 !important;
-}
-
-.ae-countdown-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  font-size: 0.75rem !important;
-  font-weight: 850 !important;
-  color: #d4ab64 !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-}
-
-.ae-countdown-pulse {
-  width: 8px !important;
-  height: 8px !important;
-  border-radius: 50% !important;
-  background: #22c55e !important;
-  box-shadow: 0 0 10px #22c55e !important;
-  animation: aePulse 1.2s infinite ease-in-out !important;
-}
-
-@keyframes aePulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(1.35); }
-}
-
-.ae-countdown-title {
-  margin: 0 !important;
-  font-size: 1.15rem !important;
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  line-height: 1.25 !important;
-}
-
-.ae-countdown-title strong {
-  color: #d4ab64 !important;
-}
-
-.ae-countdown-desc {
-  margin: 0 !important;
-  font-size: 0.82rem !important;
-  color: #94a3b8 !important;
-  line-height: 1.35 !important;
-}
-
-.ae-countdown-boxes {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-}
-
-.ae-count-unit {
-  background: rgba(15, 23, 42, 0.85) !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  background: var(--ae-card) !important;
+  border: 1px solid var(--ae-line) !important;
+  padding: 10px 14px !important;
   border-radius: 12px !important;
-  padding: 8px 14px !important;
-  min-width: 68px !important;
-  text-align: center !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+  cursor: pointer !important;
 }
 
-.ae-count-unit.is-seconds {
-  border-color: rgba(212, 171, 100, 0.45) !important;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+.ae-stats-mobile-summary {
+  font-size: 0.86rem !important;
+  font-weight: 700 !important;
 }
 
-.ae-count-num {
-  font-size: 1.55rem !important;
-  font-weight: 900 !important;
-  color: #38bdf8 !important;
-  line-height: 1 !important;
-  font-variant-numeric: tabular-nums !important;
-  font-family: monospace, sans-serif !important;
-}
-
-.ae-count-unit.is-seconds .ae-count-num {
-  color: #d4ab64 !important;
-}
-
-.ae-count-label {
-  font-size: 0.62rem !important;
-  font-weight: 850 !important;
-  color: #94a3b8 !important;
-  letter-spacing: 0.08em !important;
-  margin-top: 4px !important;
-}
-
-.ae-count-sep {
-  font-size: 1.35rem !important;
-  font-weight: 900 !important;
-  color: rgba(255, 255, 255, 0.35) !important;
-  line-height: 1 !important;
-  padding-bottom: 12px !important;
-}
-
-@media (max-width: 860px) {
-  .ae-election-countdown {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 14px !important;
-    padding: 14px !important;
-  }
-  .ae-countdown-boxes {
-    justify-content: space-between !important;
-  }
-  .ae-count-unit {
-    flex: 1 !important;
-    min-width: 0 !important;
-    padding: 8px 6px !important;
-  }
-  .ae-count-num {
-    font-size: 1.25rem !important;
-  }
-}
-
-/* STATS BAR */
 .ae-stats {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 14px !important;
-  margin-top: 2px !important;
 }
 
 .ae-stat {
-  padding: 16px 18px !important;
+  padding: 14px 16px !important;
   border-radius: var(--ae-radius) !important;
   background: var(--ae-card) !important;
   border: 1px solid var(--ae-line) !important;
@@ -362,38 +246,131 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  transition: transform 0.15s ease, border-color 0.15s ease !important;
-}
-
-.ae-stat:hover {
-  border-color: var(--ae-line-strong) !important;
-  transform: translateY(-1px) !important;
 }
 
 .ae-stat-label {
   color: var(--ae-muted) !important;
-  font-size: 0.78rem !important;
+  font-size: 0.76rem !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
 }
 
 .ae-stat-value {
-  font-size: 1.65rem !important;
+  font-size: 1.6rem !important;
   font-weight: 850 !important;
-  margin-top: 4px !important;
+  margin-top: 3px !important;
   color: var(--ae-text) !important;
   line-height: 1.15 !important;
 }
 
 .ae-stat-hint {
-  font-size: 0.8rem !important;
+  font-size: 0.78rem !important;
   color: var(--ae-muted) !important;
-  margin-top: 5px !important;
+  margin-top: 4px !important;
   line-height: 1.35 !important;
 }
 
-/* LAYOUT 2 COLUNAS */
+/* QUADRO KANBAN POR FASES DA CAMPANHA */
+.ae-kanban-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 14px !important;
+  overflow-x: auto !important;
+  padding-bottom: 12px !important;
+}
+
+.ae-kanban-column {
+  background: var(--ae-card) !important;
+  border: 1px solid var(--ae-line) !important;
+  border-radius: var(--ae-radius) !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  min-width: 250px !important;
+}
+
+.ae-kanban-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid var(--ae-line) !important;
+  padding-bottom: 10px !important;
+}
+
+.ae-kanban-head h3 {
+  margin: 0 !important;
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  color: var(--ae-text) !important;
+}
+
+.ae-kanban-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
+  max-height: 65vh !important;
+}
+
+.ae-kcard {
+  background: var(--ae-card-solid) !important;
+  border: 1px solid var(--ae-line) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.ae-kcard:hover,
+.ae-kcard.selected {
+  border-color: var(--ae-accent) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ae-kcard.done {
+  opacity: 0.6 !important;
+}
+
+.ae-kcard.done .ae-kcard-title {
+  text-decoration: line-through !important;
+}
+
+.ae-kcard-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.ae-kcard-title {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 750 !important;
+  color: var(--ae-text) !important;
+}
+
+.ae-kcard-desc {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--ae-muted) !important;
+  line-height: 1.35 !important;
+}
+
+.ae-kcard-foot {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 6px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid var(--ae-line) !important;
+}
+
+/* LAYOUT PRINCIPAL (MASTER-DETAIL SPLIT) */
 .ae-layout {
   display: grid !important;
   grid-template-columns: 1.45fr 0.95fr !important;
@@ -428,7 +405,7 @@
 
 .ae-card-head h2 {
   margin: 0 !important;
-  font-size: 1.18rem !important;
+  font-size: 1.15rem !important;
   font-weight: 800 !important;
   color: var(--ae-text) !important;
 }
@@ -444,7 +421,7 @@
   padding: 18px !important;
 }
 
-/* CONTROLES / FILTROS */
+/* CONTROLES E FILTROS */
 .ae-controls {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -496,7 +473,141 @@
   resize: vertical !important;
 }
 
-/* TABELA DE EVENTOS */
+.ae-kbd {
+  background: var(--ae-chip) !important;
+  border: 1px solid var(--ae-line) !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  font-size: 0.72rem !important;
+  font-family: monospace !important;
+  color: var(--ae-accent) !important;
+}
+
+/* PILULAS DE FILTRO RÁPIDO */
+.ae-pills-bar {
+  display: flex !important;
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+  flex-wrap: wrap !important;
+}
+
+.ae-pill {
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--ae-line) !important;
+  background: var(--ae-card-solid) !important;
+  color: var(--ae-muted) !important;
+  font-size: 0.8rem !important;
+  font-weight: 650 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.ae-pill.active {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: var(--ae-accent) !important;
+  color: var(--ae-accent) !important;
+}
+
+/* CARDS MOBILE RESPONSIVOS */
+.ae-mobile-cards {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.ae-mcard {
+  background: var(--ae-card-solid) !important;
+  border: 1px solid var(--ae-line) !important;
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.ae-mcard.selected {
+  border-color: var(--ae-accent) !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
+.ae-mcard-done {
+  opacity: 0.65 !important;
+}
+
+.ae-mcard-done .ae-mcard-title {
+  text-decoration: line-through !important;
+}
+
+.ae-mcard-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.ae-mcard-date-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: var(--ae-accent) !important;
+}
+
+.ae-mcard-title {
+  margin: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 750 !important;
+  color: var(--ae-text) !important;
+  line-height: 1.3 !important;
+}
+
+.ae-mcard-desc {
+  font-size: 0.85rem !important;
+  color: var(--ae-muted) !important;
+  line-height: 1.4 !important;
+}
+
+.ae-mcard-meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.ae-mcard-footer {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid var(--ae-line) !important;
+}
+
+.ae-mcard-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+}
+
+.ae-mcard-actions .ae-mini-btn {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 0.84rem !important;
+  border-radius: 10px !important;
+}
+
+.ae-btn-more {
+  width: 100% !important;
+  justify-content: center !important;
+  margin-top: 8px !important;
+  min-height: 44px !important;
+}
+
+/* TABELA DE EVENTOS (DESKTOP) */
 .ae-table-wrap {
   overflow-x: auto !important;
   border: 1px solid var(--ae-line) !important;
@@ -539,6 +650,10 @@
   background: rgba(56, 189, 248, 0.04) !important;
 }
 
+.ae-row-selected .ae-td {
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+
 .ae-row-done .ae-td {
   opacity: 0.55 !important;
 }
@@ -547,7 +662,7 @@
   text-decoration: line-through !important;
 }
 
-/* BADGES */
+/* BADGES DE STATUS */
 .ae-badge {
   display: inline-flex !important;
   align-items: center !important;
@@ -599,36 +714,8 @@
   transform: translateY(-1px) !important;
 }
 
-.ae-btn-done-action {
-  background: rgba(16, 185, 129, 0.14) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-  color: #34d399 !important;
-  font-weight: 750 !important;
-}
-
-.ae-btn-done-action:hover {
-  background: rgba(16, 185, 129, 0.25) !important;
-  border-color: #10b981 !important;
-  color: #10b981 !important;
-}
-
-.ae-btn-done-active {
-  background: rgba(148, 163, 184, 0.12) !important;
-  border-color: rgba(148, 163, 184, 0.3) !important;
-  color: #94a3b8 !important;
-}
-
-.ae-btn-reschedule {
-  background: rgba(245, 158, 11, 0.14) !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  color: #fbbf24 !important;
-  font-weight: 750 !important;
-}
-
-.ae-btn-reschedule:hover {
-  background: rgba(245, 158, 11, 0.25) !important;
-  border-color: #f59e0b !important;
-  color: #f59e0b !important;
+.ae-btn-trash {
+  color: #fca5a5 !important;
 }
 
 .ae-actions {
@@ -636,6 +723,64 @@
   gap: 4px !important;
   flex-wrap: wrap !important;
   align-items: center !important;
+}
+
+/* MASTER-DETAIL INSPECTOR CARD */
+.ae-inspector-card {
+  border-color: var(--ae-line-strong) !important;
+}
+
+.ae-inspector-title h2 {
+  font-size: 1.25rem !important;
+  margin: 0 0 8px 0 !important;
+  font-weight: 800 !important;
+}
+
+.ae-inspector-desc {
+  font-size: 0.9rem !important;
+  color: var(--ae-muted) !important;
+  line-height: 1.45 !important;
+  margin-bottom: 16px !important;
+}
+
+.ae-inspector-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+  background: var(--ae-card-solid) !important;
+  padding: 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--ae-line) !important;
+}
+
+.ae-inspector-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.ae-inspector-item .label {
+  font-size: 0.75rem !important;
+  color: var(--ae-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.ae-inspector-item .val {
+  font-size: 0.86rem !important;
+  color: var(--ae-text) !important;
+}
+
+.ae-inspector-actions {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.ae-inspector-actions .ae-btn {
+  width: 100% !important;
+  justify-content: center !important;
 }
 
 /* SIDEBAR / PAINEL DIREITO */
@@ -655,11 +800,6 @@
   border: 1px solid var(--ae-line) !important;
   border-radius: var(--ae-radius2) !important;
   background: var(--ae-card-solid) !important;
-  transition: border-color 0.15s ease !important;
-}
-
-.ae-countbox:hover {
-  border-color: var(--ae-line-strong) !important;
 }
 
 .ae-countbox-big {
@@ -704,9 +844,9 @@
 .ae-dow,
 .ae-day {
   border: 1px solid var(--ae-line) !important;
-  border-radius: 6px !important;
-  padding: 3px 2px !important;
-  min-height: 42px !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  min-height: 54px !important;
   background: var(--ae-card-solid) !important;
   box-sizing: border-box !important;
   min-width: 0 !important;
@@ -721,8 +861,6 @@
   font-size: 0.58rem !important;
   color: var(--ae-muted) !important;
   text-align: center !important;
-  padding: 3px 1px !important;
-  font-weight: 800 !important;
 }
 
 .ae-day {
@@ -763,12 +901,31 @@
   flex-wrap: wrap !important;
 }
 
-.ae-legend .ae-badge {
-  font-size: 0.65rem !important;
-  padding: 2px 6px !important;
+/* BOTÃO FLUTUANTE (FAB) PARA MOBILE */
+.ae-fab-btn {
+  display: none !important;
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45) !important;
+  z-index: 999 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: transform 0.2s ease !important;
 }
 
-/* MODAL */
+.ae-fab-btn:active {
+  transform: scale(0.92) !important;
+}
+
+/* MODAL BOTTOM SHEET TOUCH FRIENDLY */
 .ae-modal {
   position: fixed !important;
   inset: 0 !important;
@@ -817,16 +974,13 @@
   margin-bottom: 4px !important;
 }
 
-.ae-footer-note {
+.ae-empty-sm {
+  padding: 16px !important;
+  text-align: center !important;
   color: var(--ae-muted) !important;
   font-size: 0.82rem !important;
-  line-height: 1.45 !important;
-}
-
-.ae-split {
-  display: flex !important;
-  gap: 8px !important;
-  flex-wrap: wrap !important;
+  border: 1px dashed var(--ae-line) !important;
+  border-radius: 10px !important;
 }
 
 .ae-empty {
@@ -837,17 +991,17 @@
   border-radius: 12px !important;
 }
 
-/* RESPONSIVIDADE MODERNA MOBILE - AGENDA INTELIGENTE */
+/* RESPONSIVIDADE AVANÇADA PARA CELULAR (MOBILE TOUCH) */
 @media (max-width: 1200px) {
   .ae-layout {
     grid-template-columns: 1fr !important;
   }
+  .ae-kanban-board {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
 }
 
 @media (max-width: 900px) {
-  .ae-shell {
-    padding: 14px 10px !important;
-  }
   .ae-topbar {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -881,15 +1035,111 @@
   .ae-stat {
     padding: 12px !important;
   }
-  .ae-stat-value {
-    font-size: 1.4rem !important;
+  .ae-view-switcher {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* FIXA O CONTAINER DO MOBILE (100dvh — ALTURA FIXA SEM ROLAGEM INFINITA DE PÁGINA) */
+  .ae-root {
+    height: 100dvh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ae-shell {
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding-bottom: 80px !important;
+  }
+
+  /* BARRA DE ESTATÍSTICAS RECOLHÍVEL EM ACCORDION */
+  .ae-stats-mobile-bar {
+    display: flex !important;
+  }
+
+  .ae-stats {
+    display: none !important;
+  }
+
+  .ae-stats.expanded {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .ae-mobile-tabs {
+    display: flex !important;
+  }
+
+  .ae-fab-btn {
+    display: flex !important;
+  }
+
+  .ae-table-wrap {
+    display: none !important;
+  }
+
+  .ae-mobile-cards {
+    display: flex !important;
+  }
+
+  .ae-kanban-board {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* MODAL BOTTOM SHEET SLIDE-UP */
+  .ae-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .ae-modal-bottom-sheet {
+    border-radius: 24px 24px 0 0 !important;
+    width: 100% !important;
+    max-height: 85vh !important;
+  }
+
+  /* ALTERNÂNCIA DE ABAS EM MOBILE */
+  .ae-show-mobile-agenda .ae-col-side {
+    display: none !important;
+  }
+  .ae-show-mobile-agenda .ae-col-main {
+    display: grid !important;
+  }
+
+  .ae-show-mobile-calendario .ae-col-main {
+    display: none !important;
+  }
+  .ae-show-mobile-calendario .ae-col-side {
+    display: grid !important;
+  }
+
+  .ae-show-mobile-resumo .ae-col-main {
+    display: none !important;
+  }
+  .ae-show-mobile-resumo .ae-col-side {
+    display: grid !important;
+  }
+
+  .ae-controls {
+    flex-direction: column !important;
+  }
+
+  .ae-controls .ae-select,
+  .ae-searchwrap {
+    width: 100% !important;
+    min-width: 100% !important;
   }
 }
 
 @media (max-width: 640px) {
-  .ae-stats {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
+  .ae-stats.expanded {
+    grid-template-columns: 1fr !important;
   }
   .ae-countdown {
     grid-template-columns: 1fr !important;
