@@ -128,7 +128,7 @@ export default function MapDistrictMarkerLayer() {
     };
 
     const attach = () => {
-      const map = (window as any).__vfElectoralMap;
+      const map = (window as any).__vfElectoralMap || (window as any).__vfBaseElectoralMap;
       if (!map?._container) return false;
       void render(map);
       return true;
@@ -150,6 +150,7 @@ export default function MapDistrictMarkerLayer() {
     };
 
     window.addEventListener("voto-forte:electoral-map-ready", handleMapReady);
+    window.addEventListener("voto-forte:base-electoral-map-ready", handleMapReady);
     document.addEventListener("change", handleScopeChange, true);
     window.addEventListener("voto-forte:records-changed", handleRecordsChanged);
     window.addEventListener("voto-forte:geocoding-complete", handleRecordsChanged);

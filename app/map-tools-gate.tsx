@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AgendaCalendarEnhancer from "./agenda-calendar-enhancer";
 import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MapContactLayer from "./map-contact-layer";
+import MapDistrictMarkerLayer from "./map-district-marker-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
 import NeighborhoodElectoralDrawer from "./neighborhood-electoral-drawer";
@@ -33,6 +34,7 @@ export default function MapToolsGate() {
       {protectedAccessReady && <NeighborhoodElectoralDrawer />}
       {protectedAccessReady && <ContactWhatsappQuickQueue />}
       {protectedAccessReady && <MapContactLayer />}
+      {protectedAccessReady && <MapDistrictMarkerLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
       {protectedAccessReady && <TerritorialPendingCenter />}
