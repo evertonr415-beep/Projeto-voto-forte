@@ -20,8 +20,10 @@ import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
+import SystemNotificationsDrawer from "./system-notifications-drawer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
+import "./system-notifications.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
 import "./mobile-map-cleanup.css";
@@ -121,6 +123,7 @@ export default function RootLayout({
         <WhaticketBroadcastDrawer />
         <TseSidebarEnhancer />
         <ComunicacaoSidebarEnhancer />
+        <SystemNotificationsDrawer />
         {children}
       </body>
     </html>

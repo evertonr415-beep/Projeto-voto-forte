@@ -776,7 +776,15 @@ export default function DashboardClient({
                 </select>
               </label>
             )}
-            <button className="notification" aria-label="Notificações">
+            <button
+              type="button"
+              className="notification"
+              aria-label="Notificações"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("voto-forte:open-notifications"));
+              }}
+              title="Abrir Central de Notificações"
+            >
               ♧<i>3</i>
             </button>
             <button className="profile" onClick={() => setModal("perfil")}>
