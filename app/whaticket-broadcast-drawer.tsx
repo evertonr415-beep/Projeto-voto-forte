@@ -392,11 +392,11 @@ export default function WhaticketBroadcastDrawer() {
         <header className="wt-drawer-header">
           <div className="wt-drawer-title-group">
             <div className="wt-header-logo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" fillOpacity="0.2" />
-                <path d="M2 17L12 22L22 17" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <img
+                src="/voto-forte-bandeira-icon.jpg"
+                alt="VOTO FORTE"
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }}
+              />
             </div>
             <div>
               <h2>

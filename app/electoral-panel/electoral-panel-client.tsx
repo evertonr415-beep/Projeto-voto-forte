@@ -193,7 +193,7 @@ export default function ElectoralPanelClient({
             <div className="tse-panel-logo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/agenda-parana-icon.png"
+                src="/voto-forte-bandeira-icon.jpg"
                 alt="Paraná"
                 className="tse-panel-logo-img"
               />

@@ -656,7 +656,7 @@ export default function InstitutionalCommunicationClient({
             <div className="ae-logo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/agenda-parana-icon.png"
+                src="/voto-forte-bandeira-icon.jpg"
                 alt="Paraná"
                 className="ae-logo-img"
               />

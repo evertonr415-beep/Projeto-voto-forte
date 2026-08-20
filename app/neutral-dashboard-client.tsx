@@ -367,7 +367,7 @@ export default function NeutralDashboardClient({
     <main className="optimized-shell">
       <header className="optimized-topbar">
         <div className="optimized-brand-row">
-          <span className="optimized-brand-mark" aria-hidden="true">VF</span>
+          <img src="/voto-forte-bandeira-icon.jpg" alt="VOTO FORTE PARANÁ" className="optimized-brand-img-mark" />
           <div>
             <small>VOTO FORTE PARANÁ</small>
             <h1>Painel de contatos</h1>

@@ -57,13 +57,20 @@ export default function ExportHistoryClient() {
   return (
     <main className="vf-export-page">
       <header className="vf-export-page-head">
-        <div>
-          <small>CONTROLE DE EXPORTAÇÕES</small>
-          <h1>Histórico de exportações</h1>
-          <p>
-            Abra um lote para consultar exatamente quais contatos participaram da
-            exportação e executar ações individuais com segurança.
-          </p>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <img
+            src="/voto-forte-bandeira-icon.jpg"
+            alt="VOTO FORTE PARANÁ"
+            style={{ width: "54px", height: "42px", objectFit: "cover", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", flexShrink: 0 }}
+          />
+          <div>
+            <small>CONTROLE DE EXPORTAÇÕES</small>
+            <h1>Histórico de exportações</h1>
+            <p>
+              Abra um lote para consultar exatamente quais contatos participaram da
+              exportação e executar ações individuais com segurança.
+            </p>
+          </div>
         </div>
         <div className="vf-export-page-actions">
           <button type="button" onClick={() => router.push("/sistema-completo")}>
