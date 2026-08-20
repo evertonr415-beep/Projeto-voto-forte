@@ -89,6 +89,20 @@ export async function GET(request: Request) {
       detail: `Exportação e download de segurança (${dateStr} às ${timeStr}) com ${systemManifest.databaseSummary.contactsCount} contatos e código do sistema.`,
     });
 
+    // Persist snapshot in vf_backup_snapshots
+    try {
+      await account.supabase.from("vf_backup_snapshots").insert({
+        created_at: timestamp,
+        created_by: account.email,
+        backup_version: 2,
+        checksum: `SHA256-${dateStr}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        item_count: systemManifest.databaseSummary.contactsCount,
+        data: fullBackupPayload,
+      });
+    } catch (persistErr) {
+      console.warn("Could not insert snapshot into vf_backup_snapshots:", persistErr);
+    }
+
     const filename = isScheduledDaily
       ? `VotoForte-Backup-Automatico-Diario-${dateStr}-02h30.json`
       : `VotoForte-BACKUP-MESTRE-COMPLETO-${dateStr}-${timeStr}.json`;
