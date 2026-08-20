@@ -366,7 +366,39 @@ a {
   padding: 29px 32px 55px;
   max-width: 1560px;
   margin: auto;
+  position: relative;
 }
+
+/* MARCA D'ÁGUA SUTIL MAPA 3D DO PARANÁ NO AMBIENTE PRINCIPAL */
+.workspace::before {
+  content: "";
+  position: fixed;
+  top: 54%;
+  left: calc(50% + 120px);
+  transform: translate(-50%, -50%);
+  width: min(920px, 80vw);
+  height: min(720px, 75vh);
+  background-image: url("/parana-map-3d-watermark.jpg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center center;
+  opacity: 0.045;
+  filter: contrast(105%);
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: multiply;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .workspace::before {
+    left: 50%;
+    width: 90vw;
+    height: 60vh;
+    opacity: 0.038;
+  }
+}
+
 .welcome-pro {
   padding: 25px 28px;
   border-radius: 14px;
