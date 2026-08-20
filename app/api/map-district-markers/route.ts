@@ -2,7 +2,7 @@ import {
   getAccount,
   getVisibleUsers,
   isAdministrator,
-} from "../../../server-identity";
+} from "../../server-identity";
 
 export const dynamic = "force-dynamic";
 
