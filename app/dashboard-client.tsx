@@ -26,7 +26,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
-  { label: "Painel Eleitoral", icon: "🏛️", badge: "TSE" },
+  { label: "Painel Eleitoral", icon: "🏛️" },
   { label: "WhatsApp", icon: "◉" },
 ];
 
