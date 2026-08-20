@@ -19,6 +19,7 @@ export type CampaignEvent = {
 
 const STORAGE_KEY = "agenda-eleitoral-parana-2026-v1";
 const THEME_KEY = "agenda-eleitoral-theme-v1";
+const ELECTION_DATE = new Date("2026-10-04T08:00:00-03:00").getTime();
 
 const baseEvents: CampaignEvent[] = [
   {
@@ -317,6 +318,41 @@ export default function InstitutionalCommunicationClient({
   const [fDone, setFDone] = useState(false);
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
+
+  // Cronômetro Regressivo Intermitente até a Eleição (04 de Outubro de 2026)
+  const [electionCountdown, setElectionCountdown] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isPast: boolean;
+  }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isPast: false,
+  });
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = ELECTION_DATE - now;
+      if (diff <= 0) {
+        setElectionCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setElectionCountdown({ days, hours, minutes, seconds, isPast: false });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Reagendamento Rápido
   const [rescheduleEvent, setRescheduleEvent] = useState<CampaignEvent | null>(null);
@@ -722,6 +758,44 @@ export default function InstitutionalCommunicationClient({
             onChange={handleImportFile}
           />
         </header>
+
+        {/* CRONÔMETRO INTERMITENTE ATÉ A ELEIÇÃO (04 DE OUTUBRO DE 2026) */}
+        <section className="ae-election-countdown" aria-label="Contagem regressiva para as Eleições 2026">
+          <div className="ae-countdown-left">
+            <div className="ae-countdown-badge">
+              <span className="ae-countdown-pulse" aria-hidden="true" />
+              <span>CONTAGEM REGRESSIVA PARA AS ELEIÇÕES 2026</span>
+            </div>
+            <h2 className="ae-countdown-title">
+              1º Turno das Eleições Gerais • <strong>04 de Outubro de 2026</strong>
+            </h2>
+            <p className="ae-countdown-desc">
+              Tempo restante para a abertura oficial das urnas em todo o Estado do Paraná (08h00 — Horário de Brasília).
+            </p>
+          </div>
+
+          <div className="ae-countdown-boxes">
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.days).padStart(2, "0")}</div>
+              <div className="ae-count-label">DIAS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.hours).padStart(2, "0")}</div>
+              <div className="ae-count-label">HORAS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.minutes).padStart(2, "0")}</div>
+              <div className="ae-count-label">MINUTOS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit is-seconds">
+              <div className="ae-count-num">{String(electionCountdown.seconds).padStart(2, "0")}</div>
+              <div className="ae-count-label">SEGUNDOS</div>
+            </div>
+          </div>
+        </section>
 
         {/* STATS BAR DE ALTO CONTRASTE */}
         <section className="ae-stats">

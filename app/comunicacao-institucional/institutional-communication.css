@@ -194,6 +194,157 @@
   background: transparent !important;
 }
 
+/* CRONÔMETRO REGRESSIVO INTERMITENTE ELEIÇÕES 2026 */
+.ae-election-countdown {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 20px !important;
+  background: linear-gradient(135deg, rgba(14, 30, 56, 0.95) 0%, rgba(8, 20, 38, 0.98) 100%) !important;
+  border: 1px solid rgba(212, 171, 100, 0.35) !important;
+  border-radius: var(--ae-radius) !important;
+  padding: 16px 22px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(212, 171, 100, 0.08) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.ae-election-countdown::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, #38bdf8 0%, #d4ab64 50%, #22c55e 100%) !important;
+}
+
+.ae-countdown-left {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+.ae-countdown-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 850 !important;
+  color: #d4ab64 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.ae-countdown-pulse {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #22c55e !important;
+  box-shadow: 0 0 10px #22c55e !important;
+  animation: aePulse 1.2s infinite ease-in-out !important;
+}
+
+@keyframes aePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.35); }
+}
+
+.ae-countdown-title {
+  margin: 0 !important;
+  font-size: 1.15rem !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+}
+
+.ae-countdown-title strong {
+  color: #d4ab64 !important;
+}
+
+.ae-countdown-desc {
+  margin: 0 !important;
+  font-size: 0.82rem !important;
+  color: #94a3b8 !important;
+  line-height: 1.35 !important;
+}
+
+.ae-countdown-boxes {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.ae-count-unit {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 8px 14px !important;
+  min-width: 68px !important;
+  text-align: center !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ae-count-unit.is-seconds {
+  border-color: rgba(212, 171, 100, 0.45) !important;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+}
+
+.ae-count-num {
+  font-size: 1.55rem !important;
+  font-weight: 900 !important;
+  color: #38bdf8 !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: monospace, sans-serif !important;
+}
+
+.ae-count-unit.is-seconds .ae-count-num {
+  color: #d4ab64 !important;
+}
+
+.ae-count-label {
+  font-size: 0.62rem !important;
+  font-weight: 850 !important;
+  color: #94a3b8 !important;
+  letter-spacing: 0.08em !important;
+  margin-top: 4px !important;
+}
+
+.ae-count-sep {
+  font-size: 1.35rem !important;
+  font-weight: 900 !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  line-height: 1 !important;
+  padding-bottom: 12px !important;
+}
+
+@media (max-width: 860px) {
+  .ae-election-countdown {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 14px !important;
+  }
+  .ae-countdown-boxes {
+    justify-content: space-between !important;
+  }
+  .ae-count-unit {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 8px 6px !important;
+  }
+  .ae-count-num {
+    font-size: 1.25rem !important;
+  }
+}
+
 /* STATS BAR */
 .ae-stats {
   display: grid !important;
