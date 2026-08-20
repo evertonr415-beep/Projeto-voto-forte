@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import "./interactive-electoral-map.css";
+import { ARAPONGAS_DISTRICTS_GEO, matchDistrictGeo, DistrictGeometry } from "./arapongas-districts-geo";
 
 export type ContactRecord = {
   id: number;
@@ -22,56 +23,6 @@ export type ContactRecord = {
   pollingPlace?: string;
 };
 
-// Coordenadas Centróides de Bairros de Arapongas e Paraná
-const DISTRICT_CENTROIDS: Record<string, [number, number]> = {
-  "Centro": [-23.4153, -51.4256],
-  "Jardim San Raphael": [-23.4080, -51.4180],
-  "San Raphael": [-23.4080, -51.4180],
-  "Conjunto Flamingos": [-23.3980, -51.4320],
-  "Flamingos": [-23.3980, -51.4320],
-  "Jardim Panorama": [-23.4240, -51.4150],
-  "Panorama": [-23.4240, -51.4150],
-  "Jardim Caravelle": [-23.4290, -51.4290],
-  "Caravelle": [-23.4290, -51.4290],
-  "Vila Nova": [-23.4100, -51.4350],
-  "Conjunto Del Condor": [-23.4020, -51.4100],
-  "Del Condor": [-23.4020, -51.4100],
-  "Jardim Primavera": [-23.4180, -51.4420],
-  "Primavera": [-23.4180, -51.4420],
-  "Vila Araponguinha": [-23.4220, -51.4380],
-  "Araponguinha": [-23.4220, -51.4380],
-  "Jardim Petrópolis": [-23.4060, -51.4460],
-  "Petrópolis": [-23.4060, -51.4460],
-  "Jardim Columbia": [-23.4350, -51.4200],
-  "Columbia": [-23.4350, -51.4200],
-  "Jardim Mônaco": [-23.4120, -51.4080],
-  "Mônaco": [-23.4120, -51.4080],
-  "Jardim Aeroporto": [-23.3850, -51.4450],
-  "Aeroporto": [-23.3850, -51.4450],
-  "Conjunto Palmares": [-23.3940, -51.4210],
-  "Palmares": [-23.3940, -51.4210],
-  "Jardim Vale das Perobas": [-23.4280, -51.4050],
-  "Vale das Perobas": [-23.4280, -51.4050],
-  "Jardim Bandeirantes": [-23.4190, -51.4100],
-  "Bandeirantes": [-23.4190, -51.4100],
-  "Jardim Interlagos": [-23.4320, -51.4400],
-  "Interlagos": [-23.4320, -51.4400],
-  "Parque Industrial": [-23.3750, -51.4500],
-  "Vila Aparecida": [-23.4140, -51.4320],
-  "Jardim Tropical": [-23.4040, -51.4380],
-  "Jardim Santa Alice": [-23.4260, -51.4240],
-  "Conjunto Águias": [-23.3910, -51.4280],
-  "Jardim Universitário": [-23.4380, -51.4320],
-  "Aricanduva": [-23.4650, -51.4800],
-  "Zona Rural": [-23.4450, -51.4600],
-  "Curitiba": [-25.4284, -49.2733],
-  "Londrina": [-23.3045, -51.1696],
-  "Maringá": [-23.4205, -51.9333],
-  "Ponta Grossa": [-25.0994, -50.1583],
-  "Cascavel": [-24.9578, -53.4595],
-  "Foz do Iguaçu": [-25.5163, -54.5854],
-};
-
 function getCentroidForContact(contact: ContactRecord, index: number): [number, number] {
   if (
     typeof contact.latitude === "number" &&
@@ -84,12 +35,13 @@ function getCentroidForContact(contact: ContactRecord, index: number): [number, 
     return [contact.latitude, contact.longitude];
   }
 
-  const district = (contact.district || "Centro").trim();
-  const base = DISTRICT_CENTROIDS[district] || DISTRICT_CENTROIDS["Centro"] || [-23.4153, -51.4256];
+  const districtName = (contact.district || "Centro").trim();
+  const matched = matchDistrictGeo(districtName);
+  const base = matched ? matched.centroid : [-23.4153, -51.4256];
   
   // Pequeno espalhamento determinístico para contatos no mesmo bairro não colidirem
   const angle = (index * 137.5 * Math.PI) / 180;
-  const radius = (0.0015 * Math.sqrt((index % 25) + 1));
+  const radius = (0.0018 * Math.sqrt((index % 25) + 1));
   const lat = base[0] + radius * Math.sin(angle);
   const lng = base[1] + (radius * Math.cos(angle)) / Math.cos((base[0] * Math.PI) / 180);
   return [lat, lng];
@@ -111,12 +63,18 @@ export default function InteractiveElectoralMap({
   const [loading, setLoading] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>("all");
   const [searchPerson, setSearchPerson] = useState("");
+  const [showPolygons, setShowPolygons] = useState(true);
+  const [showPins, setShowPins] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const polygonsLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const labelsLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,7 +99,7 @@ export default function InteractiveElectoralMap({
         }
       }
     } catch {
-      // Usa initialContacts se falhar a rede
+      // Fallback
     } finally {
       setLoading(false);
     }
@@ -155,35 +113,51 @@ export default function InteractiveElectoralMap({
     }
   }, [initialContacts, loadContactsFromApi]);
 
-  // Lista de todos os bairros com contagem
-  const districtStats = useMemo(() => {
+  // Contagem por Bairro
+  const districtCounts = useMemo(() => {
     const map = new Map<string, { total: number; leaders: number; voters: number }>();
+    
+    // Inicializa todos os bairros conhecidos com 0
+    ARAPONGAS_DISTRICTS_GEO.forEach((geo) => {
+      map.set(geo.name, { total: 0, leaders: 0, voters: 0 });
+    });
+
     contacts.forEach((c) => {
-      const d = (c.district || "Centro").trim();
-      const current = map.get(d) || { total: 0, leaders: 0, voters: 0 };
+      const dName = (c.district || "Centro").trim();
+      const matched = matchDistrictGeo(dName);
+      const key = matched ? matched.name : dName;
+      const current = map.get(key) || { total: 0, leaders: 0, voters: 0 };
       current.total += 1;
       if (c.kind === "Liderança") {
         current.leaders += 1;
       } else {
         current.voters += 1;
       }
-      map.set(d, current);
+      map.set(key, current);
     });
 
-    const list = Array.from(map.entries()).map(([district, stat]) => ({
+    return map;
+  }, [contacts]);
+
+  // Lista para o seletor de bairros
+  const districtOptions = useMemo(() => {
+    const list = Array.from(districtCounts.entries()).map(([district, stat]) => ({
       district,
       ...stat,
     }));
-
-    list.sort((a, b) => b.total - a.total);
+    list.sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
     return list;
-  }, [contacts]);
+  }, [districtCounts]);
 
-  // Contatos filtrados
+  // Contatos filtrados pela busca e pelo bairro selecionado
   const filteredContacts = useMemo(() => {
     const q = searchPerson.trim().toLowerCase();
     return contacts.filter((c) => {
-      const matchDistrict = selectedDistrict === "all" || (c.district || "Centro").trim() === selectedDistrict;
+      const dName = (c.district || "Centro").trim();
+      const matched = matchDistrictGeo(dName);
+      const normalizedDistrict = matched ? matched.name : dName;
+
+      const matchDistrict = selectedDistrict === "all" || normalizedDistrict === selectedDistrict;
       const matchQuery =
         !q ||
         c.name.toLowerCase().includes(q) ||
@@ -193,25 +167,25 @@ export default function InteractiveElectoralMap({
     });
   }, [contacts, selectedDistrict, searchPerson]);
 
-  // Estatísticas da seleção atual
+  // Estatísticas do Bairro Selecionado
   const currentSelectionStats = useMemo(() => {
     if (selectedDistrict === "all") {
       const leaders = contacts.filter((c) => c.kind === "Liderança").length;
       return {
-        name: "Todos os Bairros (Arapongas & PR)",
+        name: "Todos os Bairros de Arapongas",
         total: contacts.length,
         leaders,
         voters: contacts.length - leaders,
       };
     }
-    const stat = districtStats.find((d) => d.district === selectedDistrict);
+    const stat = districtCounts.get(selectedDistrict);
     return {
       name: selectedDistrict,
       total: stat?.total || 0,
       leaders: stat?.leaders || 0,
       voters: stat?.voters || 0,
     };
-  }, [contacts, selectedDistrict, districtStats]);
+  }, [contacts, selectedDistrict, districtCounts]);
 
   // Inicialização Ultra Segura do Leaflet
   useEffect(() => {
@@ -225,7 +199,6 @@ export default function InteractiveElectoralMap({
         let L = (window as any).L;
 
         if (!L) {
-          // Carrega CSS
           if (!document.querySelector('link[data-iem-leaflet="true"]')) {
             const link = document.createElement("link");
             link.rel = "stylesheet";
@@ -234,7 +207,6 @@ export default function InteractiveElectoralMap({
             document.head.appendChild(link);
           }
 
-          // Carrega JS
           if (!document.querySelector('script[data-iem-leaflet="true"]')) {
             await new Promise<void>((resolve, reject) => {
               const script = document.createElement("script");
@@ -252,7 +224,6 @@ export default function InteractiveElectoralMap({
 
         if (!active || !L || !mapContainerRef.current) return;
 
-        // Se já existe um mapa criado, remove antes de recriar
         if (mapInstanceRef.current) {
           mapInstanceRef.current.remove();
           mapInstanceRef.current = null;
@@ -266,13 +237,14 @@ export default function InteractiveElectoralMap({
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
-          attribution: "&copy; OpenStreetMap · Voto Forte",
+          attribution: "&copy; OpenStreetMap · Voto Forte Arapongas",
         }).addTo(map);
 
-        const markersLayer = L.layerGroup().addTo(map);
+        polygonsLayerRef.current = L.layerGroup().addTo(map);
+        labelsLayerRef.current = L.layerGroup().addTo(map);
+        markersLayerRef.current = L.layerGroup().addTo(map);
 
         mapInstanceRef.current = map;
-        markersLayerRef.current = markersLayer;
         setMapReady(true);
         setMapError(false);
 
@@ -297,7 +269,80 @@ export default function InteractiveElectoralMap({
     };
   }, []);
 
-  // Atualização dos Marcadores no Mapa quando contatos ou filtro mudam
+  // PASSO 1 & 2: RENDERIZAR POLÍGONOS DE BAIRROS E RÓTULOS COM CONTAGEM
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const L = (window as any).L;
+    if (!L || !mapInstanceRef.current || !polygonsLayerRef.current || !labelsLayerRef.current) return;
+
+    polygonsLayerRef.current.clearLayers();
+    labelsLayerRef.current.clearLayers();
+
+    if (!showPolygons) return;
+
+    ARAPONGAS_DISTRICTS_GEO.forEach((district: DistrictGeometry) => {
+      const stats = districtCounts.get(district.name) || { total: 0, leaders: 0, voters: 0 };
+      const isSelected = selectedDistrict === district.name;
+
+      // Densidade de cor dinâmica
+      const baseOpacity = isSelected ? 0.45 : stats.total > 0 ? 0.25 : 0.12;
+      const weight = isSelected ? 3.5 : 2;
+
+      // 1. Polígono do Bairro
+      const poly = L.polygon(district.polygon, {
+        color: isSelected ? "#38bdf8" : district.color,
+        weight,
+        fillColor: district.color,
+        fillOpacity: baseOpacity,
+      });
+
+      poly.on("mouseover", (e: any) => {
+        e.target.setStyle({ weight: 3.5, fillOpacity: 0.42 });
+      });
+
+      poly.on("mouseout", (e: any) => {
+        if (selectedDistrict !== district.name) {
+          e.target.setStyle({ weight: 2, fillOpacity: baseOpacity });
+        }
+      });
+
+      poly.on("click", () => {
+        setSelectedDistrict(district.name);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.fitBounds(poly.getBounds(), { padding: [40, 40], maxZoom: 16 });
+        }
+      });
+
+      poly.addTo(polygonsLayerRef.current);
+
+      // 2. Rótulo central com nome e contagem de eleitores
+      const labelHtml = `
+        <div class="iem-district-label" title="${district.name}: ${stats.total} cadastros">
+          <span>${district.name}</span>
+          <span class="iem-district-badge">👥 ${stats.total} (${stats.leaders} L / ${stats.voters} E)</span>
+        </div>
+      `;
+
+      const labelIcon = L.divIcon({
+        className: "",
+        html: labelHtml,
+        iconSize: [110, 36],
+        iconAnchor: [55, 18],
+      });
+
+      const labelMarker = L.marker(district.centroid, { icon: labelIcon });
+      labelMarker.on("click", () => {
+        setSelectedDistrict(district.name);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.fitBounds(poly.getBounds(), { padding: [40, 40], maxZoom: 16 });
+        }
+      });
+
+      labelMarker.addTo(labelsLayerRef.current);
+    });
+  }, [districtCounts, selectedDistrict, showPolygons]);
+
+  // PASSO 3: RENDERIZAR PONTOS DE GEOLOCALIZAÇÃO INDIVIDUAIS DE CADA CONTATO
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const L = (window as any).L;
@@ -305,6 +350,8 @@ export default function InteractiveElectoralMap({
 
     markersLayerRef.current.clearLayers();
     markerMapRef.current.clear();
+
+    if (!showPins) return;
 
     const bounds: [number, number][] = [];
 
@@ -318,10 +365,10 @@ export default function InteractiveElectoralMap({
 
       const icon = L.divIcon({
         className: "",
-        html: `<div class="${pinClass}" title="${contact.name}"><span>${initials}</span></div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16],
+        html: `<div class="${pinClass}" title="${contact.name} (${contact.kind || "Eleitor"})"><span>${initials}</span></div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15],
       });
 
       const marker = L.marker([lat, lng], { icon });
@@ -333,9 +380,9 @@ export default function InteractiveElectoralMap({
         <div class="iem-popup">
           <h4>${contact.name}</h4>
           <p><strong>${isLeader ? "🟢 Liderança" : "🔵 Eleitor"}</strong> · ${contact.district || "Centro"}</p>
-          ${contact.street ? `<p>${contact.street}${contact.number ? `, ${contact.number}` : ""}</p>` : ""}
+          ${contact.street ? `<p>📍 ${contact.street}${contact.number ? `, ${contact.number}` : ""}</p>` : ""}
           ${contact.phone ? `<p>📞 ${contact.phone}</p>` : ""}
-          ${contact.pollingPlace ? `<p>🏛️ Local: ${contact.pollingPlace}</p>` : ""}
+          ${contact.pollingPlace ? `<p>🏛️ Local de Votação: ${contact.pollingPlace}</p>` : ""}
           ${
             waLink
               ? `<a class="iem-popup-btn" href="${waLink}" target="_blank" rel="noopener noreferrer">💬 Abrir WhatsApp</a>`
@@ -349,17 +396,15 @@ export default function InteractiveElectoralMap({
       markerMapRef.current.set(contact.id, marker);
     });
 
-    if (bounds.length > 0) {
-      if (selectedDistrict !== "all") {
-        mapInstanceRef.current.fitBounds(L.latLngBounds(bounds), {
-          padding: [40, 40],
-          maxZoom: 16,
-        });
-      }
+    if (bounds.length > 0 && selectedDistrict !== "all") {
+      mapInstanceRef.current.fitBounds(L.latLngBounds(bounds), {
+        padding: [40, 40],
+        maxZoom: 16,
+      });
     }
-  }, [filteredContacts, selectedDistrict]);
+  }, [filteredContacts, selectedDistrict, showPins]);
 
-  // Foco no contato ao clicar na lista lateral
+  // Centraliza e abre o popup do contato
   const focusContact = (contact: ContactRecord, idx: number) => {
     if (!mapInstanceRef.current) return;
     const [lat, lng] = getCentroidForContact(contact, idx);
@@ -371,7 +416,7 @@ export default function InteractiveElectoralMap({
     }
   };
 
-  // Botões de Zoom Rápido
+  // Botões de Zoom
   const viewParana = () => {
     if (!mapInstanceRef.current) return;
     mapInstanceRef.current.setView([-24.8, -51.5], 7, { animate: true });
@@ -385,24 +430,38 @@ export default function InteractiveElectoralMap({
 
   return (
     <div className="iem-container">
-      {/* MAPA PRINCIPAL */}
+      {/* MAPA PRINCIPAL COM REGIONALIZAÇÃO */}
       <div className="iem-map-card">
         <header className="iem-map-header">
           <div className="iem-map-title">
-            <div style={{ fontSize: "22px" }}>📍</div>
+            <div style={{ fontSize: "22px" }}>🗺️</div>
             <div>
-              <h2>Mapa Eleitoral do Paraná & Arapongas</h2>
+              <h2>Regionalização Eleitoral de Arapongas</h2>
               <span>
-                {filteredContacts.length} alfinetes de eleitores e lideranças distribuídos por região.
+                {ARAPONGAS_DISTRICTS_GEO.length} bairros delimitados · {filteredContacts.length} pessoas mapeadas.
               </span>
             </div>
           </div>
           <div className="iem-map-controls">
+            <button
+              type="button"
+              className={`iem-btn ${showPolygons ? "active" : ""}`}
+              onClick={() => setShowPolygons(!showPolygons)}
+            >
+              📐 Polígonos de Bairros {showPolygons ? "✓" : "✕"}
+            </button>
+            <button
+              type="button"
+              className={`iem-btn ${showPins ? "active" : ""}`}
+              onClick={() => setShowPins(!showPins)}
+            >
+              📍 Pinos Individuais {showPins ? "✓" : "✕"}
+            </button>
             <button type="button" className="iem-btn" onClick={viewArapongas}>
               🎯 Arapongas
             </button>
             <button type="button" className="iem-btn" onClick={viewParana}>
-              🗺️ Estado do Paraná
+              🗺️ Paraná
             </button>
             <button
               type="button"
@@ -410,7 +469,7 @@ export default function InteractiveElectoralMap({
               onClick={loadContactsFromApi}
               disabled={loading}
             >
-              {loading ? "Atualizando…" : "🔄 Atualizar Cadastros"}
+              {loading ? "Atualizando…" : "🔄 Sincronizar"}
             </button>
           </div>
         </header>
@@ -431,7 +490,7 @@ export default function InteractiveElectoralMap({
             >
               <div style={{ fontSize: "32px", marginBottom: "8px" }}>🗺️</div>
               <strong style={{ color: "#f4f7ff", fontSize: "16px" }}>
-                Visualização de Dados Geográficos Ativa
+                Visualização Regional de Arapongas Ativa
               </strong>
               <p style={{ maxWidth: "400px", margin: "6px 0 14px" }}>
                 Use a barra lateral para filtrar os eleitores por bairro e ver a distribuição eleitoral completa.
@@ -446,33 +505,53 @@ export default function InteractiveElectoralMap({
             <div className="iem-floating-legend">
               <div>
                 <i className="iem-legend-dot green" />
-                <span>Lideranças</span>
+                <span>Liderança</span>
               </div>
               <div>
                 <i className="iem-legend-dot blue" />
-                <span>Eleitores</span>
+                <span>Eleitor</span>
+              </div>
+              <div>
+                <i className="iem-legend-dot polygon" />
+                <span>Divisão Bairros</span>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* PAINEL LATERAL: FILTRO POR BAIRRO & QUANTIDADE */}
+      {/* PAINEL LATERAL: FILTRO POR REGIONALIZAÇÃO & QUANTIDADE */}
       <aside className="iem-sidebar">
         <div className="iem-sidebar-head">
-          <h3>Filtro por Bairro</h3>
-          <p>Selecione a região para ver os eleitores e lideranças cadastrados.</p>
+          <h3>Regionalização por Bairro</h3>
+          <p>Selecione a região para ver os polígonos e os eleitores cadastrados.</p>
         </div>
 
-        {/* SELECT DE BAIRROS */}
+        {/* SELECT DE BAIRROS COM CONTAGEM */}
         <div className="iem-filter-box">
           <select
             className="iem-select"
             value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedDistrict(val);
+              if (val !== "all" && mapInstanceRef.current) {
+                const geo = ARAPONGAS_DISTRICTS_GEO.find((g) => g.name === val);
+                if (geo) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const L = (window as any).L;
+                  if (L) {
+                    mapInstanceRef.current.fitBounds(L.polygon(geo.polygon).getBounds(), {
+                      padding: [40, 40],
+                      maxZoom: 16,
+                    });
+                  }
+                }
+              }
+            }}
           >
-            <option value="all">📍 Todos os Bairros ({contacts.length})</option>
-            {districtStats.map((d) => (
+            <option value="all">📍 Todos os Bairros ({contacts.length} total)</option>
+            {districtOptions.map((d) => (
               <option key={d.district} value={d.district}>
                 {d.district} ({d.total} {d.total === 1 ? "cadastro" : "cadastros"})
               </option>
@@ -481,7 +560,7 @@ export default function InteractiveElectoralMap({
 
           <input
             className="iem-search-input"
-            placeholder="Buscar nome ou telefone..."
+            placeholder="Buscar por nome, bairro ou fone..."
             value={searchPerson}
             onChange={(e) => setSearchPerson(e.target.value)}
           />
@@ -490,7 +569,7 @@ export default function InteractiveElectoralMap({
         {/* ESTATÍSTICAS DO BAIRRO SELECIONADO */}
         <div className="iem-district-stats">
           <div className="iem-stat-item">
-            <small>Total</small>
+            <small>Total Região</small>
             <strong>{currentSelectionStats.total}</strong>
           </div>
           <div className="iem-stat-item">
