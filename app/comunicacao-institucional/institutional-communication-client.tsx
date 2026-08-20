@@ -371,14 +371,18 @@ export default function InstitutionalCommunicationClient() {
     return list;
   }, [events, search, filterCategory, filterStatus, sortBy]);
 
-  // Estatísticas
+  // Estatísticas com visualização clara
   const stats = useMemo(() => {
     const total = events.length;
     const pending = events.filter((e) => !e.done).length;
     const done = events.filter((e) => e.done).length;
-    const next = [...events]
+    
+    // Próximo marco pendente
+    const pendingUpcoming = [...events]
       .filter((e) => !e.done)
-      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date))[0];
+      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date));
+    
+    const next = pendingUpcoming[0] || null;
     const nextDays = next ? daysUntil(next.date) : null;
 
     return { total, pending, done, next, nextDays };
@@ -386,10 +390,14 @@ export default function InstitutionalCommunicationClient() {
 
   // Próximos 4 eventos para contagem regressiva
   const upcomingCountdowns = useMemo(() => {
-    return [...events]
+    const pendingList = [...events]
       .filter((e) => !e.done)
-      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date))
-      .slice(0, 4);
+      .sort((a, b) => isoToDate(a.date) - isoToDate(b.date));
+    
+    if (pendingList.length > 0) {
+      return pendingList.slice(0, 4);
+    }
+    return events.slice(0, 4);
   }, [events]);
 
   // Lembretes próximos
@@ -583,37 +591,39 @@ export default function InstitutionalCommunicationClient() {
   return (
     <div className={`ae-root ${theme === "light" ? "light-mode" : ""}`} data-theme={theme}>
       <div className="shell">
-        {/* TOPBAR */}
+        {/* TOPBAR ROBUSTA */}
         <header className="topbar">
-          <div className="brand">
-            <div className="logo">🗳️</div>
-            <div>
-              <h1>Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
-              <div className="footer-note">
-                Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
+          <div className="topbar-main">
+            <div className="brand">
+              <div className="logo">🗳️</div>
+              <div>
+                <h1>Agenda Eleitoral — Pedro Lupion e Sérgio Onofre</h1>
+                <div className="subtitle">
+                  Cronograma operacional da campanha • Arapongas — 2026 • busca, lembretes, contagem regressiva e persistência no navegador.
+                </div>
               </div>
             </div>
-          </div>
-          <div className="toolbar">
-            <button type="button" className="btn ghost" onClick={toggleTheme}>
-              {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              ⬆️ Importar JSON
-            </button>
-            <button type="button" className="btn" onClick={exportJson}>
-              ⬇️ Exportar JSON
-            </button>
-            <button type="button" className="btn" onClick={() => window.print()}>
-              🖨️ Imprimir
-            </button>
-            <button type="button" className="btn good" onClick={resetBase}>
-              ↺ Restaurar modelo
-            </button>
+            <div className="toolbar">
+              <button type="button" className="btn ghost" onClick={toggleTheme}>
+                {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                ⬆️ Importar JSON
+              </button>
+              <button type="button" className="btn" onClick={exportJson}>
+                ⬇️ Exportar JSON
+              </button>
+              <button type="button" className="btn" onClick={() => window.print()}>
+                🖨️ Imprimir
+              </button>
+              <button type="button" className="btn good" onClick={resetBase}>
+                ↺ Restaurar modelo
+              </button>
+            </div>
           </div>
           <input
             ref={fileInputRef}
@@ -624,32 +634,36 @@ export default function InstitutionalCommunicationClient() {
           />
         </header>
 
-        {/* STATS BAR */}
+        {/* STATS BAR DE ALTO CONTRASTE */}
         <section className="stats">
           <div className="stat">
             <div className="label">Total de eventos</div>
-            <div className="value">{stats.total}</div>
+            <div className="value" style={{ color: "var(--accent)" }}>{stats.total}</div>
             <div className="hint">marcos no calendário</div>
           </div>
           <div className="stat">
             <div className="label">Pendentes</div>
-            <div className="value">{stats.pending}</div>
+            <div className="value" style={{ color: "var(--warn)" }}>{stats.pending}</div>
             <div className="hint">ainda exigem acompanhamento</div>
           </div>
           <div className="stat">
             <div className="label">Concluídos</div>
-            <div className="value">{stats.done}</div>
+            <div className="value" style={{ color: "var(--ok)" }}>{stats.done}</div>
             <div className="hint">marcados como finalizados</div>
           </div>
           <div className="stat">
             <div className="label">Próximo marco</div>
-            <div className="value">
+            <div className="value" style={{ color: "var(--text)" }}>
               {stats.nextDays !== null
-                ? `${Math.abs(stats.nextDays)} dia${Math.abs(stats.nextDays) === 1 ? "" : "s"}`
-                : "—"}
+                ? stats.nextDays < 0
+                  ? `Há ${Math.abs(stats.nextDays)} dias`
+                  : stats.nextDays === 0
+                    ? "Hoje!"
+                    : `${stats.nextDays} dia${stats.nextDays === 1 ? "" : "s"}`
+                : "Tudo em dia!"}
             </div>
             <div className="hint">
-              {stats.next ? `${stats.next.title} • ${dateLabel(stats.next.date)}` : "Sem eventos"}
+              {stats.next ? `${stats.next.title} • ${dateLabel(stats.next.date)}` : "Nenhum evento pendente"}
             </div>
           </div>
         </section>
@@ -661,7 +675,7 @@ export default function InstitutionalCommunicationClient() {
             <article className="card">
               <div className="card-head">
                 <div>
-                  <h2>Agenda</h2>
+                  <h2>Agenda de Compromissos</h2>
                   <div className="footer-note">
                     Use os filtros, marque como concluído, edite eventos e adicione novos marcos eleitorais.
                   </div>
@@ -724,13 +738,13 @@ export default function InstitutionalCommunicationClient() {
                   <table>
                     <thead>
                       <tr>
-                        <th style={{ width: "14%" }}>Data</th>
-                        <th style={{ width: "18%" }}>Categoria</th>
+                        <th style={{ width: "13%" }}>Data</th>
+                        <th style={{ width: "19%" }}>Categoria</th>
                         <th>Título</th>
-                        <th style={{ width: "10%" }}>Contagem</th>
+                        <th style={{ width: "11%" }}>Contagem</th>
                         <th style={{ width: "11%" }}>Status</th>
                         <th style={{ width: "12%" }}>Responsável</th>
-                        <th style={{ width: "12%" }}>Local</th>
+                        <th style={{ width: "11%" }}>Local</th>
                         <th style={{ width: "13%" }}>Ações</th>
                       </tr>
                     </thead>
@@ -748,7 +762,7 @@ export default function InstitutionalCommunicationClient() {
                             <tr key={ev.id} className={ev.done ? "row-done" : ""}>
                               <td data-label="Data">
                                 <div>
-                                  <strong>{dateLabel(ev.date)}</strong>
+                                  <strong style={{ color: "var(--text)" }}>{dateLabel(ev.date)}</strong>
                                 </div>
                                 <div className="footer-note">{weekdayLabel(ev.date)}</div>
                               </td>
@@ -766,7 +780,7 @@ export default function InstitutionalCommunicationClient() {
                                 {ev.done ? (
                                   <span className="badge ok">✓ concluído</span>
                                 ) : d < 0 ? (
-                                  <span className="badge danger">atrasado</span>
+                                  <span className="badge danger">atrasado ({Math.abs(d)}d)</span>
                                 ) : d === 0 ? (
                                   <span className="badge danger">hoje</span>
                                 ) : d <= 7 ? (
@@ -840,22 +854,30 @@ export default function InstitutionalCommunicationClient() {
             <article className="card">
               <div className="card-head">
                 <div>
-                  <h3>Resumo rápido</h3>
+                  <h3>Resumo Rápido</h3>
                   <div className="footer-note">Próximos marcos, visão geral e calendário mensal.</div>
                 </div>
               </div>
               <div className="card-body sidebar-panel">
                 {/* CONTAGEM REGRESSIVA */}
-                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
                   <div className="card-body">
                     <div className="countdown">
                       {upcomingCountdowns.map((ev) => {
                         const d = daysUntil(ev.date);
                         return (
                           <div key={ev.id} className="countbox">
-                            <div className="big">{d < 0 ? "—" : d}</div>
+                            <div className="big">
+                              {ev.done
+                                ? "OK"
+                                : d < 0
+                                  ? `-${Math.abs(d)}d`
+                                  : d === 0
+                                    ? "Hoje"
+                                    : `${d}d`}
+                            </div>
                             <div className="small">
-                              <strong>{ev.title}</strong>
+                              <strong style={{ color: "var(--text)" }}>{ev.title}</strong>
                               <br />
                               {dateLabel(ev.date)} · {ev.category}
                             </div>
@@ -867,7 +889,7 @@ export default function InstitutionalCommunicationClient() {
                 </div>
 
                 {/* CALENDÁRIO MENSAL */}
-                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
                   <div className="card-body">
                     <div className="calendar">
                       <div className="cal-head">
@@ -946,9 +968,9 @@ export default function InstitutionalCommunicationClient() {
                 </div>
 
                 {/* NOTAS E ORIENTAÇÕES */}
-                <div className="card" style={{ background: "transparent", borderColor: "var(--line)" }}>
+                <div className="card" style={{ background: "var(--card-solid)", borderColor: "var(--line)" }}>
                   <div className="card-body">
-                    <h3 style={{ marginBottom: "10px" }}>Notas e orientações</h3>
+                    <h3 style={{ marginBottom: "10px" }}>Notas e Orientações</h3>
                     <div className="footer-note">
                       <div>
                         <strong>Agenda pronta para uso offline:</strong> os dados ficam no seu navegador. Você pode editar, importar e exportar sem internet.
