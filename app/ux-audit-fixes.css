@@ -155,3 +155,84 @@
   margin-top: 14px !important;
   margin-bottom: 14px !important;
 }
+
+/* Cabeçalho global: composição previsível no mobile em todas as abas. */
+@media (max-width: 760px) {
+  .topbar {
+    height: auto !important;
+    min-height: 76px;
+    padding: 9px 12px 10px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "page profile"
+      "scope scope";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 7px;
+  }
+
+  .page-id {
+    grid-area: page;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .page-id > div {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .page-id small {
+    display: none !important;
+  }
+
+  .page-id h1 {
+    margin: 0 !important;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 17px !important;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-menu {
+    width: 42px !important;
+    height: 42px !important;
+    margin-right: 10px !important;
+  }
+
+  .top-actions {
+    display: contents !important;
+  }
+
+  .top-actions .profile {
+    grid-area: profile;
+    justify-self: end;
+  }
+
+  .top-actions .profile > span {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .top-actions .scope-picker {
+    grid-area: scope;
+    width: 100%;
+    max-width: none !important;
+    min-width: 0;
+    padding: 7px 10px;
+    justify-content: center;
+  }
+
+  .top-actions .scope-picker select {
+    width: 100%;
+    max-width: none !important;
+    min-width: 0;
+    text-align: center;
+    text-overflow: ellipsis;
+  }
+}
