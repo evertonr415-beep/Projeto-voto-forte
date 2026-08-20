@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icons } from "../ui-icons";
 import "./institutional-communication.css";
 
 export type CampaignEvent = {
@@ -731,20 +732,33 @@ export default function InstitutionalCommunicationClient({
           </div>
           <div className="ae-toolbar">
             <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme}>
-              {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+              {theme === "light" ? (
+                <>
+                  <Icons.Moon size={15} />
+                  <span>Modo Escuro</span>
+                </>
+              ) : (
+                <>
+                  <Icons.Sun size={15} />
+                  <span>Modo Claro</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               className="ae-btn"
               onClick={() => fileInputRef.current?.click()}
             >
-              ⬆️ Importar JSON
+              <Icons.Upload size={15} />
+              <span>Importar JSON</span>
             </button>
             <button type="button" className="ae-btn" onClick={exportJson}>
-              ⬇️ Exportar JSON
+              <Icons.Download size={15} />
+              <span>Exportar JSON</span>
             </button>
             <button type="button" className="ae-btn" onClick={() => window.print()}>
-              🖨️ Imprimir
+              <Icons.Printer size={15} />
+              <span>Imprimir</span>
             </button>
             <button type="button" className="vf-back-dashboard-btn" onClick={handleBackToDashboard} title="Voltar ao Dashboard Principal">
               <span className="vf-back-arrow" aria-hidden="true">←</span>

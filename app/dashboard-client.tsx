@@ -5,6 +5,7 @@ import { apiFetch, supabase } from "./supabase-client";
   
 
 import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
+import { Icons } from "./ui-icons";
 
 type View =
   | "Visão Geral"
@@ -22,12 +23,12 @@ type Modal =
   | "filtros"
   | "perfil";
 
-const menu: { label: View; icon: string; badge?: string }[] = [
-  { label: "Visão Geral", icon: "▦" },
-  { label: "Contatos", icon: "☷" },
-  { label: "Mapa Eleitoral", icon: "⌖" },
-  { label: "Painel Eleitoral", icon: "🏛" },
-  { label: "WhatsApp", icon: "◉" },
+const menu: { label: View; iconRender: (props: { size?: number }) => React.ReactNode; badge?: string }[] = [
+  { label: "Visão Geral", iconRender: (p) => <Icons.Overview {...p} /> },
+  { label: "Contatos", iconRender: (p) => <Icons.Contacts {...p} /> },
+  { label: "Mapa Eleitoral", iconRender: (p) => <Icons.ElectoralMap {...p} /> },
+  { label: "Painel Eleitoral", iconRender: (p) => <Icons.ElectoralPanel {...p} /> },
+  { label: "WhatsApp", iconRender: (p) => <Icons.WhatsApp {...p} /> },
 ];
 
 function Brand() {
@@ -673,7 +674,7 @@ export default function DashboardClient({
                 }}
                 title={item.label}
               >
-                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-icon">{item.iconRender({ size: 17 })}</span>
                 <span className="nav-name">{item.label}</span>
                 {item.badge && <em>{item.badge}</em>}
               </button>
@@ -687,7 +688,9 @@ export default function DashboardClient({
                   }}
                   title="Disparo em Massa"
                 >
-                  <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
+                  <span className="nav-icon" style={{ color: "#2ddd7f", display: "inline-flex", alignItems: "center" }}>
+                    <Icons.Lightning size={17} color="#2ddd7f" />
+                  </span>
                   <span className="nav-name">Disparo em Massa</span>
                 </button>
               )}
@@ -709,7 +712,9 @@ export default function DashboardClient({
               }}
               title="Administração"
             >
-              <span className="nav-icon">⚙</span>
+              <span className="nav-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                <Icons.Admin size={17} />
+              </span>
               <span className="nav-name">Administração</span>
             </button>
           )}
@@ -726,48 +731,38 @@ export default function DashboardClient({
           <span>Recolher menu</span>
         </button>
       </aside>
-      <main>
+      <main className="main">
         <header className="topbar">
-          <div className="page-id">
+          <div className="topbar-left">
             <button
-              type="button"
-              className="mobile-menu"
-              onClick={() => {
-                closeMapPopup();
-                setCollapsed(!collapsed);
-              }}
-              aria-label="Abrir menu de navegação"
-              title="Abrir menu"
+              className="sidebar-mobile-toggle"
+              aria-label="Abrir navegação principal"
+              onClick={toggleMobileSidebar}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="4.5" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-                <rect x="3" y="10.75" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-                <rect x="3" y="17" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
-              </svg>
+              ≡
             </button>
-            <div>
-              <small>
+            <div className="header-titles">
+              <span className="header-kicker">
                 {isAdmin
                   ? "VISÃO ADMINISTRATIVA · AMBIENTES PROTEGIDOS"
                   : "MEU AMBIENTE · DADOS PRIVATIVOS"}
-              </small>
+              </span>
               <h1>{view}</h1>
             </div>
           </div>
-          <div className="top-actions">
+          <div className="actions">
             {isAdmin && (
               <label className="scope-picker">
-                <span>Visualizando</span>
+                <span className="sr-only">Visualizando registros por</span>
                 <select
+                  aria-label="Visualizando registros por"
                   value={scope}
-                  onChange={(event) => {
-                    setScope(event.target.value);
-                  }}
+                  onChange={(e) => setScope(e.target.value)}
                 >
-                  <option value="all">Todos os usuários</option>
+                  <option value="all">VISUALIZANDO: Todos os usuários</option>
                   {availableUsers.map((user) => (
-                    <option value={user.email} key={user.email}>
-                      {user.name}
+                    <option key={user.email} value={user.email}>
+                      VISUALIZANDO: {user.name} ({user.email})
                     </option>
                   ))}
                 </select>
@@ -776,7 +771,7 @@ export default function DashboardClient({
             <button
               type="button"
               className="notification"
-              aria-label="Notificações"
+              aria-label="Notificações e avisos da equipe"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   if ((window as any).vfOpenNotifications) {
@@ -788,7 +783,10 @@ export default function DashboardClient({
               }}
               title="Disparar aviso para os usuários do sistema"
             >
-              ♣<i>3</i>
+              <span style={{ display: "inline-flex", alignItems: "center" }}>
+                <Icons.Bell size={16} />
+              </span>
+              <i>3</i>
             </button>
             <button className="profile" onClick={() => setModal("perfil")}>
               <span>{initials(currentUser.name)}</span>
@@ -918,7 +916,7 @@ function Overview({
       <div className="kpis">
         <Kpi
           tone="green"
-          icon="♜"
+          icon={<Icons.Leader size={18} />}
           value={String(leaders)}
           label="Lideranças ativas"
           delta="Cadastrar liderança"
@@ -926,7 +924,7 @@ function Overview({
         />
         <Kpi
           tone="blue"
-          icon="♙"
+          icon={<Icons.Voters size={18} />}
           value={String(voters)}
           label="Eleitores cadastrados"
           delta="Ver relatório de eleitores"
@@ -934,7 +932,7 @@ function Overview({
         />
         <Kpi
           tone="gold"
-          icon="⌖"
+          icon={<Icons.Target size={18} />}
           value={String(districts)}
           label="Bairros alcançados"
           delta="Navegar no mapa eleitoral"
@@ -942,7 +940,7 @@ function Overview({
         />
         <Kpi
           tone="violet"
-          icon="◫"
+          icon={<Icons.Calendar size={18} />}
           value={String(summary.meetings)}
           label="Reuniões agendadas"
           delta="Abrir agenda inteligente"
@@ -958,46 +956,49 @@ function Overview({
             onClick={() => go("Agenda Inteligente")}
           />
           {meetings.length ? (
-            meetings.slice(0, 3).map((meeting, index) => (
-              <div className="event" key={meeting.id}>
-                <div className="event-date">
-                  <b>{String(index + 1).padStart(2, "0")}</b>
-                  <small>AGENDA</small>
-                </div>
-                <div>
-                  <span>{meeting.date}</span>
-                  <b>{meeting.title}</b>
-                  <small>⌖ {meeting.place}</small>
-                </div>
-              </div>
-            ))
+            <ul className="agenda-list">
+              {meetings.slice(0, 4).map((meeting, index) => (
+                <li key={meeting.id}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <time>
+                      {meeting.date}
+                      {meeting.time ? ` · ${meeting.time}` : ""}
+                    </time>
+                    <strong>{meeting.title}</strong>
+                    <small>
+                      {meeting.place || meeting.address || "Local não informado"}
+                    </small>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="empty-state">
-              Nenhum compromisso agendado neste ambiente.
-            </p>
+            <div className="empty-state">
+              Nenhuma reunião registrada neste ambiente.
+            </div>
           )}
         </article>
-        <article className="panel activity">
-          <PanelTitle
-            title="Privacidade ativa"
-            subtitle="Separação por identidade"
-          />
-          <div className="activity-line">
-            <span className="dot d0" />
-            <div>
-              <small>SEGURANÇA</small>
-              <b>Dados vinculados ao usuário autenticado</b>
-            </div>
-            <time>Ativo</time>
-          </div>
-          <div className="activity-line">
-            <span className="dot d1" />
-            <div>
-              <small>AUDITORIA</small>
-              <b>Ações administrativas registradas</b>
-            </div>
-            <time>Ativo</time>
-          </div>
+        <article className="panel">
+          <PanelTitle title="Privacidade ativa" subtitle="Separação por identidade" />
+          <ul className="audit-list">
+            <li>
+              <span className="dot ok" />
+              <div>
+                <strong>Dados vinculados ao usuário autenticado</strong>
+                <small>Segurança</small>
+              </div>
+              <em className="tag green">Ativo</em>
+            </li>
+            <li>
+              <span className="dot ok" />
+              <div>
+                <strong>Ações administrativas registradas</strong>
+                <small>Auditoria</small>
+              </div>
+              <em className="tag green">Ativo</em>
+            </li>
+          </ul>
         </article>
       </div>
     </>
@@ -1013,7 +1014,7 @@ function Kpi({
   onClick,
 }: {
   tone: string;
-  icon: string;
+  icon: React.ReactNode;
   value: string;
   label: string;
   delta: string;

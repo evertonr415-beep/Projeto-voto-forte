@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
+import { Icons } from "./ui-icons";
 
 export type SystemNotification = {
   id: string;
@@ -325,7 +326,8 @@ export default function SystemNotificationsDrawer() {
                   boxShadow: activeTab === "compose" ? "0 4px 12px rgba(234, 179, 8, 0.3)" : "none",
                 }}
               >
-                📢 Disparar Novo Aviso
+                <Icons.Megaphone size={15} />
+                <span>Disparar Novo Aviso</span>
               </button>
 
               <button
@@ -348,7 +350,8 @@ export default function SystemNotificationsDrawer() {
                   boxShadow: activeTab === "history" ? "0 4px 12px rgba(2, 132, 199, 0.3)" : "none",
                 }}
               >
-                📬 Avisos ({unreadCount > 0 ? `${unreadCount} novos` : notifications.length})
+                <Icons.Bell size={15} />
+                <span>Avisos ({unreadCount > 0 ? `${unreadCount} novos` : notifications.length})</span>
               </button>
             </div>
 
