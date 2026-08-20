@@ -6,6 +6,10 @@ type SendMessagePayload = {
   phone?: string;
   message?: string;
   contactName?: string;
+  mediaBase64?: string;
+  mediaUrl?: string;
+  mediaName?: string;
+  mediaMimeType?: string;
 };
 
 function normalizePhone(phone: string): string {
@@ -26,7 +30,17 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as SendMessagePayload;
-    const { apiUrl, apiToken, phone, message, contactName } = body;
+    const {
+      apiUrl,
+      apiToken,
+      phone,
+      message,
+      contactName,
+      mediaBase64,
+      mediaUrl,
+      mediaName,
+      mediaMimeType,
+    } = body;
 
     if (!apiUrl || !apiToken) {
       return Response.json(
@@ -35,9 +49,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!phone || !message) {
+    if (!phone || (!message && !mediaBase64 && !mediaUrl)) {
       return Response.json(
-        { error: "Telefone e mensagem são obrigatórios." },
+        { error: "Telefone e conteúdo da mensagem ou imagem são obrigatórios." },
         { status: 400 },
       );
     }
@@ -58,6 +72,7 @@ export async function POST(request: Request) {
       `${cleanApiUrl}/messages/send`,
       `${cleanApiUrl}/api/v1/send`,
       `${cleanApiUrl}/send-message`,
+      `${cleanApiUrl}/send-media`,
     ];
 
     let lastError = "";
@@ -66,13 +81,28 @@ export async function POST(request: Request) {
 
     for (const endpoint of endpoints) {
       try {
-        const payload = {
+        const payload: Record<string, unknown> = {
           number: cleanPhone,
-          body: message,
+          body: message || "",
           phone: cleanPhone,
-          message: message,
+          message: message || "",
+          caption: message || "",
           readChat: true,
         };
+
+        if (mediaBase64 || mediaUrl) {
+          payload.media = mediaBase64 || mediaUrl;
+          payload.mediaUrl = mediaUrl;
+          payload.mediaBase64 = mediaBase64;
+          payload.medias = [
+            {
+              url: mediaUrl,
+              base64: mediaBase64,
+              filename: mediaName || "santinho.jpg",
+              mimetype: mediaMimeType || "image/jpeg",
+            },
+          ];
+        }
 
         const res = await fetch(endpoint, {
           method: "POST",

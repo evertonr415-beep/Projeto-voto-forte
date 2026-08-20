@@ -46,10 +46,42 @@ export default function WhaticketBroadcastDrawer() {
   const [selectedKind, setSelectedKind] = useState<"Todos" | "Eleitor" | "Liderança">("Todos");
   const [recipientLimit, setRecipientLimit] = useState<number>(50);
 
-  // Message Composer
+  // Message Composer & Media
   const [messageTemplate, setMessageTemplate] = useState(
     "Olá, {nome}! Tudo bem? Passando para te convidar para o nosso próximo encontro do VOTO FORTE no bairro {bairro}. Contamos com seu apoio!",
   );
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaBase64, setMediaBase64] = useState<string | null>(null);
+  const [mediaName, setMediaName] = useState<string>("");
+  const [mediaUrl, setMediaUrl] = useState<string>("");
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelectMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("A imagem selecionada deve ter no máximo 5MB.");
+      return;
+    }
+
+    setMediaFile(file);
+    setMediaName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setMediaBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearMedia = () => {
+    setMediaFile(null);
+    setMediaBase64(null);
+    setMediaName("");
+    setMediaUrl("");
+    if (mediaInputRef.current) mediaInputRef.current.value = "";
+  };
 
   // Execution State
   const [isExecuting, setIsExecuting] = useState(false);
@@ -318,6 +350,10 @@ export default function WhaticketBroadcastDrawer() {
             phone: recipient.phone,
             message: customizedText,
             contactName: recipient.name,
+            mediaBase64: mediaBase64 || undefined,
+            mediaUrl: mediaUrl || undefined,
+            mediaName: mediaName || "santinho.jpg",
+            mediaMimeType: mediaFile?.type || "image/jpeg",
           }),
         });
 
@@ -528,15 +564,94 @@ export default function WhaticketBroadcastDrawer() {
                     className="wt-textarea"
                     value={messageTemplate}
                     onChange={(e) => setMessageTemplate(e.target.value)}
-                    placeholder="Digite a mensagem do disparo..."
+                    placeholder="Digite a mensagem ou legenda da imagem do disparo..."
                   />
                 </div>
 
-                <div className="wt-form-group">
+                {/* ANEXO DE IMAGEM / SANTINHO DIGITAL */}
+                <div className="wt-form-group" style={{ marginTop: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <label style={{ margin: 0, fontWeight: 700, fontSize: "12px", color: "var(--wt-text)" }}>
+                      🖼️ Anexar Santinho / Panfleto (Opcional)
+                    </label>
+                    {mediaBase64 && (
+                      <button
+                        type="button"
+                        onClick={clearMedia}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#ef4444",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        ✕ Remover foto
+                      </button>
+                    )}
+                  </div>
+
+                  {!mediaBase64 ? (
+                    <div
+                      className="wt-upload-zone"
+                      onClick={() => mediaInputRef.current?.click()}
+                    >
+                      <span style={{ fontSize: "24px" }}>📸</span>
+                      <strong style={{ fontSize: "13px", color: "var(--wt-primary)" }}>
+                        Clique para anexar foto ou panfleto
+                      </strong>
+                      <small style={{ color: "var(--wt-text-muted)", fontSize: "11px" }}>
+                        Formatos JPG, PNG ou WebP (máx. 5MB)
+                      </small>
+                    </div>
+                  ) : (
+                    <div className="wt-media-attached-bar">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={mediaBase64}
+                        alt="Santinho"
+                        className="wt-media-thumb"
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <b style={{ fontSize: "12px", display: "block", color: "var(--wt-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {mediaName || "santinho.jpg"}
+                        </b>
+                        <small style={{ color: "#16a34a", fontWeight: 700, fontSize: "11px" }}>
+                          ✓ Imagem anexada com sucesso
+                        </small>
+                      </div>
+                      <button
+                        type="button"
+                        className="wt-btn-replace-img"
+                        onClick={() => mediaInputRef.current?.click()}
+                      >
+                        Trocar
+                      </button>
+                    </div>
+                  )}
+
+                  <input
+                    ref={mediaInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: "none" }}
+                    onChange={handleSelectMedia}
+                  />
+                </div>
+
+                <div className="wt-form-group" style={{ marginTop: "12px" }}>
                   <label>Pré-Visualização no WhatsApp</label>
                   <div className="wt-preview-box">
                     <div className="wt-wa-bubble">
-                      {previewMessage}
+                      {mediaBase64 && (
+                        <div className="wt-wa-bubble-img-wrap">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={mediaBase64} alt="Santinho Preview" className="wt-wa-bubble-img" />
+                        </div>
+                      )}
+                      <div className="wt-wa-bubble-text">{previewMessage}</div>
                       <span className="wt-wa-time">
                         {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ✓✓
                       </span>
