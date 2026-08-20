@@ -344,7 +344,7 @@ export default function AuthClient({
     return (
       <main className="auth-page">
         <section className="auth-hero">
-          <img src="/parana-icon-small.jpg" alt="Mapa do Paraná" />
+          <img src="/voto-forte-bandeira-icon.jpg" alt="VOTO FORTE PARANÁ" />
           <div>
             <small>VOTO FORTE PARANÁ</small>
             <h1>Seu login foi autenticado.</h1>
@@ -401,7 +401,7 @@ export default function AuthClient({
   return (
     <main className="auth-page">
       <section className="auth-hero">
-        <img src="/parana-icon-small.jpg" alt="Mapa do Paraná" />
+        <img src="/voto-forte-bandeira-icon.jpg" alt="VOTO FORTE PARANÁ" />
         <div>
           <small>VOTO FORTE PARANÁ</small>
           <h1>Gestão eleitoral segura e organizada.</h1>

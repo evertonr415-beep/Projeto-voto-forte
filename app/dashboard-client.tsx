@@ -36,8 +36,8 @@ function Brand() {
       <div className="brand-icons">
         <img
           className="parana-icon"
-          src="/parana-icon-small.jpg"
-          alt="Mapa do Estado do Paraná"
+          src="/voto-forte-bandeira-icon.jpg"
+          alt="Bandeira do Estado do Paraná - Voto Forte"
         />
       </div>
       <div>

@@ -78,7 +78,7 @@ export default function OptimizedAuthClient() {
   return (
     <main className="auth-page">
       <section className="auth-hero">
-        <img src="/parana-icon-small.jpg" alt="Mapa do Paraná" />
+        <img src="/voto-forte-bandeira-icon.jpg" alt="VOTO FORTE PARANÁ" />
         <div>
           <small>VOTO FORTE PARANÁ</small>
           <h1>Gestão rápida para bases com mais de 100 mil contatos.</h1>

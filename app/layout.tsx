@@ -66,9 +66,9 @@ export const metadata: Metadata = {
     "codex-preview": "development",
   },
   icons: {
-    icon: "/parana-icon-small.jpg",
-    shortcut: "/parana-icon-small.jpg",
-    apple: "/parana-icon-small.jpg",
+    icon: "/voto-forte-bandeira-icon.jpg",
+    shortcut: "/voto-forte-bandeira-icon.jpg",
+    apple: "/voto-forte-bandeira-icon.jpg",
   },
 };
 
