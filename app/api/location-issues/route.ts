@@ -15,6 +15,8 @@ const FILTER_CATEGORIES = [
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
 
+let summaryCache: { timestamp: number; scope: string; data: Record<string, number> } | null = null;
+
 type FilterCategory = (typeof FILTER_CATEGORIES)[number];
 
 type QualityUpdateBody = {
@@ -117,61 +119,74 @@ export async function GET(request: Request) {
   const to = from + PAGE_SIZE - 1;
 
   try {
-    // 1. Fetch filter summary statistics
+    // 1. Fetch filter summary statistics with fast 30s cache
+    const cacheKey = scope;
+    const now = Date.now();
     let summaryMap: Record<string, number> = {};
-    try {
-      const { data: summaryRows } = await account.supabase.rpc(
-        "vf_contact_quality_filter_summary",
-      );
 
-      if (Array.isArray(summaryRows)) {
-        for (const item of summaryRows) {
-          if (item && typeof item === "object") {
-            const code = String((item as { filter_code?: unknown }).filter_code || "");
-            const tot = safeCount((item as { total?: unknown }).total);
-            if (code) summaryMap[code] = tot;
+    if (summaryCache && summaryCache.scope === cacheKey && now - summaryCache.timestamp < 30_000) {
+      summaryMap = summaryCache.data;
+    } else {
+      try {
+        const { data: summaryRows } = await account.supabase.rpc(
+          "vf_contact_quality_filter_summary",
+        );
+
+        if (Array.isArray(summaryRows)) {
+          for (const item of summaryRows) {
+            if (item && typeof item === "object") {
+              const code = String((item as { filter_code?: unknown }).filter_code || "");
+              const tot = safeCount((item as { total?: unknown }).total);
+              if (code) summaryMap[code] = tot;
+            }
           }
         }
+      } catch {
+        // Fallback
       }
-    } catch {
-      // Fallback
-    }
 
-    const hasValidRpcCounts = (summaryMap["all"] || 0) > 0;
-    if (!hasValidRpcCounts) {
-      const [
-        allRes,
-        invPhoneRes,
-        missNameRes,
-        incNameRes,
-        missDistRes,
-        locDivRes,
-        missStreetRes,
-      ] = await Promise.all([
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
-        account.supabase.from("vf_contact_quality").select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
-      ]);
+      const hasValidRpcCounts = (summaryMap["all"] || 0) > 0;
+      if (!hasValidRpcCounts) {
+        let baseQualityQuery = account.supabase.from("vf_contact_quality");
+        if (!isGlobalScope) {
+          baseQualityQuery = baseQualityQuery.eq("owner_email", scope);
+        }
 
-      summaryMap = {
-        all: allRes.count ?? 57683,
-        invalid_phone: invPhoneRes.count ?? 0,
-        missing_name: missNameRes.count ?? 0,
-        incomplete_name: incNameRes.count ?? 0,
-        missing_district: missDistRes.count ?? 0,
-        location_divergence: locDivRes.count ?? 0,
-        missing_street: missStreetRes.count ?? 0,
-      };
-      summaryMap.needs_review =
-        (summaryMap.invalid_phone || 0) +
-        (summaryMap.missing_name || 0) +
-        (summaryMap.incomplete_name || 0) +
-        (summaryMap.missing_district || 0) +
-        (summaryMap.location_divergence || 0);
+        const [
+          allRes,
+          invPhoneRes,
+          missNameRes,
+          incNameRes,
+          missDistRes,
+          locDivRes,
+          missStreetRes,
+        ] = await Promise.all([
+          baseQualityQuery.select("record_id", { count: "exact", head: true }),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
+          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
+        ]);
+
+        summaryMap = {
+          all: allRes.count ?? 57683,
+          invalid_phone: invPhoneRes.count ?? 0,
+          missing_name: missNameRes.count ?? 0,
+          incomplete_name: incNameRes.count ?? 0,
+          missing_district: missDistRes.count ?? 0,
+          location_divergence: locDivRes.count ?? 0,
+          missing_street: missStreetRes.count ?? 0,
+        };
+        summaryMap.needs_review =
+          (summaryMap.invalid_phone || 0) +
+          (summaryMap.missing_name || 0) +
+          (summaryMap.incomplete_name || 0) +
+          (summaryMap.missing_district || 0) +
+          (summaryMap.location_divergence || 0);
+      }
+      summaryCache = { timestamp: now, scope: cacheKey, data: summaryMap };
     }
 
     const categoryCounts: Record<string, number> = {
@@ -225,8 +240,9 @@ export async function GET(request: Request) {
       else query = query.contains("issue_codes", [category]);
     } else if (severity) {
       query = query.eq("severity", severity);
-    } else {
-      query = query.in("severity", ["critical", "warning"]);
+    } else if (!queryText) {
+      // Quando não há busca textual nem categoria específica, traz as pendências ativas
+      query = query.in("severity", ["critical", "warning", "info"]);
     }
 
     if (queryText) {

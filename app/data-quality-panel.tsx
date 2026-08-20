@@ -106,13 +106,27 @@ export default function DataQualityPanel() {
     const load = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/records?owner=all&kind=contact", {
+        const response = await fetch("/api/location-issues?owner=all&page=1", {
           headers: { accept: "application/json" },
           cache: "no-store",
         });
         if (!response.ok) return;
-        const data = (await response.json()) as { records?: ContactRecord[] };
-        if (!cancelled) setRecords(data.records || []);
+        const data = (await response.json()) as { issues?: any[] };
+        if (!cancelled && Array.isArray(data.issues)) {
+          setRecords(data.issues.map((i: any) => ({
+            id: String(i.record_id),
+            kind: "contact",
+            payload: {
+              name: i.contact_name,
+              phone: i.phone,
+              street: i.street,
+              number: i.street_number,
+              district: i.district_original,
+              city: i.city,
+              cep: i.cep,
+            },
+          })));
+        }
       } catch {
         // O restante do sistema permanece disponível.
       } finally {
