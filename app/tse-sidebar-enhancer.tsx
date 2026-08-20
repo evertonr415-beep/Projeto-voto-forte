@@ -44,7 +44,10 @@ export default function TseSidebarEnhancer() {
         if (appShell) appShell.classList.remove("collapsed");
         window.dispatchEvent(new CustomEvent("voto-forte:close-mobile-sidebar"));
 
-        // Abre a gaveta oficial do TSE
+        // Navega diretamente para a visualização completa do Painel Eleitoral
+        window.dispatchEvent(new CustomEvent("voto-forte:navigate-electoral-panel"));
+
+        // Abre a gaveta oficial do TSE se estiver em outra tela
         window.dispatchEvent(
           new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
             detail: { district: "Todos os Bairros (Geral - Arapongas)", initialTab: "electoral" },

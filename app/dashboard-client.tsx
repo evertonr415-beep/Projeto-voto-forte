@@ -4,11 +4,14 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import { apiFetch, supabase } from "./supabase-client";
   
 
+import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
+
 type View =
   | "Visão Geral"
   | "Contatos"
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
+  | "Painel Eleitoral"
   | "WhatsApp"
   | "Administração";
 type Modal =
@@ -24,6 +27,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
   { label: "Mapa Eleitoral", icon: "⌖" },
+  { label: "Painel Eleitoral", icon: "🏛️", badge: "TSE" },
   { label: "WhatsApp", icon: "◉" },
 ];
 
@@ -210,11 +214,16 @@ export default function DashboardClient({
     const handleNavigateOverview = () => {
       setView("Visão Geral");
     };
+    const handleNavigateElectoral = () => {
+      setView("Painel Eleitoral");
+    };
     window.addEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
     window.addEventListener("voto-forte:navigate-overview", handleNavigateOverview);
+    window.addEventListener("voto-forte:navigate-electoral-panel", handleNavigateElectoral);
     return () => {
       window.removeEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
       window.removeEventListener("voto-forte:navigate-overview", handleNavigateOverview);
+      window.removeEventListener("voto-forte:navigate-electoral-panel", handleNavigateElectoral);
     };
   }, []);
 
@@ -581,6 +590,8 @@ export default function DashboardClient({
     ) : (
       <MapPage open={setModal} contacts={contacts} />
     )
+  ) : view === "Painel Eleitoral" ? (
+    <ElectoralPanelClient onBackToDashboard={() => setView("Visão Geral")} />
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
