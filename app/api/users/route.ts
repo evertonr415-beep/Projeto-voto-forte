@@ -61,6 +61,38 @@ function mapUser(user: Record<string, unknown>, municipalityIds: number[] = []) 
   };
 }
 
+function restrictAdministrationScope(
+  users: Awaited<ReturnType<typeof getVisibleUsers>>,
+  accountId: number,
+  accountRole: AccessRole,
+) {
+  const realUsers = users.filter((user) => Number(user.id) > 0);
+  if (accountRole !== "gestor") return realUsers;
+
+  const visibleIds = new Set<number>([accountId]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const user of realUsers) {
+      const id = Number(user.id);
+      const parentId = user.parent_user_id == null ? null : Number(user.parent_user_id);
+      const role = accessRoleOf(user as Record<string, unknown>);
+      if (
+        parentId != null &&
+        visibleIds.has(parentId) &&
+        role !== "adm" &&
+        role !== "gestor" &&
+        !visibleIds.has(id)
+      ) {
+        visibleIds.add(id);
+        changed = true;
+      }
+    }
+  }
+
+  return realUsers.filter((user) => visibleIds.has(Number(user.id)));
+}
+
 export async function GET() {
   const account = await getAccount();
   if (!account)
@@ -70,7 +102,11 @@ export async function GET() {
   // O Gestor pode receber identificadores operacionais sintéticos para ler
   // registros historicamente vinculados a um ADM. Eles nunca representam uma
   // conta real e não podem aparecer na Administração de usuários/auditoria.
-  const realVisibleUsers = visibleUsers.filter((user) => Number(user.id) > 0);
+  const realVisibleUsers = restrictAdministrationScope(
+    visibleUsers,
+    Number(account.id),
+    account.accessRole,
+  );
   const visibleAuthIds = realVisibleUsers
     .map((user) => String(user.auth_user_id))
     .filter(Boolean);
