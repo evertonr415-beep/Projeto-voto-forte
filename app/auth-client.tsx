@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import React, { Component, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { CurrentUser } from "./dashboard-client";
 import { apiFetch, supabase } from "./supabase-client";
@@ -31,6 +31,28 @@ type SessionResponse = {
   error?: string;
 };
 
+class SafeDashboardBoundary extends Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.error("Dashboard caught by safe boundary:", error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 const DashboardClient = dynamic(() => import("./dashboard-client"), {
   ssr: false,
   loading: () => (
@@ -54,7 +76,7 @@ const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
 const SESSION_VALIDATION_TIMEOUT_MS = 45_000;
 
 export default function AuthClient({
-  dashboardMode = "full",
+  dashboardMode = "neutral",
 }: {
   dashboardMode?: DashboardMode;
 }) {
@@ -291,7 +313,9 @@ export default function AuthClient({
     return dashboardMode === "neutral" ? (
       <NeutralDashboardClient currentUser={account} />
     ) : (
-      <DashboardClient currentUser={account} />
+      <SafeDashboardBoundary fallback={<NeutralDashboardClient currentUser={account} />}>
+        <DashboardClient currentUser={account} />
+      </SafeDashboardBoundary>
     );
   }
 

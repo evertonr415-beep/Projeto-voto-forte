@@ -5,6 +5,7 @@ import { apiFetch, supabase } from "./supabase-client";
   
 
 import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
+import { Icons } from "./ui-icons";
 
 type View =
   | "Visão Geral"
@@ -22,12 +23,12 @@ type Modal =
   | "filtros"
   | "perfil";
 
-const menu: { label: View; icon: string; badge?: string }[] = [
-  { label: "Visão Geral", icon: "▦" },
-  { label: "Contatos", icon: "☷", badge: "NOVO" },
-  { label: "Mapa Eleitoral", icon: "⌖" },
-  { label: "Painel Eleitoral", icon: "🏛" },
-  { label: "WhatsApp", icon: "◉" },
+const menu: { label: View; iconRender: (props: { size?: number }) => React.ReactNode; badge?: string }[] = [
+  { label: "Visão Geral", iconRender: (p) => <Icons.Overview {...p} /> },
+  { label: "Contatos", iconRender: (p) => <Icons.Contacts {...p} /> },
+  { label: "Mapa Eleitoral", iconRender: (p) => <Icons.ElectoralMap {...p} /> },
+  { label: "Painel Eleitoral", iconRender: (p) => <Icons.ElectoralPanel {...p} /> },
+  { label: "WhatsApp", iconRender: (p) => <Icons.WhatsApp {...p} /> },
 ];
 
 function Brand() {
@@ -204,6 +205,11 @@ export default function DashboardClient({
     if (typeof window !== "undefined" && window.innerWidth <= 1050) {
       setCollapsed(false);
     }
+  }, []);
+
+  const toggleMobileSidebar = useCallback(() => {
+    closeMapPopup();
+    setCollapsed((prev) => !prev);
   }, []);
 
   useEffect(() => {
@@ -673,7 +679,7 @@ export default function DashboardClient({
                 }}
                 title={item.label}
               >
-                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-icon">{item.iconRender({ size: 17 })}</span>
                 <span className="nav-name">{item.label}</span>
                 {item.badge && <em>{item.badge}</em>}
               </button>
@@ -685,13 +691,12 @@ export default function DashboardClient({
                     closeMobileSidebar();
                     window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
                   }}
-                  title="Disparo em Massa Whaticket"
+                  title="Disparo em Massa"
                 >
-                  <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
+                  <span className="nav-icon" style={{ color: "#2ddd7f", display: "inline-flex", alignItems: "center" }}>
+                    <Icons.Lightning size={17} color="#2ddd7f" />
+                  </span>
                   <span className="nav-name">Disparo em Massa</span>
-                  <em style={{ background: "rgba(45, 221, 127, 0.2)", color: "#2ddd7f", border: "1px solid rgba(45, 221, 127, 0.4)" }}>
-                    WHATICKET
-                  </em>
                 </button>
               )}
             </React.Fragment>
@@ -712,7 +717,9 @@ export default function DashboardClient({
               }}
               title="Administração"
             >
-              <span className="nav-icon">⚙</span>
+              <span className="nav-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                <Icons.Admin size={17} />
+              </span>
               <span className="nav-name">Administração</span>
             </button>
           )}
@@ -729,7 +736,7 @@ export default function DashboardClient({
           <span>Recolher menu</span>
         </button>
       </aside>
-      <main>
+      <main className="main">
         <header className="topbar">
           <div className="page-id">
             <button
@@ -762,6 +769,7 @@ export default function DashboardClient({
               <label className="scope-picker">
                 <span>Visualizando</span>
                 <select
+                  aria-label="Visualizando registros por"
                   value={scope}
                   onChange={(event) => {
                     setScope(event.target.value);
@@ -776,8 +784,25 @@ export default function DashboardClient({
                 </select>
               </label>
             )}
-            <button className="notification" aria-label="Notificações">
-              ♧<i>3</i>
+            <button
+              type="button"
+              className="notification"
+              aria-label="Notificações e avisos da equipe"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  if ((window as any).vfOpenNotifications) {
+                    (window as any).vfOpenNotifications();
+                  } else {
+                    window.dispatchEvent(new CustomEvent("voto-forte:open-notifications"));
+                  }
+                }
+              }}
+              title="Disparar aviso para os usuários do sistema"
+            >
+              <span style={{ display: "inline-flex", alignItems: "center" }}>
+                <Icons.Bell size={16} />
+              </span>
+              <i>3</i>
             </button>
             <button className="profile" onClick={() => setModal("perfil")}>
               <span>{initials(currentUser.name)}</span>
@@ -907,7 +932,7 @@ function Overview({
       <div className="kpis">
         <Kpi
           tone="green"
-          icon="♜"
+          icon={<Icons.Leader size={18} />}
           value={String(leaders)}
           label="Lideranças ativas"
           delta="Cadastrar liderança"
@@ -915,7 +940,7 @@ function Overview({
         />
         <Kpi
           tone="blue"
-          icon="♙"
+          icon={<Icons.Voters size={18} />}
           value={String(voters)}
           label="Eleitores cadastrados"
           delta="Ver relatório de eleitores"
@@ -923,7 +948,7 @@ function Overview({
         />
         <Kpi
           tone="gold"
-          icon="⌖"
+          icon={<Icons.Target size={18} />}
           value={String(districts)}
           label="Bairros alcançados"
           delta="Navegar no mapa eleitoral"
@@ -931,7 +956,7 @@ function Overview({
         />
         <Kpi
           tone="violet"
-          icon="◫"
+          icon={<Icons.Calendar size={18} />}
           value={String(summary.meetings)}
           label="Reuniões agendadas"
           delta="Abrir agenda inteligente"
@@ -947,46 +972,49 @@ function Overview({
             onClick={() => go("Agenda Inteligente")}
           />
           {meetings.length ? (
-            meetings.slice(0, 3).map((meeting, index) => (
-              <div className="event" key={meeting.id}>
-                <div className="event-date">
-                  <b>{String(index + 1).padStart(2, "0")}</b>
-                  <small>AGENDA</small>
-                </div>
-                <div>
-                  <span>{meeting.date}</span>
-                  <b>{meeting.title}</b>
-                  <small>⌖ {meeting.place}</small>
-                </div>
-              </div>
-            ))
+            <ul className="agenda-list">
+              {meetings.slice(0, 4).map((meeting, index) => (
+                <li key={meeting.id}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <time>
+                      {meeting.date}
+                      {meeting.time ? ` · ${meeting.time}` : ""}
+                    </time>
+                    <strong>{meeting.title}</strong>
+                    <small>
+                      {meeting.place || meeting.address || "Local não informado"}
+                    </small>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="empty-state">
-              Nenhum compromisso agendado neste ambiente.
-            </p>
+            <div className="empty-state">
+              Nenhuma reunião registrada neste ambiente.
+            </div>
           )}
         </article>
-        <article className="panel activity">
-          <PanelTitle
-            title="Privacidade ativa"
-            subtitle="Separação por identidade"
-          />
-          <div className="activity-line">
-            <span className="dot d0" />
-            <div>
-              <small>SEGURANÇA</small>
-              <b>Dados vinculados ao usuário autenticado</b>
-            </div>
-            <time>Ativo</time>
-          </div>
-          <div className="activity-line">
-            <span className="dot d1" />
-            <div>
-              <small>AUDITORIA</small>
-              <b>Ações administrativas registradas</b>
-            </div>
-            <time>Ativo</time>
-          </div>
+        <article className="panel">
+          <PanelTitle title="Privacidade ativa" subtitle="Separação por identidade" />
+          <ul className="audit-list">
+            <li>
+              <span className="dot ok" />
+              <div>
+                <strong>Dados vinculados ao usuário autenticado</strong>
+                <small>Segurança</small>
+              </div>
+              <em className="tag green">Ativo</em>
+            </li>
+            <li>
+              <span className="dot ok" />
+              <div>
+                <strong>Ações administrativas registradas</strong>
+                <small>Auditoria</small>
+              </div>
+              <em className="tag green">Ativo</em>
+            </li>
+          </ul>
         </article>
       </div>
     </>
@@ -1002,7 +1030,7 @@ function Kpi({
   onClick,
 }: {
   tone: string;
-  icon: string;
+  icon: React.ReactNode;
   value: string;
   label: string;
   delta: string;

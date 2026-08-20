@@ -305,7 +305,61 @@ button.whaticket-broadcast-sidebar-btn:hover {
   color: #0f172a;
 }
 
-/* WhatsApp Message Preview Bubble */
+/* WhatsApp Message Preview Bubble & Media */
+.wt-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px dashed rgba(45, 221, 127, 0.35);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.wt-upload-zone:hover {
+  border-color: var(--wt-primary);
+  background: rgba(45, 221, 127, 0.08);
+}
+
+.wt-media-attached-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(45, 221, 127, 0.3);
+  border-radius: 10px;
+}
+
+.wt-media-thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.wt-btn-replace-img {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--wt-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wt-btn-replace-img:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .wt-preview-box {
   background: #0b141a;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -319,7 +373,7 @@ button.whaticket-broadcast-sidebar-btn:hover {
 .wt-wa-bubble {
   background: #005c4b;
   color: #e9edef;
-  padding: 10px 14px;
+  padding: 8px 10px;
   border-radius: 12px 12px 2px 12px;
   font-size: 13.5px;
   line-height: 1.4;
@@ -330,12 +384,34 @@ button.whaticket-broadcast-sidebar-btn:hover {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
+.wt-wa-bubble-img-wrap {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  background: #000;
+}
+
+.wt-wa-bubble-img {
+  width: 100%;
+  height: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.wt-wa-bubble-text {
+  padding: 2px 4px;
+}
+
 .wt-wa-time {
   display: block;
   font-size: 10px;
   color: rgba(255, 255, 255, 0.6);
   text-align: right;
   margin-top: 4px;
+  padding-right: 4px;
 }
 
 /* Progress and Execution Stats */

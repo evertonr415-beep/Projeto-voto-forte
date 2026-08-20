@@ -15,6 +15,9 @@ type ContactPayload = {
   number?: string;
   city?: string;
   state?: string;
+  latitude?: number;
+  longitude?: number;
+  locationLabel?: string;
 };
 
 const MAX_BATCH_SIZE = 500;
@@ -33,7 +36,7 @@ function sanitizeContact(input: ContactPayload) {
   if (!name || !/^[1-9]\d{9,10}$/.test(phoneNormalized) || /^(\d)\1+$/.test(phoneNormalized))
     return null;
 
-  return {
+  const result: Record<string, unknown> = {
     name,
     phone,
     phoneNormalized,
@@ -46,6 +49,17 @@ function sanitizeContact(input: ContactPayload) {
     city: String(input.city ?? "").trim(),
     state: String(input.state ?? "").trim(),
   };
+
+  // Preserve geographic coordinates if provided
+  const lat = Number(input.latitude);
+  const lng = Number(input.longitude);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0) {
+    result.latitude = lat;
+    result.longitude = lng;
+    if (input.locationLabel) result.locationLabel = String(input.locationLabel).trim();
+  }
+
+  return result;
 }
 
 async function resolveOwner(

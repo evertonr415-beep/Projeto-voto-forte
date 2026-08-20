@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icons } from "../ui-icons";
 import "./institutional-communication.css";
 
 export type CampaignEvent = {
@@ -19,6 +20,7 @@ export type CampaignEvent = {
 
 const STORAGE_KEY = "agenda-eleitoral-parana-2026-v1";
 const THEME_KEY = "agenda-eleitoral-theme-v1";
+const ELECTION_DATE = new Date("2026-10-04T08:00:00-03:00").getTime();
 
 const baseEvents: CampaignEvent[] = [
   {
@@ -271,6 +273,19 @@ function dateLabel(dateStr: string) {
   return d.toLocaleDateString("pt-BR");
 }
 
+function getInitialElectionCountdown() {
+  const now = Date.now();
+  const diff = ELECTION_DATE - now;
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return { days, hours, minutes, seconds, isPast: false };
+}
+
 function weekdayLabel(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("pt-BR", { weekday: "long" });
@@ -318,11 +333,58 @@ export default function InstitutionalCommunicationClient({
   const [fImportant, setFImportant] = useState(false);
   const [fReminder, setFReminder] = useState(3);
 
+  // Cronômetro Regressivo Intermitente até a Eleição (04 de Outubro de 2026)
+  const [electionCountdown, setElectionCountdown] = useState(getInitialElectionCountdown);
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = ELECTION_DATE - now;
+      if (diff <= 0) {
+        setElectionCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setElectionCountdown({ days, hours, minutes, seconds, isPast: false });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Reagendamento Rápido
   const [rescheduleEvent, setRescheduleEvent] = useState<CampaignEvent | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleLocation, setRescheduleLocation] = useState("");
+
+  // Detalhes dos Eventos ao Clicar no Dia/Balão do Calendário
+  const [selectedDayEvents, setSelectedDayEvents] = useState<{
+    iso: string;
+    dateLabel: string;
+    events: CampaignEvent[];
+  } | null>(null);
+
+  const handleCalendarDayClick = (cell: { iso: string; dateNumber: number; inMonth: boolean; eventCount?: number }) => {
+    const dayEvents = events.filter((e) => e.date === cell.iso);
+    const d = new Date(cell.iso + "T00:00:00");
+    const formattedDate = d.toLocaleDateString("pt-BR", { dateStyle: "full" });
+
+    if (dayEvents.length > 0) {
+      setSelectedDayEvents({
+        iso: cell.iso,
+        dateLabel: formattedDate,
+        events: dayEvents,
+      });
+    } else {
+      openModal(null);
+      setFDate(cell.iso);
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -670,23 +732,37 @@ export default function InstitutionalCommunicationClient({
           </div>
           <div className="ae-toolbar">
             <button type="button" className="ae-btn ae-btn-ghost" onClick={toggleTheme}>
-              {theme === "light" ? "🌙 Modo Escuro" : "☀️ Modo Claro"}
+              {theme === "light" ? (
+                <>
+                  <Icons.Moon size={15} />
+                  <span>Modo Escuro</span>
+                </>
+              ) : (
+                <>
+                  <Icons.Sun size={15} />
+                  <span>Modo Claro</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               className="ae-btn"
               onClick={() => fileInputRef.current?.click()}
             >
-              ⬆️ Importar JSON
+              <Icons.Upload size={15} />
+              <span>Importar JSON</span>
             </button>
             <button type="button" className="ae-btn" onClick={exportJson}>
-              ⬇️ Exportar JSON
+              <Icons.Download size={15} />
+              <span>Exportar JSON</span>
             </button>
             <button type="button" className="ae-btn" onClick={() => window.print()}>
-              🖨️ Imprimir
+              <Icons.Printer size={15} />
+              <span>Imprimir</span>
             </button>
-            <button type="button" className="ae-btn ae-btn-primary" onClick={handleBackToDashboard}>
-              ⬅ Voltar ao Dashboard
+            <button type="button" className="vf-back-dashboard-btn" onClick={handleBackToDashboard} title="Voltar ao Dashboard Principal">
+              <span className="vf-back-arrow" aria-hidden="true">←</span>
+              <span>Voltar ao Sistema</span>
             </button>
           </div>
           <input
@@ -697,6 +773,44 @@ export default function InstitutionalCommunicationClient({
             onChange={handleImportFile}
           />
         </header>
+
+        {/* CRONÔMETRO INTERMITENTE ATÉ A ELEIÇÃO (04 DE OUTUBRO DE 2026) */}
+        <section className="ae-election-countdown" aria-label="Contagem regressiva para as Eleições 2026">
+          <div className="ae-countdown-left">
+            <div className="ae-countdown-badge">
+              <span className="ae-countdown-pulse" aria-hidden="true" />
+              <span>CONTAGEM REGRESSIVA PARA AS ELEIÇÕES 2026</span>
+            </div>
+            <h2 className="ae-countdown-title">
+              1º Turno das Eleições Gerais • <strong>04 de Outubro de 2026</strong>
+            </h2>
+            <p className="ae-countdown-desc">
+              Tempo restante para a abertura oficial das urnas em todo o Estado do Paraná (08h00 — Horário de Brasília).
+            </p>
+          </div>
+
+          <div className="ae-countdown-boxes">
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.days).padStart(2, "0")}</div>
+              <div className="ae-count-label">DIAS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.hours).padStart(2, "0")}</div>
+              <div className="ae-count-label">HORAS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit">
+              <div className="ae-count-num">{String(electionCountdown.minutes).padStart(2, "0")}</div>
+              <div className="ae-count-label">MINUTOS</div>
+            </div>
+            <div className="ae-count-sep">:</div>
+            <div className="ae-count-unit is-seconds">
+              <div className="ae-count-num">{String(electionCountdown.seconds).padStart(2, "0")}</div>
+              <div className="ae-count-label">SEGUNDOS</div>
+            </div>
+          </div>
+        </section>
 
         {/* STATS BAR DE ALTO CONTRASTE */}
         <section className="ae-stats">
@@ -831,22 +945,73 @@ export default function InstitutionalCommunicationClient({
                                 <span className="ae-badge">{ev.category}</span>
                               </td>
                               <td className="ae-td" data-label="Reunião / Compromisso">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                                   <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                                    <strong style={{ fontSize: "0.88rem" }}>{ev.title}</strong>
+                                    <strong style={{ fontSize: "0.92rem", color: ev.done ? "#64748b" : "var(--ae-text)", textDecoration: ev.done ? "line-through" : "none" }}>
+                                      {ev.title}
+                                    </strong>
                                     {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
                                   </div>
-                                  <div className="ae-footer-note" style={{ fontSize: "0.78rem" }}>{ev.desc}</div>
+                                  <div className="ae-footer-note" style={{ fontSize: "0.80rem" }}>{ev.desc}</div>
                                   {(ev.responsible || ev.location) && (
-                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "1px" }}>
                                       {ev.responsible && (
-                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>👤 {ev.responsible}</span>
+                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>👤 {ev.responsible}</span>
                                       )}
                                       {ev.location && (
-                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>📍 {ev.location}</span>
+                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>📍 {ev.location}</span>
                                       )}
                                     </div>
                                   )}
+
+                                  {/* BOTÕES DIRETOS DE AÇÃO NA LINHA DA REUNIÃO */}
+                                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleDone(ev.id)}
+                                      title={ev.done ? "Reabrir reunião como pendente" : "Dizer que a reunião foi concluída com sucesso"}
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "6px 12px",
+                                        fontSize: "11.5px",
+                                        fontWeight: 800,
+                                        borderRadius: "8px",
+                                        border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
+                                        background: ev.done ? "#f0fdf4" : "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                                        color: ev.done ? "#166534" : "#ffffff",
+                                        cursor: "pointer",
+                                        boxShadow: ev.done ? "none" : "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                        transition: "all 0.15s ease",
+                                      }}
+                                    >
+                                      {ev.done ? "✓ Concluída com Sucesso (Reabrir)" : "✅ Concluir Reunião com Sucesso"}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => openRescheduleModal(ev)}
+                                      title="Reagendar esta reunião para outra data ou horário"
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "6px 12px",
+                                        fontSize: "11.5px",
+                                        fontWeight: 800,
+                                        borderRadius: "8px",
+                                        border: "1px solid #0284c7",
+                                        background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                                        color: "#ffffff",
+                                        cursor: "pointer",
+                                        boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)",
+                                        transition: "all 0.15s ease",
+                                      }}
+                                    >
+                                      📅 Reagendar Reunião
+                                    </button>
+                                  </div>
                                 </div>
                               </td>
                               <td className="ae-td" data-label="Status">
@@ -868,27 +1033,11 @@ export default function InstitutionalCommunicationClient({
                                 <div className="ae-actions">
                                   <button
                                     type="button"
-                                    className={`ae-mini-btn ${ev.done ? "ae-btn-done-active" : "ae-btn-done-action"}`}
-                                    onClick={() => toggleDone(ev.id)}
-                                    title={ev.done ? "Reabrir reunião como pendente" : "Dar baixa e marcar como realizada"}
-                                  >
-                                    {ev.done ? "↩ Desmarcar" : "✅ Realizada"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ae-mini-btn ae-btn-reschedule"
-                                    onClick={() => openRescheduleModal(ev)}
-                                    title="Reagendar reunião para outra data"
-                                  >
-                                    📅 Reagendar
-                                  </button>
-                                  <button
-                                    type="button"
                                     className="ae-mini-btn"
                                     onClick={() => openModal(ev)}
                                     title="Editar compromisso completo"
                                   >
-                                    ✎
+                                    ✎ Editar
                                   </button>
                                   <button
                                     type="button"
@@ -896,7 +1045,7 @@ export default function InstitutionalCommunicationClient({
                                     onClick={() => deleteEvent(ev.id)}
                                     title="Excluir reunião"
                                   >
-                                    🗑
+                                    🗑 Excluir
                                   </button>
                                 </div>
                               </td>
@@ -938,10 +1087,45 @@ export default function InstitutionalCommunicationClient({
                                     ? "Hoje"
                                     : `${d}d`}
                             </div>
-                            <div className="ae-countbox-small">
-                              <strong style={{ color: "var(--ae-text)" }}>{ev.title}</strong>
-                              <br />
-                              {dateLabel(ev.date)} · {ev.category}
+                            <div className="ae-countbox-small" style={{ flex: 1 }}>
+                              <strong style={{ color: "var(--ae-text)", fontSize: "0.85rem" }}>{ev.title}</strong>
+                              <div style={{ fontSize: "0.75rem", color: "var(--ae-muted)", margin: "2px 0 6px" }}>
+                                {dateLabel(ev.date)} · {ev.category}
+                              </div>
+                              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDone(ev.id)}
+                                  style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    fontSize: "11px",
+                                    fontWeight: 800,
+                                    border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
+                                    background: ev.done ? "#f0fdf4" : "#16a34a",
+                                    color: ev.done ? "#166534" : "#ffffff",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {ev.done ? "✓ Concluída" : "✅ Concluir"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openRescheduleModal(ev)}
+                                  style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    fontSize: "11px",
+                                    fontWeight: 800,
+                                    border: "1px solid #0284c7",
+                                    background: "#0284c7",
+                                    color: "#ffffff",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  📅 Reagendar
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1011,14 +1195,32 @@ export default function InstitutionalCommunicationClient({
                         {calendarData.cells.map((cell, idx) => (
                           <div
                             key={idx}
-                            className={`ae-day ${cell.inMonth ? "" : "muted"}`}
-                            title={cell.iso}
+                            className={`ae-day ${cell.inMonth ? "" : "muted"} ${cell.eventCount > 0 ? "has-events" : ""}`}
+                            title={cell.eventCount > 0 ? `Clique para ver ${cell.eventCount} compromisso(s) de ${cell.iso}` : `Clique para agendar novo evento em ${cell.iso}`}
+                            onClick={() => handleCalendarDayClick(cell)}
+                            style={{ cursor: "pointer", transition: "all 0.15s ease" }}
                           >
                             <div className="ae-day-num">{cell.dateNumber}</div>
                             {cell.eventCount > 0 ? (
-                              <div className={`ae-badge ae-badge-${cell.highlight || "warn"}`}>
+                              <button
+                                type="button"
+                                className={`ae-badge ae-badge-${cell.highlight || "warn"}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCalendarDayClick(cell);
+                                }}
+                                style={{
+                                  border: 0,
+                                  cursor: "pointer",
+                                  width: "100%",
+                                  textAlign: "center",
+                                  font: "inherit",
+                                  display: "block",
+                                }}
+                                title={`Clique para abrir o compromisso de ${cell.iso}`}
+                              >
                                 {cell.eventCount} evento{cell.eventCount === 1 ? "" : "s"}
-                              </div>
+                              </button>
                             ) : (
                               <div className="ae-footer-note">&nbsp;</div>
                             )}
@@ -1065,6 +1267,165 @@ export default function InstitutionalCommunicationClient({
           </div>
         </section>
       </div>
+
+      {/* MODAL DE DETALHES DOS COMPROMISSOS DO DIA SELECIONADO NO CALENDÁRIO */}
+      {selectedDayEvents && (
+        <div
+          className="ae-modal"
+          onClick={(e) => e.target === e.currentTarget && setSelectedDayEvents(null)}
+        >
+          <div className="ae-modal-card" style={{ maxWidth: "560px" }}>
+            <div className="ae-card-head">
+              <div>
+                <h2>📅 Compromissos de {selectedDayEvents.dateLabel}</h2>
+                <div className="ae-footer-note">
+                  {selectedDayEvents.events.length} reunião(ões) ou evento(s) agendado(s) para este dia.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="ae-mini-btn"
+                onClick={() => setSelectedDayEvents(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="ae-modal-body" style={{ display: "grid", gap: "12px", maxHeight: "65vh", overflowY: "auto", padding: "16px" }}>
+              {selectedDayEvents.events.map((ev) => (
+                <div
+                  key={ev.id}
+                  style={{
+                    background: "var(--ae-surface)",
+                    border: "1px solid var(--ae-line)",
+                    borderRadius: "12px",
+                    padding: "14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                    <div>
+                      <span className="ae-badge" style={{ marginBottom: "4px" }}>{ev.category}</span>
+                      <strong style={{ display: "block", fontSize: "1rem", color: "var(--ae-text)", marginTop: "2px" }}>
+                        {ev.title}
+                      </strong>
+                    </div>
+                    {ev.done ? (
+                      <span className="ae-badge ae-badge-ok">✅ Realizada</span>
+                    ) : (
+                      <span className="ae-badge ae-badge-warn">⏳ Pendente</span>
+                    )}
+                  </div>
+
+                  <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--ae-muted)", lineHeight: 1.45 }}>
+                    {ev.desc}
+                  </p>
+
+                  {(ev.responsible || ev.location) && (
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {ev.responsible && <span className="ae-badge" style={{ fontSize: "0.72rem" }}>👤 {ev.responsible}</span>}
+                      {ev.location && <span className="ae-badge" style={{ fontSize: "0.72rem" }}>📍 {ev.location}</span>}
+                    </div>
+                  )}
+
+                  {/* AÇÕES DIRETAS NO MODAL DO BALÃO DO CALENDÁRIO */}
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px", paddingTop: "8px", borderTop: "1px solid var(--ae-line)" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleDone(ev.id);
+                        setSelectedDayEvents((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                events: prev.events.map((e) => (e.id === ev.id ? { ...e, done: !e.done } : e)),
+                              }
+                            : null,
+                        );
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        fontSize: "11.5px",
+                        fontWeight: 800,
+                        border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
+                        background: ev.done ? "#f0fdf4" : "#16a34a",
+                        color: ev.done ? "#166534" : "#ffffff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {ev.done ? "✓ Concluída (Reabrir)" : "✅ Concluir Reunião"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDayEvents(null);
+                        openRescheduleModal(ev);
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        fontSize: "11.5px",
+                        fontWeight: 800,
+                        border: "1px solid #0284c7",
+                        background: "#0284c7",
+                        color: "#ffffff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      📅 Reagendar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDayEvents(null);
+                        openModal(ev);
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        fontSize: "11.5px",
+                        fontWeight: 800,
+                        border: "1px solid var(--ae-line)",
+                        background: "transparent",
+                        color: "var(--ae-text)",
+                        cursor: "pointer",
+                        marginLeft: "auto",
+                      }}
+                    >
+                      ✎ Editar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="ae-actions" style={{ justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid var(--ae-line)" }}>
+              <button
+                type="button"
+                className="ae-btn"
+                onClick={() => {
+                  const dateToNew = selectedDayEvents.iso;
+                  setSelectedDayEvents(null);
+                  openModal(null);
+                  setFDate(dateToNew);
+                }}
+              >
+                ＋ Adicionar Outro Evento Neste Dia
+              </button>
+              <button
+                type="button"
+                className="ae-btn ae-btn-primary"
+                onClick={() => setSelectedDayEvents(null)}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE REAGENDAMENTO RÁPIDO */}
       {rescheduleEvent && (

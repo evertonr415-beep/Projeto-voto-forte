@@ -102,13 +102,81 @@ export default function NeutralDashboardClient({
   const [query, setQuery] = useState("");
   const [profile, setProfile] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
-  const [contactsRequested, setContactsRequested] = useState(false);
+  const [contactsRequested, setContactsRequested] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Contact | null>(null);
   const [savingContact, setSavingContact] = useState(false);
   const [deletingContactId, setDeletingContactId] = useState<number | null>(null);
+  const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
+  const [bulkModalAction, setBulkModalAction] = useState<"district" | "leader" | "kind" | "delete" | null>(null);
+  const [bulkDistrictValue, setBulkDistrictValue] = useState("");
+  const [bulkLeaderValue, setBulkLeaderValue] = useState("");
+  const [bulkKindValue, setBulkKindValue] = useState<"Eleitor" | "Liderança">("Eleitor");
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelectContact = (id: number) => {
+    setSelectedContactIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const isAllCurrentPageSelected =
+    pageData.contacts.length > 0 &&
+    pageData.contacts.every((c) => selectedContactIds.includes(c.id));
+
+  const toggleSelectAllCurrentPage = () => {
+    if (isAllCurrentPageSelected) {
+      const pageIds = new Set(pageData.contacts.map((c) => c.id));
+      setSelectedContactIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = pageData.contacts.map((c) => c.id);
+      setSelectedContactIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const clearSelection = () => setSelectedContactIds([]);
+
+  const executeBulkAction = async () => {
+    if (!bulkModalAction || !selectedContactIds.length) return;
+    setBulkLoading(true);
+    try {
+      const body: Record<string, unknown> = {
+        ids: selectedContactIds,
+      };
+      if (bulkModalAction === "district") {
+        body.action = "update_district";
+        body.district = bulkDistrictValue;
+      } else if (bulkModalAction === "leader") {
+        body.action = "update_leader";
+        body.leader = bulkLeaderValue;
+      } else if (bulkModalAction === "kind") {
+        body.action = "update_kind";
+        body.kind = bulkKindValue;
+      } else if (bulkModalAction === "delete") {
+        body.action = "delete";
+      }
+
+      const res = await apiFetch("/api/contacts/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Falha ao aplicar ação em lote");
+
+      setMessage(data.message || "Ação em lote aplicada com sucesso!");
+      setBulkModalAction(null);
+      setSelectedContactIds([]);
+      void loadContacts();
+      void loadSummary();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Erro ao processar alteração em lote");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
   const summaryVersion = useRef(0);
   const contactsVersion = useRef(0);
   const contactActionInFlight = useRef(false);
@@ -216,7 +284,7 @@ export default function NeutralDashboardClient({
       setQuery("");
       setProfile("");
       setDistrictFilter(district);
-      setContactsRequested(false);
+      setContactsRequested(true);
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>(".contacts-panel")?.scrollIntoView({
           behavior: "smooth",
@@ -458,7 +526,7 @@ export default function NeutralDashboardClient({
         </div>
       </section>
 
-      <section className="optimized-content" style={{ gridTemplateColumns: "1fr" }}>
+      <section className="optimized-content">
         <article className="optimized-panel contacts-panel">
           <div className="optimized-panel-head">
             <div>
@@ -644,9 +712,69 @@ export default function NeutralDashboardClient({
             </div>
           ) : (
             <div className="optimized-table-wrap">
+              {selectedContactIds.length > 0 && (
+                <div className="vf-bulk-bar">
+                  <div className="vf-bulk-bar-info">
+                    <span className="vf-bulk-count">
+                      ☑️ <strong>{selectedContactIds.length}</strong> selecionado(s)
+                    </span>
+                    <button type="button" className="vf-bulk-btn-link" onClick={clearSelection}>
+                      Desmarcar todos
+                    </button>
+                  </div>
+                  <div className="vf-bulk-bar-actions">
+                    <button
+                      type="button"
+                      className="vf-bulk-btn"
+                      onClick={() => {
+                        setBulkDistrictValue("");
+                        setBulkModalAction("district");
+                      }}
+                    >
+                      📍 Alterar Bairro
+                    </button>
+                    <button
+                      type="button"
+                      className="vf-bulk-btn"
+                      onClick={() => {
+                        setBulkLeaderValue("");
+                        setBulkModalAction("leader");
+                      }}
+                    >
+                      👤 Alterar Líder
+                    </button>
+                    <button
+                      type="button"
+                      className="vf-bulk-btn"
+                      onClick={() => {
+                        setBulkKindValue("Eleitor");
+                        setBulkModalAction("kind");
+                      }}
+                    >
+                      🏷️ Alterar Perfil
+                    </button>
+                    <button
+                      type="button"
+                      className="vf-bulk-btn vf-bulk-btn-danger"
+                      onClick={() => setBulkModalAction("delete")}
+                    >
+                      🗑️ Excluir
+                    </button>
+                  </div>
+                </div>
+              )}
               <table>
                 <thead>
                   <tr>
+                    <th style={{ width: "42px", textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={isAllCurrentPageSelected}
+                        onChange={toggleSelectAllCurrentPage}
+                        title="Selecionar todos os contatos desta página"
+                        style={{ cursor: "pointer", width: "18px", height: "18px", accentColor: "#0d6b50" }}
+                      />
+                    </th>
                     <th>Contato</th>
                     <th>Telefone</th>
                     <th>Perfil</th>
@@ -657,7 +785,15 @@ export default function NeutralDashboardClient({
                 </thead>
                 <tbody>
                   {pageData.contacts.map((contact) => (
-                    <tr key={contact.id}>
+                    <tr key={contact.id} className={selectedContactIds.includes(contact.id) ? "vf-row-selected" : ""}>
+                      <td style={{ width: "42px", textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedContactIds.includes(contact.id)}
+                          onChange={() => toggleSelectContact(contact.id)}
+                          style={{ cursor: "pointer", width: "18px", height: "18px", accentColor: "#0d6b50" }}
+                        />
+                      </td>
                       <td data-label="Contato" className="optimized-contact-cell">
                         <span className="optimized-avatar">{initials(contact.name || "")}</span>
                         <span>
@@ -734,6 +870,108 @@ export default function NeutralDashboardClient({
 
       {message && (
         <div className="optimized-toast" role="status" onClick={() => setMessage("")}>{message}</div>
+      )}
+
+      {/* MODAL DE AÇÕES EM LOTE */}
+      {bulkModalAction && (
+        <div
+          className="optimized-modal-backdrop"
+          onMouseDown={() => {
+            if (!bulkLoading) setBulkModalAction(null);
+          }}
+        >
+          <div
+            className="optimized-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ação em lote"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <header>
+              <h2>
+                {bulkModalAction === "district" && "📍 Alterar Bairro em Lote"}
+                {bulkModalAction === "leader" && "👤 Alterar Líder em Lote"}
+                {bulkModalAction === "kind" && "🏷️ Alterar Perfil em Lote"}
+                {bulkModalAction === "delete" && "⚠️ Excluir Contatos em Lote"}
+              </h2>
+              <button
+                type="button"
+                aria-label="Fechar"
+                disabled={bulkLoading}
+                onClick={() => setBulkModalAction(null)}
+              >
+                ×
+              </button>
+            </header>
+
+            <p style={{ margin: "4px 0 14px", color: "#64748b", fontSize: "13px" }}>
+              Esta ação será aplicada a <strong>{selectedContactIds.length}</strong> contato(s) selecionado(s).
+            </p>
+
+            {bulkModalAction === "district" && (
+              <label>
+                Novo Bairro para todos os selecionados:
+                <input
+                  required
+                  placeholder="Ex: Centro, Jardim Aeroporto, etc."
+                  value={bulkDistrictValue}
+                  onChange={(e) => setBulkDistrictValue(e.target.value)}
+                  disabled={bulkLoading}
+                />
+              </label>
+            )}
+
+            {bulkModalAction === "leader" && (
+              <label>
+                Nova Liderança responsável:
+                <input
+                  placeholder="Ex: Sérgio Onofre, Pedro Lupion, etc."
+                  value={bulkLeaderValue}
+                  onChange={(e) => setBulkLeaderValue(e.target.value)}
+                  disabled={bulkLoading}
+                />
+              </label>
+            )}
+
+            {bulkModalAction === "kind" && (
+              <label>
+                Novo Perfil:
+                <select
+                  value={bulkKindValue}
+                  onChange={(e) => setBulkKindValue(e.target.value as "Eleitor" | "Liderança")}
+                  disabled={bulkLoading}
+                >
+                  <option value="Eleitor">Eleitor</option>
+                  <option value="Liderança">Liderança</option>
+                </select>
+              </label>
+            )}
+
+            {bulkModalAction === "delete" && (
+              <div style={{ padding: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", color: "#991b1b", fontSize: "13px", lineHeight: "1.5" }}>
+                <strong>Atenção:</strong> Você está prestes a excluir permanentemente <strong>{selectedContactIds.length}</strong> contato(s). Esta ação não pode ser desfeita.
+              </div>
+            )}
+
+            <div className="optimized-modal-actions" style={{ marginTop: "18px" }}>
+              <button
+                type="button"
+                disabled={bulkLoading}
+                onClick={() => setBulkModalAction(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={bulkModalAction === "delete" ? "danger" : "primary"}
+                disabled={bulkLoading}
+                onClick={() => void executeBulkAction()}
+              >
+                {bulkLoading ? "Processando…" : `Confirmar para ${selectedContactIds.length} contato(s)`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {editing && (

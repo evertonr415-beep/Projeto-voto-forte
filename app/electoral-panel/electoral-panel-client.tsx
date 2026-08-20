@@ -216,8 +216,9 @@ export default function ElectoralPanelClient({
             <button type="button" className="tse-btn" onClick={() => window.print()}>
               🖨️ Imprimir
             </button>
-            <button type="button" className="tse-btn tse-btn-primary" onClick={handleBack}>
-              ⬅ Voltar ao Dashboard
+            <button type="button" className="vf-back-dashboard-btn" onClick={handleBack} title="Voltar ao Dashboard Principal">
+              <span className="vf-back-arrow" aria-hidden="true">←</span>
+              <span>Voltar ao Sistema</span>
             </button>
           </div>
         </header>

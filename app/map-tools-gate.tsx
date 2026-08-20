@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import MapCityMarkers from "./map-city-markers";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
@@ -25,6 +26,7 @@ export default function MapToolsGate() {
   return (
     <>
       {protectedAccessReady && <MapContactLayer />}
+      {protectedAccessReady && <MapCityMarkers />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
       {protectedAccessReady && <TerritorialPendingCenter />}
