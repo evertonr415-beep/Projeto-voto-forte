@@ -15,7 +15,7 @@ export default function ComunicacaoSidebarEnhancer() {
       if (
         nav.querySelector(".vf-comunicacao-sidebar-btn") ||
         Array.from(nav.querySelectorAll(".nav-name, button")).some((el) =>
-          el.textContent?.includes("Comunicação Institucional"),
+          el.textContent?.includes("Agenda Inteligente"),
         )
       )
         return;
@@ -28,7 +28,7 @@ export default function ComunicacaoSidebarEnhancer() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "vf-comunicacao-sidebar-btn";
-      btn.title = "Comunicação Institucional & Editorial";
+      btn.title = "Agenda Inteligente";
       btn.style.cursor = "pointer";
 
       const icon = document.createElement("span");
@@ -38,7 +38,7 @@ export default function ComunicacaoSidebarEnhancer() {
 
       const name = document.createElement("span");
       name.className = "nav-name";
-      name.textContent = "Comunicação Institucional";
+      name.textContent = "Agenda Inteligente";
 
       const badge = document.createElement("em");
       badge.style.background = "rgba(167, 139, 250, 0.2)";
