@@ -250,6 +250,38 @@ export async function getVisibleUsers(
   return users.filter((user) => visibleIds.has(Number(user.id)));
 }
 
+export async function getAuthorizedOwnerEmails(
+  account: Awaited<ReturnType<typeof getAccount>>,
+): Promise<string[]> {
+  if (!account) return [];
+
+  const self = String(account.email || "").trim().toLowerCase();
+  const emails = new Set<string>();
+  if (self) emails.add(self);
+
+  if (account.accessRole === "gestor") {
+    const { data, error } = await account.supabase.rpc(
+      "vf_gestor_operational_owner_emails",
+    );
+    if (!error && Array.isArray(data)) {
+      for (const value of data) {
+        const email = String(value || "").trim().toLowerCase();
+        if (email) emails.add(email);
+      }
+    }
+    return [...emails];
+  }
+
+  const users = await getVisibleUsers(account);
+  for (const user of users) {
+    if (user.status !== "active") continue;
+    const email = String(user.email || "").trim().toLowerCase();
+    if (email) emails.add(email);
+  }
+
+  return [...emails];
+}
+
 export async function canManageUser(
   account: Awaited<ReturnType<typeof getAccount>>,
   targetId: number,
