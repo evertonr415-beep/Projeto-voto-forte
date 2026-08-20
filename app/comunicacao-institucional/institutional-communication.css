@@ -490,69 +490,96 @@
   line-height: 1.35 !important;
 }
 
-/* CALENDÁRIO */
+/* CALENDÁRIO COMPACTO E RESPONSIVO */
 .ae-calendar {
   display: grid !important;
-  gap: 10px !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 .ae-cal-head {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   flex-wrap: wrap !important;
 }
 
 .ae-month-grid {
   display: grid !important;
-  grid-template-columns: repeat(7, 1fr) !important;
-  gap: 6px !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .ae-dow,
 .ae-day {
   border: 1px solid var(--ae-line) !important;
-  border-radius: 8px !important;
-  padding: 6px !important;
-  min-height: 58px !important;
+  border-radius: 6px !important;
+  padding: 3px 2px !important;
+  min-height: 42px !important;
   background: var(--ae-card-solid) !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
 }
 
 .ae-dow {
   min-height: auto !important;
   background: transparent !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  font-size: 0.68rem !important;
+  letter-spacing: 0.02em !important;
+  font-size: 0.58rem !important;
   color: var(--ae-muted) !important;
   text-align: center !important;
-  padding: 4px 2px !important;
+  padding: 3px 1px !important;
+  font-weight: 800 !important;
 }
 
 .ae-day {
   display: flex !important;
   flex-direction: column !important;
-  gap: 3px !important;
+  gap: 2px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.ae-day:hover {
+  border-color: var(--ae-accent) !important;
+  transform: translateY(-1px) !important;
 }
 
 .ae-day.muted {
-  opacity: 0.35 !important;
+  opacity: 0.3 !important;
 }
 
 .ae-day-num {
   font-weight: 750 !important;
-  font-size: 0.82rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+}
+
+.ae-day .ae-badge {
+  font-size: 0.56rem !important;
+  padding: 1px 3px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .ae-legend {
   display: flex !important;
-  gap: 8px !important;
+  gap: 6px !important;
   flex-wrap: wrap !important;
 }
 
 .ae-legend .ae-badge {
-  font-size: 0.72rem !important;
+  font-size: 0.65rem !important;
+  padding: 2px 6px !important;
 }
 
 /* MODAL */

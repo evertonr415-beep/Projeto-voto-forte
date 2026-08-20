@@ -217,13 +217,21 @@ export default function DashboardClient({
     const handleNavigateElectoral = () => {
       setView("Painel Eleitoral");
     };
+    const handleMeetingQuickView = (event: Event) => {
+      const detail = (event as CustomEvent<{ title?: string; date?: string; place?: string; leader?: string; notes?: string }>).detail;
+      if (detail?.title) {
+        setNotice(`📅 Reunião: ${detail.title} • Local: ${detail.place || "Arapongas"} • Responsável: ${detail.leader || "Coordenação"}`);
+      }
+    };
     window.addEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
     window.addEventListener("voto-forte:navigate-overview", handleNavigateOverview);
     window.addEventListener("voto-forte:navigate-electoral-panel", handleNavigateElectoral);
+    window.addEventListener("voto-forte:open-meeting-quick-view", handleMeetingQuickView);
     return () => {
       window.removeEventListener("voto-forte:close-mobile-sidebar", handleCloseMobile);
       window.removeEventListener("voto-forte:navigate-overview", handleNavigateOverview);
       window.removeEventListener("voto-forte:navigate-electoral-panel", handleNavigateElectoral);
+      window.removeEventListener("voto-forte:open-meeting-quick-view", handleMeetingQuickView);
     };
   }, []);
 
@@ -588,7 +596,7 @@ export default function DashboardClient({
     loadingContacts && contactsLoadedScope !== scope ? (
       <div className="loading-state">Carregando mapa eleitoral…</div>
     ) : (
-      <MapPage open={setModal} contacts={contacts} />
+      <MapPage open={setModal} contacts={contacts} meetings={meetings} />
     )
   ) : view === "Painel Eleitoral" ? (
     <ElectoralPanelClient onBackToDashboard={() => setView("Visão Geral")} />
@@ -1171,8 +1179,132 @@ function MeetingLocationMap({
   );
 }
 
+function renderMapMarkers(
+  L: any,
+  layer: any,
+  contacts: Contact[],
+  meetings: (Meeting & { id: number; ownerEmail: string })[] = [],
+) {
+  if (!L || !layer) return;
+  layer.clearLayers();
+
+  // 1. Contatos
+  contacts
+    .filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude))
+    .forEach((contact) => {
+      const marker = L.marker(
+        [Number(contact.latitude), Number(contact.longitude)],
+        {
+          icon: L.divIcon({
+            className: "contact-pin",
+            html: `<span>${initials(contact.name)}</span>`,
+            iconSize: [38, 48],
+            iconAnchor: [19, 46],
+            popupAnchor: [0, -44],
+          }),
+        },
+      );
+      marker.bindPopup(
+        `<strong>${contact.name}</strong><small>${contact.kind} · ${contact.district}</small><p>${contact.street || ""}, ${contact.number || ""}</p>`,
+        { autoClose: true, closeOnClick: true, closeButton: true },
+      );
+      marker.addTo(layer);
+    });
+
+  // 2. Balões de Reuniões / Eventos da Agenda
+  const ARAPONGAS_CENTER: [number, number] = [-23.4153, -51.4256];
+  const DISTRICT_COORDS: Record<string, [number, number]> = {
+    centro: [-23.4153, -51.4256],
+    flamingos: [-23.425, -51.408],
+    columbia: [-23.421, -51.451],
+    petropolis: [-23.411, -51.429],
+    araponguinha: [-23.4285, -51.423],
+    monaco: [-23.4112, -51.4085],
+    primavera: [-23.435, -51.418],
+    tropical: [-23.402, -51.438],
+    interlagos: [-23.438, -51.435],
+    aguias: [-23.429, -51.398],
+    bandeirantes: [-23.408, -51.442],
+  };
+
+  meetings.forEach((meeting, idx) => {
+    let lat = Number(meeting.latitude);
+    let lng = Number(meeting.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      const placeKey = (meeting.place || meeting.address || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const matched = Object.keys(DISTRICT_COORDS).find((k) => placeKey.includes(k));
+      if (matched) {
+        const [baseLat, baseLng] = DISTRICT_COORDS[matched];
+        lat = baseLat + ((idx % 3) - 1) * 0.003;
+        lng = baseLng + ((idx % 3) - 1) * 0.003;
+      } else {
+        lat = ARAPONGAS_CENTER[0] + ((idx % 5) - 2) * 0.004;
+        lng = ARAPONGAS_CENTER[1] + ((idx % 5) - 2) * 0.004;
+      }
+    }
+
+    const safeTitle = (meeting.title || "Reunião de Campanha").replace(/"/g, "&quot;");
+    const safePlace = (meeting.place || meeting.address || "Arapongas / PR").replace(/"/g, "&quot;");
+    const safeNotes = (meeting.notes || "").replace(/"/g, "&quot;");
+    const safeLeader = (meeting.ownerEmail || "Coordenação de Campanha").replace(/"/g, "&quot;");
+
+    const meetingMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: "vf-map-meeting-balloon",
+        html: `
+          <div class="vf-meeting-balloon-inner">
+            <span class="vf-meeting-balloon-icon">📅</span>
+            <span>${safeTitle}</span>
+          </div>
+        `,
+        iconSize: [160, 36],
+        iconAnchor: [80, 18],
+        popupAnchor: [0, -20],
+      }),
+      zIndexOffset: 1000,
+    });
+
+    const popupHtml = `
+      <div class="vf-meeting-popup-content">
+        <div class="vf-meeting-popup-badge">📅 REUNIÃO DE CAMPANHA</div>
+        <h4 class="vf-meeting-popup-title">${safeTitle}</h4>
+        <div class="vf-meeting-popup-meta">
+          <div><strong>📅 Data & Horário:</strong> ${meeting.date || "A definir"} ${meeting.time ? `às ${meeting.time}` : ""}</div>
+          <div><strong>📍 Onde vai ser:</strong> ${safePlace}</div>
+          <div><strong>👤 Líder Marcador:</strong> ${safeLeader}</div>
+          ${safeNotes ? `<div><strong>📝 Pauta / Assunto:</strong> ${safeNotes}</div>` : ""}
+        </div>
+        <div class="vf-meeting-popup-actions">
+          <button type="button" class="vf-meeting-popup-btn" onclick="window.dispatchEvent(new CustomEvent('voto-forte:open-meeting-quick-view', { detail: { title: '${safeTitle}', date: '${meeting.date}', place: '${safePlace}', leader: '${safeLeader}', notes: '${safeNotes}' } }))">
+            🔍 Ver Detalhes da Reunião
+          </button>
+        </div>
+      </div>
+    `;
+
+    meetingMarker.bindPopup(popupHtml, {
+      autoClose: true,
+      closeOnClick: true,
+      closeButton: true,
+      maxWidth: 320,
+    });
+
+    meetingMarker.addTo(layer);
+  });
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
+function CityMap({
+  contacts = [],
+  meetings = [],
+}: {
+  contacts?: Contact[];
+  meetings?: (Meeting & { id: number; ownerEmail: string })[];
+}) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const contactLayer = useRef<any>(null);
@@ -1209,29 +1341,7 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
       map.on("movestart zoomstart", closePopup);
       map._vfClosePopup = closePopup;
       contactLayer.current = L.layerGroup().addTo(map);
-      contacts
-        .filter(
-          (c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude),
-        )
-        .forEach((contact) => {
-          const marker = L.marker(
-            [Number(contact.latitude), Number(contact.longitude)],
-            {
-              icon: L.divIcon({
-                className: "contact-pin",
-                html: `<span>${initials(contact.name)}</span>`,
-                iconSize: [38, 48],
-                iconAnchor: [19, 46],
-                popupAnchor: [0, -44],
-              }),
-            },
-          );
-          marker.bindPopup(
-            `<strong>${contact.name}</strong><small>${contact.kind} · ${contact.district}</small><p>${contact.street || ""}, ${contact.number || ""}</p>`,
-            { autoClose: true, closeOnClick: true, closeButton: true },
-          );
-          marker.addTo(contactLayer.current);
-        });
+      renderMapMarkers(L, contactLayer.current, contacts, meetings);
       setTimeout(() => map.invalidateSize(), 100);
       const query =
         '[out:json][timeout:25];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a);node["place"~"neighbourhood|suburb"]["name"](area.a););out tags center geom;';
@@ -1307,37 +1417,14 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
         contactLayer.current = null;
       }
     };
-  }, [contacts]);
+  }, [contacts, meetings]);
 
   useEffect(() => {
     const L = (window as any).L,
       layer = contactLayer.current;
     if (!L || !layer) return;
-    layer.clearLayers();
-    contacts
-      .filter(
-        (c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude),
-      )
-      .forEach((contact) => {
-        const marker = L.marker(
-          [Number(contact.latitude), Number(contact.longitude)],
-          {
-            icon: L.divIcon({
-              className: "contact-pin",
-              html: `<span>${initials(contact.name)}</span>`,
-              iconSize: [38, 48],
-              iconAnchor: [19, 46],
-              popupAnchor: [0, -44],
-            }),
-          },
-        );
-        marker.bindPopup(
-          `<strong>${contact.name}</strong><small>${contact.kind} · ${contact.district}</small><p>${contact.street || ""}, ${contact.number || ""}</p>`,
-          { autoClose: true, closeOnClick: true, closeButton: true },
-        );
-        marker.addTo(layer);
-      });
-  }, [contacts]);
+    renderMapMarkers(L, layer, contacts, meetings);
+  }, [contacts, meetings]);
 
   function locateUser() {
     if (!navigator.geolocation) {
@@ -2376,13 +2463,16 @@ function MeetingEditor({
 function MapPage({
   open,
   contacts,
+  meetings = [],
 }: {
   open: (m: Modal) => void;
   contacts: (Contact & { id: number; ownerEmail: string })[];
+  meetings?: (Meeting & { id: number; ownerEmail: string })[];
 }) {
   const leaders = contacts.filter((p) => p.kind === "Liderança").length;
   const voters = contacts.length - leaders;
   const coverage = new Set(contacts.map((p) => p.district)).size;
+  const totalMeetings = meetings.length;
   return (
     <>
       <PageHead
@@ -2393,7 +2483,7 @@ function MapPage({
         onClick={() => open("filtros")}
       />
       <article className="panel full-map">
-        <CityMap contacts={contacts} />
+        <CityMap contacts={contacts} meetings={meetings} />
         <div className="map-legend">
           <h4>CAMADAS DO MAPA</h4>
           <label>
@@ -2404,6 +2494,12 @@ function MapPage({
             <input type="checkbox" defaultChecked />
             <i className="legend-dot blue-dot" /> Eleitores <b>{voters}</b>
           </label>
+          {totalMeetings > 0 && (
+            <label>
+              <input type="checkbox" defaultChecked />
+              <span style={{ fontSize: "12px", marginRight: "6px" }}>📅</span> Reuniões <b>{totalMeetings}</b>
+            </label>
+          )}
           <hr />
           <small>BAIRROS COM PRESENÇA</small>
           <strong>{coverage}</strong>
