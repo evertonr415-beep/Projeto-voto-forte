@@ -32,7 +32,7 @@ type OrderMode = "rank" | "alphabetical";
 type MobileSection = "contacts" | "sidebar";
 
 const ADMIN_ROLES = new Set(["master", "gestor", "lider"]);
-const DESKTOP_QUERY = "(min-width: 1121px)";
+const DESKTOP_QUERY = "(min-width: 860px)";
 const MOBILE_QUERY = "(max-width: 760px)";
 const NUMBER = new Intl.NumberFormat("pt-BR");
 const PERCENT = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

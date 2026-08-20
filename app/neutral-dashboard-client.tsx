@@ -102,7 +102,7 @@ export default function NeutralDashboardClient({
   const [query, setQuery] = useState("");
   const [profile, setProfile] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
-  const [contactsRequested, setContactsRequested] = useState(false);
+  const [contactsRequested, setContactsRequested] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [message, setMessage] = useState("");
@@ -284,7 +284,7 @@ export default function NeutralDashboardClient({
       setQuery("");
       setProfile("");
       setDistrictFilter(district);
-      setContactsRequested(false);
+      setContactsRequested(true);
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>(".contacts-panel")?.scrollIntoView({
           behavior: "smooth",
@@ -526,7 +526,7 @@ export default function NeutralDashboardClient({
         </div>
       </section>
 
-      <section className="optimized-content" style={{ gridTemplateColumns: "1fr" }}>
+      <section className="optimized-content">
         <article className="optimized-panel contacts-panel">
           <div className="optimized-panel-head">
             <div>
