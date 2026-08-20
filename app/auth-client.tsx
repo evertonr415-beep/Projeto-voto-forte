@@ -76,7 +76,7 @@ const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
 const SESSION_VALIDATION_TIMEOUT_MS = 45_000;
 
 export default function AuthClient({
-  dashboardMode = "neutral",
+  dashboardMode = "full",
 }: {
   dashboardMode?: DashboardMode;
 }) {
