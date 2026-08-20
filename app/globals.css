@@ -375,11 +375,28 @@ a {
   justify-content: space-between;
   align-items: center;
   background:
-    linear-gradient(110deg, rgba(7, 29, 47, 0.98), rgba(9, 65, 61, 0.94)),
+    linear-gradient(110deg, rgba(7, 29, 47, 0.96), rgba(9, 65, 61, 0.92)),
     radial-gradient(circle at 80%, #157e64, transparent 35%);
   box-shadow: 0 16px 40px rgba(7, 29, 47, 0.13);
   position: relative;
   overflow: hidden;
+}
+.welcome-pro:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/banner-parana-araponga.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+  opacity: 0.15;
+  mix-blend-mode: luminosity;
+  pointer-events: none;
+  z-index: 0;
+}
+.welcome-pro > * {
+  position: relative;
+  z-index: 1;
 }
 .welcome-pro:after {
   content: "";
@@ -392,6 +409,8 @@ a {
   box-shadow:
     0 0 0 38px #ffffff08,
     0 0 0 76px #ffffff05;
+  pointer-events: none;
+  z-index: 0;
 }
 .welcome-pro span,
 .page-head span {
