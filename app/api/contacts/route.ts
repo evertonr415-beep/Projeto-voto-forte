@@ -102,6 +102,27 @@ function applyScope<T>(query: T, scope: string, emails: string[], isAdmOrGestor:
   return scoped.eq("owner_email", scope);
 }
 
+async function countOwnedRecords(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  scope: string,
+  emails: string[],
+  isAdmOrGestor: boolean,
+  kind: "contact" | "meeting",
+  profile?: "Eleitor" | "Liderança",
+) {
+  let query = account.supabase
+    .from("vf_owned_records")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", kind);
+
+  query = applyScope(query, scope, emails, isAdmOrGestor);
+  if (profile) query = query.eq("payload->>kind", profile);
+
+  const { count, error } = await query;
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -131,19 +152,12 @@ export async function GET(request: Request) {
           summaryResult = data as Record<string, unknown>;
         }
       } catch {
-        // Fallback to district lists
+        // Fallback dinâmico abaixo.
       }
 
-      // If summaryResult has no districts or failed, generate from district summary RPC
-      let districtsList: Array<{ district: string; total: number }> = [];
-      if (
-        summaryResult &&
-        Array.isArray(summaryResult.districts) &&
-        summaryResult.districts.length > 0
-      ) {
-        districtsList = summaryResult.districts as Array<{ district: string; total: number }>;
-      } else {
-        // 1. Try vf_map_district_summary
+      if (!summaryResult) {
+        let districtsList: Array<{ district: string; total: number }> = [];
+
         try {
           const { data: districtRows } = await account.supabase.rpc(
             "vf_map_district_summary",
@@ -159,15 +173,15 @@ export async function GET(request: Request) {
               .sort((a, b) => b.total - a.total);
           }
         } catch {
-          // Fallback to table
+          // Fallback para a tabela de resumo territorial.
         }
 
-        // 2. Try vf_arapongas_district_summary table
         if (!districtsList.length) {
           try {
             const { data: cachedRows } = await account.supabase
               .from("vf_arapongas_district_summary")
-              .select("district_name, total");
+              .select("district_name, total")
+              .in("owner_email", ownerEmails);
 
             if (Array.isArray(cachedRows) && cachedRows.length > 0) {
               const map = new Map<string, number>();
@@ -182,21 +196,38 @@ export async function GET(request: Request) {
                 .sort((a, b) => b.total - a.total);
             }
           } catch {
-            // Fallback
+            // O resumo de contatos ainda será calculado diretamente.
           }
         }
 
-        const calculatedTotal = districtsList.reduce((acc, curr) => acc + curr.total, 0);
+        const [total, voters, leaders, meetings] = await Promise.all([
+          countOwnedRecords(account, scope, emails, isAdmOrGestor, "contact"),
+          countOwnedRecords(
+            account,
+            scope,
+            emails,
+            isAdmOrGestor,
+            "contact",
+            "Eleitor",
+          ),
+          countOwnedRecords(
+            account,
+            scope,
+            emails,
+            isAdmOrGestor,
+            "contact",
+            "Liderança",
+          ),
+          countOwnedRecords(account, scope, emails, isAdmOrGestor, "meeting"),
+        ]);
 
         summaryResult = {
-          total: calculatedTotal || (summaryResult?.total ?? 57683),
-          totalContacts: calculatedTotal || (summaryResult?.totalContacts ?? 57683),
-          districtsCount: districtsList.length || 151,
+          total,
+          voters,
+          leaders,
+          meetings,
+          districtsReached: districtsList.filter((district) => district.total > 0).length,
           districts: districtsList,
-          profiles: {
-            eleitor: 57681,
-            lideranca: 2,
-          },
         };
       }
 
@@ -275,7 +306,7 @@ export async function GET(request: Request) {
 
         if (Array.isArray(fallbackRows)) {
           districtContacts = fallbackRows.map(mapContact);
-          total = fallbackCount || fallbackRows.length;
+          total = fallbackCount ?? 0;
         }
       }
 
@@ -297,16 +328,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const hasFilters = Boolean(
-      queryText || profile === "Eleitor" || profile === "Liderança",
-    );
-
     let query = account.supabase
       .from("vf_owned_records")
-      .select(
-        "id,owner_email,payload,created_at,updated_at",
-        hasFilters ? { count: "exact" } : undefined,
-      )
+      .select("id,owner_email,payload,created_at,updated_at", { count: "exact" })
       .eq("kind", "contact")
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
@@ -335,15 +359,15 @@ export async function GET(request: Request) {
     const { data, count, error } = await query;
     if (error) throw new Error(error.message);
 
-    const total = count ?? (Array.isArray(data) ? data.length : 0);
+    const total = count ?? 0;
 
     return Response.json(
       {
         scope,
         page,
         pageSize,
-        total: total || 57683,
-        totalPages: Math.max(1, Math.ceil((total || 57683) / pageSize)),
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
         contacts: ((data ?? []) as ContactRow[]).map(mapContact),
       },
       {
