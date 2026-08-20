@@ -3178,6 +3178,19 @@ td {
     linear-gradient(135deg, rgba(4, 18, 42, 0.98), rgba(20, 61, 112, 0.94)),
     radial-gradient(circle at 80% 25%, #4d79af, transparent 42%);
 }
+.auth-hero:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/login-parana-flag-bg.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+  opacity: 0.15;
+  mix-blend-mode: luminosity;
+  pointer-events: none;
+  z-index: 0;
+}
 .auth-hero:after {
   content: "";
   position: absolute;
@@ -3190,6 +3203,8 @@ td {
   box-shadow:
     0 0 0 70px #ffffff08,
     0 0 0 140px #ffffff05;
+  pointer-events: none;
+  z-index: 0;
 }
 .auth-hero img {
   position: relative;
