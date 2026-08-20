@@ -24,7 +24,7 @@ type Modal =
 
 const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
-  { label: "Contatos", icon: "☷", badge: "NOVO" },
+  { label: "Contatos", icon: "☷" },
   { label: "Mapa Eleitoral", icon: "⌖" },
   { label: "Painel Eleitoral", icon: "🏛" },
   { label: "WhatsApp", icon: "◉" },
