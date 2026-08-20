@@ -3,6 +3,5 @@
 import AuthClient from "./auth-client";
 
 export default function FullSystemEntry() {
-  return <AuthClient dashboardMode="neutral" />;
+  return <AuthClient />;
 }
-
