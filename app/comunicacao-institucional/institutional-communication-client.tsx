@@ -272,6 +272,19 @@ function dateLabel(dateStr: string) {
   return d.toLocaleDateString("pt-BR");
 }
 
+function getInitialElectionCountdown() {
+  const now = Date.now();
+  const diff = ELECTION_DATE - now;
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return { days, hours, minutes, seconds, isPast: false };
+}
+
 function weekdayLabel(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("pt-BR", { weekday: "long" });
@@ -320,19 +333,7 @@ export default function InstitutionalCommunicationClient({
   const [fReminder, setFReminder] = useState(3);
 
   // Cronômetro Regressivo Intermitente até a Eleição (04 de Outubro de 2026)
-  const [electionCountdown, setElectionCountdown] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    isPast: boolean;
-  }>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isPast: false,
-  });
+  const [electionCountdown, setElectionCountdown] = useState(getInitialElectionCountdown);
 
   useEffect(() => {
     const updateCountdown = () => {
