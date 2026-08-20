@@ -9,6 +9,7 @@ type View =
   | "Visão Geral"
   | "Contatos"
   | "Agenda Inteligente"
+  | "Mapa Eleitoral"
   | "Comunicação Institucional"
   | "WhatsApp"
   | "Administração";
@@ -24,7 +25,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
-  { label: "Comunicação Institucional", icon: "📢", badge: "EDITORIAL" },
+  { label: "Mapa Eleitoral", icon: "✢", badge: "MAPA" },
   { label: "WhatsApp", icon: "◉" },
 ];
 
@@ -578,6 +579,12 @@ export default function DashboardClient({
     )
   ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
     <InstitutionalCommunicationClient />
+  ) : view === "Mapa Eleitoral" ? (
+    loadingContacts && contactsLoadedScope !== scope ? (
+      <div className="loading-state">Carregando mapa eleitoral…</div>
+    ) : (
+      <ElectoralMap open={open} contacts={contacts} />
+    )
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
@@ -929,11 +936,11 @@ function Overview({
         />
         <Kpi
           tone="gold"
-          icon="📢"
+          icon="✢"
           value={String(districts)}
-          label="Comunicação Institucional"
-          delta="Abrir planejamento editorial"
-          onClick={() => go("Comunicação Institucional")}
+          label="Bairros alcançados"
+          delta="Abrir mapa eleitoral"
+          onClick={() => go("Mapa Eleitoral")}
         />
         <Kpi
           tone="violet"
