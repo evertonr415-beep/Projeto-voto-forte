@@ -781,11 +781,17 @@ export default function DashboardClient({
               className="notification"
               aria-label="Notificações"
               onClick={() => {
-                window.dispatchEvent(new CustomEvent("voto-forte:open-notifications"));
+                if (typeof window !== "undefined") {
+                  if ((window as any).vfOpenNotifications) {
+                    (window as any).vfOpenNotifications();
+                  } else {
+                    window.dispatchEvent(new CustomEvent("voto-forte:open-notifications"));
+                  }
+                }
               }}
-              title="Abrir Central de Notificações"
+              title="Disparar aviso para os usuários do sistema"
             >
-              ♧<i>3</i>
+              ♣<i>3</i>
             </button>
             <button className="profile" onClick={() => setModal("perfil")}>
               <span>{initials(currentUser.name)}</span>
