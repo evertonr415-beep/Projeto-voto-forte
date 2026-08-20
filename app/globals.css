@@ -385,28 +385,17 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/banner-parana-araponga.jpg");
+  background-image: url("/banner-parana-araponga.png");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: center 38%;
+  background-position: center 30%;
   opacity: 0.15;
   mix-blend-mode: luminosity;
   pointer-events: none;
   z-index: 0;
 }
-.welcome-bg-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 35%;
-  opacity: 0.15;
-  mix-blend-mode: luminosity;
-  pointer-events: none;
-  z-index: 0;
-}
-.welcome-pro > * {
+.welcome-copy,
+.welcome-actions {
   position: relative;
   z-index: 1;
 }

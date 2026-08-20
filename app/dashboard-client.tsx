@@ -855,12 +855,6 @@ const BrasiliaClockWidget = React.memo(function BrasiliaClockWidget({
 
   return (
     <div className="welcome-pro">
-      <img
-        className="welcome-bg-art"
-        src="/banner-parana-araponga.png"
-        alt="Arapongas e Paraná"
-        aria-hidden="true"
-      />
       <div className="welcome-copy">
         <span>AMBIENTE SELECIONADO · {contextName.toUpperCase()}</span>
         <h2>
