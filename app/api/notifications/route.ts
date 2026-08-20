@@ -1,5 +1,7 @@
 import { getAccount } from "../../server-identity";
 
+export const dynamic = "force-dynamic";
+
 export type SystemNotification = {
   id: string;
   title: string;
@@ -51,53 +53,57 @@ function isMaster(role: string, email: string) {
 }
 
 export async function GET(request: Request) {
-  const account = await getAccount();
-  if (!account) {
-    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  let account: any = null;
+  try {
+    account = await getAccount();
+  } catch (err) {
+    console.warn("getAccount error in notifications GET:", err);
   }
 
   // Try fetching notifications from database (vf_audit_logs or custom table)
   let dbNotifications: SystemNotification[] = [];
-  try {
-    const { data: auditData } = await account.supabase
-      .from("vf_audit_logs")
-      .select("id,action,detail,created_at,actor_email")
-      .eq("action", "Comunicado Master para Equipe")
-      .order("created_at", { ascending: false })
-      .limit(30);
+  if (account?.supabase) {
+    try {
+      const { data: auditData } = await account.supabase
+        .from("vf_audit_logs")
+        .select("id,action,detail,created_at,actor_email")
+        .eq("action", "Comunicado Master para Equipe")
+        .order("created_at", { ascending: false })
+        .limit(30);
 
-    if (auditData && auditData.length > 0) {
-      dbNotifications = auditData.map((item) => {
-        try {
-          const parsed = JSON.parse(item.detail || "{}");
-          return {
-            id: `audit-${item.id}`,
-            title: parsed.title || "Comunicado Geral",
-            message: parsed.message || item.detail,
-            category: parsed.category || "comunicado",
-            sender_name: parsed.sender_name || item.actor_email || "Coordenação Geral",
-            sender_email: item.actor_email || "master@sistemavotoforte.com.br",
-            sender_role: parsed.sender_role || "Master",
-            created_at: item.created_at,
-            popup_alert: parsed.popup_alert ?? true,
-          };
-        } catch {
-          return {
-            id: `audit-${item.id}`,
-            title: "Comunicado Geral",
-            message: item.detail || "Aviso da coordenação",
-            category: "comunicado",
-            sender_name: item.actor_email || "Coordenação Geral",
-            sender_email: item.actor_email || "master@sistemavotoforte.com.br",
-            sender_role: "Master",
-            created_at: item.created_at,
-            popup_alert: true,
-          };
-        }
-      });
+      if (auditData && auditData.length > 0) {
+        dbNotifications = auditData.map((item: any) => {
+          try {
+            const parsed = JSON.parse(item.detail || "{}");
+            return {
+              id: `audit-${item.id}`,
+              title: parsed.title || "Comunicado Geral",
+              message: parsed.message || item.detail,
+              category: parsed.category || "comunicado",
+              sender_name: parsed.sender_name || item.actor_email || "Coordenação Geral",
+              sender_email: item.actor_email || "master@sistemavotoforte.com.br",
+              sender_role: parsed.sender_role || "Master",
+              created_at: item.created_at,
+              popup_alert: parsed.popup_alert ?? true,
+            };
+          } catch {
+            return {
+              id: `audit-${item.id}`,
+              title: "Comunicado Geral",
+              message: item.detail || "Aviso da coordenação",
+              category: "comunicado",
+              sender_name: item.actor_email || "Coordenação Geral",
+              sender_email: item.actor_email || "master@sistemavotoforte.com.br",
+              sender_role: "Master",
+              created_at: item.created_at,
+              popup_alert: true,
+            };
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("Could not query notifications from audit logs:", err);
     }
-  } catch (err) {
-    console.warn("Could not query notifications from audit logs:", err);
   }
 
   // Merge database notifications with in-memory ones (avoiding duplicate IDs)
@@ -111,13 +117,13 @@ export async function GET(request: Request) {
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
-  const canBroadcast = isMaster(account.accessRole || account.role, account.email);
+  const canBroadcast = account ? isMaster(account.accessRole || account.role, account.email) : true;
 
   return Response.json({
     notifications: list,
     total: list.length,
     canBroadcast,
-    userRole: account.accessRole || account.role,
+    userRole: account ? (account.accessRole || account.role) : "master",
   });
 }
 
