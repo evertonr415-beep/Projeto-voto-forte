@@ -964,7 +964,7 @@ function Overview({
         />
       </div>
       <div className="dashboard-grid">
-        <article className="panel agenda-summary">
+        <article className="panel">
           <PanelTitle
             title="Próximos compromissos"
             subtitle="Agenda do ambiente"
@@ -972,49 +972,46 @@ function Overview({
             onClick={() => go("Agenda Inteligente")}
           />
           {meetings.length ? (
-            <ul className="agenda-list">
-              {meetings.slice(0, 4).map((meeting, index) => (
-                <li key={meeting.id}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <time>
-                      {meeting.date}
-                      {meeting.time ? ` · ${meeting.time}` : ""}
-                    </time>
-                    <strong>{meeting.title}</strong>
-                    <small>
-                      {meeting.place || meeting.address || "Local não informado"}
-                    </small>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            meetings.slice(0, 3).map((meeting, index) => (
+              <div className="event" key={meeting.id}>
+                <div className="event-date">
+                  <b>{String(index + 1).padStart(2, "0")}</b>
+                  <small>AGENDA</small>
+                </div>
+                <div>
+                  <span>{meeting.date}</span>
+                  <b>{meeting.title}</b>
+                  <small>⌖ {meeting.place}</small>
+                </div>
+              </div>
+            ))
           ) : (
-            <div className="empty-state">
-              Nenhuma reunião registrada neste ambiente.
-            </div>
+            <p className="empty-state">
+              Nenhum compromisso agendado neste ambiente.
+            </p>
           )}
         </article>
-        <article className="panel">
-          <PanelTitle title="Privacidade ativa" subtitle="Separação por identidade" />
-          <ul className="audit-list">
-            <li>
-              <span className="dot ok" />
-              <div>
-                <strong>Dados vinculados ao usuário autenticado</strong>
-                <small>Segurança</small>
-              </div>
-              <em className="tag green">Ativo</em>
-            </li>
-            <li>
-              <span className="dot ok" />
-              <div>
-                <strong>Ações administrativas registradas</strong>
-                <small>Auditoria</small>
-              </div>
-              <em className="tag green">Ativo</em>
-            </li>
-          </ul>
+        <article className="panel activity">
+          <PanelTitle
+            title="Privacidade ativa"
+            subtitle="Separação por identidade"
+          />
+          <div className="activity-line">
+            <span className="dot d0" />
+            <div>
+              <small>SEGURANÇA</small>
+              <b>Dados vinculados ao usuário autenticado</b>
+            </div>
+            <time>Ativo</time>
+          </div>
+          <div className="activity-line">
+            <span className="dot d1" />
+            <div>
+              <small>AUDITORIA</small>
+              <b>Ações administrativas registradas</b>
+            </div>
+            <time>Ativo</time>
+          </div>
         </article>
       </div>
     </>
