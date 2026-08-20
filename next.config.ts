@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
