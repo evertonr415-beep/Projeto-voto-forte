@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AdaptivePerformance from "./adaptive-performance";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
@@ -58,6 +58,15 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#051929",
+};
 
 export const metadata: Metadata = {
   title: "VOTO FORTE PARANÁ",

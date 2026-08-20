@@ -1,32 +1,79 @@
-/* Global Smooth Performance Enhancements */
-* {
+/* Global Smooth Performance & Mobile Touch Responsiveness */
+*, *::before, *::after {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
 }
 
-/* Accelerated smooth scrolling for lists and tables */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Eliminate iOS Safari / Android auto-zoom when tapping inputs */
+@media (max-width: 860px) {
+  input,
+  select,
+  textarea,
+  .search-bar input,
+  .form-input,
+  .contact-field,
+  .vf-export-filter input,
+  .optimized-filters input,
+  .optimized-filters select,
+  .ae-filter-input,
+  .ae-filter-select,
+  .tse-search-input {
+    font-size: 16px !important; /* Prevents auto-zoom on mobile focus */
+    touch-action: manipulation;
+  }
+}
+
+/* Hardware accelerated fluid scrolling */
 .contacts-table-container,
 .main-content,
 .sidebar,
 .panel,
 .contacts-list,
 .districts-list,
-.issues-scroll-area {
+.issues-scroll-area,
+.optimized-table-wrap,
+.ae-table-wrap,
+.tse-table-container,
+.wt-drawer-body {
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   transform: translateZ(0);
 }
 
-/* Reduce composite layers and excessive blur overhead on general devices */
+/* Rendering performance via content-visibility for heavy tables and cards */
+.contacts-table tbody tr,
+.optimized-table-wrap tbody tr,
+.ae-event-card,
+.vf-team-performance-leaders article,
+.audit-list > div {
+  content-visibility: auto;
+  contain-intrinsic-size: 48px;
+}
+
+/* Modals and Drawers GPU Acceleration */
 .modal,
 .issues-modal-backdrop,
+.wt-drawer,
+.optimized-modal-backdrop,
 .vf-heatmap-control,
 .vf-district-map-control,
 .vf-map-contact-control {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  will-change: transform, opacity;
 }
 
-/* Light mode for devices under pressure */
+/* Light mode for low-power or data-saving devices */
 html[data-vf-performance="light"] *,
 html[data-vf-performance="light"] *::before,
 html[data-vf-performance="light"] *::after {
