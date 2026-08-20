@@ -50,6 +50,49 @@ export default function ExportHistoryClient() {
     }
   }, [router]);
 
+  const [backingUp, setBackingUp] = useState(false);
+  const [backupMessage, setBackupMessage] = useState("");
+
+  const handlePerformBackup = async () => {
+    setBackingUp(true);
+    setBackupMessage("");
+    try {
+      const res = await apiFetch("/api/contacts?limit=5000");
+      const data = await res.json();
+      const contacts = Array.isArray(data.contacts) ? data.contacts : [];
+
+      const backupPackage = {
+        format: "voto-forte-user-backup",
+        version: "1.0",
+        generatedAt: new Date().toISOString(),
+        totalContacts: contacts.length,
+        contacts: contacts,
+        exportsHistory: items,
+      };
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const timeStr = new Date().toTimeString().slice(0, 5).replace(":", "");
+      const blob = new Blob([JSON.stringify(backupPackage, null, 2)], {
+        type: "application/json;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `VotoForte-Backup-Meus-Dados-${dateStr}-${timeStr}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+
+      setBackupMessage(`✅ Backup realizado com sucesso! (${contacts.length} contatos salvos no arquivo baixado)`);
+      setTimeout(() => setBackupMessage(""), 6000);
+    } catch {
+      setBackupMessage("❌ Erro ao gerar o arquivo de backup.");
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -75,6 +118,15 @@ export default function ExportHistoryClient() {
         <div className="vf-export-page-actions">
           <button
             type="button"
+            className="vf-btn-perform-backup"
+            onClick={handlePerformBackup}
+            disabled={backingUp}
+            title="Realizar backup dos seus dados e baixar arquivo"
+          >
+            {backingUp ? "⏳ Gerando backup…" : "💾 Realizar backup"}
+          </button>
+          <button
+            type="button"
             className="vf-back-dashboard-btn"
             onClick={() => router.push("/sistema-completo")}
             title="Voltar ao Dashboard Principal"
@@ -87,6 +139,12 @@ export default function ExportHistoryClient() {
           </button>
         </div>
       </header>
+
+      {backupMessage && (
+        <div className="vf-backup-toast" role="status">
+          {backupMessage}
+        </div>
+      )}
 
       <section className="vf-export-info" aria-label="Informação sobre o histórico">
         <b>Rastreabilidade a partir desta versão</b>

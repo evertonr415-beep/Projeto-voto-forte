@@ -88,7 +88,115 @@
 .system-intelligence-state-card p{color:var(--sys-muted);line-height:1.5}
 .system-intelligence-spinner{width:36px;height:36px;margin:0 auto 14px;border:3px solid #d7e2ed;border-top-color:var(--sys-blue);border-radius:50%;animation:sys-spin .8s linear infinite}
 @keyframes sys-spin{to{transform:rotate(360deg)}}
+/* CARD EXCLUSIVO DE BACKUP GERAL MASTER */
+.system-intelligence-master-backup {
+  margin: 20px 0;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #091728 0%, #102a45 60%, #153a5c 100%);
+  border: 1px solid rgba(242, 201, 76, 0.35);
+  box-shadow: 0 16px 40px rgba(9, 23, 40, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.system-master-backup-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.system-master-backup-info {
+  max-width: 720px;
+}
+
+.system-master-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(242, 201, 76, 0.18);
+  color: var(--sys-gold);
+  border: 1px solid rgba(242, 201, 76, 0.4);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.system-master-backup-info h2 {
+  margin: 4px 0 8px;
+  font-size: 24px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.system-master-backup-info p {
+  margin: 0;
+  color: #c9d8e8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.system-master-backup-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.system-master-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 12px;
+  font-weight: 850;
+  font-size: 14px;
+  color: #102845;
+  background: linear-gradient(135deg, #f7d66f 0%, #e5b938 100%);
+  border: 1px solid #ffe894;
+  box-shadow: 0 6px 20px rgba(242, 201, 76, 0.35);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.system-master-backup-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #ffe082 0%, #f0c54a 100%);
+  box-shadow: 0 8px 26px rgba(242, 201, 76, 0.5);
+}
+
+.system-master-backup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.system-master-backup-action small {
+  color: #8da4be;
+  font-size: 11px;
+}
+
+.system-master-backup-toast {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  font-size: 13px;
+  font-weight: 750;
+  animation: sys-spin 0.3s ease;
+}
+
+@media(max-width:860px){
+  .system-master-backup-content{flex-direction:column;align-items:stretch;}
+  .system-master-backup-action{align-items:stretch;}
+  .system-master-backup-btn{width:100%;}
+}
+
 @media(max-width:1120px){.system-intelligence-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.system-signal-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:760px){.system-intelligence-shell{padding:14px}.system-intelligence-hero{display:block;padding:22px}.system-intelligence-actions{justify-content:flex-start;margin-top:18px}.system-intelligence-actions a{width:100%;text-align:center}.system-intelligence-overview{grid-template-columns:1fr 1fr}.system-intelligence-section-head{display:block}.system-intelligence-filters{justify-content:flex-start;margin-top:14px}.system-signal-grid{grid-template-columns:1fr 1fr}.system-finding-columns{grid-template-columns:1fr}.system-intelligence-roadmap{grid-template-columns:1fr}.system-intelligence-roadmap p{grid-column:auto}}
+@media(max-width:760px){.system-intelligence-shell{padding:14px}.system-intelligence-hero{display:block;padding:22px}.system-intelligence-actions{justify-content:flex-start;margin-top:18px}.system-intelligence-overview{grid-template-columns:1fr 1fr}.system-intelligence-section-head{display:block}.system-intelligence-filters{justify-content:flex-start;margin-top:14px}.system-signal-grid{grid-template-columns:1fr 1fr}.system-finding-columns{grid-template-columns:1fr}.system-intelligence-roadmap{grid-template-columns:1fr}.system-intelligence-roadmap p{grid-column:auto}}
 @media(max-width:520px){.system-intelligence-overview,.system-signal-grid{grid-template-columns:1fr}.system-finding-meta{display:block}.system-finding-meta small{display:block;margin-top:4px}}
 @media(prefers-reduced-motion:reduce){.system-intelligence-spinner{animation:none}.system-intelligence-shell *{transition:none!important}}

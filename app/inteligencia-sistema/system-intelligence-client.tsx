@@ -95,6 +95,41 @@ export default function SystemIntelligenceClient() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | Severity>("all");
+  const [downloadingMasterBackup, setDownloadingMasterBackup] = useState(false);
+  const [masterBackupMessage, setMasterBackupMessage] = useState("");
+
+  const handleMasterFullBackup = async () => {
+    setDownloadingMasterBackup(true);
+    setMasterBackupMessage("");
+    try {
+      const res = await apiFetch("/api/master-full-backup");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Falha ao gerar o backup mestre.");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      const disposition = res.headers.get("content-disposition") || "";
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+      anchor.download = filenameMatch
+        ? filenameMatch[1]
+        : `VotoForte-Backup-Mestre-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setMasterBackupMessage("✅ Backup Geral Master baixado com sucesso!");
+      setTimeout(() => setMasterBackupMessage(""), 7000);
+    } catch (err) {
+      setMasterBackupMessage(
+        err instanceof Error ? `❌ ${err.message}` : "❌ Erro ao baixar backup mestre.",
+      );
+    } finally {
+      setDownloadingMasterBackup(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -171,7 +206,15 @@ export default function SystemIntelligenceClient() {
           </p>
         </div>
         <div className="system-intelligence-actions">
-          <a href="/contatos">Voltar ao painel</a>
+          <button
+            type="button"
+            className="vf-back-dashboard-btn"
+            onClick={() => window.location.assign("/sistema-completo")}
+            title="Voltar ao Dashboard Principal"
+          >
+            <span className="vf-back-arrow" aria-hidden="true">←</span>
+            <span>Voltar ao Sistema</span>
+          </button>
         </div>
       </header>
 
@@ -197,6 +240,37 @@ export default function SystemIntelligenceClient() {
           <b>{data.health.priorities.critical + data.health.priorities.high}</b>
           <small>Itens críticos ou de alta prioridade encontrados agora.</small>
         </article>
+      </section>
+
+      {/* SEÇÃO EXCLUSIVA MASTER: BACKUP GERAL DO SISTEMA */}
+      <section className="system-intelligence-master-backup">
+        <div className="system-master-backup-content">
+          <div className="system-master-backup-info">
+            <span className="system-master-badge">👑 RECURSO EXCLUSIVO MASTER</span>
+            <h2>Backup Geral do Sistema & Código</h2>
+            <p>
+              Gera uma cópia integral de segurança contendo todos os contatos de todos os usuários,
+              permissões, histórico de auditoria, locais eleitorais, agenda e o manifesto técnico de arquitetura da plataforma.
+            </p>
+            {masterBackupMessage && (
+              <div className="system-master-backup-toast" role="status">
+                {masterBackupMessage}
+              </div>
+            )}
+          </div>
+          <div className="system-master-backup-action">
+            <button
+              type="button"
+              className="system-master-backup-btn"
+              onClick={handleMasterFullBackup}
+              disabled={downloadingMasterBackup}
+              title="Gerar e baixar o backup mestre completo de todo o sistema"
+            >
+              {downloadingMasterBackup ? "⏳ Gerando Backup Completo…" : "📦 Baixar Backup Geral Master"}
+            </button>
+            <small>Arquivo JSON estruturado com assinatura de integridade</small>
+          </div>
+        </div>
       </section>
 
       <section className="system-intelligence-signals">
