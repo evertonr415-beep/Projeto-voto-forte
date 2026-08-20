@@ -33,20 +33,14 @@ export default function ComunicacaoSidebarEnhancer() {
 
       const icon = document.createElement("span");
       icon.className = "nav-icon";
-      icon.style.color = "#a78bfa";
-      icon.textContent = "📢";
+      icon.style.color = "#d3b16e";
+      icon.textContent = "📅";
 
       const name = document.createElement("span");
       name.className = "nav-name";
       name.textContent = "Agenda Inteligente";
 
-      const badge = document.createElement("em");
-      badge.style.background = "rgba(167, 139, 250, 0.2)";
-      badge.style.color = "#c4b5fd";
-      badge.style.border = "1px solid rgba(167, 139, 250, 0.4)";
-      badge.textContent = "EDITORIAL";
-
-      btn.append(icon, name, badge);
+      btn.append(icon, name);
 
       btn.addEventListener("click", () => {
         // Fecha o menu mobile se estiver aberto
