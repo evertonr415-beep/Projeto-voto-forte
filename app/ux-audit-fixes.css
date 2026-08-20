@@ -236,3 +236,17 @@
     text-overflow: ellipsis;
   }
 }
+
+/* Visão Geral: contraste consistente no cabeçalho da agenda escura. */
+.workspace .dashboard-grid > .panel:first-child .panel-title h3 {
+  color: #f8fafc;
+}
+
+.workspace .dashboard-grid > .panel:first-child .panel-title p {
+  color: #cbd5e1;
+  opacity: 1;
+}
+
+.workspace .dashboard-grid > .panel:first-child .panel-title button {
+  color: #7dd3fc;
+}
