@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AgendaCalendarEnhancer from "./agenda-calendar-enhancer";
-import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MapContactLayer from "./map-contact-layer";
-import MapDistrictMarkerLayer from "./map-district-marker-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
-import NeighborhoodElectoralDrawer from "./neighborhood-electoral-drawer";
 import TerritorialPendingCenter from "./territorial-pending-center";
-import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 
 export default function MapToolsGate() {
   const [protectedAccessReady, setProtectedAccessReady] = useState(false);
@@ -29,10 +24,6 @@ export default function MapToolsGate() {
 
   return (
     <>
-      {protectedAccessReady && <AgendaCalendarEnhancer />}
-      {protectedAccessReady && <TseSidebarEnhancer />}
-      {protectedAccessReady && <NeighborhoodElectoralDrawer />}
-      {protectedAccessReady && <ContactWhatsappQuickQueue />}
       {protectedAccessReady && <MapContactLayer />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}

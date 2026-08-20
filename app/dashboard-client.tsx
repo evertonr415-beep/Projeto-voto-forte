@@ -2,15 +2,13 @@
 
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, supabase } from "./supabase-client";
-import MeetingInteractiveCalendar from "./meeting-interactive-calendar";
-import InstitutionalCommunicationClient from "./comunicacao-institucional/institutional-communication-client";
+  
 
 type View =
   | "Visão Geral"
   | "Contatos"
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
-  | "Comunicação Institucional"
   | "WhatsApp"
   | "Administração";
 type Modal =
@@ -25,7 +23,7 @@ const menu: { label: View; icon: string; badge?: string }[] = [
   { label: "Visão Geral", icon: "▦" },
   { label: "Contatos", icon: "☷", badge: "NOVO" },
   { label: "Agenda Inteligente", icon: "◫", badge: "NOVO" },
-  { label: "Mapa Eleitoral", icon: "✢", badge: "MAPA" },
+  { label: "Mapa Eleitoral", icon: "⌖" },
   { label: "WhatsApp", icon: "◉" },
 ];
 
@@ -148,15 +146,8 @@ export default function DashboardClient({
   const isAdmin = currentUser.role === "master" || currentUser.role === "admin";
   const [view, setView] = useState<View>("Visão Geral");
   const [modal, setModal] = useState<Modal>(null);
-  const [presetMeetingDay, setPresetMeetingDay] = useState<string>("");
   const [notice, setNotice] = useState("");
   const [collapsed, setCollapsed] = useState(false);
-
-  const open = useCallback((nextModal: Modal, dayPreset?: string) => {
-    if (dayPreset) setPresetMeetingDay(dayPreset);
-    else setPresetMeetingDay("");
-    setModal(nextModal);
-  }, []);
   const [records, setRecords] = useState<OwnedRecord[]>([]);
   const [availableUsers, setAvailableUsers] = useState<ManagedUser[]>([]);
   const [scope, setScope] = useState(isAdmin ? "all" : currentUser.email);
@@ -577,13 +568,25 @@ export default function DashboardClient({
         isAdmin={isAdmin}
       />
     )
-  ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
-    <InstitutionalCommunicationClient />
+  ) : view === "Agenda Inteligente" ? (
+    loadingMeetings && meetingsLoadedScope !== scope ? (
+      <div className="loading-state">Carregando agenda…</div>
+    ) : (
+      <Agenda
+        meetings={meetings}
+        tell={setNotice}
+        open={setModal}
+        updateMeeting={updateMeeting}
+        deleteMeeting={(id) => deleteRecord(id, "Reunião")}
+        isAdmin={isAdmin}
+        users={availableUsers}
+      />
+    )
   ) : view === "Mapa Eleitoral" ? (
     loadingContacts && contactsLoadedScope !== scope ? (
       <div className="loading-state">Carregando mapa eleitoral…</div>
     ) : (
-      <CityMap contacts={contacts} />
+      <MapPage open={setModal} contacts={contacts} />
     )
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
@@ -640,7 +643,6 @@ export default function DashboardClient({
             ✕
           </button>
         </div>
-        <div id="vf-sidebar-municipality-host" className="vf-sidebar-municipality-host" />
         <div className="menu-label">NAVEGAÇÃO</div>
         <nav>
           {visibleMenu.map((item) => (
@@ -665,43 +667,21 @@ export default function DashboardClient({
                 {item.badge && <em>{item.badge}</em>}
               </button>
               {item.label === "WhatsApp" && (
-                <>
-                  <button
-                    type="button"
-                    className="whaticket-broadcast-sidebar-btn"
-                    onClick={() => {
-                      closeMobileSidebar();
-                      window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
-                    }}
-                    title="Disparo em Massa Whaticket"
-                  >
-                    <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
-                    <span className="nav-name">Disparo em Massa</span>
-                    <em style={{ background: "rgba(45, 221, 127, 0.2)", color: "#2ddd7f", border: "1px solid rgba(45, 221, 127, 0.4)" }}>
-                      WHATICKET
-                    </em>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="tse-info-sidebar-btn"
-                    onClick={() => {
-                      closeMobileSidebar();
-                      window.dispatchEvent(
-                        new CustomEvent("voto-forte:open-neighborhood-electoral-drawer", {
-                          detail: { district: "Todos os Bairros (Geral - Arapongas)", initialTab: "electoral" },
-                        }),
-                      );
-                    }}
-                    title="Painel Eleitoral"
-                  >
-                    <span className="nav-icon" style={{ color: "#38bdf8" }}>🏛️</span>
-                    <span className="nav-name">Painel Eleitoral</span>
-                    <em style={{ background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.4)" }}>
-                      TSE
-                    </em>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className="whaticket-broadcast-sidebar-btn"
+                  onClick={() => {
+                    closeMobileSidebar();
+                    window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
+                  }}
+                  title="Disparo em Massa Whaticket"
+                >
+                  <span className="nav-icon" style={{ color: "#2ddd7f" }}>⚡</span>
+                  <span className="nav-name">Disparo em Massa</span>
+                  <em style={{ background: "rgba(45, 221, 127, 0.2)", color: "#2ddd7f", border: "1px solid rgba(45, 221, 127, 0.4)" }}>
+                    WHATICKET
+                  </em>
+                </button>
               )}
             </React.Fragment>
           ))}
@@ -803,11 +783,7 @@ export default function DashboardClient({
       {modal && (
         <ModalBox
           kind={modal}
-          presetDay={presetMeetingDay}
-          close={() => {
-            setModal(null);
-            setPresetMeetingDay("");
-          }}
+          close={() => setModal(null)}
           tell={setNotice}
           meetings={meetings}
           currentUser={currentUser}
@@ -936,10 +912,10 @@ function Overview({
         />
         <Kpi
           tone="gold"
-          icon="✢"
+          icon="⌖"
           value={String(districts)}
           label="Bairros alcançados"
-          delta="Abrir mapa eleitoral"
+          delta="Navegar no mapa eleitoral"
           onClick={() => go("Mapa Eleitoral")}
         />
         <Kpi
@@ -1253,7 +1229,64 @@ function CityMap({ contacts = [] }: { contacts?: Contact[] }) {
           marker.addTo(contactLayer.current);
         });
       setTimeout(() => map.invalidateSize(), 100);
-
+      const query =
+        '[out:json][timeout:25];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a);node["place"~"neighbourhood|suburb"]["name"](area.a););out tags center geom;';
+      fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        body: `data=${encodeURIComponent(query)}`,
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          const boundary = L.layerGroup().addTo(map);
+          for (const element of data.elements || []) {
+            const parts =
+              element.type === "relation"
+                ? (element.members || []).filter((m: any) => m.geometry)
+                : [element];
+            for (const part of parts)
+              if (part.geometry?.length > 1) {
+                const points = part.geometry.map((p: any) => [p.lat, p.lon]);
+                const first = part.geometry[0];
+                const last = part.geometry[part.geometry.length - 1];
+                const isClosed = first.lat === last.lat && first.lon === last.lon;
+                (isClosed ? L.polygon(points, {
+                  color: "#ef8429",
+                  weight: 2,
+                  opacity: 0.88,
+                  fillColor: "#f5a45f",
+                  fillOpacity: 0.08,
+                }) : L.polyline(points, {
+                  color: "#ef8429",
+                  weight: 2,
+                  opacity: 0.88,
+                })).addTo(boundary);
+              }
+            const center =
+              element.center ||
+              (element.lat && element.lon
+                ? { lat: element.lat, lon: element.lon }
+                : null);
+            if (center && element.tags?.name)
+              L.marker([center.lat, center.lon], {
+                interactive: false,
+                icon: L.divIcon({
+                  className: "district-name",
+                  html: element.tags.name,
+                  iconSize: [120, 18],
+                  iconAnchor: [60, 9],
+                }),
+              }).addTo(boundary);
+          }
+        })
+        .catch(() =>
+          setLocationMessage(
+            "Mapa ativo · limites conforme a base territorial",
+          ),
+        );
     }
     startMap().catch(() =>
       setLocationMessage("Não foi possível carregar o mapa agora"),
@@ -2027,7 +2060,6 @@ function ContactManager({
 }
 function Agenda({
   meetings,
-  tell,
   open,
   updateMeeting,
   deleteMeeting,
@@ -2036,7 +2068,7 @@ function Agenda({
 }: {
   meetings: (Meeting & { id: number; ownerEmail: string })[];
   tell: (s: string) => void;
-  open: (m: Modal, dayPreset?: string) => void;
+  open: (m: Modal) => void;
   updateMeeting: (id: number, m: Meeting) => Promise<boolean>;
   deleteMeeting: (id: number) => Promise<boolean>;
   isAdmin: boolean;
@@ -2091,11 +2123,19 @@ function Agenda({
             só lugar.
           </p>
         </article>
-        <article className="panel agenda-map" style={{ padding: "16px 18px", overflow: "visible" }}>
-          <MeetingInteractiveCalendar
-            meetings={meetings}
-            onSelectDate={(dayString) => open("reuniao", dayString)}
+        <article className="panel agenda-map">
+          <PanelTitle
+            title="Ambiente protegido"
+            subtitle="Dados vinculados ao usuário autenticado"
           />
+          <div className="privacy-card">
+            <span>◆</span>
+            <h3>Agenda individual</h3>
+            <p>
+              Usuários comuns não visualizam reuniões cadastradas por outras
+              pessoas.
+            </p>
+          </div>
         </article>
       </div>
       <article className="panel meeting-list">
@@ -3153,7 +3193,6 @@ function Users({
 
 function ModalBox({
   kind,
-  presetDay,
   close,
   tell,
   meetings,
@@ -3161,7 +3200,6 @@ function ModalBox({
   onSave,
 }: {
   kind: Exclude<Modal, null>;
-  presetDay?: string;
   close: () => void;
   tell: (s: string) => void;
   meetings: (Meeting & { id: number; ownerEmail: string })[];
@@ -3180,8 +3218,8 @@ function ModalBox({
   };
   const [meeting, setMeeting] = useState<Meeting>({
     title: "",
-    day: presetDay || (kind === "reuniao" ? new Date().toISOString().split("T")[0] : ""),
-    time: "19:00",
+    day: "",
+    time: "",
     date: "",
     address: "",
     place: "",
