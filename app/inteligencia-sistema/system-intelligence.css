@@ -190,6 +190,167 @@
   animation: sys-spin 0.3s ease;
 }
 
+/* HISTÓRICO DE BACKUPS DIÁRIOS AUTOMÁTICOS (02:30 AM) */
+.system-intelligence-daily-backups {
+  padding: 24px;
+  border-radius: 20px;
+  margin-top: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--sys-border);
+  box-shadow: 0 12px 32px rgba(23, 52, 92, 0.07);
+}
+
+.system-daily-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #15803d;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.system-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: sys-pulse 1.8s infinite;
+}
+
+@keyframes sys-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.system-backup-table-wrap {
+  overflow-x: auto;
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.system-backup-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  min-width: 680px;
+}
+
+.system-backup-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.system-backup-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+.system-backup-row:hover {
+  background: #f8fafc;
+}
+
+.system-backup-table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+.system-backup-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.system-backup-icon {
+  font-size: 18px;
+}
+
+.system-backup-date-cell strong {
+  display: block;
+  color: var(--sys-text);
+  font-size: 13px;
+}
+
+.system-backup-date-cell small {
+  display: block;
+  color: var(--sys-muted);
+  font-size: 11px;
+}
+
+.system-backup-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.system-backup-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.system-backup-download-row-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.system-backup-download-row-btn:hover:not(:disabled) {
+  background: #0b2039;
+  border-color: #0b2039;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(11, 32, 57, 0.2);
+}
+
+.system-backup-download-row-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media(max-width:860px){
   .system-master-backup-content{flex-direction:column;align-items:stretch;}
   .system-master-backup-action{align-items:stretch;}
@@ -200,3 +361,4 @@
 @media(max-width:760px){.system-intelligence-shell{padding:14px}.system-intelligence-hero{display:block;padding:22px}.system-intelligence-actions{justify-content:flex-start;margin-top:18px}.system-intelligence-overview{grid-template-columns:1fr 1fr}.system-intelligence-section-head{display:block}.system-intelligence-filters{justify-content:flex-start;margin-top:14px}.system-signal-grid{grid-template-columns:1fr 1fr}.system-finding-columns{grid-template-columns:1fr}.system-intelligence-roadmap{grid-template-columns:1fr}.system-intelligence-roadmap p{grid-column:auto}}
 @media(max-width:520px){.system-intelligence-overview,.system-signal-grid{grid-template-columns:1fr}.system-finding-meta{display:block}.system-finding-meta small{display:block;margin-top:4px}}
 @media(prefers-reduced-motion:reduce){.system-intelligence-spinner{animation:none}.system-intelligence-shell *{transition:none!important}}
+

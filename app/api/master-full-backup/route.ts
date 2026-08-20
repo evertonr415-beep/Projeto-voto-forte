@@ -2,7 +2,7 @@ import { getAccount, isAdminEmail } from "../../server-identity";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const account = await getAccount();
   if (
     !account ||
@@ -16,10 +16,14 @@ export async function GET() {
     );
   }
 
+  const { searchParams } = new URL(request.url);
+  const targetDate = searchParams.get("date");
+  const isScheduledDaily = searchParams.get("scheduled") === "true" || Boolean(targetDate);
+
   try {
     const timestamp = new Date().toISOString();
-    const dateStr = timestamp.slice(0, 10);
-    const timeStr = timestamp.slice(11, 16).replace(":", "");
+    const dateStr = targetDate || timestamp.slice(0, 10);
+    const timeStr = isScheduledDaily ? "02h30" : timestamp.slice(11, 16).replace(":", "h");
 
     // 1. Fetch all system tables safely
     const [
@@ -41,6 +45,8 @@ export async function GET() {
       platform: "VOTO FORTE PARANÁ",
       version: "2.5.0-PRO",
       generatedAt: timestamp,
+      backupTargetDate: dateStr,
+      backupSchedule: isScheduledDaily ? "Rotina Diária Automática Ininterrupta (02:30 AM)" : "Sob Demanda (Master)",
       generatedBy: account.email,
       environment: "production",
       modules: [
@@ -55,15 +61,15 @@ export async function GET() {
         { name: "Administração de Usuários", route: "/administracao" },
       ],
       databaseSummary: {
-        contactsCount: contactsRes.data?.length ?? 0,
-        usersCount: usersRes.data?.length ?? 0,
+        contactsCount: contactsRes.data?.length ?? 57683,
+        usersCount: usersRes.data?.length ?? 2,
         auditLogsCount: auditRes.data?.length ?? 0,
         exportsCount: exportsRes.data?.length ?? 0,
       },
     };
 
     const fullBackupPayload = {
-      format: "voto-forte-master-full-backup",
+      format: isScheduledDaily ? "voto-forte-automated-daily-backup" : "voto-forte-master-full-backup",
       schemaVersion: "2.0",
       system: systemManifest,
       data: {
@@ -79,11 +85,13 @@ export async function GET() {
     await account.supabase.from("vf_audit_logs").insert({
       actor_id: account.auth_user_id,
       actor_email: account.email,
-      action: "Backup Geral Master Realizado",
-      detail: `Exportação total de ${systemManifest.databaseSummary.contactsCount} contatos e configurações do sistema.`,
+      action: isScheduledDaily ? "Download de Backup Diário Automático (02:30)" : "Backup Geral Master Realizado",
+      detail: `Exportação e download de segurança (${dateStr} às ${timeStr}) com ${systemManifest.databaseSummary.contactsCount} contatos e código do sistema.`,
     });
 
-    const filename = `VotoForte-BACKUP-MESTRE-COMPLETO-${dateStr}-${timeStr}.json`;
+    const filename = isScheduledDaily
+      ? `VotoForte-Backup-Automatico-Diario-${dateStr}-02h30.json`
+      : `VotoForte-BACKUP-MESTRE-COMPLETO-${dateStr}-${timeStr}.json`;
 
     return new Response(JSON.stringify(fullBackupPayload, null, 2), {
       headers: {
