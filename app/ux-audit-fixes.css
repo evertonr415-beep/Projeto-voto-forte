@@ -143,3 +143,15 @@
   .vf-team-performance-leaders article > * { grid-column: 1 / -1; }
   .workspace .kpis { grid-template-columns: 1fr; }
 }
+
+/* ESPAÇAMENTO ELEGANTE ENTRE AS LINHAS / CARDS DO MAPA */
+.vf-mobile-district-host,
+.vf-district-map-control {
+  margin-bottom: 14px !important;
+}
+
+.vf-territorial-center-host,
+.vf-territorial-center {
+  margin-top: 14px !important;
+  margin-bottom: 14px !important;
+}

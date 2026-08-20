@@ -74,7 +74,7 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = id;
   style.textContent = `
-    .vf-territorial-center-host{width:100%}.vf-territorial-center{margin:0 0 14px;border:1px solid rgba(23,52,92,.12);border-radius:16px;background:#fff;box-shadow:0 10px 28px rgba(15,35,65,.08);overflow:hidden;color:#17345c}
+    .vf-territorial-center-host{width:100%;margin-top:14px;margin-bottom:14px;display:block}.vf-territorial-center{margin:0 0 14px;border:1px solid rgba(23,52,92,.12);border-radius:16px;background:#fff;box-shadow:0 10px 28px rgba(15,35,65,.08);overflow:hidden;color:#17345c}
     .vf-territorial-center>header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;background:linear-gradient(135deg,#fff,#f7f9fc)}
     .vf-territorial-center>header div{min-width:0}.vf-territorial-center>header strong{display:block;font:800 14px/1.2 Arial,sans-serif}.vf-territorial-center>header small{display:block;margin-top:3px;color:#64748b;font:600 10px/1.35 Arial,sans-serif}
     .vf-territorial-center button{cursor:pointer}.vf-territorial-center>header button{flex:0 0 auto;border:1px solid #d8e1ec;border-radius:10px;background:#fff;color:#17345c;padding:8px 11px;font:800 11px/1 Arial,sans-serif}
