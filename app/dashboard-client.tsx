@@ -4,7 +4,6 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import { apiFetch, supabase } from "./supabase-client";
 import MeetingInteractiveCalendar from "./meeting-interactive-calendar";
 import InstitutionalCommunicationClient from "./comunicacao-institucional/institutional-communication-client";
-import InteractiveElectoralMap from "./electoral-map/interactive-electoral-map";
 
 type View =
   | "Visão Geral"
@@ -581,7 +580,11 @@ export default function DashboardClient({
   ) : view === "Agenda Inteligente" || view === "Comunicação Institucional" ? (
     <InstitutionalCommunicationClient />
   ) : view === "Mapa Eleitoral" ? (
-    <InteractiveElectoralMap initialContacts={contacts} />
+    loadingContacts && contactsLoadedScope !== scope ? (
+      <div className="loading-state">Carregando mapa eleitoral…</div>
+    ) : (
+      <CityMap contacts={contacts} />
+    )
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
