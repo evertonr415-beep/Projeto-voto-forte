@@ -832,22 +832,73 @@ export default function InstitutionalCommunicationClient({
                                 <span className="ae-badge">{ev.category}</span>
                               </td>
                               <td className="ae-td" data-label="Reunião / Compromisso">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                                   <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                                    <strong style={{ fontSize: "0.88rem" }}>{ev.title}</strong>
+                                    <strong style={{ fontSize: "0.92rem", color: ev.done ? "#64748b" : "var(--ae-text)", textDecoration: ev.done ? "line-through" : "none" }}>
+                                      {ev.title}
+                                    </strong>
                                     {ev.important && <span className="ae-badge ae-badge-danger">★ importante</span>}
                                   </div>
-                                  <div className="ae-footer-note" style={{ fontSize: "0.78rem" }}>{ev.desc}</div>
+                                  <div className="ae-footer-note" style={{ fontSize: "0.80rem" }}>{ev.desc}</div>
                                   {(ev.responsible || ev.location) && (
-                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "1px" }}>
                                       {ev.responsible && (
-                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>👤 {ev.responsible}</span>
+                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>👤 {ev.responsible}</span>
                                       )}
                                       {ev.location && (
-                                        <span className="ae-badge" style={{ fontSize: "0.70rem" }}>📍 {ev.location}</span>
+                                        <span className="ae-badge" style={{ fontSize: "0.72rem" }}>📍 {ev.location}</span>
                                       )}
                                     </div>
                                   )}
+
+                                  {/* BOTÕES DIRETOS DE AÇÃO NA LINHA DA REUNIÃO */}
+                                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleDone(ev.id)}
+                                      title={ev.done ? "Reabrir reunião como pendente" : "Dizer que a reunião foi concluída com sucesso"}
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "6px 12px",
+                                        fontSize: "11.5px",
+                                        fontWeight: 800,
+                                        borderRadius: "8px",
+                                        border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
+                                        background: ev.done ? "#f0fdf4" : "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                                        color: ev.done ? "#166534" : "#ffffff",
+                                        cursor: "pointer",
+                                        boxShadow: ev.done ? "none" : "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                        transition: "all 0.15s ease",
+                                      }}
+                                    >
+                                      {ev.done ? "✓ Concluída com Sucesso (Reabrir)" : "✅ Concluir Reunião com Sucesso"}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => openRescheduleModal(ev)}
+                                      title="Reagendar esta reunião para outra data ou horário"
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "6px 12px",
+                                        fontSize: "11.5px",
+                                        fontWeight: 800,
+                                        borderRadius: "8px",
+                                        border: "1px solid #0284c7",
+                                        background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                                        color: "#ffffff",
+                                        cursor: "pointer",
+                                        boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)",
+                                        transition: "all 0.15s ease",
+                                      }}
+                                    >
+                                      📅 Reagendar Reunião
+                                    </button>
+                                  </div>
                                 </div>
                               </td>
                               <td className="ae-td" data-label="Status">
@@ -869,27 +920,11 @@ export default function InstitutionalCommunicationClient({
                                 <div className="ae-actions">
                                   <button
                                     type="button"
-                                    className={`ae-mini-btn ${ev.done ? "ae-btn-done-active" : "ae-btn-done-action"}`}
-                                    onClick={() => toggleDone(ev.id)}
-                                    title={ev.done ? "Reabrir reunião como pendente" : "Dar baixa e marcar como realizada"}
-                                  >
-                                    {ev.done ? "↩ Desmarcar" : "✅ Realizada"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ae-mini-btn ae-btn-reschedule"
-                                    onClick={() => openRescheduleModal(ev)}
-                                    title="Reagendar reunião para outra data"
-                                  >
-                                    📅 Reagendar
-                                  </button>
-                                  <button
-                                    type="button"
                                     className="ae-mini-btn"
                                     onClick={() => openModal(ev)}
                                     title="Editar compromisso completo"
                                   >
-                                    ✎
+                                    ✎ Editar
                                   </button>
                                   <button
                                     type="button"
@@ -897,7 +932,7 @@ export default function InstitutionalCommunicationClient({
                                     onClick={() => deleteEvent(ev.id)}
                                     title="Excluir reunião"
                                   >
-                                    🗑
+                                    🗑 Excluir
                                   </button>
                                 </div>
                               </td>
@@ -939,10 +974,45 @@ export default function InstitutionalCommunicationClient({
                                     ? "Hoje"
                                     : `${d}d`}
                             </div>
-                            <div className="ae-countbox-small">
-                              <strong style={{ color: "var(--ae-text)" }}>{ev.title}</strong>
-                              <br />
-                              {dateLabel(ev.date)} · {ev.category}
+                            <div className="ae-countbox-small" style={{ flex: 1 }}>
+                              <strong style={{ color: "var(--ae-text)", fontSize: "0.85rem" }}>{ev.title}</strong>
+                              <div style={{ fontSize: "0.75rem", color: "var(--ae-muted)", margin: "2px 0 6px" }}>
+                                {dateLabel(ev.date)} · {ev.category}
+                              </div>
+                              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDone(ev.id)}
+                                  style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    fontSize: "11px",
+                                    fontWeight: 800,
+                                    border: ev.done ? "1px solid #86efac" : "1px solid #16a34a",
+                                    background: ev.done ? "#f0fdf4" : "#16a34a",
+                                    color: ev.done ? "#166534" : "#ffffff",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {ev.done ? "✓ Concluída" : "✅ Concluir"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openRescheduleModal(ev)}
+                                  style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    fontSize: "11px",
+                                    fontWeight: 800,
+                                    border: "1px solid #0284c7",
+                                    background: "#0284c7",
+                                    color: "#ffffff",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  📅 Reagendar
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
