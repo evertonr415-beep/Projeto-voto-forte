@@ -1,44 +1,54 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 
 /**
  * No mobile, mantém a lista pesada de contatos recolhida ao abrir o painel.
- * O desktop preserva o comportamento atual. O clique usa o próprio botão
- * existente para que toda a lógica de estado continue centralizada no painel.
+ * Aguarda a hidratação do React antes de acionar o botão existente e confirma
+ * que o estado visual realmente mudou para "Ver lista".
  */
 export default function MobileContactListDefaultCollapsed() {
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!window.matchMedia("(max-width: 760px)").matches) return;
 
-    let done = false;
+    let disposed = false;
+    let attempts = 0;
+    let timer: number | undefined;
 
-    const collapseIfOpen = () => {
-      if (done) return true;
+    const findToggleButton = () => {
       const panel = document.querySelector<HTMLElement>(".contacts-panel");
-      if (!panel) return false;
+      if (!panel) return null;
 
-      const button = Array.from(panel.querySelectorAll<HTMLButtonElement>("button")).find(
-        (item) => item.textContent?.trim().toLowerCase() === "ocultar lista",
-      );
-      if (!button) return false;
-
-      done = true;
-      button.click();
-      return true;
+      return Array.from(panel.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
+        const label = button.textContent?.trim().toLowerCase();
+        return label === "ocultar lista" || label === "ver lista";
+      }) || null;
     };
 
-    if (collapseIfOpen()) return;
+    const ensureCollapsed = () => {
+      if (disposed) return;
 
-    const observer = new MutationObserver(() => {
-      if (collapseIfOpen()) observer.disconnect();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+      const button = findToggleButton();
+      const label = button?.textContent?.trim().toLowerCase();
 
-    const timeout = window.setTimeout(() => observer.disconnect(), 5000);
+      if (label === "ver lista") return;
+
+      if (button && label === "ocultar lista" && !button.disabled) {
+        button.click();
+      }
+
+      attempts += 1;
+      if (attempts < 40) {
+        timer = window.setTimeout(ensureCollapsed, 125);
+      }
+    };
+
+    // Pequeno atraso para garantir que os handlers do painel já estejam hidratados.
+    timer = window.setTimeout(ensureCollapsed, 250);
+
     return () => {
-      observer.disconnect();
-      window.clearTimeout(timeout);
+      disposed = true;
+      if (timer) window.clearTimeout(timer);
     };
   }, []);
 
