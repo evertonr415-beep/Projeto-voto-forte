@@ -10,6 +10,14 @@ on:
       - .github/workflows/validate-electoral-panel-tse.yml
       - app/electoral-panel/**
       - app/electoral-tse-data.ts
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/validate-electoral-panel-tse.mjs
+      - .github/workflows/validate-electoral-panel-tse.yml
+      - app/electoral-panel/**
+      - app/electoral-tse-data.ts
 
 permissions:
   contents: read
