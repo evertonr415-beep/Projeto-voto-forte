@@ -2,9 +2,9 @@
 
 - Repository: evertonr415-beep/Projeto-voto-forte
 - Source branch: fix/broadcast-full-district-catalog-20260821
-- Source commit: 4a6cb9f997ecfa2a98117bda30702c31837ee9ac
+- Source commit: 3e7c0f9beb8f215189980fc653d11d4e6f766826
 - Triggered by: evertonr415-beep
-- Generated at (UTC): 2026-08-21T18:35:22Z
+- Generated at (UTC): 2026-08-21T18:35:48Z
 
 The  directory contains the complete repository snapshot for this branch at the commit above.
 Previous snapshots remain recoverable through the Git history of the  branch.
