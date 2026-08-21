@@ -2,23 +2,19 @@
 
 import { useEffect } from "react";
 
-const COMPACT_CLASS = "vf-welcome-scope";
+const COMPACT_CLASS = "vf-header-scope";
 const SOURCE_HIDDEN_ATTR = "data-vf-scope-source-hidden";
 const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
-
-function findOriginalContext(welcome: HTMLElement) {
-  return Array.from(welcome.children).find(
-    (child) =>
-      child instanceof HTMLElement &&
-      child.tagName === "SPAN" &&
-      !child.classList.contains(COMPACT_CLASS),
-  ) as HTMLElement | undefined;
-}
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
     .map((option) => `${option.value}\u0000${option.text}`)
     .join("\u0001");
+}
+
+function displayOptionText(option: HTMLOptionElement) {
+  if (option.value === "all") return "Toda a rede";
+  return option.text;
 }
 
 export default function CompactOverviewScopeEnhancer() {
@@ -59,19 +55,13 @@ export default function CompactOverviewScopeEnhancer() {
       scheduled = false;
       if (disposed) return;
 
-      const welcome = document.querySelector<HTMLElement>(
-        ".welcome-pro .welcome-copy",
-      );
-      const sourceLabel = document.querySelector<HTMLLabelElement>(
-        ".topbar .scope-picker",
-      );
-      const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>(
-        "select",
-      );
+      const welcome = document.querySelector<HTMLElement>(".welcome-pro .welcome-copy");
+      const pageId = document.querySelector<HTMLElement>(".topbar .page-id");
+      const pageTitle = pageId?.querySelector<HTMLElement>("h1");
+      const sourceLabel = document.querySelector<HTMLLabelElement>(".topbar .scope-picker");
+      const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>("select");
 
-      // Fora da Visão Geral (ou para usuário sem seletor administrativo),
-      // preserva exatamente o comportamento original do cabeçalho.
-      if (!welcome || !sourceLabel || !sourceSelect) {
+      if (!welcome || !pageId || !pageTitle || !sourceLabel || !sourceSelect) {
         restoreSource();
         restoreContext();
         removeCompactControls();
@@ -80,44 +70,39 @@ export default function CompactOverviewScopeEnhancer() {
 
       if (hiddenSource && hiddenSource !== sourceLabel) restoreSource();
       hiddenSource = sourceLabel;
-      if (sourceLabel.style.display !== "none") {
-        sourceLabel.style.setProperty("display", "none", "important");
-      }
+      sourceLabel.style.setProperty("display", "none", "important");
       sourceLabel.setAttribute(SOURCE_HIDDEN_ATTR, "true");
 
-      const originalContext = findOriginalContext(welcome);
+      const originalContext = Array.from(welcome.children).find(
+        (child) =>
+          child instanceof HTMLElement &&
+          child.tagName === "SPAN" &&
+          !child.classList.contains(COMPACT_CLASS),
+      ) as HTMLElement | undefined;
+
       if (originalContext) {
-        if (originalContext.style.display !== "none") {
-          originalContext.style.setProperty("display", "none", "important");
-        }
+        originalContext.style.setProperty("display", "none", "important");
         originalContext.setAttribute(CONTEXT_HIDDEN_ATTR, "true");
       }
 
-      let compact = welcome.querySelector<HTMLElement>(
-        `:scope > .${COMPACT_CLASS}`,
-      );
+      let compact = pageId.querySelector<HTMLElement>(`:scope > .${COMPACT_CLASS}`);
       let compactSelect = compact?.querySelector<HTMLSelectElement>("select");
 
       if (!compact || !compactSelect) {
         compact?.remove();
-
         compact = document.createElement("div");
         compact.className = COMPACT_CLASS;
         compact.setAttribute("role", "group");
-        compact.setAttribute("aria-label", "Ambiente selecionado");
-
-        const label = document.createElement("span");
-        label.className = "vf-welcome-scope-label";
-        label.textContent = "AMBIENTE SELECIONADO";
+        compact.setAttribute("aria-label", "Selecionar ambiente da rede");
 
         const selectWrap = document.createElement("span");
-        selectWrap.className = "vf-welcome-scope-select-wrap";
+        selectWrap.className = "vf-header-scope-select-wrap";
 
         compactSelect = document.createElement("select");
-        compactSelect.className = "vf-welcome-scope-select";
+        compactSelect.className = "vf-header-scope-select";
         compactSelect.setAttribute(
           "aria-label",
-          "Selecionar usuário para visualizar os indicadores",
+          "Selecionar usuário ou toda a rede para visualizar os indicadores",
         );
 
         compactSelect.addEventListener("change", () => {
@@ -138,8 +123,8 @@ export default function CompactOverviewScopeEnhancer() {
         });
 
         selectWrap.appendChild(compactSelect);
-        compact.append(label, selectWrap);
-        welcome.insertBefore(compact, welcome.firstChild);
+        compact.appendChild(selectWrap);
+        pageId.appendChild(compact);
       }
 
       const sourceSignature = optionSignature(sourceSelect);
@@ -148,7 +133,7 @@ export default function CompactOverviewScopeEnhancer() {
           ...Array.from(sourceSelect.options).map((option) => {
             const clone = document.createElement("option");
             clone.value = option.value;
-            clone.text = option.text;
+            clone.text = displayOptionText(option);
             clone.disabled = option.disabled;
             return clone;
           }),
@@ -160,7 +145,9 @@ export default function CompactOverviewScopeEnhancer() {
         compactSelect.value = sourceSelect.value;
       }
       compactSelect.title =
-        sourceSelect.selectedOptions[0]?.text || "Selecionar ambiente";
+        sourceSelect.value === "all"
+          ? "Toda a rede"
+          : sourceSelect.selectedOptions[0]?.text || "Selecionar ambiente";
     };
 
     const observer = new MutationObserver(scheduleSync);
@@ -180,8 +167,8 @@ export default function CompactOverviewScopeEnhancer() {
         scheduleSync();
       }
     };
-    document.addEventListener("change", handleChange, true);
 
+    document.addEventListener("change", handleChange, true);
     scheduleSync();
 
     return () => {
