@@ -11,59 +11,13 @@ function isLegacyDashboardPath() {
 
 const OVERVIEW_LOADING_MARKUP = `
   <section class="vf-overview-loading" aria-live="polite" aria-busy="true">
-    <div class="vf-overview-loading__header">
-      <div>
-        <span>VISÃO GERAL</span>
-        <h2>Preparando seu painel</h2>
-        <p>Atualizando os dados exatos do ambiente…</p>
-      </div>
+    <div class="vf-overview-loading__visual" aria-hidden="true">
+      <span class="vf-overview-loading__orbit vf-overview-loading__orbit--one"></span>
+      <span class="vf-overview-loading__orbit vf-overview-loading__orbit--two"></span>
+      <img class="vf-overview-loading__map" src="/parana-loading.webp" alt="" decoding="async" fetchpriority="high" />
     </div>
-    <div class="kpis vf-overview-loading__kpis">
-      <div class="kpi">
-        <div class="kpi-icon green">♜</div>
-        <div>
-          <strong>—</strong>
-          <b>Lideranças ativas</b>
-          <small>Atualizando indicador</small>
-        </div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-icon blue">♙</div>
-        <div>
-          <strong>—</strong>
-          <b>Eleitores cadastrados</b>
-          <small>Atualizando indicador</small>
-        </div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-icon gold">⌖</div>
-        <div>
-          <strong>—</strong>
-          <b>Bairros alcançados</b>
-          <small>Atualizando indicador</small>
-        </div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-icon violet">◫</div>
-        <div>
-          <strong>—</strong>
-          <b>Reuniões agendadas</b>
-          <small>Atualizando indicador</small>
-        </div>
-      </div>
-    </div>
-    <div class="vf-overview-loading__panels">
-      <div class="panel vf-overview-loading__panel">
-        <div class="vf-overview-loading__line vf-overview-loading__line--title"></div>
-        <div class="vf-overview-loading__line"></div>
-        <div class="vf-overview-loading__line vf-overview-loading__line--short"></div>
-      </div>
-      <div class="panel vf-overview-loading__panel">
-        <div class="vf-overview-loading__line vf-overview-loading__line--title"></div>
-        <div class="vf-overview-loading__line"></div>
-        <div class="vf-overview-loading__line vf-overview-loading__line--short"></div>
-      </div>
-    </div>
+    <div class="vf-overview-loading__spinner" aria-hidden="true"></div>
+    <p class="vf-overview-loading__label">Carregando indicadores...</p>
   </section>
 `;
 
@@ -79,7 +33,8 @@ export default function OverviewLoadingEnhancer() {
       }
       const loadingState = document.querySelector<HTMLElement>(".loading-state");
       if (!loadingState || loadingState.dataset.vfOverviewSkeleton === "1") return;
-      if (!loadingState.textContent?.includes("Carregando ambiente protegido")) return;
+      const text = loadingState.textContent || "";
+      if (!text.includes("Carregando ambiente protegido") && !text.includes("Carregando indicadores")) return;
 
       loadingState.dataset.vfOverviewSkeleton = "1";
       loadingState.classList.add("vf-overview-loading-state");
