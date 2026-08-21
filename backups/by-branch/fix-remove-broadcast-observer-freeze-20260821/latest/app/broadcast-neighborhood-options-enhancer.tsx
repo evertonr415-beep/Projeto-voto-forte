@@ -27,13 +27,11 @@ async function loadCatalog() {
 export default function BroadcastNeighborhoodOptionsEnhancer() {
   useEffect(() => {
     let disposed = false;
-    let loaded = false;
-    let districts: string[] = [];
 
-    const sync = () => {
+    const applyCatalog = (districts: string[]) => {
       if (disposed) return;
       const select = findDistrictSelect();
-      if (!select || !loaded || select.dataset[ENHANCED_ATTR]) return;
+      if (!select || select.dataset[ENHANCED_ATTR]) return;
 
       const current = select.value;
       select.replaceChildren();
@@ -58,9 +56,8 @@ export default function BroadcastNeighborhoodOptionsEnhancer() {
 
     const load = async () => {
       try {
-        districts = await loadCatalog();
-        loaded = true;
-        sync();
+        const districts = await loadCatalog();
+        applyCatalog(districts);
       } catch {
         // Mantém o filtro original em caso de indisponibilidade.
       }
@@ -68,12 +65,8 @@ export default function BroadcastNeighborhoodOptionsEnhancer() {
 
     void load();
 
-    const observer = new MutationObserver(sync);
-    observer.observe(document.body, { childList: true, subtree: true });
-
     return () => {
       disposed = true;
-      observer.disconnect();
     };
   }, []);
 
