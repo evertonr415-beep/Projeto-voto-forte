@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const VERSION_CHECK_INTERVAL_MS = 30 * 1000;
-
 type VersionPayload = {
   version?: string;
 };
@@ -11,13 +9,20 @@ type VersionPayload = {
 export default function RuntimeVersionGuard() {
   const baselineVersion = useRef("");
   const checking = useRef(false);
+  const lastCheckAt = useRef(0);
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   const checkVersion = useCallback(async () => {
     if (checking.current || updateAvailable) return;
+    const now = Date.now();
+    const isMobile = window.matchMedia("(max-width: 760px)").matches;
+    const minGap = isMobile ? 90_000 : 45_000;
+    if (now - lastCheckAt.current < minGap) return;
+
     checking.current = true;
+    lastCheckAt.current = now;
     try {
-      const response = await fetch(`/api/version?t=${Date.now()}`, {
+      const response = await fetch(`/api/version?t=${now}`, {
         cache: "no-store",
         headers: { "cache-control": "no-cache" },
       });
@@ -40,21 +45,23 @@ export default function RuntimeVersionGuard() {
   }, [updateAvailable]);
 
   useEffect(() => {
-    void checkVersion();
+    const isMobile = window.matchMedia("(max-width: 760px)").matches;
+    const initialDelay = isMobile ? 8_000 : 3_000;
+    const intervalMs = isMobile ? 120_000 : 60_000;
+    const initialTimer = window.setTimeout(() => void checkVersion(), initialDelay);
 
     const handleFocus = () => void checkVersion();
     const handleVisibility = () => {
       if (document.visibilityState === "visible") void checkVersion();
     };
     const timer = window.setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void checkVersion();
-      }
-    }, VERSION_CHECK_INTERVAL_MS);
+      if (document.visibilityState === "visible") void checkVersion();
+    }, intervalMs);
 
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
+      window.clearTimeout(initialTimer);
       window.clearInterval(timer);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
