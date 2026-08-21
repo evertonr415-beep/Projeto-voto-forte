@@ -1,0 +1,130 @@
+.vf-header-scope {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.vf-header-scope-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+  width: 148px;
+  max-width: 148px;
+  height: 34px;
+  border: 1px solid #c7d5e4;
+  border-radius: 10px;
+  background: #f8fbfe;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 2px 8px rgba(20, 45, 72, 0.05);
+}
+
+.vf-header-scope-select-wrap::after {
+  content: "⌄";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-56%);
+  color: #173f75;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.vf-header-scope-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 148px;
+  height: 32px;
+  padding: 0 29px 0 11px;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: #173f75;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.vf-header-scope-select:focus-visible {
+  box-shadow: 0 0 0 2px rgba(23, 63, 117, 0.14);
+  border-radius: 9px;
+}
+
+.vf-header-scope-select option {
+  color: #102f59;
+  background: #fff;
+}
+
+.topbar .page-id {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar .page-id > div,
+.topbar .page-id > span:not(.vf-header-scope-select-wrap) {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .topbar .page-id {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar .page-id h1 {
+    white-space: nowrap;
+    font-size: 17px;
+  }
+
+  .vf-header-scope {
+    margin-left: 9px;
+    flex: 0 0 auto;
+  }
+
+  .vf-header-scope-select-wrap {
+    width: 112px;
+    max-width: 112px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .vf-header-scope-select {
+    width: 112px;
+    max-width: 112px;
+    height: 30px;
+    font-size: 10px;
+    padding-left: 10px;
+    padding-right: 26px;
+  }
+
+  .vf-header-scope-select-wrap::after {
+    right: 9px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .vf-header-scope {
+    margin-left: 7px;
+  }
+
+  .vf-header-scope-select-wrap,
+  .vf-header-scope-select {
+    width: 102px;
+    max-width: 102px;
+  }
+
+  .vf-header-scope-select {
+    font-size: 9.5px;
+  }
+}
