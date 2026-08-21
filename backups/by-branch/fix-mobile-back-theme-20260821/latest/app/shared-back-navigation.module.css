@@ -25,11 +25,19 @@
   cursor: pointer;
 }
 
+:global(html[data-vf-theme="dark"]) .backLink.backLink {
+  color: #ffffff;
+}
+
+:global(html[data-vf-theme="light"]) .backLink.backLink {
+  color: #17345c;
+}
+
 .backLink.backLink:hover {
   border: 0;
   background: transparent;
   box-shadow: none;
-  color: #17345c;
+  color: inherit;
   transform: none;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -63,9 +71,16 @@
 }
 
 :global(.ae-root .ae-shell > [data-vf-standard-back="true"]) {
-  color: #ffffff !important;
   position: relative !important;
   z-index: 50 !important;
+}
+
+:global(html[data-vf-theme="dark"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
+  color: #ffffff !important;
+}
+
+:global(html[data-vf-theme="light"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
+  color: #17345c !important;
 }
 
 @media (max-width: 760px) {
@@ -74,7 +89,6 @@
     margin: 0 0 10px 10px;
     padding: 7px 2px;
     font-size: 16px;
-    color: #ffffff;
   }
 
   .arrow.arrow {
@@ -90,7 +104,14 @@
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    color: #ffffff !important;
     align-self: flex-start !important;
+  }
+
+  :global(html[data-vf-theme="dark"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
+    color: #ffffff !important;
+  }
+
+  :global(html[data-vf-theme="light"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
+    color: #17345c !important;
   }
 }
