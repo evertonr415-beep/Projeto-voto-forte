@@ -1,14 +1,14 @@
 .vf-welcome-scope {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin: 0 0 10px;
   max-width: 100%;
 }
 
 .vf-welcome-scope-label {
   font-size: 7px !important;
-  letter-spacing: 1.8px !important;
+  letter-spacing: 1.55px !important;
   color: #d0ab64 !important;
   font-weight: 900 !important;
   white-space: nowrap;
@@ -18,23 +18,26 @@
   display: inline-flex;
   align-items: center;
   position: relative;
+  flex: 0 1 190px;
+  width: 190px;
   min-width: 0;
-  max-width: 260px;
+  max-width: 190px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 .vf-welcome-scope-select-wrap::after {
   content: "⌄";
   position: absolute;
-  right: 12px;
+  right: 11px;
   top: 50%;
   transform: translateY(-55%);
   color: #d8e5ea;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
   pointer-events: none;
 }
@@ -42,21 +45,27 @@
 .vf-welcome-scope-select {
   width: 100%;
   min-width: 0;
-  max-width: 260px;
+  max-width: 190px;
   height: 34px;
-  padding: 0 34px 0 13px;
+  padding: 0 29px 0 12px;
   border: 0;
   outline: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
+}
+
+.vf-welcome-scope-select:focus-visible {
+  box-shadow: 0 0 0 2px rgba(255,255,255,.16);
+  border-radius: 999px;
 }
 
 .vf-welcome-scope-select option {
@@ -66,28 +75,52 @@
 
 @media (max-width: 760px) {
   .vf-welcome-scope {
-    width: 100%;
-    gap: 8px;
-    margin-bottom: 12px;
+    width: auto;
+    max-width: 100%;
+    gap: 6px;
+    margin-bottom: 11px;
   }
 
   .vf-welcome-scope-label {
     flex: 0 0 auto;
-    font-size: 6.5px !important;
-    letter-spacing: 1.25px !important;
+    font-size: 6.25px !important;
+    letter-spacing: 1.05px !important;
   }
 
   .vf-welcome-scope-select-wrap {
-    flex: 1;
-    max-width: none;
-    min-width: 0;
+    flex: 0 1 174px;
+    width: 174px;
+    max-width: 174px;
   }
 
   .vf-welcome-scope-select {
-    max-width: none;
-    height: 40px;
-    font-size: 12px;
-    padding-left: 12px;
-    padding-right: 32px;
+    width: 174px;
+    max-width: 174px;
+    height: 34px;
+    font-size: 11px;
+    padding-left: 11px;
+    padding-right: 28px;
+  }
+
+  .vf-welcome-scope-select-wrap::after {
+    right: 10px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .vf-welcome-scope-label {
+    font-size: 6px !important;
+    letter-spacing: .85px !important;
+  }
+
+  .vf-welcome-scope-select-wrap,
+  .vf-welcome-scope-select {
+    width: 166px;
+    max-width: 166px;
+  }
+
+  .vf-welcome-scope-select {
+    font-size: 10.5px;
   }
 }
