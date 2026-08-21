@@ -26,6 +26,34 @@ export default function StandardBackNavigationEnhancer() {
   useEffect(() => {
     let cancelled = false;
 
+    const hideLegacyBackControls = (root: HTMLElement, rootSelector: string, legacySelector: string) => {
+      const candidates = new Set<HTMLElement>();
+
+      root.querySelectorAll<HTMLElement>(legacySelector).forEach((element) => candidates.add(element));
+
+      if (rootSelector === ".ae-root") {
+        root.querySelectorAll<HTMLElement>("button, a, [role='button']").forEach((element) => {
+          if (element.dataset.vfStandardBack === "true") return;
+          const text = (element.textContent || "").trim().toLocaleLowerCase("pt-BR");
+          if (text === "dashboard" || text === "← dashboard" || text.includes("voltar ao sistema")) {
+            candidates.add(element);
+          }
+        });
+      }
+
+      candidates.forEach((legacy) => {
+        const text = (legacy.textContent || "").toLocaleLowerCase("pt-BR");
+        if (
+          rootSelector === ".tse-panel-root" ||
+          text.includes("dashboard") ||
+          text.includes("voltar")
+        ) {
+          legacy.dataset.vfHiddenLegacyBack = "true";
+          legacy.style.setProperty("display", "none", "important");
+        }
+      });
+    };
+
     const install = () => {
       if (cancelled) return;
 
@@ -58,17 +86,7 @@ export default function StandardBackNavigationEnhancer() {
           shell.prepend(button);
         }
 
-        root.querySelectorAll<HTMLElement>(legacySelector).forEach((legacy) => {
-          const text = (legacy.textContent || "").toLocaleLowerCase("pt-BR");
-          if (
-            rootSelector === ".tse-panel-root" ||
-            text.includes("dashboard") ||
-            text.includes("voltar")
-          ) {
-            legacy.dataset.vfHiddenLegacyBack = "true";
-            legacy.style.display = "none";
-          }
-        });
+        hideLegacyBackControls(root, rootSelector, legacySelector);
       });
     };
 
