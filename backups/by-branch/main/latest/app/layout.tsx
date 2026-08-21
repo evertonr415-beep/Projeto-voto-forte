@@ -22,6 +22,7 @@ import RuntimeVersionGuard from "./runtime-version-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
+import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
@@ -137,6 +138,7 @@ export default function RootLayout({
         <TeamPerformanceAdminEnhancer />
         <RuntimeVersionGuard />
         <WhaticketBroadcastDrawer />
+        <BroadcastNeighborhoodOptionsEnhancer />
         <TseSidebarEnhancer />
         <ComunicacaoSidebarEnhancer />
         <StandardBackNavigationEnhancer />
