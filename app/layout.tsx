@@ -38,6 +38,7 @@ import "./runtime-version-guard.css";
 import "./ux-audit-fixes.css";
 import "./voto-forte-unified-theme.css";
 import "./topbar-theme-sync.css";
+import "./profile-modal-premium.css";
 import "./remove-electoral-back-system.css";
 
 const geistSans = Geist({
