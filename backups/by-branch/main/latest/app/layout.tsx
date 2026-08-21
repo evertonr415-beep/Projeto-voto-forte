@@ -14,6 +14,7 @@ import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import GestorAccessGate from "./gestor-access-gate";
+import CompactOverviewScopeEnhancer from "./compact-overview-scope-enhancer";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
@@ -23,6 +24,7 @@ import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
+import "./compact-overview-scope.css";
 import "./system-notifications.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
@@ -112,6 +114,7 @@ export default function RootLayout({
         <MapInstantContactBootstrap />
         <MapToolsGate />
         <GestorAccessGate />
+        <CompactOverviewScopeEnhancer />
         <AccountSettingsEnhancer />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
