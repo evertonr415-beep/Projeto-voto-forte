@@ -74,6 +74,15 @@
 }
 
 @media (max-width: 760px) {
+  /*
+   * Na Visão Geral mobile o seletor legado é renderizado pelo HTML antes do
+   * enhancer compacto hidratar. Escondê-lo por CSS no primeiro paint elimina
+   * o flash de "Todos os usuários" sem afetar as outras telas.
+   */
+  body:has(.welcome-pro) .topbar .scope-picker {
+    display: none !important;
+  }
+
   .topbar .page-id {
     flex: 1 1 auto;
     min-width: 0;
