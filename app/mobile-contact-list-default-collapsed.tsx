@@ -3,52 +3,99 @@
 import { useEffect } from "react";
 
 /**
- * No mobile, mantém a lista pesada de contatos recolhida ao abrir o painel.
- * Aguarda a hidratação do React antes de acionar o botão existente e confirma
- * que o estado visual realmente mudou para "Ver lista".
+ * No mobile, a lista do Painel de Contatos deve iniciar recolhida toda vez que
+ * o usuário entra nessa tela pela navegação SPA. Depois que o usuário tocar em
+ * "Ver lista", a lista permanece aberta enquanto ele continuar nessa tela.
  */
 export default function MobileContactListDefaultCollapsed() {
   useEffect(() => {
     if (!window.matchMedia("(max-width: 760px)").matches) return;
 
     let disposed = false;
-    let attempts = 0;
-    let timer: number | undefined;
+    let panelWasPresent = false;
+    let handledCurrentVisit = false;
+    let retryTimer: number | undefined;
 
-    const findToggleButton = () => {
-      const panel = document.querySelector<HTMLElement>(".contacts-panel");
-      if (!panel) return null;
+    const getPanel = () =>
+      document.querySelector<HTMLElement>(".contacts-panel");
 
-      return Array.from(panel.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
+    const getToggleButton = (panel: HTMLElement) =>
+      Array.from(panel.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
         const label = button.textContent?.trim().toLowerCase();
         return label === "ocultar lista" || label === "ver lista";
       }) || null;
+
+    const clearRetry = () => {
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+        retryTimer = undefined;
+      }
     };
 
-    const ensureCollapsed = () => {
+    const tryCollapseCurrentVisit = () => {
+      if (disposed || handledCurrentVisit) return;
+
+      const panel = getPanel();
+      if (!panel) return;
+
+      const button = getToggleButton(panel);
+      if (!button) {
+        clearRetry();
+        retryTimer = window.setTimeout(tryCollapseCurrentVisit, 100);
+        return;
+      }
+
+      const label = button.textContent?.trim().toLowerCase();
+
+      // Se já estiver recolhida, esta visita já está correta.
+      if (label === "ver lista") {
+        handledCurrentVisit = true;
+        clearRetry();
+        return;
+      }
+
+      // Aguarda o handler React estar disponível; confirma na próxima leitura.
+      if (label === "ocultar lista" && !button.disabled) {
+        button.click();
+        clearRetry();
+        retryTimer = window.setTimeout(tryCollapseCurrentVisit, 80);
+      }
+    };
+
+    const syncRoutePresence = () => {
       if (disposed) return;
 
-      const button = findToggleButton();
-      const label = button?.textContent?.trim().toLowerCase();
+      const panelPresent = Boolean(getPanel());
 
-      if (label === "ver lista") return;
-
-      if (button && label === "ocultar lista" && !button.disabled) {
-        button.click();
+      // Transição real: usuário entrou no Painel de Contatos.
+      if (panelPresent && !panelWasPresent) {
+        handledCurrentVisit = false;
+        clearRetry();
+        retryTimer = window.setTimeout(tryCollapseCurrentVisit, 80);
       }
 
-      attempts += 1;
-      if (attempts < 40) {
-        timer = window.setTimeout(ensureCollapsed, 125);
+      // Saiu da tela: prepara a próxima entrada para começar recolhida novamente.
+      if (!panelPresent && panelWasPresent) {
+        handledCurrentVisit = false;
+        clearRetry();
       }
+
+      panelWasPresent = panelPresent;
     };
 
-    // Pequeno atraso para garantir que os handlers do painel já estejam hidratados.
-    timer = window.setTimeout(ensureCollapsed, 250);
+    const observer = new MutationObserver(syncRoutePresence);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Cobre também acesso direto/refresh já dentro da tela de contatos.
+    syncRoutePresence();
 
     return () => {
       disposed = true;
-      if (timer) window.clearTimeout(timer);
+      observer.disconnect();
+      clearRetry();
     };
   }, []);
 
