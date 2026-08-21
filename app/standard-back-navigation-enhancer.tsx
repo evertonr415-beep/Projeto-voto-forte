@@ -79,7 +79,27 @@ export default function StandardBackNavigationEnhancer() {
 
           button.append(arrow, label);
           button.addEventListener("click", () => {
+            if (rootSelector === ".ae-root") {
+              const agendaRoot = document.querySelector<HTMLElement>(".ae-root");
+              const nativeBack = agendaRoot?.querySelector<HTMLButtonElement>(
+                'button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"]',
+              );
+
+              if (nativeBack) {
+                nativeBack.click();
+                return;
+              }
+            }
+
             window.dispatchEvent(new CustomEvent("voto-forte:navigate-overview"));
+
+            if (rootSelector === ".ae-root") {
+              window.requestAnimationFrame(() => {
+                if (document.querySelector(".ae-root")) {
+                  window.location.assign("/");
+                }
+              });
+            }
           });
 
           shell.prepend(button);
