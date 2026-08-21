@@ -13,12 +13,14 @@ export default function MapNeighborhoodInfoEnhancer() {
       scheduled = false;
       if (disposed) return;
 
+      document.body.classList.toggle("vf-map-position-adm", isAdm);
+
       document
         .querySelectorAll<HTMLButtonElement>(".vf-district-open-contacts")
         .forEach((button) => {
+          button.textContent = "Ver informações deste bairro →";
           if (button.dataset.vfNeighborhoodInfo === "true") return;
           button.dataset.vfNeighborhoodInfo = "true";
-          button.textContent = "Ver informações deste bairro →";
           button.addEventListener(
             "click",
             (event) => {
@@ -42,11 +44,9 @@ export default function MapNeighborhoodInfoEnhancer() {
         .querySelectorAll<HTMLButtonElement>(".vf-district-adjust, .vf-district-save")
         .forEach((button) => {
           if (isAdm) {
-            button.style.removeProperty("display");
             button.removeAttribute("aria-hidden");
             button.removeAttribute("tabindex");
           } else {
-            button.style.setProperty("display", "none", "important");
             button.setAttribute("aria-hidden", "true");
             button.setAttribute("tabindex", "-1");
           }
@@ -73,13 +73,12 @@ export default function MapNeighborhoodInfoEnhancer() {
 
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });
-    document.addEventListener("click", schedule, true);
     schedule();
 
     return () => {
       disposed = true;
       observer.disconnect();
-      document.removeEventListener("click", schedule, true);
+      document.body.classList.remove("vf-map-position-adm");
     };
   }, []);
 
