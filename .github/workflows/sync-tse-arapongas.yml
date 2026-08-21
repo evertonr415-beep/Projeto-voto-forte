@@ -13,6 +13,7 @@ on:
     paths:
       - scripts/sync_tse_arapongas.py
       - .github/workflows/sync-tse-arapongas.yml
+      - ci/tse-trigger.txt
   workflow_dispatch:
 
 permissions:
