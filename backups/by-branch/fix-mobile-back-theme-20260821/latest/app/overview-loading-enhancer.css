@@ -1,0 +1,120 @@
+.loading-state.vf-overview-loading-state {
+  min-height: 0;
+  display: block;
+  place-items: initial;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+}
+
+.vf-overview-loading {
+  display: block;
+}
+
+.vf-overview-loading__header {
+  min-height: 126px;
+  padding: 25px 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(110deg, rgba(7, 29, 47, 0.98), rgba(9, 65, 61, 0.94)),
+    radial-gradient(circle at 80%, #157e64, transparent 35%);
+  box-shadow: 0 16px 40px rgba(7, 29, 47, 0.13);
+  color: white;
+}
+
+.vf-overview-loading__header span {
+  font-size: 7px;
+  letter-spacing: 1.8px;
+  color: #d0ab64;
+  font-weight: 900;
+}
+
+.vf-overview-loading__header h2 {
+  margin: 8px 0 5px;
+  font-size: 24px;
+}
+
+.vf-overview-loading__header p {
+  margin: 0;
+  color: #bbced1;
+  font-size: 10px;
+}
+
+.vf-overview-loading__kpis .kpi {
+  min-height: 82px;
+}
+
+.vf-overview-loading__kpis .kpi strong {
+  min-width: 28px;
+  color: #809099;
+}
+
+.vf-overview-loading__kpis .kpi small {
+  color: #8a989e;
+}
+
+.vf-overview-loading__panels {
+  display: grid;
+  grid-template-columns: 1.55fr 0.85fr;
+  gap: 16px;
+}
+
+.vf-overview-loading__panel {
+  min-height: 176px;
+  padding: 22px;
+  overflow: hidden;
+}
+
+.vf-overview-loading__line {
+  height: 11px;
+  width: 82%;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eef2f3 25%, #f8fafb 50%, #eef2f3 75%);
+  background-size: 200% 100%;
+  animation: vf-overview-loading-shimmer 1.4s ease-in-out infinite;
+}
+
+.vf-overview-loading__line--title {
+  width: 42%;
+  height: 14px;
+  margin-top: 0;
+}
+
+.vf-overview-loading__line--short {
+  width: 58%;
+}
+
+@keyframes vf-overview-loading-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-overview-loading__line {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .vf-overview-loading__header {
+    min-height: 112px;
+    padding: 21px 20px;
+  }
+
+  .vf-overview-loading__header h2 {
+    font-size: 21px;
+  }
+
+  .vf-overview-loading__panels {
+    grid-template-columns: 1fr;
+  }
+}
