@@ -39,6 +39,7 @@ import "./ux-audit-fixes.css";
 import "./voto-forte-unified-theme.css";
 import "./topbar-theme-sync.css";
 import "./remove-electoral-back-system.css";
+import "./agenda-mobile-compact.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
