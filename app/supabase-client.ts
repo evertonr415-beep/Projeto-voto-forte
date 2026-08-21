@@ -1,12 +1,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
+let browserAuthProxy: SupabaseClient["auth"] | null = null;
+let sessionReadInFlight: ReturnType<SupabaseClient["auth"]["getSession"]> | null = null;
 const inFlightReads = new Map<string, Promise<Response>>();
 
 function getBrowserSupabase() {
   if (browserClient) return browserClient;
 
-  // Keep direct environment accesses so Next.js can inline NEXT_PUBLIC values.
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -27,11 +28,46 @@ function getBrowserSupabase() {
   return browserClient;
 }
 
-// The proxy preserves the existing import contract while avoiding client
-// initialization during Next.js prerendering of pages such as /_not-found.
+function getBrowserAuth() {
+  const client = getBrowserSupabase();
+  if (browserAuthProxy) return browserAuthProxy;
+
+  const auth = client.auth;
+  browserAuthProxy = new Proxy(auth, {
+    get(target, property) {
+      if (property === "onAuthStateChange") {
+        return (callback: Parameters<typeof auth.onAuthStateChange>[0]) =>
+          auth.onAuthStateChange((event, session) => {
+            if (event === "TOKEN_REFRESHED") return;
+            callback(event, session);
+          });
+      }
+
+      const value = Reflect.get(target, property);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  }) as SupabaseClient["auth"];
+
+  return browserAuthProxy;
+}
+
+async function getCoalescedSession() {
+  if (sessionReadInFlight) return sessionReadInFlight;
+
+  const auth = getBrowserSupabase().auth;
+  const read = auth.getSession();
+  sessionReadInFlight = read;
+  try {
+    return await read;
+  } finally {
+    if (sessionReadInFlight === read) sessionReadInFlight = null;
+  }
+}
+
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, property) {
     const client = getBrowserSupabase();
+    if (property === "auth") return getBrowserAuth();
     const value = Reflect.get(client, property);
     return typeof value === "function" ? value.bind(client) : value;
   },
@@ -52,7 +88,7 @@ export async function apiFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ) {
-  const { data } = await supabase.auth.getSession();
+  const { data } = await getCoalescedSession();
   const headers = new Headers(input instanceof Request ? input.headers : undefined);
   new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   if (data.session?.access_token) {
@@ -64,9 +100,6 @@ export async function apiFetch(
     return fetch(input, { ...init, headers });
   }
 
-  // Coalesce only requests that are simultaneously in flight. Nothing is
-  // persisted or reused after completion, so authenticated data never becomes
-  // stale and cache semantics remain unchanged.
   const dedupeKey = `${requestUrl(input)}\n${headers.get("authorization") || ""}`;
   const existing = inFlightReads.get(dedupeKey);
   if (existing) return (await existing).clone();
