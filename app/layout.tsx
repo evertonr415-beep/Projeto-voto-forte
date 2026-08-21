@@ -50,6 +50,19 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const themeBootstrapScript = `(() => {
+  try {
+    const saved = localStorage.getItem("voto-forte-theme");
+    const theme = saved === "light" ? "light" : "dark";
+    const root = document.documentElement;
+    root.setAttribute("data-vf-theme", theme);
+    root.style.colorScheme = theme;
+  } catch {
+    document.documentElement.setAttribute("data-vf-theme", "dark");
+    document.documentElement.style.colorScheme = "dark";
+  }
+})();`;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -88,7 +101,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <PwaInstaller />
         <AdaptivePerformance />
