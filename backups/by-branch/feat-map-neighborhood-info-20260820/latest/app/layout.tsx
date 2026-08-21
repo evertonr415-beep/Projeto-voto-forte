@@ -28,6 +28,7 @@ import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./compact-overview-scope.css";
 import "./neighborhood-info-drawer.css";
+import "./map-neighborhood-permissions.css";
 import "./system-notifications.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
