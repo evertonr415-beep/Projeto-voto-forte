@@ -1,0 +1,61 @@
+/* Menu lateral: mantém cabeçalho e rodapé estáveis e permite rolagem somente na navegação. */
+.sidebar {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.sidebar nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 5px;
+  padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sidebar nav::-webkit-scrollbar {
+  width: 7px;
+}
+
+.sidebar nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: rgba(211, 177, 110, 0.48);
+  border-radius: 999px;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(211, 177, 110, 0.72);
+}
+
+.sidebar-message,
+.sidebar .collapse,
+.sidebar .brand-button,
+.sidebar .menu-label {
+  flex: 0 0 auto;
+}
+
+@media (max-height: 780px) {
+  .sidebar {
+    padding-top: 18px;
+    padding-bottom: 10px;
+  }
+
+  .brand-button {
+    padding-bottom: 16px;
+  }
+
+  .sidebar nav button {
+    min-height: 42px;
+  }
+
+  .sidebar-message {
+    padding: 10px;
+  }
+}
