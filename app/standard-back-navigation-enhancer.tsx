@@ -39,6 +39,7 @@ export default function StandardBackNavigationEnhancer() {
           button.type = "button";
           button.dataset.vfStandardBack = "true";
           button.className = styles.backLink;
+          button.style.color = "#ffffff";
           button.setAttribute("aria-label", "Voltar para a Visão Geral");
 
           const arrow = document.createElement("span");
