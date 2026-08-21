@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
 import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
@@ -33,7 +33,7 @@ const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell"
 export default function DashboardRuntimeEnhancers() {
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
 
     const sync = () => {
