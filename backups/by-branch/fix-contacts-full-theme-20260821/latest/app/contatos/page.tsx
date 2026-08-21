@@ -8,6 +8,7 @@ import "./contact-quality-label.css";
 import "./whatsapp-quick-queue.css";
 import "./contacts-ux.css";
 import "./hide-meetings-kpi.css";
+import "./contacts-full-theme.css";
 
 export default function ContactsPage() {
   return (
