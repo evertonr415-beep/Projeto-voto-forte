@@ -1,0 +1,109 @@
+/* Correção direta do cabeçalho real da Agenda Inteligente no mobile.
+   A .ae-topbar muda para coluna abaixo de 900px; por isso o flex-basis de
+   300px da .ae-brand passava a atuar como altura e criava um grande vazio. */
+@media (max-width: 768px) {
+  .ae-root .ae-topbar {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 18px 16px !important;
+    gap: 14px !important;
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+  }
+
+  .ae-root .ae-brand {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .ae-root .ae-brand > div:last-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .ae-root .ae-logo {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    border-radius: 13px !important;
+  }
+
+  .ae-root .ae-title {
+    font-size: 1.05rem !important;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+  }
+
+  .ae-root .ae-subtitle {
+    margin-top: 5px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .ae-root .ae-toolbar {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+
+  .ae-root .ae-view-switcher {
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  .ae-root .ae-view-btn {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 8px 5px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .ae-root .ae-toolbar > .ae-btn,
+  .ae-root .ae-toolbar > div > .ae-btn {
+    min-height: 44px !important;
+  }
+
+  .ae-root .ae-shell {
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .ae-root .ae-topbar {
+    padding: 15px 13px !important;
+    gap: 11px !important;
+  }
+
+  .ae-root .ae-logo {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+
+  .ae-root .ae-title {
+    font-size: 0.98rem !important;
+  }
+
+  .ae-root .ae-subtitle {
+    font-size: 0.71rem !important;
+  }
+
+  .ae-root .ae-view-btn {
+    font-size: 0.7rem !important;
+    gap: 4px !important;
+  }
+}
