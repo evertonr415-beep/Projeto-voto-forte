@@ -5,6 +5,7 @@ import { useEffect } from "react";
 const COMPACT_CLASS = "vf-header-scope";
 const SOURCE_HIDDEN_ATTR = "data-vf-scope-source-hidden";
 const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
+const NETWORK_LABEL = "Todos da rede";
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -13,7 +14,7 @@ function optionSignature(select: HTMLSelectElement) {
 }
 
 function displayOptionText(option: HTMLOptionElement) {
-  if (option.value === "all") return "Toda a rede";
+  if (option.value === "all") return NETWORK_LABEL;
   return option.text;
 }
 
@@ -68,6 +69,13 @@ export default function CompactOverviewScopeEnhancer() {
         return;
       }
 
+      const allOption = Array.from(sourceSelect.options).find(
+        (option) => option.value === "all",
+      );
+      if (allOption && allOption.text !== NETWORK_LABEL) {
+        allOption.text = NETWORK_LABEL;
+      }
+
       if (hiddenSource && hiddenSource !== sourceLabel) restoreSource();
       hiddenSource = sourceLabel;
       sourceLabel.style.setProperty("display", "none", "important");
@@ -102,7 +110,7 @@ export default function CompactOverviewScopeEnhancer() {
         compactSelect.className = "vf-header-scope-select";
         compactSelect.setAttribute(
           "aria-label",
-          "Selecionar usuário ou toda a rede para visualizar os indicadores",
+          "Selecionar usuário ou todos da rede para visualizar os indicadores",
         );
 
         compactSelect.addEventListener("change", () => {
@@ -146,7 +154,7 @@ export default function CompactOverviewScopeEnhancer() {
       }
       compactSelect.title =
         sourceSelect.value === "all"
-          ? "Toda a rede"
+          ? NETWORK_LABEL
           : sourceSelect.selectedOptions[0]?.text || "Selecionar ambiente";
     };
 
