@@ -1,33 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AdaptivePerformance from "./adaptive-performance";
-import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
-import MunicipalityContextEnhancer from "./municipality-context-enhancer";
-import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
-import CepFallbackEnhancer from "./cep-fallback-enhancer";
-import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
-import MapToolsGate from "./map-tools-gate";
-import MapNeighborhoodInfoEnhancer from "./map-neighborhood-info-enhancer";
-import NeighborhoodInfoDrawer from "./neighborhood-info-drawer";
-import AccountSettingsEnhancer from "./account-settings-enhancer";
-import ContactNavigationInterceptor from "./contact-navigation-interceptor";
-import ImportCompletionEnhancer from "./import-completion-enhancer";
-import ContactExportEnhancer from "./contact-export-enhancer";
-import IntelligenceNavigation from "./intelligence-navigation";
-import GestorAccessGate from "./gestor-access-gate";
-import CompactOverviewScopeEnhancer from "./compact-overview-scope-enhancer";
-import NetworkScopeLabelNormalizer from "./network-scope-label-normalizer";
-import RuntimeVersionGuard from "./runtime-version-guard";
-import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
-import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
-import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
-import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
-import TseSidebarEnhancer from "./tse-sidebar-enhancer";
-import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
-import SystemNotificationsDrawer from "./system-notifications-drawer";
-import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
-import ThemeToggleEnhancer from "./theme-toggle-enhancer";
+import DashboardRuntimeEnhancers from "./dashboard-runtime-enhancers";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./compact-overview-scope.css";
@@ -117,32 +92,7 @@ export default function RootLayout({
         <PwaInstaller />
         <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
-        <MunicipalityContextEnhancer />
-        <MunicipalityFieldEnhancer />
-        <MunicipalElectoralMapContext />
-        <CepFallbackEnhancer />
-        <MapInstantContactBootstrap />
-        <MapToolsGate />
-        <MapNeighborhoodInfoEnhancer />
-        <NeighborhoodInfoDrawer />
-        <GestorAccessGate />
-        <CompactOverviewScopeEnhancer />
-        <NetworkScopeLabelNormalizer />
-        <ThemeToggleEnhancer />
-        <AccountSettingsEnhancer />
-        <ContactNavigationInterceptor />
-        <ImportCompletionEnhancer />
-        <ContactExportEnhancer />
-        <IntelligenceNavigation />
-        <AuthReconciliationEnhancer />
-        <TeamPerformanceAdminEnhancer />
-        <RuntimeVersionGuard />
-        <WhaticketBroadcastDrawer />
-        <BroadcastNeighborhoodOptionsEnhancer />
-        <TseSidebarEnhancer />
-        <ComunicacaoSidebarEnhancer />
-        <StandardBackNavigationEnhancer />
-        <SystemNotificationsDrawer />
+        <DashboardRuntimeEnhancers />
         {children}
       </body>
     </html>
