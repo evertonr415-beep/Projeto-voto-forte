@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getAccount } from "../../server-identity";
+import { ARAPONGAS_POLLING_PLACES } from "../../electoral-tse-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,25 @@ function districtMatches(left: unknown, right: unknown) {
   return Boolean(aa && bb && (aa === bb || aa.includes(bb) || bb.includes(aa)));
 }
 
+function normalizeZone(value: unknown) {
+  const match = String(value ?? "").match(/\d+/);
+  return match ? Number(match[0]) : undefined;
+}
+
+function fallbackPollingPlaces(district: string): OfficialPollingPlace[] {
+  return ARAPONGAS_POLLING_PLACES
+    .filter((place) => !district || districtMatches(place.district, district))
+    .map((place) => ({
+      id: place.id,
+      name: place.name,
+      address: place.address,
+      district: place.district,
+      zone: normalizeZone(place.zone),
+      sections: place.sections,
+      totalVoters: place.totalVoters,
+    }));
+}
+
 async function readDataset(): Promise<OfficialDataset | null> {
   try {
     const file = path.join(
@@ -88,6 +108,17 @@ async function readDataset(): Promise<OfficialDataset | null> {
   }
 }
 
+function hasElectionResults(place: OfficialPollingPlace) {
+  return Boolean(
+    place.elections &&
+      Object.values(place.elections).some((election) =>
+        Object.values(election.offices || {}).some(
+          (office) => Array.isArray(office.candidates) && office.candidates.length > 0,
+        ),
+      ),
+  );
+}
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
@@ -99,14 +130,22 @@ export async function GET(request: Request) {
   const dataset = await readDataset();
 
   if (!dataset?.pollingPlaces?.length) {
+    const pollingPlaces = fallbackPollingPlaces(district);
     return Response.json(
       {
         ready: false,
+        pollingPlacesReady: pollingPlaces.length > 0,
+        resultsReady: false,
         provider: "Tribunal Superior Eleitoral (TSE)",
         district,
-        pollingPlaces: [],
+        pollingPlaces,
+        selectedPollingPlace: pollingPlaceId
+          ? pollingPlaces.find((place) => place.id === pollingPlaceId) || null
+          : null,
         message:
-          "A sincronização dos resultados oficiais por seção/local de votação ainda não foi concluída.",
+          pollingPlaces.length > 0
+            ? "Locais e seções eleitorais disponíveis. A sincronização dos votos oficiais por seção/local ainda não foi concluída."
+            : "A sincronização dos resultados oficiais por seção/local de votação ainda não foi concluída.",
       },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
@@ -118,10 +157,13 @@ export async function GET(request: Request) {
   const selected = pollingPlaceId
     ? dataset.pollingPlaces.find((place) => place.id === pollingPlaceId) || null
     : null;
+  const resultsReady = districtPlaces.some(hasElectionResults);
 
   return Response.json(
     {
-      ready: true,
+      ready: resultsReady,
+      pollingPlacesReady: districtPlaces.length > 0,
+      resultsReady,
       district,
       provider: dataset.provider || "Tribunal Superior Eleitoral (TSE)",
       methodology:
@@ -131,6 +173,9 @@ export async function GET(request: Request) {
       sourceUrls: dataset.sourceUrls || [],
       pollingPlaces: districtPlaces,
       selectedPollingPlace: selected,
+      message: resultsReady
+        ? undefined
+        : "Locais de votação disponíveis; os votos oficiais por seção/local ainda estão em sincronização.",
     },
     {
       headers: {
