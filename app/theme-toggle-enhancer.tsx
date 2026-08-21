@@ -17,48 +17,92 @@ export default function ThemeToggleEnhancer() {
     applyTheme(saved);
 
     let stopped = false;
+    let frameId = 0;
+    let button: HTMLButtonElement | null = null;
 
-    const install = () => {
-      if (stopped) return;
-      const topActions = document.querySelector<HTMLElement>(".top-actions");
-      if (!topActions || topActions.querySelector("[data-vf-theme-toggle]")) return;
+    const syncButton = () => {
+      if (!button) return;
+      const theme = (document.documentElement.dataset.vfTheme as Theme) || "dark";
+      button.textContent = theme === "dark" ? "☀️" : "🌙";
+      button.title = theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro";
+      button.setAttribute("aria-label", button.title);
+    };
 
-      const municipalitySelect = Array.from(topActions.querySelectorAll("select")).find((select) =>
-        Array.from(select.options).some((option) => /arapongas|munic/i.test(option.textContent || "")),
-      );
+    const ensureButton = () => {
+      if (button?.isConnected) return button;
 
-      const button = document.createElement("button");
+      const existing = document.querySelector<HTMLButtonElement>("[data-vf-theme-toggle]");
+      if (existing) {
+        button = existing;
+        syncButton();
+        return button;
+      }
+
+      button = document.createElement("button");
       button.type = "button";
       button.dataset.vfThemeToggle = "true";
       button.className = "vf-theme-toggle";
-
-      const sync = () => {
-        const theme = (document.documentElement.dataset.vfTheme as Theme) || "dark";
-        button.textContent = theme === "dark" ? "☀️" : "🌙";
-        button.title = theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro";
-        button.setAttribute("aria-label", button.title);
-      };
-
       button.addEventListener("click", () => {
         const current = (document.documentElement.dataset.vfTheme as Theme) || "dark";
         const next: Theme = current === "dark" ? "light" : "dark";
         applyTheme(next);
         localStorage.setItem(STORAGE_KEY, next);
-        sync();
+        syncButton();
       });
+      syncButton();
+      return button;
+    };
 
-      sync();
-      if (municipalitySelect) municipalitySelect.insertAdjacentElement("afterend", button);
-      else topActions.prepend(button);
+    const install = () => {
+      frameId = 0;
+      if (stopped) return;
+
+      const topbar = document.querySelector<HTMLElement>(".topbar");
+      const topActions = topbar?.querySelector<HTMLElement>(".top-actions");
+      if (!topbar || !topActions) return;
+
+      const themeButton = ensureButton();
+      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+      if (isMobile) {
+        const compactScope = topbar.querySelector<HTMLElement>(".page-id > .vf-header-scope");
+        if (compactScope?.parentElement) {
+          if (compactScope.nextElementSibling !== themeButton) {
+            compactScope.insertAdjacentElement("afterend", themeButton);
+          }
+          return;
+        }
+      }
+
+      const municipalitySelect = Array.from(topActions.querySelectorAll("select")).find((select) =>
+        Array.from(select.options).some((option) => /arapongas|munic/i.test(option.textContent || "")),
+      );
+
+      if (municipalitySelect) {
+        if (municipalitySelect.nextElementSibling !== themeButton) {
+          municipalitySelect.insertAdjacentElement("afterend", themeButton);
+        }
+      } else if (topActions.firstElementChild !== themeButton) {
+        topActions.prepend(themeButton);
+      }
+    };
+
+    const scheduleInstall = () => {
+      if (stopped || frameId) return;
+      frameId = window.requestAnimationFrame(install);
     };
 
     install();
-    const observer = new MutationObserver(install);
+    const observer = new MutationObserver(scheduleInstall);
     observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", scheduleInstall);
+
     return () => {
       stopped = true;
+      if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
-      document.querySelectorAll("[data-vf-theme-toggle]").forEach((el) => el.remove());
+      window.removeEventListener("resize", scheduleInstall);
+      button?.remove();
     };
   }, []);
 
