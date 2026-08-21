@@ -1,0 +1,209 @@
+.vf-data-quality-panel {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 1195;
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 125px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(23, 52, 92, 0.14);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.99);
+  box-shadow: 0 22px 52px rgba(23, 52, 92, 0.2);
+  backdrop-filter: blur(16px);
+}
+
+.vf-data-quality-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.vf-data-quality-panel header small {
+  display: block;
+  color: #a45b1e;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.vf-data-quality-panel header strong {
+  display: block;
+  margin-top: 3px;
+  color: #17345c;
+  font-size: 19px;
+}
+
+.vf-data-quality-panel header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.vf-data-quality-panel header > button {
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 11px;
+  background: #17345c;
+  color: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-data-quality-panel > nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.vf-data-quality-panel > nav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #e8edf3;
+  border-radius: 11px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  color: #17345c;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-data-quality-panel > nav button.active {
+  border-color: #ef8429;
+  background: #fff6ed;
+  box-shadow: 0 0 0 2px rgba(239, 132, 41, 0.1);
+}
+
+.vf-data-quality-panel > nav b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #17345c;
+  color: #fff;
+  font-size: 10px;
+}
+
+.vf-data-quality-list {
+  display: grid;
+  gap: 8px;
+}
+
+.vf-data-quality-list > button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid #e9edf2;
+  border-left-width: 5px;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #17345c;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vf-data-quality-list > button:hover {
+  transform: translateX(2px);
+  box-shadow: 0 8px 18px rgba(23, 52, 92, 0.08);
+}
+
+.vf-data-quality-list strong,
+.vf-data-quality-list small,
+.vf-data-quality-list span {
+  display: block;
+}
+
+.vf-data-quality-list strong {
+  font-size: 12px;
+}
+
+.vf-data-quality-list small {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.vf-data-quality-list span {
+  max-width: 160px;
+  color: #7a3510;
+  font-size: 9px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.vf-quality-complete { border-left-color: #2e7d32 !important; }
+.vf-quality-unmapped { border-left-color: #c62828 !important; }
+.vf-quality-incomplete { border-left-color: #ef6c00 !important; }
+.vf-quality-duplicate { border-left-color: #6a4fb3 !important; }
+.vf-quality-district-variant { border-left-color: #f9a825 !important; }
+
+.vf-data-quality-list > p,
+.vf-data-quality-loading {
+  margin: 0;
+  padding: 24px 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 12px;
+  text-align: center;
+}
+
+.vf-mobile-analytics-panel-slot .vf-data-quality-panel {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 0 18px !important;
+  overflow: visible !important;
+  z-index: auto !important;
+}
+
+@media (max-width: 900px) {
+  .vf-data-quality-panel > nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .vf-data-quality-panel {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    max-height: 76vh;
+    padding: 14px;
+  }
+
+  .vf-data-quality-list > button {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-data-quality-list span {
+    max-width: none;
+    text-align: left;
+  }
+
+  .vf-mobile-analytics-panel-slot .vf-data-quality-panel {
+    width: auto !important;
+    margin: 52px 16px 18px !important;
+  }
+}
