@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import AdaptivePerformance from "./adaptive-performance";
 import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import DashboardRuntimeEnhancers from "./dashboard-runtime-enhancers";
+import ThemeToggleEnhancer from "./theme-toggle-enhancer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./compact-overview-scope.css";
@@ -37,6 +38,7 @@ import "./gestor-access-ui.css";
 import "./runtime-version-guard.css";
 import "./ux-audit-fixes.css";
 import "./voto-forte-unified-theme.css";
+import "./theme-toggle-global.css";
 import "./topbar-theme-sync.css";
 import "./remove-electoral-back-system.css";
 import "./agenda-mobile-compact.css";
@@ -96,6 +98,7 @@ export default function RootLayout({
         <PwaInstaller />
         <AdaptivePerformance />
         <SignupMunicipalityEnhancer />
+        <ThemeToggleEnhancer />
         <DashboardRuntimeEnhancers />
         {children}
       </body>
