@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { getAccountForAuthenticatedUser } from "../../server-identity";
+import { getAccountForAuthenticatedUser, isGestorEmail } from "../../server-identity";
 import { getServerSupabase } from "../../supabase-server";
 
 const LAST_SEEN_WRITE_INTERVAL_MS = 5 * 60 * 1000;
@@ -65,7 +65,6 @@ async function getAccessStatus(
   }
 
   const email = user.email?.trim().toLowerCase();
-  // Fallback garantido para o ADM Principal (OWNER_EMAIL)
   if (email === "evertonr415@gmail.com") {
     return {
       state: "active",
@@ -75,45 +74,10 @@ async function getAccessStatus(
     };
   }
 
-  // Fallback garantido para os Gestores (Pedro Lupion, threexdroid, williammarquesmachado)
-  if (
-    email === "campanhaeleicaoxv@gmail.com" ||
-    email === "threexdroid@gmail.com" ||
-    email === "williammarquesmachado@gmail.com"
-  ) {
-    void (async () => {
-      const { data: u } = await supabase
-        .from("vf_users")
-        .select("id")
-        .ilike("email", email)
-        .maybeSingle();
-
-      if (u?.id) {
-        await supabase
-          .from("vf_users")
-          .update({ role: "gestor", access_role: "gestor" })
-          .eq("id", u.id);
-
-        const { data: municipalities } = await supabase
-          .from("vf_municipalities")
-          .select("id")
-          .eq("status", "active");
-
-        if (Array.isArray(municipalities) && municipalities.length > 0) {
-          const rows = municipalities.map((m, index) => ({
-            user_id: u.id,
-            municipality_id: Number(m.id),
-            access_role: "gestor",
-            status: "active",
-            is_default: index === 0,
-          }));
-          await supabase
-            .from("vf_user_municipalities")
-            .upsert(rows, { onConflict: "user_id,municipality_id" });
-        }
-      }
-    })();
-
+  // O papel do Gestor já é resolvido em server-identity. A validação de sessão
+  // não deve escrever perfil/permissões a cada login, pois isso gera PATCH 400,
+  // POST 403 e chamadas redundantes durante a abertura do sistema.
+  if (email && isGestorEmail(email)) {
     return {
       state: "active",
       message: "Acesso de Gestor liberado.",
@@ -125,7 +89,7 @@ async function getAccessStatus(
   if (email) {
     const { data: userRow } = await supabase
       .from("vf_users")
-      .select("*")
+      .select("status")
       .or(`auth_user_id.eq.${user.id},email.ilike.${email}`)
       .maybeSingle();
 
@@ -186,8 +150,6 @@ async function activeSessionResponse(
     user: {
       email: account.email,
       name: account.name,
-      // O dashboard legado habilita a area administrativa pelo campo role.
-      // O accessRole continua sendo a fonte de verdade de autorizacao no servidor.
       role: account.accessRole === "gestor" ? "master" : account.role,
       accessRole: account.accessRole,
     },
