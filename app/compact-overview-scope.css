@@ -1,59 +1,48 @@
-.vf-welcome-scope {
+.vf-header-scope {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 10px;
-  max-width: 100%;
+  margin-left: 12px;
+  vertical-align: middle;
 }
 
-.vf-welcome-scope-label {
-  font-size: 7px !important;
-  letter-spacing: 1.55px !important;
-  color: #d0ab64 !important;
-  font-weight: 900 !important;
-  white-space: nowrap;
-}
-
-.vf-welcome-scope-select-wrap {
+.vf-header-scope-select-wrap {
   display: inline-flex;
   align-items: center;
   position: relative;
-  flex: 0 1 190px;
-  width: 190px;
   min-width: 0;
-  max-width: 190px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  width: 148px;
+  max-width: 148px;
+  height: 34px;
+  border: 1px solid #c7d5e4;
+  border-radius: 10px;
+  background: #f8fbfe;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 2px 8px rgba(20, 45, 72, 0.05);
 }
 
-.vf-welcome-scope-select-wrap::after {
+.vf-header-scope-select-wrap::after {
   content: "⌄";
   position: absolute;
-  right: 11px;
+  right: 10px;
   top: 50%;
-  transform: translateY(-55%);
-  color: #d8e5ea;
-  font-size: 11px;
+  transform: translateY(-56%);
+  color: #173f75;
+  font-size: 12px;
   line-height: 1;
   pointer-events: none;
 }
 
-.vf-welcome-scope-select {
+.vf-header-scope-select {
   width: 100%;
   min-width: 0;
-  max-width: 190px;
-  height: 34px;
-  padding: 0 29px 0 12px;
+  max-width: 148px;
+  height: 32px;
+  padding: 0 29px 0 11px;
   border: 0;
   outline: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  color: #fff;
+  color: #173f75;
   font-size: 11px;
   font-weight: 800;
   line-height: 1;
@@ -63,64 +52,79 @@
   cursor: pointer;
 }
 
-.vf-welcome-scope-select:focus-visible {
-  box-shadow: 0 0 0 2px rgba(255,255,255,.16);
-  border-radius: 999px;
+.vf-header-scope-select:focus-visible {
+  box-shadow: 0 0 0 2px rgba(23, 63, 117, 0.14);
+  border-radius: 9px;
 }
 
-.vf-welcome-scope-select option {
+.vf-header-scope-select option {
   color: #102f59;
   background: #fff;
 }
 
+.topbar .page-id {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar .page-id > div,
+.topbar .page-id > span:not(.vf-header-scope-select-wrap) {
+  min-width: 0;
+}
+
 @media (max-width: 760px) {
-  .vf-welcome-scope {
-    width: auto;
-    max-width: 100%;
-    gap: 6px;
-    margin-bottom: 11px;
+  .topbar .page-id {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
   }
 
-  .vf-welcome-scope-label {
+  .topbar .page-id h1 {
+    white-space: nowrap;
+    font-size: 17px;
+  }
+
+  .vf-header-scope {
+    margin-left: 9px;
     flex: 0 0 auto;
-    font-size: 6.25px !important;
-    letter-spacing: 1.05px !important;
   }
 
-  .vf-welcome-scope-select-wrap {
-    flex: 0 1 174px;
-    width: 174px;
-    max-width: 174px;
+  .vf-header-scope-select-wrap {
+    width: 112px;
+    max-width: 112px;
+    height: 32px;
+    border-radius: 9px;
   }
 
-  .vf-welcome-scope-select {
-    width: 174px;
-    max-width: 174px;
-    height: 34px;
-    font-size: 11px;
-    padding-left: 11px;
-    padding-right: 28px;
+  .vf-header-scope-select {
+    width: 112px;
+    max-width: 112px;
+    height: 30px;
+    font-size: 10px;
+    padding-left: 10px;
+    padding-right: 26px;
   }
 
-  .vf-welcome-scope-select-wrap::after {
-    right: 10px;
+  .vf-header-scope-select-wrap::after {
+    right: 9px;
     font-size: 10px;
   }
 }
 
 @media (max-width: 390px) {
-  .vf-welcome-scope-label {
-    font-size: 6px !important;
-    letter-spacing: .85px !important;
+  .vf-header-scope {
+    margin-left: 7px;
   }
 
-  .vf-welcome-scope-select-wrap,
-  .vf-welcome-scope-select {
-    width: 166px;
-    max-width: 166px;
+  .vf-header-scope-select-wrap,
+  .vf-header-scope-select {
+    width: 102px;
+    max-width: 102px;
   }
 
-  .vf-welcome-scope-select {
-    font-size: 10.5px;
+  .vf-header-scope-select {
+    font-size: 9.5px;
   }
 }
