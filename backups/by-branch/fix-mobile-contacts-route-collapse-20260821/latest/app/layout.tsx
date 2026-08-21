@@ -17,7 +17,6 @@ import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
 import GestorAccessGate from "./gestor-access-gate";
 import CompactOverviewScopeEnhancer from "./compact-overview-scope-enhancer";
-import MobileContactListDefaultCollapsed from "./mobile-contact-list-default-collapsed";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
@@ -122,7 +121,6 @@ export default function RootLayout({
         <NeighborhoodInfoDrawer />
         <GestorAccessGate />
         <CompactOverviewScopeEnhancer />
-        <MobileContactListDefaultCollapsed />
         <AccountSettingsEnhancer />
         <ContactNavigationInterceptor />
         <ImportCompletionEnhancer />
