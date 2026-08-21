@@ -8,6 +8,8 @@ import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
+import MapNeighborhoodInfoEnhancer from "./map-neighborhood-info-enhancer";
+import NeighborhoodInfoDrawer from "./neighborhood-info-drawer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
@@ -25,6 +27,8 @@ import SystemNotificationsDrawer from "./system-notifications-drawer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./compact-overview-scope.css";
+import "./neighborhood-info-drawer.css";
+import "./map-neighborhood-permissions.css";
 import "./system-notifications.css";
 import "./whaticket-broadcast.css";
 import "./adaptive-performance.css";
@@ -113,6 +117,8 @@ export default function RootLayout({
         <CepFallbackEnhancer />
         <MapInstantContactBootstrap />
         <MapToolsGate />
+        <MapNeighborhoodInfoEnhancer />
+        <NeighborhoodInfoDrawer />
         <GestorAccessGate />
         <CompactOverviewScopeEnhancer />
         <AccountSettingsEnhancer />
