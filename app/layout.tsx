@@ -41,6 +41,7 @@ import "./topbar-theme-sync.css";
 import "./remove-electoral-back-system.css";
 import "./agenda-mobile-compact.css";
 import "./agenda-mobile-direct-fix.css";
+import "./profile-modal-exact.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
