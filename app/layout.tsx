@@ -24,6 +24,7 @@ import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
+import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./compact-overview-scope.css";
@@ -132,6 +133,7 @@ export default function RootLayout({
         <WhaticketBroadcastDrawer />
         <TseSidebarEnhancer />
         <ComunicacaoSidebarEnhancer />
+        <StandardBackNavigationEnhancer />
         <SystemNotificationsDrawer />
         {children}
       </body>
