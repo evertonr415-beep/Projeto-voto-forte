@@ -1,0 +1,49 @@
+name: Validate electoral panel TSE data
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/electoral-panel-official-data
+    paths:
+      - scripts/validate-electoral-panel-tse.mjs
+      - .github/workflows/validate-electoral-panel-tse.yml
+      - app/electoral-panel/**
+      - app/electoral-tse-data.ts
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate official Arapongas electoral artifact
+        run: node scripts/validate-electoral-panel-tse.mjs
+
+      - name: Show validation summary
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('artifacts/electoral-panel-official-data.json', 'utf8'));
+          for (const [year, payload] of Object.entries(data.years)) {
+            console.log(`YEAR ${year}`);
+            console.log('LOCATION SUMMARY', payload.locationSummary);
+            console.log('OFFICES', Object.keys(payload.voteSummary));
+          }
+          NODE
+
+      - name: Upload validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: electoral-panel-official-data
+          path: artifacts/electoral-panel-official-data.json
+          if-no-files-found: error
