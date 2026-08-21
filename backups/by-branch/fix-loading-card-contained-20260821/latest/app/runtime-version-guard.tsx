@@ -1,0 +1,87 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type VersionPayload = {
+  version?: string;
+};
+
+export default function RuntimeVersionGuard() {
+  const baselineVersion = useRef("");
+  const checking = useRef(false);
+  const lastCheckAt = useRef(0);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  const checkVersion = useCallback(async () => {
+    if (checking.current || updateAvailable) return;
+    const now = Date.now();
+    const isMobile = window.matchMedia("(max-width: 760px)").matches;
+    const minGap = isMobile ? 90_000 : 45_000;
+    if (now - lastCheckAt.current < minGap) return;
+
+    checking.current = true;
+    lastCheckAt.current = now;
+    try {
+      const response = await fetch(`/api/version?t=${now}`, {
+        cache: "no-store",
+        headers: { "cache-control": "no-cache" },
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as VersionPayload;
+      const nextVersion = String(data.version || "").trim();
+      if (!nextVersion) return;
+
+      if (!baselineVersion.current) {
+        baselineVersion.current = nextVersion;
+        return;
+      }
+
+      if (nextVersion !== baselineVersion.current) setUpdateAvailable(true);
+    } catch {
+      // Version checks are best-effort and must never block the application.
+    } finally {
+      checking.current = false;
+    }
+  }, [updateAvailable]);
+
+  useEffect(() => {
+    const isMobile = window.matchMedia("(max-width: 760px)").matches;
+    const initialDelay = isMobile ? 8_000 : 3_000;
+    const intervalMs = isMobile ? 120_000 : 60_000;
+    const initialTimer = window.setTimeout(() => void checkVersion(), initialDelay);
+
+    const handleFocus = () => void checkVersion();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void checkVersion();
+    };
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void checkVersion();
+    }, intervalMs);
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [checkVersion]);
+
+  if (!updateAvailable) return null;
+
+  return (
+    <aside className="vf-runtime-update" role="status" aria-live="polite">
+      <div>
+        <strong>Nova versão do VOTO FORTE disponível</strong>
+        <span>
+          Atualize quando for conveniente. O sistema não recarrega sozinho para
+          evitar perda de trabalho em andamento.
+        </span>
+      </div>
+      <button type="button" onClick={() => window.location.reload()}>
+        Atualizar sistema
+      </button>
+    </aside>
+  );
+}
