@@ -134,7 +134,6 @@ export async function GET(request: Request) {
         // Fallback to district lists
       }
 
-      // If summaryResult has no districts or failed, generate from district summary RPC
       let districtsList: Array<{ district: string; total: number }> = [];
       if (
         summaryResult &&
@@ -143,7 +142,6 @@ export async function GET(request: Request) {
       ) {
         districtsList = summaryResult.districts as Array<{ district: string; total: number }>;
       } else {
-        // 1. Try vf_map_district_summary
         try {
           const { data: districtRows } = await account.supabase.rpc(
             "vf_map_district_summary",
@@ -162,7 +160,6 @@ export async function GET(request: Request) {
           // Fallback to table
         }
 
-        // 2. Try vf_arapongas_district_summary table
         if (!districtsList.length) {
           try {
             const { data: cachedRows } = await account.supabase
@@ -254,6 +251,8 @@ export async function GET(request: Request) {
           .select("id,owner_email,payload,created_at,updated_at", { count: "exact" })
           .eq("kind", "contact");
 
+        query = applyScope(query, scope, emails, isAdmOrGestor);
+
         if (district.toLowerCase() === "zona rural" || district.toLowerCase() === "rural") {
           query = query.ilike("payload->>district", "%rural%");
         } else {
@@ -275,7 +274,7 @@ export async function GET(request: Request) {
 
         if (Array.isArray(fallbackRows)) {
           districtContacts = fallbackRows.map(mapContact);
-          total = fallbackCount || fallbackRows.length;
+          total = fallbackCount ?? fallbackRows.length;
         }
       }
 
@@ -303,10 +302,7 @@ export async function GET(request: Request) {
 
     let query = account.supabase
       .from("vf_owned_records")
-      .select(
-        "id,owner_email,payload,created_at,updated_at",
-        hasFilters ? { count: "exact" } : undefined,
-      )
+      .select("id,owner_email,payload,created_at,updated_at", { count: "exact" })
       .eq("kind", "contact")
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
@@ -342,8 +338,8 @@ export async function GET(request: Request) {
         scope,
         page,
         pageSize,
-        total: total || 57683,
-        totalPages: Math.max(1, Math.ceil((total || 57683) / pageSize)),
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
         contacts: ((data ?? []) as ContactRow[]).map(mapContact),
       },
       {
