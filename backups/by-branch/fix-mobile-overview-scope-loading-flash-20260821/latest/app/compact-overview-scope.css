@@ -75,11 +75,13 @@
 
 @media (max-width: 760px) {
   /*
-   * Na Visão Geral mobile o seletor legado é renderizado pelo HTML antes do
-   * enhancer compacto hidratar. Escondê-lo por CSS no primeiro paint elimina
-   * o flash de "Todos os usuários" sem afetar as outras telas.
+   * Na Visão Geral mobile, o seletor legado existe antes do enhancer compacto.
+   * Durante o carregamento inicial ainda não existe .welcome-pro; nesse estágio
+   * a workspace contém diretamente .loading-state. Cobrimos os dois estados
+   * para impedir o flash de "Todos os usuários" do primeiro ao último paint.
    */
-  body:has(.welcome-pro) .topbar .scope-picker {
+  body:has(.welcome-pro) .topbar .scope-picker,
+  body:has(.workspace > .loading-state) .topbar .scope-picker {
     display: none !important;
   }
 
