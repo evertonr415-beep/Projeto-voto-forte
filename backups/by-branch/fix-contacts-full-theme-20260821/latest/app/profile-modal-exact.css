@@ -1,0 +1,282 @@
+/* Modal Minha conta — visual aprovado (desktop + mobile) */
+.modal:has(.profile-box) {
+  width: min(920px, calc(100vw - 32px)) !important;
+  max-width: 920px !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(47, 111, 178, 0.72) !important;
+  border-radius: 24px !important;
+  background: #07152b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 30px 90px rgba(0, 8, 22, 0.62) !important;
+}
+
+.modal:has(.profile-box) > header {
+  min-height: 170px !important;
+  padding: 34px 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: linear-gradient(110deg, #0a2244 0%, #123a72 55%, #1b4a86 100%) !important;
+  border-bottom: 1px solid rgba(69, 126, 191, 0.25) !important;
+}
+
+.modal:has(.profile-box) > header small {
+  display: block !important;
+  margin-bottom: 16px !important;
+  color: #d9aa4a !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 4px !important;
+}
+
+.modal:has(.profile-box) > header h3 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 32px !important;
+  line-height: 1.1 !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.4px !important;
+}
+
+.modal:has(.profile-box) > header > button {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(108, 155, 209, 0.45) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: #ffffff !important;
+  font-size: 31px !important;
+  line-height: 1 !important;
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.025) !important;
+}
+
+.modal:has(.profile-box) .profile-box {
+  padding: 54px 56px 44px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(34, 85, 155, 0.18), transparent 28%),
+    linear-gradient(180deg, #07172f 0%, #07142a 100%) !important;
+  text-align: center !important;
+}
+
+.modal:has(.profile-box) .profile-box > span {
+  width: 112px !important;
+  height: 112px !important;
+  min-width: 112px !important;
+  min-height: 112px !important;
+  margin: 0 auto 26px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 2px solid #d6a33d !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #14396e 0%, #245eae 100%) !important;
+  color: #ffffff !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.30) !important;
+}
+
+.modal:has(.profile-box) .profile-box h4 {
+  margin: 0 0 8px !important;
+  color: #ffffff !important;
+  font-size: 29px !important;
+  line-height: 1.15 !important;
+  font-weight: 500 !important;
+}
+
+.modal:has(.profile-box) .profile-box p {
+  margin: 0 0 34px !important;
+  color: #7f8ea4 !important;
+  font-size: 18px !important;
+  line-height: 1.3 !important;
+}
+
+.modal:has(.profile-box) .profile-box button {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 66px !important;
+  margin: 0 0 16px !important;
+  padding: 0 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  border: 1px solid #376aa8 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #0d2448 0%, #0a1b36 100%) !important;
+  color: #f8fafc !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+.modal:has(.profile-box) .profile-box button:first-of-type::before {
+  content: "⚙" !important;
+  color: #e4b44d !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+}
+
+.modal:has(.profile-box) .profile-box .logout-link {
+  margin-bottom: 0 !important;
+  border-color: #d99b2b !important;
+  color: #e0a83e !important;
+  background: linear-gradient(180deg, #101f39 0%, #0b172c 100%) !important;
+}
+
+.modal:has(.profile-box) .profile-box .logout-link::before {
+  content: "↪" !important;
+  color: #e0a83e !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+
+.modal:has(.profile-box) .profile-box button:hover {
+  transform: translateY(-1px) !important;
+  border-color: #4b84c4 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+.modal:has(.profile-box) .profile-box .logout-link:hover {
+  border-color: #efb545 !important;
+}
+
+.modal:has(.profile-box) > footer {
+  min-height: 104px !important;
+  padding: 22px 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 16px !important;
+  border-top: 1px solid rgba(60, 111, 169, 0.34) !important;
+  background: linear-gradient(180deg, #08172d 0%, #071427 100%) !important;
+}
+
+.modal:has(.profile-box) > footer button {
+  min-width: 150px !important;
+  min-height: 56px !important;
+  padding: 0 26px !important;
+  border: 1px solid #376aa8 !important;
+  border-radius: 14px !important;
+  background: #0d203e !important;
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+}
+
+.modal:has(.profile-box) > footer .primary {
+  border-color: #e0ad45 !important;
+  background: linear-gradient(135deg, #d5a347 0%, #b87820 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(181, 119, 31, 0.30) !important;
+}
+
+/* Mobile: mesma identidade, proporções compactas e sem perder legibilidade */
+@media (max-width: 700px) {
+  .modal:has(.profile-box) {
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 20px !important;
+  }
+
+  .modal:has(.profile-box) > header {
+    min-height: 118px !important;
+    padding: 22px 22px !important;
+  }
+
+  .modal:has(.profile-box) > header small {
+    margin-bottom: 10px !important;
+    font-size: 9px !important;
+    letter-spacing: 3px !important;
+  }
+
+  .modal:has(.profile-box) > header h3 {
+    font-size: 25px !important;
+  }
+
+  .modal:has(.profile-box) > header > button {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    font-size: 26px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box {
+    padding: 34px 20px 30px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box > span {
+    width: 88px !important;
+    height: 88px !important;
+    min-width: 88px !important;
+    min-height: 88px !important;
+    margin-bottom: 20px !important;
+    font-size: 23px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box h4 {
+    font-size: 23px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box p {
+    margin-bottom: 26px !important;
+    font-size: 15px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box button {
+    min-height: 56px !important;
+    margin-bottom: 13px !important;
+    padding: 0 16px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+    font-size: 15px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box button:first-of-type::before {
+    font-size: 21px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box .logout-link::before {
+    font-size: 23px !important;
+  }
+
+  .modal:has(.profile-box) > footer {
+    min-height: 82px !important;
+    padding: 14px 16px !important;
+    gap: 10px !important;
+  }
+
+  .modal:has(.profile-box) > footer button {
+    min-width: 0 !important;
+    min-height: 50px !important;
+    flex: 1 1 0 !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .modal:has(.profile-box) .profile-box {
+    padding: 28px 16px 24px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box > span {
+    width: 78px !important;
+    height: 78px !important;
+    min-width: 78px !important;
+    min-height: 78px !important;
+  }
+
+  .modal:has(.profile-box) .profile-box h4 {
+    font-size: 21px !important;
+  }
+}
