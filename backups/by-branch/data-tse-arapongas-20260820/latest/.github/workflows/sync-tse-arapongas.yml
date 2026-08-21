@@ -7,13 +7,19 @@ on:
     paths:
       - scripts/sync_tse_arapongas.py
       - .github/workflows/sync-tse-arapongas.yml
+  pull_request:
+    branches:
+      - data/tse-arapongas-20260820
+    paths:
+      - scripts/sync_tse_arapongas.py
+      - .github/workflows/sync-tse-arapongas.yml
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: sync-tse-arapongas
+  group: sync-tse-arapongas-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Checkout branch
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -46,7 +52,15 @@ jobs:
           print(f'OK: {len(places)} locais oficiais; {p.stat().st_size} bytes')
           PY
 
-      - name: Commit generated data
+      - name: Upload generated official dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: arapongas-tse-official
+          path: app/data/arapongas-tse-official.json
+          if-no-files-found: error
+
+      - name: Commit generated data on sync branch
+        if: github.event_name == 'push'
         run: |
           if git diff --quiet -- app/data/arapongas-tse-official.json; then
             echo "No generated-data changes."
