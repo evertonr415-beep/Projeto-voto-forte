@@ -1,0 +1,74 @@
+name: Sync TSE Arapongas official data
+
+on:
+  push:
+    branches:
+      - data/tse-arapongas-20260820
+    paths:
+      - scripts/sync_tse_arapongas.py
+      - .github/workflows/sync-tse-arapongas.yml
+  pull_request:
+    branches:
+      - data/tse-arapongas-20260820
+    paths:
+      - scripts/sync_tse_arapongas.py
+      - .github/workflows/sync-tse-arapongas.yml
+      - ci/tse-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-tse-arapongas-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate official TSE polling-place data
+        run: python3 scripts/sync_tse_arapongas.py
+
+      - name: Validate generated dataset
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('app/data/arapongas-tse-official.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          places = data.get('pollingPlaces') or []
+          assert data.get('provider') == 'Tribunal Superior Eleitoral (TSE)'
+          assert data.get('municipality') == 'Arapongas'
+          assert data.get('uf') == 'PR'
+          assert len(places) >= 5, f'Poucos locais gerados: {len(places)}'
+          assert any('2024' in (x.get('elections') or {}) for x in places)
+          assert any('2022' in (x.get('elections') or {}) for x in places)
+          print(f'OK: {len(places)} locais oficiais; {p.stat().st_size} bytes')
+          PY
+
+      - name: Upload generated official dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: arapongas-tse-official
+          path: app/data/arapongas-tse-official.json
+          if-no-files-found: error
+
+      - name: Commit generated data on sync branch
+        if: github.event_name == 'push'
+        run: |
+          if git diff --quiet -- app/data/arapongas-tse-official.json; then
+            echo "No generated-data changes."
+            exit 0
+          fi
+          git config user.name "voto-forte-tse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/data/arapongas-tse-official.json
+          git commit -m "data(tse): sync official Arapongas polling-place results [skip ci]"
+          git push origin HEAD:data/tse-arapongas-20260820

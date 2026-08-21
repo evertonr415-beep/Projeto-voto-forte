@@ -1,0 +1,4 @@
+/* Oculta apenas o KPI de Reuniões no Painel de Contatos (/contatos). */
+.optimized-overview .optimized-kpis > article:nth-child(5) {
+  display: none;
+}
