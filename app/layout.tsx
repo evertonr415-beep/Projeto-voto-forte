@@ -59,6 +59,7 @@ import "./municipality-management.css";
 import "./gestor-access-ui.css";
 import "./runtime-version-guard.css";
 import "./ux-audit-fixes.css";
+import "./voto-forte-unified-theme.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
