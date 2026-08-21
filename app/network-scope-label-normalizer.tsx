@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 const NETWORK_LABEL = "Todos da rede";
 const LEGACY_LABELS = new Set([
@@ -42,7 +42,7 @@ function normalizeNetworkScopeLabels() {
 }
 
 export default function NetworkScopeLabelNormalizer() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     let scheduled = false;
 
     const schedule = () => {
