@@ -14,8 +14,13 @@ const FILTER_CATEGORIES = [
   ...AUXILIARY_FILTER_CATEGORIES,
 ] as const;
 const ISSUE_SEVERITIES = ["critical", "warning", "info"] as const;
+const SUMMARY_CACHE_TTL_MS = 30_000;
 
-let summaryCache: { timestamp: number; scope: string; data: Record<string, number> } | null = null;
+type SummaryCacheEntry = {
+  timestamp: number;
+  data: Record<string, number>;
+};
+const summaryCache = new Map<string, SummaryCacheEntry>();
 
 type FilterCategory = (typeof FILTER_CATEGORIES)[number];
 
@@ -77,18 +82,109 @@ async function resolveScope(
 ) {
   const emails = await visibleEmails(account);
   const requested = requestedOwner?.trim().toLowerCase();
-  const isAdmOrGestor =
+  const canUseAll =
     account.accessRole === "adm" ||
     account.accessRole === "gestor" ||
     isAdministrator(account.role);
 
-  let scope = isAdmOrGestor ? "all" : account.email;
-  if (requested === "all" && isAdmOrGestor) scope = "all";
-  else if (requested && emails.includes(requested)) scope = requested;
-  else if (requested && requested !== account.email && !isAdmOrGestor)
-    return { error: Response.json({ error: "Acesso negado" }, { status: 403 }) };
+  if (!requested) {
+    return { scope: canUseAll ? "all" : account.email, emails, canUseAll };
+  }
 
-  return { scope, emails, isAdmOrGestor };
+  if (requested === "all") {
+    if (!canUseAll)
+      return { error: Response.json({ error: "Acesso negado" }, { status: 403 }) };
+    return { scope: "all", emails, canUseAll };
+  }
+
+  if (!emails.includes(requested)) {
+    return { error: Response.json({ error: "Acesso negado" }, { status: 403 }) };
+  }
+
+  return { scope: requested, emails, canUseAll };
+}
+
+async function loadSummaryMap(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  scope: string,
+  isGlobalScope: boolean,
+) {
+  const cacheKey = `${account.email}:${scope}`;
+  const now = Date.now();
+  const cached = summaryCache.get(cacheKey);
+  if (cached && now - cached.timestamp < SUMMARY_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  let summaryMap: Record<string, number> = {};
+
+  try {
+    const { data: summaryRows, error } = isGlobalScope
+      ? await account.supabase.rpc("vf_contact_quality_filter_summary")
+      : await account.supabase.rpc(
+          "vf_contact_quality_filter_summary_for_owner",
+          { p_owner_email: scope },
+        );
+
+    if (error) throw error;
+    if (Array.isArray(summaryRows)) {
+      for (const item of summaryRows) {
+        if (!item || typeof item !== "object") continue;
+        const code = String((item as { filter_code?: unknown }).filter_code || "");
+        if (!code) continue;
+        summaryMap[code] = safeCount((item as { total?: unknown }).total);
+      }
+    }
+  } catch {
+    // O fallback abaixo preserva o painel caso a RPC esteja temporariamente indisponível.
+  }
+
+  if (!("all" in summaryMap)) {
+    let baseQualityQuery = account.supabase.from("vf_contact_quality");
+    if (!isGlobalScope) baseQualityQuery = baseQualityQuery.eq("owner_email", scope);
+
+    const [
+      allRes,
+      invPhoneRes,
+      missNameRes,
+      incNameRes,
+      missDistRes,
+      locDivRes,
+      missStreetRes,
+    ] = await Promise.all([
+      baseQualityQuery.select("record_id", { count: "exact", head: true }),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
+      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
+    ]);
+
+    summaryMap = {
+      all: allRes.count ?? 0,
+      invalid_phone: invPhoneRes.count ?? 0,
+      missing_name: missNameRes.count ?? 0,
+      incomplete_name: incNameRes.count ?? 0,
+      missing_district: missDistRes.count ?? 0,
+      location_divergence: locDivRes.count ?? 0,
+      missing_street: missStreetRes.count ?? 0,
+    };
+    summaryMap.needs_review =
+      (summaryMap.invalid_phone || 0) +
+      (summaryMap.missing_name || 0) +
+      (summaryMap.incomplete_name || 0) +
+      (summaryMap.missing_district || 0) +
+      (summaryMap.location_divergence || 0);
+  }
+
+  summaryCache.set(cacheKey, { timestamp: now, data: summaryMap });
+  if (summaryCache.size > 30) {
+    for (const [key, entry] of summaryCache) {
+      if (now - entry.timestamp >= SUMMARY_CACHE_TTL_MS) summaryCache.delete(key);
+    }
+  }
+  return summaryMap;
 }
 
 export async function GET(request: Request) {
@@ -99,13 +195,11 @@ export async function GET(request: Request) {
   const resolved = await resolveScope(account, url.searchParams.get("owner") ?? undefined);
   if ("error" in resolved) return resolved.error;
 
-  const { scope, emails, isAdmOrGestor } = resolved;
+  const { scope } = resolved;
   const isGlobalScope = scope === "all";
   const page = Math.min(100_000, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const requestedCategory = url.searchParams.get("category") ?? "";
-  const category = FILTER_CATEGORIES.includes(
-    requestedCategory as FilterCategory,
-  )
+  const category = FILTER_CATEGORIES.includes(requestedCategory as FilterCategory)
     ? requestedCategory
     : "";
   const requestedSeverity = url.searchParams.get("severity") ?? "";
@@ -119,83 +213,15 @@ export async function GET(request: Request) {
   const to = from + PAGE_SIZE - 1;
 
   try {
-    // 1. Fetch filter summary statistics with fast 30s cache
-    const cacheKey = scope;
-    const now = Date.now();
-    let summaryMap: Record<string, number> = {};
-
-    if (summaryCache && summaryCache.scope === cacheKey && now - summaryCache.timestamp < 30_000) {
-      summaryMap = summaryCache.data;
-    } else {
-      try {
-        const { data: summaryRows } = await account.supabase.rpc(
-          "vf_contact_quality_filter_summary",
-        );
-
-        if (Array.isArray(summaryRows)) {
-          for (const item of summaryRows) {
-            if (item && typeof item === "object") {
-              const code = String((item as { filter_code?: unknown }).filter_code || "");
-              const tot = safeCount((item as { total?: unknown }).total);
-              if (code) summaryMap[code] = tot;
-            }
-          }
-        }
-      } catch {
-        // Fallback
-      }
-
-      const hasValidRpcCounts = (summaryMap["all"] || 0) > 0;
-      if (!hasValidRpcCounts) {
-        let baseQualityQuery = account.supabase.from("vf_contact_quality");
-        if (!isGlobalScope) {
-          baseQualityQuery = baseQualityQuery.eq("owner_email", scope);
-        }
-
-        const [
-          allRes,
-          invPhoneRes,
-          missNameRes,
-          incNameRes,
-          missDistRes,
-          locDivRes,
-          missStreetRes,
-        ] = await Promise.all([
-          baseQualityQuery.select("record_id", { count: "exact", head: true }),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
-          baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
-        ]);
-
-        summaryMap = {
-          all: allRes.count ?? 57683,
-          invalid_phone: invPhoneRes.count ?? 0,
-          missing_name: missNameRes.count ?? 0,
-          incomplete_name: incNameRes.count ?? 0,
-          missing_district: missDistRes.count ?? 0,
-          location_divergence: locDivRes.count ?? 0,
-          missing_street: missStreetRes.count ?? 0,
-        };
-        summaryMap.needs_review =
-          (summaryMap.invalid_phone || 0) +
-          (summaryMap.missing_name || 0) +
-          (summaryMap.incomplete_name || 0) +
-          (summaryMap.missing_district || 0) +
-          (summaryMap.location_divergence || 0);
-      }
-      summaryCache = { timestamp: now, scope: cacheKey, data: summaryMap };
-    }
+    const summaryMap = await loadSummaryMap(account, scope, isGlobalScope);
 
     const categoryCounts: Record<string, number> = {
-      invalid_phone: summaryMap["invalid_phone"] || 0,
-      missing_name: summaryMap["missing_name"] || 0,
-      incomplete_name: summaryMap["incomplete_name"] || 0,
-      missing_district: summaryMap["missing_district"] || 0,
-      location_divergence: summaryMap["location_divergence"] || 0,
-      missing_street: summaryMap["missing_street"] || 0,
+      invalid_phone: summaryMap.invalid_phone || 0,
+      missing_name: summaryMap.missing_name || 0,
+      incomplete_name: summaryMap.incomplete_name || 0,
+      missing_district: summaryMap.missing_district || 0,
+      location_divergence: summaryMap.location_divergence || 0,
+      missing_street: summaryMap.missing_street || 0,
     };
 
     const severityCounts = {
@@ -207,16 +233,13 @@ export async function GET(request: Request) {
       info: categoryCounts.missing_street,
     };
 
-    const totalContacts = summaryMap["all"] || 57683;
-    const totalIssues = summaryMap["needs_review"] || (severityCounts.critical + severityCounts.warning);
+    const totalContacts = summaryMap.all || 0;
+    const totalIssues =
+      summaryMap.needs_review || severityCounts.critical + severityCounts.warning;
     const requiredIncomplete =
       categoryCounts.missing_name +
       categoryCounts.incomplete_name +
       categoryCounts.missing_district;
-
-    // 2. Fetch issues data
-    let issues: Array<Record<string, unknown>> = [];
-    let total = 0;
 
     let query = account.supabase
       .from("vf_contact_quality")
@@ -226,23 +249,23 @@ export async function GET(request: Request) {
       )
       .order("updated_at", { ascending: false });
 
-    if (!isGlobalScope) {
-      query = query.eq("owner_email", scope);
-    }
+    if (!isGlobalScope) query = query.eq("owner_email", scope);
 
-    if (category) {
-      if (category === "invalid_phone") query = query.eq("has_invalid_phone", true);
-      else if (category === "missing_name") query = query.eq("has_missing_name", true);
-      else if (category === "incomplete_name") query = query.eq("has_incomplete_name", true);
-      else if (category === "missing_district") query = query.eq("has_missing_district", true);
-      else if (category === "location_divergence") query = query.eq("has_location_divergence", true);
-      else if (category === "missing_street") query = query.eq("has_missing_street", true);
-      else query = query.contains("issue_codes", [category]);
-    } else if (severity) {
+    if (category === "invalid_phone") query = query.eq("has_invalid_phone", true);
+    else if (category === "missing_name") query = query.eq("has_missing_name", true);
+    else if (category === "incomplete_name") query = query.eq("has_incomplete_name", true);
+    else if (category === "missing_district") query = query.eq("has_missing_district", true);
+    else if (category === "location_divergence") query = query.eq("has_location_divergence", true);
+    else if (category === "missing_street") query = query.eq("has_missing_street", true);
+
+    // Categoria e prioridade são filtros cumulativos. Antes, escolher uma categoria
+    // fazia a prioridade ser ignorada, o que dava a impressão de filtro incorreto.
+    if (severity) {
       query = query.eq("severity", severity);
-    } else if (!queryText) {
-      // Quando não há busca textual nem categoria específica, traz as pendências ativas
-      query = query.in("severity", ["critical", "warning", "info"]);
+    } else if (!category) {
+      // A visão padrão é de pendências essenciais. "Sem rua" continua disponível
+      // como filtro complementar, mas não força a leitura de quase toda a base.
+      query = query.in("severity", ["critical", "warning"]);
     }
 
     if (queryText) {
@@ -252,56 +275,26 @@ export async function GET(request: Request) {
     }
 
     query = query.range(from, to);
-    const { data: tableData, count: tableCount } = await query;
+    const { data: tableData, count: tableCount, error: tableError } = await query;
+    if (tableError) throw tableError;
 
-    if (Array.isArray(tableData) && tableData.length > 0) {
-      issues = tableData;
-      total = tableCount ?? tableData.length;
-    } else if (!category && !queryText && !severity) {
-      const { data: fallbackRecords, count: fallbackCount } = await account.supabase
-        .from("vf_owned_records")
-        .select("id,owner_email,payload,updated_at", { count: "exact" })
-        .eq("kind", "contact")
-        .order("id", { ascending: false })
-        .range(from, to);
-
-      if (Array.isArray(fallbackRecords)) {
-        issues = fallbackRecords.map((r) => {
-          const p = (r.payload ?? {}) as Record<string, unknown>;
-          return {
-            record_id: r.id,
-            owner_email: r.owner_email,
-            contact_name: String(p.name || ""),
-            phone: String(p.phone || ""),
-            phone_normalized: String(p.phoneNormalized || p.phone || ""),
-            district_original: String(p.district || ""),
-            city: String(p.city || "Arapongas"),
-            state: String(p.state || "PR"),
-            street: String(p.street || ""),
-            street_number: String(p.number || ""),
-            cep: String(p.cep || ""),
-            is_rural: false,
-            issue_codes: ["needs_review"],
-            severity: "warning",
-            updated_at: r.updated_at,
-          };
-        });
-        total = fallbackCount ?? issues.length;
-      }
-    }
+    const issues = Array.isArray(tableData)
+      ? (tableData as Array<Record<string, unknown>>)
+      : [];
+    const total = tableCount ?? issues.length;
 
     return Response.json(
       {
         scope,
         page,
         pageSize: PAGE_SIZE,
-        total: total || issues.length,
+        total,
         totalContacts,
         totalIssues,
         requiredIncomplete,
         categoryCounts,
         severityCounts,
-        totalPages: Math.max(1, Math.ceil((total || issues.length) / PAGE_SIZE)),
+        totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
         issues,
       },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
@@ -310,6 +303,7 @@ export async function GET(request: Request) {
     console.error("Failed to load contact quality issues", error);
     return Response.json(
       {
+        error: "Não foi possível carregar a Central de Qualidade agora.",
         scope,
         page,
         pageSize: PAGE_SIZE,
@@ -322,7 +316,10 @@ export async function GET(request: Request) {
         totalPages: 1,
         issues: [],
       },
-      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      {
+        status: 500,
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      },
     );
   }
 }
@@ -382,7 +379,7 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Não foi possível corrigir o contato." }, { status: 400 });
   }
 
-  // Synchronize quality table
+  summaryCache.clear();
   account.supabase.rpc("vf_sync_contact_quality_row", { p_record_id: recordId }).catch(() => undefined);
 
   return Response.json({ ok: true });
@@ -424,6 +421,7 @@ export async function DELETE(request: Request) {
       return Response.json({ error: message }, { status });
     }
 
+    summaryCache.clear();
     const result = (data ?? {}) as { deleted?: number };
     return Response.json({ ok: true, deleted: Number(result.deleted) || 0 });
   } catch (error) {
