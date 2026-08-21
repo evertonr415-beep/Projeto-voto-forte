@@ -132,22 +132,31 @@ html[data-vf-theme="light"] .vf-header-scope-select-wrap::after {
     min-width: 0;
     display: flex;
     align-items: center;
+    gap: 6px;
+    overflow: hidden;
   }
 
   .topbar .page-id h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 17px;
+    font-size: 15px;
+    margin: 0;
   }
 
   .vf-header-scope {
-    margin-left: 8px;
-    flex: 0 0 auto;
+    margin-left: 0;
+    flex: 0 1 118px;
+    min-width: 0;
   }
 
   .vf-header-scope-select-wrap {
-    width: 136px;
-    min-width: 136px;
-    max-width: 136px;
+    width: 118px;
+    min-width: 0;
+    max-width: 118px;
     height: 34px;
     border-radius: 10px;
     border-width: 1.5px;
@@ -157,38 +166,57 @@ html[data-vf-theme="light"] .vf-header-scope-select-wrap::after {
   }
 
   .vf-header-scope-select {
-    width: 136px;
-    min-width: 136px;
-    max-width: 136px;
+    width: 118px;
+    min-width: 0;
+    max-width: 118px;
     height: 32px;
-    padding: 0 27px 0 10px;
-    font-size: 11px !important;
+    padding: 0 24px 0 9px;
+    font-size: 10.5px !important;
     font-weight: 800 !important;
     letter-spacing: 0 !important;
-    text-overflow: clip;
+    text-overflow: ellipsis;
   }
 
   .vf-header-scope-select-wrap::after {
-    right: 9px;
+    right: 8px;
     font-size: 10px;
+  }
+
+  .topbar .page-id > .vf-theme-toggle {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+    min-width: 34px !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  .topbar .profile {
+    flex: 0 0 auto !important;
+    margin-left: 6px !important;
   }
 }
 
 @media (max-width: 390px) {
+  .topbar .page-id h1 {
+    max-width: 78px;
+    font-size: 14px;
+  }
+
   .vf-header-scope {
-    margin-left: 6px;
+    flex-basis: 108px;
   }
 
   .vf-header-scope-select-wrap,
   .vf-header-scope-select {
-    width: 132px;
-    min-width: 132px;
-    max-width: 132px;
+    width: 108px;
+    max-width: 108px;
   }
 
   .vf-header-scope-select {
-    font-size: 10.5px !important;
-    padding-left: 9px;
-    padding-right: 25px;
+    font-size: 10px !important;
+    padding-left: 8px;
+    padding-right: 22px;
   }
 }
