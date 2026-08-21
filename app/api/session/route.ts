@@ -75,45 +75,14 @@ async function getAccessStatus(
     };
   }
 
-  // Fallback garantido para os Gestores (Pedro Lupion, threexdroid, williammarquesmachado)
+  // Compatibilidade temporária para contas de Gestor já cadastradas.
+  // O login não deve promover papel nem alterar vínculos municipais: essas
+  // mudanças são administrativas e precisam passar pelas RPCs protegidas.
   if (
     email === "campanhaeleicaoxv@gmail.com" ||
     email === "threexdroid@gmail.com" ||
     email === "williammarquesmachado@gmail.com"
   ) {
-    void (async () => {
-      const { data: u } = await supabase
-        .from("vf_users")
-        .select("id")
-        .ilike("email", email)
-        .maybeSingle();
-
-      if (u?.id) {
-        await supabase
-          .from("vf_users")
-          .update({ role: "gestor", access_role: "gestor" })
-          .eq("id", u.id);
-
-        const { data: municipalities } = await supabase
-          .from("vf_municipalities")
-          .select("id")
-          .eq("status", "active");
-
-        if (Array.isArray(municipalities) && municipalities.length > 0) {
-          const rows = municipalities.map((m, index) => ({
-            user_id: u.id,
-            municipality_id: Number(m.id),
-            access_role: "gestor",
-            status: "active",
-            is_default: index === 0,
-          }));
-          await supabase
-            .from("vf_user_municipalities")
-            .upsert(rows, { onConflict: "user_id,municipality_id" });
-        }
-      }
-    })();
-
     return {
       state: "active",
       message: "Acesso de Gestor liberado.",
