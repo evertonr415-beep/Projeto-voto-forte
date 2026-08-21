@@ -1,0 +1,107 @@
+name: Sync TSE Arapongas official data
+
+on:
+  push:
+    branches:
+      - data/tse-arapongas-20260820
+    paths:
+      - scripts/sync_tse_arapongas.py
+      - .github/workflows/sync-tse-arapongas.yml
+  pull_request:
+    branches:
+      - data/tse-arapongas-20260820
+    paths:
+      - scripts/sync_tse_arapongas.py
+      - .github/workflows/sync-tse-arapongas.yml
+      - ci/tse-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-tse-arapongas-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare TSE downloader for CDN
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("scripts/sync_tse_arapongas.py")
+          s = p.read_text(encoding="utf-8")
+          if "import subprocess\n" not in s:
+              s = s.replace("import shutil\n", "import shutil\nimport subprocess\n")
+          old = '''    request = urllib.request.Request(url, headers={"User-Agent": "VotoForte-TSE-Sync/1.0"})
+              with urllib.request.urlopen(request, timeout=180) as response, destination.open("wb") as out:
+                  shutil.copyfileobj(response, out, length=1024 * 1024)
+          '''
+          old = old.replace("              ", "")
+          new = '''    subprocess.run([
+              "curl", "-fL", "--retry", "3", "--retry-delay", "2",
+              "--http1.1",
+              "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36",
+              "-e", "https://dadosabertos.tse.jus.br/",
+              "-H", "Accept: application/zip,application/octet-stream,*/*",
+              "-o", str(destination), url,
+          ], check=True)
+          '''
+          old = old.replace("    ", "    ")
+          new = new.replace("          ", "    ", 1)
+          if old not in s:
+              start = s.index('    request = urllib.request.Request')
+              end = s.index('    if destination.stat().st_size == 0:', start)
+              s = s[:start] + new + s[end:]
+          else:
+              s = s.replace(old, new)
+          p.write_text(s, encoding="utf-8")
+          PY
+
+      - name: Generate official TSE polling-place data
+        run: python3 scripts/sync_tse_arapongas.py
+
+      - name: Validate generated dataset
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('app/data/arapongas-tse-official.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          places = data.get('pollingPlaces') or []
+          assert data.get('provider') == 'Tribunal Superior Eleitoral (TSE)'
+          assert data.get('municipality') == 'Arapongas'
+          assert data.get('uf') == 'PR'
+          assert len(places) >= 5, f'Poucos locais gerados: {len(places)}'
+          assert any('2024' in (x.get('elections') or {}) for x in places)
+          assert any('2022' in (x.get('elections') or {}) for x in places)
+          print(f'OK: {len(places)} locais oficiais; {p.stat().st_size} bytes')
+          PY
+
+      - name: Upload generated official dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: arapongas-tse-official
+          path: app/data/arapongas-tse-official.json
+          if-no-files-found: error
+
+      - name: Commit generated data on sync branch
+        if: github.event_name == 'push'
+        run: |
+          if git diff --quiet -- app/data/arapongas-tse-official.json; then
+            echo "No generated-data changes."
+            exit 0
+          fi
+          git config user.name "voto-forte-tse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/data/arapongas-tse-official.json
+          git commit -m "data(tse): sync official Arapongas polling-place results [skip ci]"
+          git push origin HEAD:data/tse-arapongas-20260820
