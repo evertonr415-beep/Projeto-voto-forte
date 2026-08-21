@@ -1,0 +1,93 @@
+.vf-welcome-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  max-width: 100%;
+}
+
+.vf-welcome-scope-label {
+  font-size: 7px !important;
+  letter-spacing: 1.8px !important;
+  color: #d0ab64 !important;
+  font-weight: 900 !important;
+  white-space: nowrap;
+}
+
+.vf-welcome-scope-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+  max-width: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.vf-welcome-scope-select-wrap::after {
+  content: "⌄";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-55%);
+  color: #d8e5ea;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.vf-welcome-scope-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 260px;
+  height: 34px;
+  padding: 0 34px 0 13px;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.vf-welcome-scope-select option {
+  color: #102f59;
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  .vf-welcome-scope {
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .vf-welcome-scope-label {
+    flex: 0 0 auto;
+    font-size: 6.5px !important;
+    letter-spacing: 1.25px !important;
+  }
+
+  .vf-welcome-scope-select-wrap {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .vf-welcome-scope-select {
+    max-width: none;
+    height: 40px;
+    font-size: 12px;
+    padding-left: 12px;
+    padding-right: 32px;
+  }
+}
