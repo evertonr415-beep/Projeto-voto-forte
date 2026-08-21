@@ -87,24 +87,31 @@
   }
 
   .vf-header-scope {
-    margin-left: 9px;
+    margin-left: 8px;
     flex: 0 0 auto;
   }
 
   .vf-header-scope-select-wrap {
-    width: 112px;
-    max-width: 112px;
-    height: 32px;
+    width: 136px;
+    min-width: 136px;
+    max-width: 136px;
+    height: 30px;
     border-radius: 9px;
+    border-color: #cbd8e6;
+    background: #fbfdff;
+    box-shadow: 0 2px 7px rgba(20, 45, 72, 0.05);
   }
 
   .vf-header-scope-select {
-    width: 112px;
-    max-width: 112px;
-    height: 30px;
-    font-size: 10px;
-    padding-left: 10px;
-    padding-right: 26px;
+    width: 136px;
+    min-width: 136px;
+    max-width: 136px;
+    height: 28px;
+    padding: 0 27px 0 10px;
+    font-size: 11px !important;
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
+    text-overflow: clip;
   }
 
   .vf-header-scope-select-wrap::after {
@@ -115,16 +122,19 @@
 
 @media (max-width: 390px) {
   .vf-header-scope {
-    margin-left: 7px;
+    margin-left: 6px;
   }
 
   .vf-header-scope-select-wrap,
   .vf-header-scope-select {
-    width: 102px;
-    max-width: 102px;
+    width: 132px;
+    min-width: 132px;
+    max-width: 132px;
   }
 
   .vf-header-scope-select {
-    font-size: 9.5px;
+    font-size: 10.5px !important;
+    padding-left: 9px;
+    padding-right: 25px;
   }
 }
