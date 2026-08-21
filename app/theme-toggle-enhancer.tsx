@@ -57,34 +57,45 @@ export default function ThemeToggleEnhancer() {
       frameId = 0;
       if (stopped) return;
 
+      const themeButton = ensureButton();
       const topbar = document.querySelector<HTMLElement>(".topbar");
       const topActions = topbar?.querySelector<HTMLElement>(".top-actions");
-      if (!topbar || !topActions) return;
-
-      const themeButton = ensureButton();
       const isMobile = window.matchMedia("(max-width: 760px)").matches;
 
-      if (isMobile) {
-        const compactScope = topbar.querySelector<HTMLElement>(".page-id > .vf-header-scope");
-        if (compactScope?.parentElement) {
-          if (compactScope.nextElementSibling !== themeButton) {
-            compactScope.insertAdjacentElement("afterend", themeButton);
+      if (topbar && topActions) {
+        themeButton.classList.remove("vf-theme-toggle-floating");
+
+        if (isMobile) {
+          const compactScope = topbar.querySelector<HTMLElement>(".page-id > .vf-header-scope");
+          if (compactScope?.parentElement) {
+            if (compactScope.nextElementSibling !== themeButton) {
+              compactScope.insertAdjacentElement("afterend", themeButton);
+            }
+            return;
           }
-          return;
         }
+
+        const municipalitySelect = Array.from(topActions.querySelectorAll("select")).find((select) =>
+          Array.from(select.options).some((option) => /arapongas|munic/i.test(option.textContent || "")),
+        );
+
+        if (municipalitySelect) {
+          if (municipalitySelect.nextElementSibling !== themeButton) {
+            municipalitySelect.insertAdjacentElement("afterend", themeButton);
+          }
+        } else if (topActions.firstElementChild !== themeButton) {
+          topActions.prepend(themeButton);
+        }
+        return;
       }
 
-      const municipalitySelect = Array.from(topActions.querySelectorAll("select")).find((select) =>
-        Array.from(select.options).some((option) => /arapongas|munic/i.test(option.textContent || "")),
-      );
-
-      if (municipalitySelect) {
-        if (municipalitySelect.nextElementSibling !== themeButton) {
-          municipalitySelect.insertAdjacentElement("afterend", themeButton);
-        }
-      } else if (topActions.firstElementChild !== themeButton) {
-        topActions.prepend(themeButton);
+      // Telas independentes (Painel de contatos, Agenda, Inteligência,
+      // Importações, Exportações etc.) nem sempre possuem .topbar. Nelas,
+      // mantém o mesmo alternador em posição fixa e acessível.
+      if (themeButton.parentElement !== document.body) {
+        document.body.appendChild(themeButton);
       }
+      themeButton.classList.add("vf-theme-toggle-floating");
     };
 
     const scheduleInstall = () => {
