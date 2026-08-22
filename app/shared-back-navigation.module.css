@@ -88,15 +88,14 @@
   opacity: 1 !important;
 }
 
-/* O tema local da Agenda e a autoridade final para este botao. Isso evita
-   que o tema global do html deixe o retorno branco sobre fundo claro. */
-:global(.ae-root[data-theme="dark"] .ae-shell > [data-vf-standard-back="true"]) {
+/* A Agenda mobile e pintada pelo tema global do sistema; o retorno precisa
+   obedecer a mesma fonte para nao ficar branco sobre uma tela clara. */
+:global(html[data-vf-theme="dark"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
 
-:global(.ae-root[data-theme="light"] .ae-shell > [data-vf-standard-back="true"]),
-:global(.ae-root.light-mode .ae-shell > [data-vf-standard-back="true"]) {
+:global(html[data-vf-theme="light"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
   color: #17345c !important;
   -webkit-text-fill-color: #17345c !important;
 }
@@ -133,13 +132,12 @@
     align-self: flex-start !important;
   }
 
-  :global(.ae-root[data-theme="dark"] .ae-shell > [data-vf-standard-back="true"]) {
+  :global(html[data-vf-theme="dark"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
   }
 
-  :global(.ae-root[data-theme="light"] .ae-shell > [data-vf-standard-back="true"]),
-  :global(.ae-root.light-mode .ae-shell > [data-vf-standard-back="true"]) {
+  :global(html[data-vf-theme="light"] .ae-root .ae-shell > [data-vf-standard-back="true"]) {
     color: #17345c !important;
     -webkit-text-fill-color: #17345c !important;
   }
