@@ -1,0 +1,31 @@
+.quality-mobile-list-toggle-host{display:none}
+
+@media(max-width:760px){
+  .issues-panel:not(.mobile-quality-expanded) .issues-table-wrap tbody>tr:nth-child(n+6){display:none!important}
+
+  .quality-mobile-list-toggle-host{
+    display:block;
+    padding:12px 0 2px;
+  }
+
+  .quality-mobile-list-toggle{
+    width:100%;
+    min-height:48px;
+    border:1px solid #c8d3df;
+    border-radius:12px;
+    background:#f7f9fc;
+    color:#17345c;
+    font-size:14px;
+    font-weight:850;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(23,52,92,.05);
+  }
+
+  .quality-mobile-list-toggle:active{
+    transform:translateY(1px);
+  }
+
+  .mobile-quality-expanded .quality-mobile-list-toggle{
+    background:#fff;
+  }
+}
