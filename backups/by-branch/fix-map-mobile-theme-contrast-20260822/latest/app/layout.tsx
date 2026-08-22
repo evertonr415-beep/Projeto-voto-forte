@@ -45,6 +45,7 @@ import "./agenda-mobile-compact.css";
 import "./agenda-mobile-direct-fix.css";
 import "./profile-modal-exact.css";
 import "./map-mobile-visual-polish.css";
+import "./map-mobile-theme-contrast.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
