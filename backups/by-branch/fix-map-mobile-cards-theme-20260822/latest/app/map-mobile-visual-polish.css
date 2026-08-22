@@ -267,3 +267,87 @@
     color: #66788c !important;
   }
 }
+
+/* Segunda camada de acabamento: integra os dois cards operacionais ao mesmo
+   azul institucional do cabecalho do mapa e usa o dourado somente nas acoes. */
+@media (max-width: 760px) {
+  body:has(.full-map) .vf-mobile-district-host {
+    margin-bottom: 14px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control,
+  body:has(.full-map) .vf-territorial-center {
+    border: 1px solid rgba(77, 153, 219, 0.22) !important;
+    border-radius: 18px !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(45, 118, 181, 0.14), transparent 42%),
+      linear-gradient(145deg, rgba(8, 32, 61, 0.98), rgba(14, 54, 91, 0.96)) !important;
+    box-shadow: 0 10px 24px rgba(2, 12, 25, 0.2) !important;
+    color: #f7fbff !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header {
+    min-height: 68px !important;
+    padding: 12px 13px 12px 15px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header strong,
+  body:has(.full-map) .vf-territorial-center > header strong {
+    color: #f8fbff !important;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.08) !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header small,
+  body:has(.full-map) .vf-territorial-center > header small {
+    color: rgba(221, 233, 246, 0.74) !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-toggle,
+  body:has(.full-map) .vf-territorial-center > header button {
+    border: 1px solid rgba(244, 202, 108, 0.58) !important;
+    background: linear-gradient(135deg, #dcae49, #b98125) !important;
+    color: #fffaf0 !important;
+    box-shadow: 0 7px 16px rgba(159, 104, 25, 0.28) !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-toggle {
+    width: 44px !important;
+    height: 44px !important;
+    flex-basis: 44px !important;
+    font-size: 21px !important;
+    font-weight: 800 !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center-host {
+    margin-top: 0 !important;
+    margin-bottom: 15px !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header {
+    min-height: 82px !important;
+    padding: 13px 13px 13px 15px !important;
+    gap: 12px !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header button {
+    min-width: 78px !important;
+    min-height: 42px !important;
+    padding-inline: 13px !important;
+    font-weight: 800 !important;
+  }
+
+  body:has(.full-map) .workspace > .full-map {
+    margin-top: 0 !important;
+  }
+
+  /* Mesmo no tema claro, estes cards permanecem azuis para manter a identidade
+     visual do bloco principal do Mapa Eleitoral. */
+  html[data-vf-theme="light"] body:has(.full-map) .vf-mobile-district-host .vf-district-map-control,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-center {
+    border-color: rgba(77, 153, 219, 0.22) !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(45, 118, 181, 0.14), transparent 42%),
+      linear-gradient(145deg, rgba(8, 32, 61, 0.98), rgba(14, 54, 91, 0.96)) !important;
+    color: #f7fbff !important;
+  }
+}
