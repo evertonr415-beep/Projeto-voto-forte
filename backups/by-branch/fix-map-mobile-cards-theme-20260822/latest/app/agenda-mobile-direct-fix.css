@@ -1,0 +1,244 @@
+/* Responsividade direta da Agenda Inteligente no mobile.
+   Mantém todo o conteúdo dentro da viewport e evita que flex/grid criem
+   largura mínima maior que a tela em Safari/iPhone. */
+@media (max-width: 768px) {
+  .ae-root {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: hidden !important;
+    transform: none !important;
+  }
+
+  .ae-root,
+  .ae-root * {
+    box-sizing: border-box !important;
+  }
+
+  .ae-root > *,
+  .ae-root .ae-shell,
+  .ae-root .ae-shell > *,
+  .ae-root .ae-topbar,
+  .ae-root .ae-toolbar,
+  .ae-root .ae-brand,
+  .ae-root .ae-view-switcher {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .ae-root .ae-shell {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    gap: 12px !important;
+    overflow-x: hidden !important;
+  }
+
+  .ae-root .ae-topbar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 16px 14px !important;
+    gap: 12px !important;
+    flex: 0 0 auto !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+
+  .ae-root .ae-brand {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    gap: 10px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  .ae-root .ae-brand > div:last-child {
+    min-width: 0 !important;
+    max-width: calc(100% - 62px) !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+  }
+
+  .ae-root .ae-logo {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    max-width: 52px !important;
+    max-height: 52px !important;
+    flex: 0 0 52px !important;
+    border-radius: 13px !important;
+  }
+
+  .ae-root .ae-title,
+  .ae-root .ae-subtitle {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    white-space: normal !important;
+  }
+
+  .ae-root .ae-title {
+    font-size: 1.02rem !important;
+    line-height: 1.16 !important;
+    margin: 0 !important;
+  }
+
+  .ae-root .ae-subtitle {
+    margin-top: 5px !important;
+    font-size: 0.74rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .ae-root .ae-toolbar {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
+  }
+
+  .ae-root .ae-toolbar > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .ae-root .ae-view-switcher {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .ae-root .ae-view-btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    padding: 8px 4px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
+  .ae-root .ae-toolbar > .ae-btn {
+    flex: 1 1 calc(50% - 4px) !important;
+    width: auto !important;
+    max-width: calc(50% - 4px) !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    white-space: normal !important;
+    justify-content: center !important;
+  }
+
+  .ae-root .ae-toolbar > div:not(.ae-view-switcher) {
+    display: flex !important;
+    flex: 1 1 100% !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .ae-root .ae-toolbar > div:not(.ae-view-switcher) > .ae-btn,
+  .ae-root .ae-toolbar > div:not(.ae-view-switcher) > button {
+    flex: 1 1 calc(50% - 4px) !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+    justify-content: center !important;
+  }
+
+  .ae-root button,
+  .ae-root input,
+  .ae-root select,
+  .ae-root textarea {
+    min-width: 0 !important;
+  }
+
+  .ae-root img,
+  .ae-root svg,
+  .ae-root canvas {
+    max-width: 100% !important;
+  }
+
+  /* Itens diretos de flex/grid podem manter min-width:auto por padrão e
+     provocar a rolagem lateral. No mobile eles devem poder encolher. */
+  .ae-root section,
+  .ae-root article,
+  .ae-root main,
+  .ae-root nav,
+  .ae-root header,
+  .ae-root footer {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .ae-root .ae-shell {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .ae-root .ae-topbar {
+    padding: 14px 11px !important;
+    gap: 10px !important;
+  }
+
+  .ae-root .ae-logo {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    max-width: 46px !important;
+    max-height: 46px !important;
+    flex-basis: 46px !important;
+  }
+
+  .ae-root .ae-brand > div:last-child {
+    max-width: calc(100% - 56px) !important;
+  }
+
+  .ae-root .ae-title {
+    font-size: 0.94rem !important;
+  }
+
+  .ae-root .ae-subtitle {
+    font-size: 0.69rem !important;
+  }
+
+  .ae-root .ae-view-btn {
+    font-size: 0.66rem !important;
+    gap: 3px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+}
