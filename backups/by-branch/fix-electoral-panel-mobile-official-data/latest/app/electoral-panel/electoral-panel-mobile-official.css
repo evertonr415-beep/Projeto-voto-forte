@@ -1,0 +1,100 @@
+@media (max-width: 760px) {
+  .tse-panel-shell {
+    padding: 10px !important;
+  }
+
+  .tse-panel-topbar {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px !important;
+  }
+
+  .tse-panel-brand {
+    min-width: 0;
+    gap: 8px !important;
+  }
+
+  .tse-panel-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .tse-panel-title {
+    font-size: 15px !important;
+    line-height: 1.2;
+  }
+
+  .tse-panel-badge {
+    display: none;
+  }
+
+  .tse-panel-subtitle {
+    display: none;
+  }
+
+  .tse-panel-actions {
+    width: auto !important;
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .tse-panel-actions .tse-btn {
+    display: none;
+  }
+
+  .tse-panel-actions .vf-back-dashboard-btn {
+    padding: 8px;
+  }
+
+  .tse-panel-integrity-note {
+    font-size: 12px;
+  }
+
+  .tse-subfilters-verified {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tse-search-input,
+  .tse-compact-select {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .tse-desktop-table {
+    display: none;
+  }
+
+  .tse-candidate-mobile-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .tse-candidate-mobile-card {
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    background: rgba(15,30,58,.7);
+  }
+
+  .tse-candidate-mobile-card.elected {
+    border-color: rgba(34,197,94,.35);
+  }
+
+  .tse-candidate-mobile-top,
+  .tse-candidate-mobile-meta,
+  .tse-candidate-mobile-result {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tse-candidate-mobile-meta,
+  .tse-candidate-mobile-result {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+}
