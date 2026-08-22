@@ -14,3 +14,21 @@
     overflow: visible !important;
   }
 }
+
+/* Botão Voltar da Agenda - contraste em tema claro */
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #17345c !important;
+  opacity: 1 !important;
+  border-color: rgba(23, 52, 92, 0.18) !important;
+}
+
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] svg,
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] span {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+html body .ae-root[data-theme="dark"] .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
