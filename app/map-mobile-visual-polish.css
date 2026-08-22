@@ -1,0 +1,269 @@
+/* Acabamento visual exclusivo do Mapa Eleitoral no mobile.
+   Mantem a logica e os controles existentes; apenas organiza hierarquia,
+   espacamento e legibilidade em telas pequenas. */
+
+@media (max-width: 760px) {
+  /* Titulo da pagina no cabecalho superior: evita o corte agressivo "Mapa El...". */
+  body:has(.full-map) .app-shell .topbar .page-id {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.full-map) .app-shell .topbar .page-id h1 {
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-top: 3px !important;
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.2px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* Cabecalho principal do mapa. O conteudo vira uma composicao de duas
+     colunas: titulo respirando a esquerda e acao compacta a direita. */
+  body:has(.full-map) .workspace > .page-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 0 !important;
+    align-items: center !important;
+    margin: 0 0 12px !important;
+    padding: 15px 15px 14px !important;
+    border: 1px solid rgba(75, 148, 214, 0.18) !important;
+    border-radius: 18px !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(45, 118, 181, 0.18), transparent 38%),
+      linear-gradient(145deg, rgba(8, 32, 61, 0.98), rgba(14, 54, 91, 0.96)) !important;
+    box-shadow: 0 12px 28px rgba(2, 12, 25, 0.2) !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.full-map) .workspace > .page-head > div {
+    display: contents !important;
+  }
+
+  body:has(.full-map) .workspace > .page-head span {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: end !important;
+    color: #d7ad5d !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+    letter-spacing: 1.65px !important;
+  }
+
+  body:has(.full-map) .workspace > .page-head h2 {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    min-width: 0 !important;
+    margin: 5px 0 7px !important;
+    color: #f8fbff !important;
+    font-size: clamp(22px, 6.4vw, 27px) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.65px !important;
+    text-wrap: balance !important;
+  }
+
+  body:has(.full-map) .workspace > .page-head p {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: rgba(221, 233, 246, 0.72) !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+  body:has(.full-map) .workspace > .page-head > button,
+  body:has(.full-map) .workspace > .page-head > .vf-mobile-page-contacts-toggle {
+    grid-column: 2 !important;
+    grid-row: 1 / 3 !important;
+    align-self: center !important;
+    min-width: 104px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border-radius: 13px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 6px 16px rgba(171, 116, 34, 0.24) !important;
+  }
+
+  /* Cartao "Contatos por bairro" deslocado para fora do Leaflet pelo
+     MobileMapControls. Fica compacto, legivel e com a mesma largura do mapa. */
+  body:has(.full-map) .vf-mobile-district-host {
+    width: 100% !important;
+    margin: 0 0 10px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: 1px solid rgba(28, 63, 105, 0.12) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg, #ffffff, #f5f8fc) !important;
+    box-shadow: 0 8px 22px rgba(8, 30, 60, 0.09) !important;
+    color: #183b67 !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-height: 66px !important;
+    padding: 11px 12px 11px 14px !important;
+    border-bottom: 0 !important;
+    background: transparent !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header > div {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header strong {
+    display: block !important;
+    color: #173b67 !important;
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-control header small {
+    display: block !important;
+    margin-top: 5px !important;
+    color: #64758a !important;
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:has(.full-map) .vf-mobile-district-host .vf-district-map-toggle {
+    display: grid !important;
+    place-items: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    border: 1px solid #d4dfec !important;
+    border-radius: 12px !important;
+    background: #eef4fa !important;
+    color: #174a7f !important;
+    box-shadow: none !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control[data-collapsed="true"]
+    .vf-district-map-list,
+  body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control[data-collapsed="true"]
+    .vf-district-map-scale {
+    display: none !important;
+  }
+
+  /* Pendencias: preserva todas as informacoes, mas reduz peso visual e evita
+     que o botao comprima excessivamente o texto. */
+  body:has(.full-map) .vf-territorial-center-host {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center {
+    margin: 0 !important;
+    border: 1px solid rgba(28, 63, 105, 0.12) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg, #ffffff, #f7f9fc) !important;
+    box-shadow: 0 8px 22px rgba(8, 30, 60, 0.09) !important;
+    color: #173b67 !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 12px 12px 14px !important;
+    background: transparent !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header > div {
+    min-width: 0 !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header strong {
+    display: block !important;
+    color: #173b67 !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.15px !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header small {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    margin-top: 5px !important;
+    color: #6a798c !important;
+    font-size: 9.5px !important;
+    line-height: 1.3 !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.full-map) .vf-territorial-center > header button {
+    min-width: 72px !important;
+    min-height: 40px !important;
+    padding: 0 11px !important;
+    border: 1px solid #d4dfec !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #173b67 !important;
+    box-shadow: 0 3px 10px rgba(15, 45, 80, 0.06) !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+
+  /* O mapa passa a encostar visualmente nos cards, sem perder area util. */
+  body:has(.full-map) .workspace > .full-map {
+    margin-top: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+}
+
+/* No tema claro o cabecalho continua institucional, mas sem ficar pesado. */
+@media (max-width: 760px) {
+  html[data-vf-theme="light"] body:has(.full-map) .workspace > .page-head {
+    border-color: #d7e3ef !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(42, 112, 174, 0.1), transparent 38%),
+      linear-gradient(145deg, #f8fbff, #eef5fb) !important;
+    box-shadow: 0 10px 24px rgba(26, 64, 103, 0.08) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .workspace > .page-head h2 {
+    color: #173b67 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .workspace > .page-head p {
+    color: #66788c !important;
+  }
+}
