@@ -1,0 +1,137 @@
+.backLink.backLink {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  width: fit-content;
+  min-height: 32px;
+  margin: 0 0 12px 2px;
+  padding: 5px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #17345c !important;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+:global(html[data-vf-theme="dark"]) .backLink.backLink {
+  color: #ffffff !important;
+}
+
+:global(html[data-vf-theme="light"]) .backLink.backLink {
+  color: #17345c !important;
+}
+
+.backLink.backLink:hover {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  transform: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.backLink.backLink:focus-visible {
+  outline: 3px solid rgba(47, 111, 178, 0.25);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.arrow.arrow {
+  display: inline-block;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  color: inherit !important;
+  font-family: Arial, sans-serif;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  transform: translateY(-1px);
+}
+
+/* Agenda Inteligente: o retorno legado e renderizado diretamente na topbar.
+   Ocultamos especificamente esse botao para manter apenas o retorno padrao. */
+:global(.ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"]) {
+  display: none !important;
+}
+
+:global(.ae-root .ae-shell > [data-vf-standard-back="true"]) {
+  position: relative !important;
+  z-index: 50 !important;
+  color: #17345c !important;
+}
+
+:global(.ae-root .ae-shell > [data-vf-standard-back="true"] *),
+:global(.vf-ic-back-link *) {
+  color: inherit !important;
+}
+
+/* O tema local da Agenda e a autoridade final para este botao. Isso evita
+   que o tema global do html deixe o retorno branco sobre fundo claro. */
+:global(.ae-root[data-theme="dark"] .ae-shell > [data-vf-standard-back="true"]),
+:global(.ae-root:not([data-theme="light"]) .ae-shell > [data-vf-standard-back="true"]) {
+  color: #ffffff !important;
+}
+
+:global(.ae-root[data-theme="light"] .ae-shell > [data-vf-standard-back="true"]),
+:global(.ae-root.light-mode .ae-shell > [data-vf-standard-back="true"]) {
+  color: #17345c !important;
+}
+
+:global(html[data-vf-theme="dark"] .vf-ic-back-link) {
+  color: #ffffff !important;
+}
+
+:global(html[data-vf-theme="light"] .vf-ic-back-link) {
+  color: #17345c !important;
+}
+
+@media (max-width: 760px) {
+  .backLink.backLink {
+    min-height: 40px;
+    margin: 0 0 10px 10px;
+    padding: 7px 2px;
+    font-size: 16px;
+  }
+
+  .arrow.arrow {
+    font-size: 24px;
+  }
+
+  :global(.ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"]) {
+    display: none !important;
+  }
+
+  :global(.ae-root .ae-shell > [data-vf-standard-back="true"]) {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    align-self: flex-start !important;
+  }
+
+  :global(.ae-root[data-theme="dark"] .ae-shell > [data-vf-standard-back="true"]),
+  :global(.ae-root:not([data-theme="light"]) .ae-shell > [data-vf-standard-back="true"]) {
+    color: #ffffff !important;
+  }
+
+  :global(.ae-root[data-theme="light"] .ae-shell > [data-vf-standard-back="true"]),
+  :global(.ae-root.light-mode .ae-shell > [data-vf-standard-back="true"]) {
+    color: #17345c !important;
+  }
+}
