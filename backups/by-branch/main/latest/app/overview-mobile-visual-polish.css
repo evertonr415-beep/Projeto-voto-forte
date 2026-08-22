@@ -11,7 +11,6 @@
     --vf-overview-radius: 16px;
   }
 
-  /* Topo: titulo e seletor compactos, ambos legiveis. */
   body:has(.welcome-pro) .app-shell .topbar {
     height: 70px !important;
     min-height: 70px !important;
@@ -107,7 +106,6 @@
     display: none !important;
   }
 
-  /* Hero: volta para proporcao compacta proxima da versao anterior. */
   body:has(.welcome-pro) .app-shell .workspace {
     padding: 18px 14px 76px !important;
   }
@@ -149,7 +147,6 @@
     line-height: 1.45 !important;
   }
 
-  /* KPIs: compactos, sem seta duplicada. */
   body:has(.welcome-pro) .kpis {
     grid-template-columns: 1fr !important;
     gap: 10px !important;
@@ -217,7 +214,6 @@
     border-radius: var(--vf-overview-radius) !important;
   }
 
-  /* Modo escuro */
   html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .welcome-pro {
     border: 1px solid rgba(77, 153, 219, 0.24) !important;
     background:
@@ -246,12 +242,16 @@
   }
 
   html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi-icon {
-    border: 1px solid rgba(56, 189, 248, 0.18) !important;
-    background: rgba(56, 189, 248, 0.075) !important;
-    color: var(--vf-overview-cyan) !important;
+    border: 1px solid rgba(224, 179, 78, 0.34) !important;
+    background:
+      radial-gradient(circle at 50% 32%, rgba(242, 202, 105, 0.12), transparent 62%),
+      rgba(224, 179, 78, 0.08) !important;
+    color: #e6b94f !important;
+    box-shadow:
+      inset 0 0 14px rgba(224, 179, 78, 0.045),
+      0 0 0 1px rgba(224, 179, 78, 0.025) !important;
   }
 
-  /* Modo claro */
   html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .welcome-pro {
     border: 1px solid #cdddea !important;
     background:
@@ -297,10 +297,12 @@
   }
 
   html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi-icon {
-    border: 1px solid #cfe2f0 !important;
-    background: #eef7fd !important;
-    color: #1477ad !important;
-    box-shadow: none !important;
+    border: 1px solid #dcc38d !important;
+    background:
+      radial-gradient(circle at 50% 32%, rgba(224, 179, 78, 0.16), transparent 62%),
+      #fff6df !important;
+    color: #9b681b !important;
+    box-shadow: 0 3px 10px rgba(132, 88, 24, 0.07) !important;
   }
 }
 
