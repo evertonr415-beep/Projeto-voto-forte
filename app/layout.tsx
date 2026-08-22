@@ -43,6 +43,7 @@ import "./topbar-theme-sync.css";
 import "./remove-electoral-back-system.css";
 import "./agenda-mobile-compact.css";
 import "./agenda-mobile-direct-fix.css";
+import "./agenda-mobile-scroll-root-fix.css";
 import "./profile-modal-exact.css";
 import "./map-mobile-visual-polish.css";
 import "./map-mobile-theme-contrast.css";
@@ -51,62 +52,9 @@ import "./overview-mobile-visual-polish.css";
 import "./overview-mobile-header-final.css";
 import "./mobile-overview-loading.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var t=localStorage.getItem('voto-forte-theme')||'dark';document.documentElement.dataset.vfTheme=t;document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.dataset.vfTheme='dark';document.documentElement.style.colorScheme='dark';}})();`;
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-  themeColor: "#051929",
-};
-
-export const metadata: Metadata = {
-  title: "VOTO FORTE PARANÁ",
-  description: "Gestão inteligente de campanha em todo o Paraná.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "VOTO FORTE",
-    startupImage: ["/voto-forte-bandeira-icon.jpg"],
-  },
-  other: {
-    "codex-preview": "development",
-    "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "black-translucent",
-  },
-  icons: {
-    icon: "/voto-forte-bandeira-icon.jpg",
-    shortcut: "/voto-forte-bandeira-icon.jpg",
-    apple: "/voto-forte-bandeira-icon.jpg",
-  },
-};
-
-export default function RootLayout({children}:{children: React.ReactNode;}) {
-  return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} /></head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <PwaInstaller />
-        <AdaptivePerformance />
-        <SignupMunicipalityEnhancer />
-        <ThemeToggleEnhancer />
-        <DashboardRuntimeEnhancers />
-        {children}
-      </body>
-    </html>
-  );
-}
+export const viewport: Viewport = { width:"device-width", initialScale:1, maximumScale:1, userScalable:false, viewportFit:"cover", themeColor:"#051929" };
+export const metadata: Metadata = { title:"VOTO FORTE PARANÁ", description:"Gestão inteligente de campanha em todo o Paraná.", manifest:"/manifest.json", appleWebApp:{capable:true,statusBarStyle:"black-translucent",title:"VOTO FORTE",startupImage:["/voto-forte-bandeira-icon.jpg"]}, other:{"codex-preview":"development","mobile-web-app-capable":"yes","apple-mobile-web-app-capable":"yes","apple-mobile-web-app-status-bar-style":"black-translucent"}, icons:{icon:"/voto-forte-bandeira-icon.jpg",shortcut:"/voto-forte-bandeira-icon.jpg",apple:"/voto-forte-bandeira-icon.jpg"} };
+export default function RootLayout({children}:{children:React.ReactNode;}) { return <html lang="pt-BR" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:THEME_BOOTSTRAP_SCRIPT}} /></head><body className={`${geistSans.variable} ${geistMono.variable} antialiased`}><PwaInstaller /><AdaptivePerformance /><SignupMunicipalityEnhancer /><ThemeToggleEnhancer /><DashboardRuntimeEnhancers />{children}</body></html>; }
