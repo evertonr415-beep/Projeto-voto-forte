@@ -1,0 +1,28 @@
+{
+  "name": "VOTO FORTE PARANÁ",
+  "short_name": "VOTO FORTE",
+  "description": "Gestão inteligente de campanha eleitoral em todo o Paraná.",
+  "start_url": "/sistema-completo",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "background_color": "#060d19",
+  "theme_color": "#051929",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "politics", "utilities"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/voto-forte-bandeira-icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/voto-forte-bandeira-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
