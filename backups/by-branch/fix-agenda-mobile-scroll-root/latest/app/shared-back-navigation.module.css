@@ -135,3 +135,35 @@
     color: #17345c !important;
   }
 }
+
+/* Safari/iPhone: força contraste do botão Voltar externo, inclusive filhos. */
+:global(.vf-ic-shell > .vf-ic-back-link),
+:global(.vf-ic-shell > .vf-ic-back-link:link),
+:global(.vf-ic-shell > .vf-ic-back-link:visited) {
+  color: #17345c !important;
+  -webkit-text-fill-color: #17345c !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+:global(.vf-ic-shell > .vf-ic-back-link *),
+:global(.vf-ic-shell > .vf-ic-back-link span),
+:global(.vf-ic-shell > .vf-ic-back-link svg) {
+  color: #17345c !important;
+  -webkit-text-fill-color: #17345c !important;
+  opacity: 1 !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+:global(html[data-vf-theme="dark"] .vf-ic-shell > .vf-ic-back-link),
+:global(html[data-vf-theme="dark"] .vf-ic-shell > .vf-ic-back-link *) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+:global(html[data-vf-theme="light"] .vf-ic-shell > .vf-ic-back-link),
+:global(html[data-vf-theme="light"] .vf-ic-shell > .vf-ic-back-link *) {
+  color: #17345c !important;
+  -webkit-text-fill-color: #17345c !important;
+}
