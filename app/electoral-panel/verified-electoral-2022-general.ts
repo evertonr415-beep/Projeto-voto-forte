@@ -19,33 +19,40 @@ export type VerifiedGeneralOffice2022 = {
   totalElectorate: number;
   coverage: "complete" | "top-candidates";
   sourceLabel: string;
+  sourceUrl: string;
   candidates: VerifiedGeneralCandidate2022[];
 };
 
+const TSE_2022_PR_SOURCE =
+  "https://dadosabertos.tse.jus.br/dataset/resultados-2022/resource/ac7bb6a5-68e4-4852-a690-dd2b526c92ee";
+
 /**
- * Snapshot conferido da apuração oficial de 2022 em Arapongas/PR.
+ * Snapshot da apuração de 2022 em Arapongas/PR.
  *
- * Fonte primária de referência: Portal de Dados Abertos do TSE —
- * Resultados 2022 / votação nominal por município e zona.
+ * Fonte primária: Portal de Dados Abertos do TSE, recurso oficial
+ * "PR - Votação por seção eleitoral - 2022". O recurso registra a
+ * totalização dos cargos de Governador, Senador, Deputado Federal e
+ * Deputado Estadual. Nenhuma votação abaixo é estimada.
  *
  * Governador e Senador possuem a lista completa de candidatos.
  * Para Deputado Federal e Deputado Estadual, o painel mantém os 30 mais
- * votados no município, identificados de forma explícita pela cobertura
- * `top-candidates`; os totais de válidos, brancos, nulos e abstenções são
- * os totais oficiais do município, não a soma dos 30 nomes exibidos.
+ * votados no município, identificados pela cobertura `top-candidates`;
+ * os totais de válidos, brancos, nulos e abstenções são os totais da
+ * disputa no município, não a soma dos 30 nomes exibidos.
  */
 export const VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES: VerifiedGeneralOffice2022[] = [
   {
     office: "governador",
     officeLabel: "Governador",
     year: 2022,
-    totalValidVotes: 59200,
+    totalValidVotes: 59145,
     blankVotes: 3325,
     nullVotes: 4596,
     abstentions: 15476,
     totalElectorate: 82597,
     coverage: "complete",
     sourceLabel: "TSE — apuração oficial 2022 em Arapongas/PR, 100% das seções",
+    sourceUrl: TSE_2022_PR_SOURCE,
     candidates: [
       { name: "Carlos Massa Ratinho Junior", ballotNumber: 55, party: "PSD", votes: 48622, percentage: 82.13, elected: true, situation: "Eleito" },
       { name: "Requião", ballotNumber: 13, party: "PT", votes: 8644, percentage: 14.6, elected: false, situation: "Não eleito" },
@@ -69,6 +76,7 @@ export const VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES: VerifiedGeneralOffice2022[
     totalElectorate: 82597,
     coverage: "complete",
     sourceLabel: "TSE — apuração oficial 2022 em Arapongas/PR, 100% das seções",
+    sourceUrl: TSE_2022_PR_SOURCE,
     candidates: [
       { name: "Paulo Martins", ballotNumber: 222, party: "PL", votes: 21864, percentage: 38.69, elected: false, situation: "Não eleito" },
       { name: "Sergio Moro", ballotNumber: 444, party: "UNIÃO", votes: 17958, percentage: 31.78, elected: true, situation: "Eleito" },
@@ -93,6 +101,7 @@ export const VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES: VerifiedGeneralOffice2022[
     totalElectorate: 82597,
     coverage: "top-candidates",
     sourceLabel: "TSE — apuração oficial 2022 em Arapongas/PR; 30 mais votados, 100% das seções",
+    sourceUrl: TSE_2022_PR_SOURCE,
     candidates: [
       { name: "Pedro Lupion", ballotNumber: "—", party: "PP", votes: 14066, percentage: 23.98, elected: true, situation: "Eleito por QP" },
       { name: "Filipe Barros", ballotNumber: "—", party: "PL", votes: 5901, percentage: 10.06, elected: true, situation: "Eleito por QP" },
@@ -102,13 +111,13 @@ export const VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES: VerifiedGeneralOffice2022[
       { name: "Sargento Fahur", ballotNumber: "—", party: "PSD", votes: 2225, percentage: 3.79, elected: true, situation: "Eleito por QP" },
       { name: "Luciano Ducci", ballotNumber: "—", party: "PSB", votes: 2130, percentage: 3.63, elected: true, situation: "Eleito por média" },
       { name: "Luísa Canziani", ballotNumber: "—", party: "PSD", votes: 1777, percentage: 3.03, elected: true, situation: "Eleito por média" },
-      { name: "Oduwaldo Calixto", ballotNumber: 2255, party: "PL", votes: 1757, percentage: 2.99, elected: false, situation: "Suplente" },
+      { name: "Oduwaldo Calixto", ballotNumber: "—", party: "PL", votes: 1757, percentage: 2.99, elected: false, situation: "Suplente" },
       { name: "Gleisi", ballotNumber: "—", party: "PT", votes: 1724, percentage: 2.94, elected: true, situation: "Eleito por QP" },
       { name: "Carol Dartora", ballotNumber: "—", party: "PT", votes: 1039, percentage: 1.77, elected: true, situation: "Eleito por QP" },
       { name: "Diego Garcia", ballotNumber: "—", party: "REPUBLICANOS", votes: 989, percentage: 1.69, elected: true, situation: "Eleito por QP" },
-      { name: "Marco Brasil", ballotNumber: 1155, party: "PP", votes: 964, percentage: 1.64, elected: false, situation: "Suplente" },
+      { name: "Marco Brasil", ballotNumber: "—", party: "PP", votes: 964, percentage: 1.64, elected: false, situation: "Suplente" },
       { name: "Felipe Francischini", ballotNumber: "—", party: "UNIÃO", votes: 913, percentage: 1.56, elected: true, situation: "Eleito por QP" },
-      { name: "Alex Santana", ballotNumber: 1522, party: "MDB", votes: 756, percentage: 1.29, elected: false, situation: "Suplente" },
+      { name: "Alex Santana", ballotNumber: "—", party: "MDB", votes: 756, percentage: 1.29, elected: false, situation: "Suplente" },
       { name: "Delegado Matheus Laiola", ballotNumber: "—", party: "UNIÃO", votes: 657, percentage: 1.12, elected: true, situation: "Eleito por QP" },
       { name: "Aroldo Martins", ballotNumber: "—", party: "REPUBLICANOS", votes: 637, percentage: 1.09, elected: false, situation: "Suplente" },
       { name: "Ricardo Barros", ballotNumber: "—", party: "PP", votes: 625, percentage: 1.07, elected: true, situation: "Eleito por QP" },
@@ -137,6 +146,7 @@ export const VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES: VerifiedGeneralOffice2022[
     totalElectorate: 82597,
     coverage: "top-candidates",
     sourceLabel: "TSE — apuração oficial 2022 em Arapongas/PR; 30 mais votados, 100% das seções",
+    sourceUrl: TSE_2022_PR_SOURCE,
     candidates: [
       { name: "Tiago Amaral", ballotNumber: "—", party: "PSD", votes: 15471, percentage: 26.65, situation: "Votação em Arapongas" },
       { name: "Pedro Paulo Bazana", ballotNumber: "—", party: "PSD", votes: 9843, percentage: 16.96, situation: "Votação em Arapongas" },
