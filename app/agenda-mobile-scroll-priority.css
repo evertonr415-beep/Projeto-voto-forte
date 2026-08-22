@@ -1,0 +1,16 @@
+/* Prioridade final Agenda Mobile */
+@media (max-width: 768px) {
+  html body .ae-root {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .ae-root .ae-shell {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
