@@ -51,6 +51,7 @@ import "./map-mobile-contacts-panel-theme.css";
 import "./overview-mobile-visual-polish.css";
 import "./overview-mobile-header-final.css";
 import "./mobile-overview-loading.css";
+import "./agenda-mobile-scroll-priority.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
