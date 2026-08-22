@@ -49,6 +49,7 @@ import "./map-mobile-theme-contrast.css";
 import "./map-mobile-contacts-panel-theme.css";
 import "./overview-mobile-visual-polish.css";
 import "./overview-mobile-header-final.css";
+import "./mobile-overview-loading.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -94,16 +95,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({children}:{children: React.ReactNode;}) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-      </head>
+      <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} /></head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <PwaInstaller />
         <AdaptivePerformance />
