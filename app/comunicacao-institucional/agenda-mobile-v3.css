@@ -1,0 +1,310 @@
+/* Agenda Inteligente — Mobile V3
+   Correção estrutural: fluxo vertical único, sem altura presa, sem sobreposição de abas. */
+
+@media (max-width: 768px) {
+  html:has(.ae-root),
+  body:has(.ae-root) {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .ae-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    position: relative !important;
+    touch-action: pan-y !important;
+  }
+
+  /* Flex column evita o esticamento de linhas do grid que deixava as abas gigantes. */
+  .ae-root .ae-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 8px calc(96px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .ae-root .ae-shell > * {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Cabeçalho compacto e sem título cortado. */
+  .ae-root .ae-topbar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    position: relative !important;
+    border-radius: 16px !important;
+  }
+
+  .ae-root .ae-brand {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .ae-root .ae-brand > div:last-child {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .ae-root .ae-logo {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    padding: 2px !important;
+    border-radius: 11px !important;
+  }
+
+  .ae-root .ae-title {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    font-size: 0.94rem !important;
+    line-height: 1.22 !important;
+    font-weight: 800 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: block !important;
+  }
+
+  .ae-root .ae-subtitle,
+  .ae-root .ae-view-switcher,
+  .ae-root .ae-toolbar > .ae-btn-ghost {
+    display: none !important;
+  }
+
+  .ae-root .ae-toolbar {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.95fr) !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  .ae-root .ae-toolbar > .ae-btn-primary,
+  .ae-root .ae-toolbar > .ae-dropdown-wrap,
+  .ae-root .ae-toolbar > .ae-dropdown-wrap > .ae-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+  }
+
+  .ae-root .ae-toolbar > .ae-btn-primary,
+  .ae-root .ae-toolbar > .ae-dropdown-wrap > .ae-btn {
+    padding: 8px 10px !important;
+    justify-content: center !important;
+    font-size: 0.78rem !important;
+    border-radius: 11px !important;
+  }
+
+  /* Hero sempre cresce para conter contagem e as quatro métricas. */
+  .ae-root .ae-hero-banner {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    overflow: visible !important;
+    position: relative !important;
+    border-radius: 17px !important;
+  }
+
+  .ae-root .ae-hero-countdown,
+  .ae-root .ae-hero-metrics {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    position: static !important;
+  }
+
+  .ae-root .ae-hero-countdown {
+    padding: 0 0 12px !important;
+    margin: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--ae-line) !important;
+  }
+
+  .ae-root .ae-countdown-boxes {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .ae-root .ae-cbox-sep {
+    display: none !important;
+  }
+
+  .ae-root .ae-cbox {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 62px !important;
+    padding: 8px 3px !important;
+  }
+
+  .ae-root .ae-hero-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(78px, auto) !important;
+    gap: 8px !important;
+  }
+
+  .ae-root .ae-hstat {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 78px !important;
+    max-height: none !important;
+    padding: 9px 10px !important;
+    overflow: hidden !important;
+  }
+
+  /* Abas voltam ao fluxo normal. Nada de sticky/fixed/absolute ou altura esticada. */
+  .ae-root .ae-mobile-tabs {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    z-index: auto !important;
+    overflow: visible !important;
+    border-radius: 13px !important;
+  }
+
+  .ae-root .ae-mobile-tab {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    margin: 0 !important;
+    padding: 7px 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    position: static !important;
+    transform: none !important;
+    font-size: 0.73rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Conteúdo principal também segue altura natural. */
+  .ae-root .ae-layout,
+  .ae-root .ae-col-main,
+  .ae-root .ae-col-side,
+  .ae-root .ae-grid,
+  .ae-root .ae-sidebar-panel,
+  .ae-root .ae-card,
+  .ae-root .ae-card-head,
+  .ae-root .ae-card-body,
+  .ae-root .ae-controls,
+  .ae-root .ae-searchwrap,
+  .ae-root .ae-timeline-list {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .ae-root .ae-layout {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .ae-root .ae-card-body {
+    overflow: visible !important;
+  }
+
+  .ae-root .ae-fab-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .ae-root .ae-shell {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    gap: 10px !important;
+  }
+
+  .ae-root .ae-title {
+    font-size: 0.9rem !important;
+  }
+
+  .ae-root .ae-toolbar {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
+  }
+
+  .ae-root .ae-mobile-tab {
+    font-size: 0.69rem !important;
+  }
+}
