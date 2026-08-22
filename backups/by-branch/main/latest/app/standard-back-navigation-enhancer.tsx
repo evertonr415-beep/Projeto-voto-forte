@@ -77,6 +77,14 @@ export default function StandardBackNavigationEnhancer() {
           const label = document.createElement("span");
           label.textContent = "Voltar";
 
+          if (rootSelector === ".ae-root") {
+            [button, arrow, label].forEach((element) => {
+              element.style.setProperty("color", "#17345c", "important");
+              element.style.setProperty("-webkit-text-fill-color", "#17345c", "important");
+              element.style.setProperty("opacity", "1", "important");
+            });
+          }
+
           button.append(arrow, label);
           button.addEventListener("click", () => {
             if (rootSelector === ".ae-root") {
