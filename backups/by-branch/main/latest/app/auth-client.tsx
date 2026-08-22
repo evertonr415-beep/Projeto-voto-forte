@@ -73,7 +73,18 @@ const NeutralDashboardClient = dynamic(() => import("./neutral-dashboard-client"
 
 const OFFICIAL_SITE_URL = "https://www.sistemavotoforte.com.br";
 const EMAIL_CONFIRMATION_URL = `${OFFICIAL_SITE_URL}/auth/confirm`;
-const SESSION_VALIDATION_TIMEOUT_MS = 45_000;
+const SESSION_VALIDATION_TIMEOUT_MS = 15_000;
+const SESSION_VALIDATION_MAX_ATTEMPTS = 3;
+const SESSION_VALIDATION_RETRY_DELAYS_MS = [0, 700, 1_400] as const;
+
+function isRetryableSessionStatus(status: number) {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+function waitForSessionRetry(delayMs: number) {
+  if (delayMs <= 0) return Promise.resolve();
+  return new Promise<void>((resolve) => window.setTimeout(resolve, delayMs));
+}
 
 export default function AuthClient({
   dashboardMode = "full",
@@ -148,71 +159,96 @@ export default function AuthClient({
 
   useEffect(() => {
     if (!session) return;
+
     let cancelled = false;
-    const controller = new AbortController();
-    let timedOut = false;
-    let timeoutId: number | null = null;
-    const timeoutPromise = new Promise<Response>((_, reject) => {
-      timeoutId = window.setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-        reject(new Error("SESSION_VALIDATION_TIMEOUT"));
-      }, SESSION_VALIDATION_TIMEOUT_MS);
-    });
+    let activeController: AbortController | null = null;
 
     setBusy(true);
     setMessage("");
-    Promise.race([
-      apiFetch("/api/session", { signal: controller.signal }),
-      timeoutPromise,
-    ])
-      .then(async (response) => ({
-        response,
-        data: (await response.json()) as SessionResponse,
-      }))
-      .then(({ response, data }) => {
+
+    const validateSession = async () => {
+      let lastFailureTimedOut = false;
+
+      for (let attempt = 0; attempt < SESSION_VALIDATION_MAX_ATTEMPTS; attempt += 1) {
+        const retryDelay = SESSION_VALIDATION_RETRY_DELAYS_MS[attempt] ?? 0;
+        await waitForSessionRetry(retryDelay);
         if (cancelled) return;
-        if (response.status === 401) {
-          setMessage(data.error || "Sua sessão expirou. Entre novamente.");
-          void supabase.auth.signOut();
+
+        const controller = new AbortController();
+        activeController = controller;
+        let timedOut = false;
+        const timeoutId = window.setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, SESSION_VALIDATION_TIMEOUT_MS);
+
+        try {
+          const response = await apiFetch("/api/session", {
+            signal: controller.signal,
+            cache: "no-store",
+          });
+          const data = (await response
+            .json()
+            .catch(() => ({}))) as SessionResponse;
+
+          if (cancelled) return;
+
+          if (response.status === 401) {
+            setMessage(data.error || "Sua sessão expirou. Entre novamente.");
+            void supabase.auth.signOut();
+            return;
+          }
+
+          if (!response.ok) {
+            const canRetry =
+              isRetryableSessionStatus(response.status) &&
+              attempt < SESSION_VALIDATION_MAX_ATTEMPTS - 1;
+            if (canRetry) continue;
+
+            if (data.access) setAccessStatus(data.access);
+            setMessage(data.error || "Não foi possível validar esta conta agora.");
+            return;
+          }
+
+          if (data.access?.state === "active" && data.user) {
+            setAccessStatus(data.access);
+            setAccount(data.user);
+            setMessage("");
+            return;
+          }
+
+          setAccount(null);
+          setAccessStatus(data.access || null);
+          setMessage(data.access?.message || "Não foi possível liberar este acesso.");
           return;
-        }
-        if (!response.ok) {
-          setMessage(data.error || "Não foi possível validar esta conta agora.");
+        } catch {
+          if (cancelled) return;
+          lastFailureTimedOut = timedOut;
+
+          if (attempt < SESSION_VALIDATION_MAX_ATTEMPTS - 1) {
+            continue;
+          }
+
+          setMessage(
+            lastFailureTimedOut
+              ? "A validação demorou mais que o esperado mesmo após novas tentativas. Confira sua conexão e tente novamente."
+              : "Sua conexão oscilou durante a validação. Tentamos novamente automaticamente, mas não foi possível concluir agora.",
+          );
           return;
-        }
-        if (data.access?.state === "active" && data.user) {
-          setAccessStatus(data.access);
-          setAccount(data.user);
-          setMessage("");
-          return;
-        }
-        setAccount(null);
-        setAccessStatus(data.access || null);
-        setMessage(data.access?.message || "Não foi possível liberar este acesso.");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setMessage(
-          timedOut
-            ? "A validação demorou mais que o esperado. Confira sua conexão e tente novamente."
-            : "Não foi possível validar seu acesso agora.",
-        );
-      })
-      .finally(() => {
-        if (timeoutId !== null) {
+        } finally {
           window.clearTimeout(timeoutId);
-          timeoutId = null;
+          if (activeController === controller) activeController = null;
         }
-        if (!cancelled) setBusy(false);
-      });
+      }
+    };
+
+    void validateSession().finally(() => {
+      if (!cancelled) setBusy(false);
+    });
+
     return () => {
       cancelled = true;
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      controller.abort();
+      activeController?.abort();
     };
   }, [session, validationAttempt]);
 
