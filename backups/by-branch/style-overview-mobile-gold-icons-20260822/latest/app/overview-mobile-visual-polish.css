@@ -1,0 +1,348 @@
+/*
+ * Visao Geral mobile — refinamento compacto.
+ * Mantem o layout original como base e aplica apenas acabamento visual,
+ * sem aumentar hero, KPIs ou controles do topo.
+ */
+
+@media (max-width: 760px) {
+  body:has(.welcome-pro) {
+    --vf-overview-cyan: #38bdf8;
+    --vf-overview-gold: #d7ad5d;
+    --vf-overview-radius: 16px;
+  }
+
+  /* Topo: titulo e seletor compactos, ambos legiveis. */
+  body:has(.welcome-pro) .app-shell .topbar {
+    height: 70px !important;
+    min-height: 70px !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id h1 {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope {
+    flex: 0 0 126px !important;
+    width: 126px !important;
+    max-width: 126px !important;
+    min-width: 126px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope-select-wrap,
+  body:has(.welcome-pro) .vf-header-scope-select {
+    width: 126px !important;
+    max-width: 126px !important;
+    min-width: 126px !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope-select-wrap {
+    height: 34px !important;
+    border-radius: 10px !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope-select {
+    height: 32px !important;
+    padding: 0 23px 0 10px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05px !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope-select-wrap::after {
+    right: 8px !important;
+    font-size: 10px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .page-id > .vf-theme-toggle {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    flex: 0 0 34px !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .profile {
+    flex: 0 0 auto !important;
+    margin-left: 2px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .profile > span {
+    width: 39px !important;
+    height: 39px !important;
+    min-width: 39px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .profile > div,
+  body:has(.welcome-pro) .topbar .profile > i {
+    display: none !important;
+  }
+
+  /* Hero: volta para proporcao compacta proxima da versao anterior. */
+  body:has(.welcome-pro) .app-shell .workspace {
+    padding: 18px 14px 76px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .welcome-pro {
+    min-height: 0 !important;
+    padding: 20px !important;
+    border-radius: var(--vf-overview-radius) !important;
+    align-items: flex-start !important;
+  }
+
+  body:has(.welcome-pro) .welcome-copy {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro span {
+    display: inline-block !important;
+    margin-bottom: 6px !important;
+    color: var(--vf-overview-gold) !important;
+    font-size: 7px !important;
+    line-height: 1.2 !important;
+    letter-spacing: 1.45px !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro h2 {
+    max-width: 100% !important;
+    margin: 0 0 8px !important;
+    font-size: 24px !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.55px !important;
+    text-wrap: balance !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro p {
+    max-width: 100% !important;
+    margin: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.45 !important;
+  }
+
+  /* KPIs: compactos, sem seta duplicada. */
+  body:has(.welcome-pro) .kpis {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin: 14px 0 16px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi {
+    position: relative !important;
+    min-height: 88px !important;
+    padding: 13px 42px 13px 14px !important;
+    gap: 13px !important;
+    border-radius: var(--vf-overview-radius) !important;
+    align-items: center !important;
+    text-align: left !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi::after {
+    content: none !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi-arrow {
+    position: absolute !important;
+    right: 16px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #9fb1c2 !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    opacity: 0.78 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi-icon {
+    width: 43px !important;
+    height: 43px !important;
+    min-width: 43px !important;
+    flex: 0 0 43px !important;
+    border-radius: 12px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi > div:not(.kpi-icon) {
+    min-width: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi strong {
+    margin: 0 !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
+    letter-spacing: -0.55px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi b {
+    margin: 3px 0 5px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi small {
+    margin: 0 !important;
+    font-size: 8.5px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .panel {
+    border-radius: var(--vf-overview-radius) !important;
+  }
+
+  /* Modo escuro */
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .welcome-pro {
+    border: 1px solid rgba(77, 153, 219, 0.24) !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(45, 118, 181, 0.14), transparent 42%),
+      linear-gradient(145deg, rgba(8, 32, 61, 0.99), rgba(14, 54, 91, 0.97)) !important;
+    box-shadow: 0 12px 26px rgba(2, 12, 25, 0.20) !important;
+  }
+
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .welcome-pro p {
+    color: rgba(221, 233, 246, 0.74) !important;
+  }
+
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi {
+    border: 1px solid rgba(77, 153, 219, 0.18) !important;
+    background: linear-gradient(145deg, rgba(10, 27, 53, 0.98), rgba(8, 21, 43, 0.98)) !important;
+    box-shadow: 0 7px 18px rgba(2, 12, 25, 0.16) !important;
+  }
+
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi strong,
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi b {
+    color: #f8fbff !important;
+  }
+
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi small {
+    color: #9fb4c9 !important;
+  }
+
+  html:not([data-vf-theme="light"]) body:has(.welcome-pro) .app-shell .kpi-icon {
+    border: 1px solid rgba(56, 189, 248, 0.18) !important;
+    background: rgba(56, 189, 248, 0.075) !important;
+    color: var(--vf-overview-cyan) !important;
+  }
+
+  /* Modo claro */
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .welcome-pro {
+    border: 1px solid #cdddea !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(65, 139, 197, 0.10), transparent 42%),
+      linear-gradient(145deg, #f8fbff, #eaf3fa) !important;
+    box-shadow: 0 10px 24px rgba(24, 61, 98, 0.09) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .welcome-pro:before {
+    opacity: 0.08 !important;
+    mix-blend-mode: multiply !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .welcome-pro h2 {
+    color: #173b67 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .welcome-pro p {
+    color: #5f7389 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .welcome-pro span {
+    color: #9a681e !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi {
+    border: 1px solid #d7e3ed !important;
+    background: linear-gradient(145deg, #ffffff, #f5f9fc) !important;
+    box-shadow: 0 7px 18px rgba(24, 61, 98, 0.065) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi strong,
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi b {
+    color: #173b67 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi small {
+    color: #667b91 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi-arrow {
+    color: #7890a6 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .kpi-icon {
+    border: 1px solid #cfe2f0 !important;
+    background: #eef7fd !important;
+    color: #1477ad !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 410px) {
+  body:has(.welcome-pro) .app-shell .topbar {
+    padding-inline: 9px !important;
+    gap: 6px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id {
+    gap: 6px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id h1 {
+    font-size: 13.5px !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope,
+  body:has(.welcome-pro) .vf-header-scope-select-wrap,
+  body:has(.welcome-pro) .vf-header-scope-select {
+    flex-basis: 116px !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+  }
+
+  body:has(.welcome-pro) .vf-header-scope-select {
+    font-size: 9.5px !important;
+    padding-left: 8px !important;
+    padding-right: 20px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .page-id > .vf-theme-toggle {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    flex-basis: 32px !important;
+  }
+
+  body:has(.welcome-pro) .topbar .profile > span {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+}
