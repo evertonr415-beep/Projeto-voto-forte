@@ -27,6 +27,7 @@ type SessionAccount = {
 
 const ENTERING_CLASS = "vf-contacts-entering";
 const ACTIVE_CLASS = "vf-contacts-active";
+const OPTIMIZED_ACTIVE_CLASS = "vf-contacts-optimized-active";
 
 function setReactSelectValue(select: HTMLSelectElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
@@ -53,6 +54,13 @@ function setEnteringState(entering: boolean) {
   const workspace = shell?.querySelector<HTMLElement>(".workspace") ?? null;
   shell?.classList.toggle(ENTERING_CLASS, entering);
   workspace?.classList.toggle(ENTERING_CLASS, entering);
+}
+
+function setImmediateContactsVisualState(active: boolean) {
+  const shell = document.querySelector<HTMLElement>(".app-shell");
+  const workspace = shell?.querySelector<HTMLElement>(".workspace") ?? null;
+  shell?.classList.toggle(ACTIVE_CLASS, active);
+  workspace?.classList.toggle(OPTIMIZED_ACTIVE_CLASS, active);
 }
 
 export default function ContactsOfficialShellBridge() {
@@ -84,8 +92,6 @@ export default function ContactsOfficialShellBridge() {
   useEffect(() => {
     let cancelled = false;
 
-    // Deixa a sessão pronta antes do usuário abrir Contatos. Assim a troca de aba
-    // não precisa esperar uma nova ida ao servidor para montar o painel atual.
     void ensureAccount().then((nextAccount) => {
       if (!cancelled && nextAccount) setAccount((current) => current ?? nextAccount);
     });
@@ -108,6 +114,7 @@ export default function ContactsOfficialShellBridge() {
       setWorkspace((current) => (current === nextWorkspace ? current : nextWorkspace));
       setActive((current) => (current === nextActive ? current : nextActive));
       shell?.classList.toggle(ACTIVE_CLASS, nextActive);
+      nextWorkspace?.classList.toggle(OPTIMIZED_ACTIVE_CLASS, nextActive);
 
       if (!nextActive) initialFiltersSeeded.current = false;
     };
@@ -124,6 +131,9 @@ export default function ContactsOfficialShellBridge() {
       cancelled = true;
       observer.disconnect();
       document.querySelector<HTMLElement>(".app-shell")?.classList.remove(ACTIVE_CLASS);
+      document
+        .querySelector<HTMLElement>(".workspace")
+        ?.classList.remove(OPTIMIZED_ACTIVE_CLASS);
     };
   }, []);
 
@@ -134,12 +144,16 @@ export default function ContactsOfficialShellBridge() {
 
       if (isContactsNavigationTarget(event.target)) {
         setEnteringState(true);
+        setImmediateContactsVisualState(true);
+        setActive(true);
         void ensureAccount().then((nextAccount) => {
           if (nextAccount) setAccount((current) => current ?? nextAccount);
         });
         return;
       }
 
+      setActive(false);
+      setImmediateContactsVisualState(false);
       setEnteringState(false);
     };
 
@@ -149,6 +163,7 @@ export default function ContactsOfficialShellBridge() {
       document.removeEventListener("pointerdown", prepareNavigation, true);
       document.removeEventListener("click", prepareNavigation, true);
       setEnteringState(false);
+      setImmediateContactsVisualState(false);
     };
   }, [account]);
 
@@ -167,8 +182,8 @@ export default function ContactsOfficialShellBridge() {
 
   useEffect(() => {
     if (!workspace) return;
-    workspace.classList.toggle("vf-contacts-optimized-active", active);
-    return () => workspace.classList.remove("vf-contacts-optimized-active");
+    workspace.classList.toggle(OPTIMIZED_ACTIVE_CLASS, active);
+    return () => workspace.classList.remove(OPTIMIZED_ACTIVE_CLASS);
   }, [active, workspace]);
 
   useEffect(() => {
