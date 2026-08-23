@@ -20,6 +20,24 @@ function statusLabel(candidate: VerifiedCandidate) {
   return candidate.situation || (candidate.elected ? "Eleito" : "Não eleito");
 }
 
+function coverageTitle(coverage: "complete" | "elected-only" | "top-candidates") {
+  if (coverage === "complete") return "Resultado completo";
+  if (coverage === "top-candidates") return "Ranking dos mais votados";
+  return "Eleitos verificados";
+}
+
+function coverageDescription(
+  coverage: "complete" | "elected-only" | "top-candidates",
+) {
+  if (coverage === "complete") {
+    return "Cobertura completa desta disputa na base verificada";
+  }
+  if (coverage === "top-candidates") {
+    return "Ranking parcial identificado explicitamente; os totais gerais permanecem os oficiais da disputa";
+  }
+  return "A fonte consultada nesta etapa contém somente os eleitos";
+}
+
 export default function ElectoralPanelClient({
   onBackToDashboard,
 }: {
@@ -73,12 +91,25 @@ export default function ElectoralPanelClient({
     [availableOffices, selectedOffice],
   );
 
+  const hasElectionStatus = useMemo(
+    () => activeOffice?.candidates.some((candidate) => candidate.elected !== undefined) ?? false,
+    [activeOffice],
+  );
+
+  React.useEffect(() => {
+    if (!hasElectionStatus && statusFilter === "elected") {
+      setStatusFilter("all");
+    }
+  }, [hasElectionStatus, statusFilter]);
+
   const filteredCandidates = useMemo(() => {
     if (!activeOffice) return [];
 
     const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
     const list = activeOffice.candidates.filter((candidate) => {
-      if (statusFilter === "elected" && !candidate.elected) return false;
+      if (statusFilter === "elected" && hasElectionStatus && !candidate.elected) {
+        return false;
+      }
       if (!query) return true;
 
       return (
@@ -98,7 +129,7 @@ export default function ElectoralPanelClient({
       }
       return 0;
     });
-  }, [activeOffice, searchQuery, sortBy, statusFilter]);
+  }, [activeOffice, hasElectionStatus, searchQuery, sortBy, statusFilter]);
 
   const topLeaders = useMemo(() => {
     if (!activeOffice) return [];
@@ -234,14 +265,16 @@ export default function ElectoralPanelClient({
               onChange={(event) => setSearchQuery(event.target.value)}
             />
 
-            <select
-              className="tse-select tse-compact-select"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            >
-              <option value="all">Todos os resultados</option>
-              <option value="elected">Apenas eleitos</option>
-            </select>
+            {hasElectionStatus && (
+              <select
+                className="tse-select tse-compact-select"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+              >
+                <option value="all">Todos os resultados</option>
+                <option value="elected">Apenas eleitos</option>
+              </select>
+            )}
 
             <select
               className="tse-select tse-compact-select"
@@ -317,7 +350,8 @@ export default function ElectoralPanelClient({
                     <div className="tse-leader-info">
                       <div className="tse-leader-name">{candidate.name}</div>
                       <div className="tse-leader-meta">
-                        <b>{candidate.party}</b> • Nº {candidate.ballotNumber}
+                        <b>{candidate.party}</b>
+                        {candidate.ballotNumber !== "—" && ` • Nº ${candidate.ballotNumber}`}
                       </div>
                     </div>
                     <div className="tse-leader-votes-bar">
@@ -340,13 +374,11 @@ export default function ElectoralPanelClient({
             <section className="tse-table-container">
               <div className="tse-table-heading">
                 <h2 className="tse-section-title">
-                  📋 {activeOffice.coverage === "complete" ? "Resultado completo" : "Eleitos verificados"}
+                  📋 {coverageTitle(activeOffice.coverage)}
                   {` (${filteredCandidates.length})`}
                 </h2>
                 <span className="tse-table-meta">
-                  {activeOffice.coverage === "complete"
-                    ? "Cobertura completa desta disputa na base verificada"
-                    : "A fonte consultada nesta etapa contém somente os eleitos"}
+                  {coverageDescription(activeOffice.coverage)}
                 </span>
               </div>
 
@@ -418,7 +450,7 @@ export default function ElectoralPanelClient({
                     </div>
                     <strong>{candidate.name}</strong>
                     <div className="tse-candidate-mobile-meta">
-                      <span>Nº {candidate.ballotNumber}</span>
+                      {candidate.ballotNumber !== "—" && <span>Nº {candidate.ballotNumber}</span>}
                       <span>{candidate.party}</span>
                     </div>
                     <div className="tse-candidate-mobile-result">
@@ -431,6 +463,18 @@ export default function ElectoralPanelClient({
 
               <div className="tse-source-footnote">
                 <strong>Fonte exibida:</strong> {activeOffice.sourceLabel}.
+                {activeOffice.sourceUrl && (
+                  <>
+                    {" "}
+                    <a
+                      href={activeOffice.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Abrir fonte oficial do TSE
+                    </a>
+                  </>
+                )}
               </div>
             </section>
           </>
