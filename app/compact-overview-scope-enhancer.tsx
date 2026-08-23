@@ -8,7 +8,29 @@ const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
 const MOBILE_TAB_HEADER_ATTR = "data-vf-mobile-compact-tab-header";
 const NETWORK_LABEL = "Todos da rede";
 const MOBILE_QUERY = "(max-width: 760px)";
-const MOBILE_COMPACT_TABS = new Set(["contatos", "administração", "administracao", "whatsapp"]);
+
+// Todas as áreas principais usam o mesmo cabeçalho mobile.
+// O seletor de rede continua aparecendo somente onde já fazia sentido antes.
+const PRIMARY_MOBILE_TABS = new Set([
+  "visão geral",
+  "visao geral",
+  "contatos",
+  "agenda inteligente",
+  "mapa eleitoral",
+  "painel eleitoral",
+  "whatsapp",
+  "administração",
+  "administracao",
+  "comunicação institucional",
+  "comunicacao institucional",
+]);
+
+const MOBILE_SCOPE_TABS = new Set([
+  "contatos",
+  "administração",
+  "administracao",
+  "whatsapp",
+]);
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -79,18 +101,21 @@ export default function CompactOverviewScopeEnhancer() {
       const topbar = document.querySelector<HTMLElement>(".topbar");
       const pageId = topbar?.querySelector<HTMLElement>(".page-id");
       const pageTitle = pageId?.querySelector<HTMLElement>("h1");
-      const mobileTargetTab =
-        isMobile && MOBILE_COMPACT_TABS.has(normalizeTitle(pageTitle?.textContent));
+      const normalizedTitle = normalizeTitle(pageTitle?.textContent);
+      const primaryMobileTab =
+        isMobile && PRIMARY_MOBILE_TABS.has(normalizedTitle);
+      const mobileScopeTarget =
+        isMobile && MOBILE_SCOPE_TABS.has(normalizedTitle);
 
       if (markedTopbar && markedTopbar !== topbar) clearMobileTabHeader();
-      if (topbar && mobileTargetTab) {
+      if (topbar && primaryMobileTab) {
         topbar.setAttribute(MOBILE_TAB_HEADER_ATTR, "true");
         markedTopbar = topbar;
       } else {
         clearMobileTabHeader();
       }
 
-      const compactContextVisible = Boolean(welcome || mapVisible || mobileTargetTab);
+      const compactContextVisible = Boolean(welcome || mapVisible || mobileScopeTarget);
       const sourceLabel = topbar?.querySelector<HTMLLabelElement>(".scope-picker");
       const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>("select");
 
