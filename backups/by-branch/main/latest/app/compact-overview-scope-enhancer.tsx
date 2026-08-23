@@ -6,6 +6,7 @@ const COMPACT_CLASS = "vf-header-scope";
 const SOURCE_HIDDEN_ATTR = "data-vf-scope-source-hidden";
 const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
 const NETWORK_LABEL = "Todos da rede";
+const MOBILE_QUERY = "(max-width: 760px)";
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -57,12 +58,22 @@ export default function CompactOverviewScopeEnhancer() {
       if (disposed) return;
 
       const welcome = document.querySelector<HTMLElement>(".welcome-pro .welcome-copy");
+      const isMobile = window.matchMedia(MOBILE_QUERY).matches;
+      const mapVisible =
+        isMobile && Boolean(document.querySelector(".workspace .full-map"));
+      const compactContextVisible = Boolean(welcome || mapVisible);
       const pageId = document.querySelector<HTMLElement>(".topbar .page-id");
       const pageTitle = pageId?.querySelector<HTMLElement>("h1");
       const sourceLabel = document.querySelector<HTMLLabelElement>(".topbar .scope-picker");
       const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>("select");
 
-      if (!welcome || !pageId || !pageTitle || !sourceLabel || !sourceSelect) {
+      if (
+        !compactContextVisible ||
+        !pageId ||
+        !pageTitle ||
+        !sourceLabel ||
+        !sourceSelect
+      ) {
         restoreSource();
         restoreContext();
         removeCompactControls();
@@ -81,12 +92,15 @@ export default function CompactOverviewScopeEnhancer() {
       sourceLabel.style.setProperty("display", "none", "important");
       sourceLabel.setAttribute(SOURCE_HIDDEN_ATTR, "true");
 
-      const originalContext = Array.from(welcome.children).find(
-        (child) =>
-          child instanceof HTMLElement &&
-          child.tagName === "SPAN" &&
-          !child.classList.contains(COMPACT_CLASS),
-      ) as HTMLElement | undefined;
+      restoreContext();
+      const originalContext = welcome
+        ? (Array.from(welcome.children).find(
+            (child) =>
+              child instanceof HTMLElement &&
+              child.tagName === "SPAN" &&
+              !child.classList.contains(COMPACT_CLASS),
+          ) as HTMLElement | undefined)
+        : undefined;
 
       if (originalContext) {
         originalContext.style.setProperty("display", "none", "important");
@@ -177,12 +191,14 @@ export default function CompactOverviewScopeEnhancer() {
     };
 
     document.addEventListener("change", handleChange, true);
+    window.addEventListener("resize", scheduleSync);
     scheduleSync();
 
     return () => {
       disposed = true;
       observer.disconnect();
       document.removeEventListener("change", handleChange, true);
+      window.removeEventListener("resize", scheduleSync);
       restoreSource();
       restoreContext();
       removeCompactControls();
