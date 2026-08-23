@@ -49,19 +49,19 @@
   }
 
   body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
-    flex: 1 1 auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
+    flex: 0 0 128px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
     margin: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
     box-sizing: border-box !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
     height: 34px !important;
     border-radius: 10px !important;
     overflow: hidden !important;
@@ -218,6 +218,19 @@
 
   body:has(.welcome-pro) .app-shell .topbar .page-id {
     gap: 5px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
+    flex: 0 0 120px !important;
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
   }
 
   body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
