@@ -37,10 +37,10 @@
 
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope {
     display: inline-flex !important;
-    flex: 0 1 150px !important;
-    width: 150px !important;
-    max-width: 150px !important;
-    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 145px !important;
     margin: 0 !important;
     overflow: visible !important;
   }
@@ -48,8 +48,8 @@
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap {
     box-sizing: border-box !important;
     width: 100% !important;
-    max-width: 150px !important;
-    min-width: 0 !important;
+    max-width: none !important;
+    min-width: 145px !important;
     height: 36px !important;
     border: 1.5px solid rgba(56, 189, 248, 0.78) !important;
     border-radius: 11px !important;
@@ -64,7 +64,7 @@
     max-width: none !important;
     min-width: 0 !important;
     height: 33px !important;
-    padding: 0 27px 0 11px !important;
+    padding: 0 25px 0 11px !important;
     border: 0 !important;
     background: transparent !important;
     color: #f8fafc !important;
@@ -72,12 +72,12 @@
     font-weight: 800 !important;
     letter-spacing: 0 !important;
     white-space: nowrap !important;
-    text-overflow: ellipsis !important;
+    text-overflow: clip !important;
     overflow: hidden !important;
   }
 
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap::after {
-    right: 9px !important;
+    right: 8px !important;
     color: #7dd3fc !important;
     font-size: 10px !important;
   }
@@ -158,21 +158,25 @@
   }
 
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope {
-    flex-basis: 136px !important;
-    width: 136px !important;
-    max-width: 136px !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 145px !important;
   }
 
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap {
-    max-width: 136px !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 145px !important;
     height: 34px !important;
   }
 
   body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select {
     height: 31px !important;
     padding-left: 9px !important;
-    padding-right: 24px !important;
+    padding-right: 22px !important;
     font-size: 10.5px !important;
+    text-overflow: clip !important;
   }
 
   body:has(.workspace .full-map) .app-shell .topbar .page-id > .vf-theme-toggle {
