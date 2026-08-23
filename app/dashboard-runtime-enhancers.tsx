@@ -52,36 +52,38 @@ export default function DashboardRuntimeEnhancers() {
     };
   }, []);
 
-  if (!ready) return null;
-
   return (
     <>
-      <MunicipalityContextEnhancer />
-      <MunicipalityFieldEnhancer />
-      <MunicipalElectoralMapContext />
-      <CepFallbackEnhancer />
-      <MapInstantContactBootstrap />
-      <MapToolsGate />
-      <MapNeighborhoodInfoEnhancer />
-      <NeighborhoodInfoDrawer />
-      <GestorAccessGate />
-      <CompactOverviewScopeEnhancer />
       <NetworkScopeLabelNormalizer />
-      <AccountSettingsEnhancer />
-      <ContactNavigationInterceptor />
-      <ImportCompletionEnhancer />
-      <ContactExportEnhancer />
-      <IntelligenceNavigation />
-      <AuthReconciliationEnhancer />
-      <TeamPerformanceAdminEnhancer />
-      <RuntimeVersionGuard />
-      <WhaticketBroadcastDrawer />
-      <BroadcastNeighborhoodOptionsEnhancer />
-      <TseSidebarEnhancer />
-      <ComunicacaoSidebarEnhancer />
-      <StandardBackNavigationEnhancer />
-      <AgendaMobileCompactEnhancer />
-      <SystemNotificationsDrawer />
+      {ready ? (
+        <>
+          <MunicipalityContextEnhancer />
+          <MunicipalityFieldEnhancer />
+          <MunicipalElectoralMapContext />
+          <CepFallbackEnhancer />
+          <MapInstantContactBootstrap />
+          <MapToolsGate />
+          <MapNeighborhoodInfoEnhancer />
+          <NeighborhoodInfoDrawer />
+          <GestorAccessGate />
+          <CompactOverviewScopeEnhancer />
+          <AccountSettingsEnhancer />
+          <ContactNavigationInterceptor />
+          <ImportCompletionEnhancer />
+          <ContactExportEnhancer />
+          <IntelligenceNavigation />
+          <AuthReconciliationEnhancer />
+          <TeamPerformanceAdminEnhancer />
+          <RuntimeVersionGuard />
+          <WhaticketBroadcastDrawer />
+          <BroadcastNeighborhoodOptionsEnhancer />
+          <TseSidebarEnhancer />
+          <ComunicacaoSidebarEnhancer />
+          <StandardBackNavigationEnhancer />
+          <AgendaMobileCompactEnhancer />
+          <SystemNotificationsDrawer />
+        </>
+      ) : null}
     </>
   );
 }
