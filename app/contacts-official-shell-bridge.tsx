@@ -27,6 +27,7 @@ type SessionAccount = {
 
 const ENTERING_CLASS = "vf-contacts-entering";
 const ACTIVE_CLASS = "vf-contacts-active";
+const OPTIMIZED_ACTIVE_CLASS = "vf-contacts-optimized-active";
 
 function setReactSelectValue(select: HTMLSelectElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
@@ -105,9 +106,12 @@ export default function ContactsOfficialShellBridge() {
       const title = shell?.querySelector<HTMLElement>(".topbar h1")?.textContent?.trim();
       const nextActive = Boolean(nextWorkspace && title === "Contatos");
 
+      // O DOM recebe o estado visual final no mesmo ciclo em que o Dashboard
+      // confirma a view Contatos, antes do React montar o portal otimizado.
+      shell?.classList.toggle(ACTIVE_CLASS, nextActive);
+      nextWorkspace?.classList.toggle(OPTIMIZED_ACTIVE_CLASS, nextActive);
       setWorkspace((current) => (current === nextWorkspace ? current : nextWorkspace));
       setActive((current) => (current === nextActive ? current : nextActive));
-      shell?.classList.toggle(ACTIVE_CLASS, nextActive);
 
       if (!nextActive) initialFiltersSeeded.current = false;
     };
@@ -124,6 +128,9 @@ export default function ContactsOfficialShellBridge() {
       cancelled = true;
       observer.disconnect();
       document.querySelector<HTMLElement>(".app-shell")?.classList.remove(ACTIVE_CLASS);
+      document
+        .querySelector<HTMLElement>(".workspace")
+        ?.classList.remove(OPTIMIZED_ACTIVE_CLASS);
     };
   }, []);
 
@@ -169,8 +176,8 @@ export default function ContactsOfficialShellBridge() {
 
   useEffect(() => {
     if (!workspace) return;
-    workspace.classList.toggle("vf-contacts-optimized-active", active);
-    return () => workspace.classList.remove("vf-contacts-optimized-active");
+    workspace.classList.toggle(OPTIMIZED_ACTIVE_CLASS, active);
+    return () => workspace.classList.remove(OPTIMIZED_ACTIVE_CLASS);
   }, [active, workspace]);
 
   useEffect(() => {
