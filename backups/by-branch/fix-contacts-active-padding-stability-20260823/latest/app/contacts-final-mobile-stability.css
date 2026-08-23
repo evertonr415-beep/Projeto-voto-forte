@@ -1,0 +1,8 @@
+/* Contatos mobile: preserva a largura do primeiro frame visível mesmo depois
+   que estilos globais da workspace voltam a participar da cascata. */
+@media (max-width: 760px) {
+  .app-shell .workspace.vf-contacts-optimized-active {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
