@@ -6,6 +6,7 @@ const COMPACT_CLASS = "vf-header-scope";
 const SOURCE_HIDDEN_ATTR = "data-vf-scope-source-hidden";
 const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
 const NETWORK_LABEL = "Todos da rede";
+const MOBILE_QUERY = "(max-width: 760px)";
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -57,7 +58,9 @@ export default function CompactOverviewScopeEnhancer() {
       if (disposed) return;
 
       const welcome = document.querySelector<HTMLElement>(".welcome-pro .welcome-copy");
-      const mapVisible = Boolean(document.querySelector(".workspace .full-map"));
+      const isMobile = window.matchMedia(MOBILE_QUERY).matches;
+      const mapVisible =
+        isMobile && Boolean(document.querySelector(".workspace .full-map"));
       const compactContextVisible = Boolean(welcome || mapVisible);
       const pageId = document.querySelector<HTMLElement>(".topbar .page-id");
       const pageTitle = pageId?.querySelector<HTMLElement>("h1");
@@ -188,12 +191,14 @@ export default function CompactOverviewScopeEnhancer() {
     };
 
     document.addEventListener("change", handleChange, true);
+    window.addEventListener("resize", scheduleSync);
     scheduleSync();
 
     return () => {
       disposed = true;
       observer.disconnect();
       document.removeEventListener("change", handleChange, true);
+      window.removeEventListener("resize", scheduleSync);
       restoreSource();
       restoreContext();
       removeCompactControls();
