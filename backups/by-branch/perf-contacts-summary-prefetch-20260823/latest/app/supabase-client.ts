@@ -154,14 +154,22 @@ export async function prefetchApiGet(
   const current = prefetchedReads.get(key);
   if (current?.expiresAt && current.expiresAt > Date.now()) return;
 
-  const existing = inFlightReads.get(key);
-  const response = existing
-    ? (await existing).clone()
-    : await fetch(input, { ...init, headers });
+  let request = inFlightReads.get(key);
+  let ownsRequest = false;
+  if (!request) {
+    request = fetch(input, { ...init, headers });
+    inFlightReads.set(key, request);
+    ownsRequest = true;
+  }
 
-  if (!response.ok) return;
-  prefetchedReads.set(key, {
-    response: response.clone(),
-    expiresAt: Date.now() + PREFETCH_TTL_MS,
-  });
+  try {
+    const response = (await request).clone();
+    if (!response.ok) return;
+    prefetchedReads.set(key, {
+      response: response.clone(),
+      expiresAt: Date.now() + PREFETCH_TTL_MS,
+    });
+  } finally {
+    if (ownsRequest) inFlightReads.delete(key);
+  }
 }
