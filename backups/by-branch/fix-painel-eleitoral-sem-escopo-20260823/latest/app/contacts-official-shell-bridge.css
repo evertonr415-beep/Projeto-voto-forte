@@ -1,0 +1,179 @@
+/* Contatos usa o shell oficial do DashboardClient.
+   Esta camada esconde apenas o ContactManager legado enquanto a experiência
+   otimizada é renderizada dentro da mesma workspace. */
+.workspace.vf-contacts-optimized-active > :not(.vf-contacts-optimized-portal) {
+  display: none !important;
+}
+
+.workspace.vf-contacts-optimized-active {
+  min-width: 0 !important;
+}
+
+.vf-contacts-optimized-portal {
+  width: 100%;
+  min-width: 0;
+}
+
+.vf-contacts-optimized-portal > .optimized-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* O seletor oficial do topbar é a única fonte de escopo visível. */
+.vf-contacts-optimized-portal .optimized-hero-controls {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .workspace.vf-contacts-optimized-active {
+    padding-top: 12px !important;
+  }
+
+  .vf-contacts-optimized-portal > .optimized-shell {
+    padding-top: 0 !important;
+  }
+
+  /* Contatos deve seguir literalmente a mesma geometria da Visão Geral. */
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .mobile-menu {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id h1,
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .vf-header-scope {
+    flex: 0 0 128px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .vf-header-scope-select-wrap {
+    box-sizing: border-box !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .vf-header-scope-select {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 32px !important;
+    padding: 0 24px 0 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .profile {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .profile > span {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar {
+    padding-inline: 8px !important;
+    gap: 5px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .mobile-menu {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id {
+    gap: 5px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .vf-header-scope {
+    flex: 0 0 120px !important;
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .vf-header-scope-select-wrap {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex-basis: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .profile,
+  body:has(.vf-contacts-optimized-portal) .app-shell .topbar .profile > span {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+  }
+}
