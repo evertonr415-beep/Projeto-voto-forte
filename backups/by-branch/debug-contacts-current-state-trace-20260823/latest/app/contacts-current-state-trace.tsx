@@ -2,46 +2,28 @@
 
 import { useEffect, useState } from "react";
 
-type Box = {
-  top: number;
-  height: number;
-  width: number;
-  paddingTop: string;
-  paddingBottom: string;
-  marginTop: string;
-  transform: string;
+type RuleHit = {
+  source: string;
+  selector: string;
+  padding: string;
 };
 
-type Sample = {
+type Snapshot = {
+  label: string;
   frame: number;
   t: number;
+  className: string;
+  top: number;
+  height: number;
+  paddingTop: string;
+  paddingBottom: string;
   scrollY: number;
-  shellClass: string;
-  workspaceClass: string;
-  workspace: Box | null;
-  portal: Box | null;
-  optimized: Box | null;
-  hero: Box | null;
-  dataLoaded: boolean;
+  sheets: number;
+  rules: RuleHit[];
 };
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-function box(element: Element | null): Box | null {
-  if (!(element instanceof HTMLElement)) return null;
-  const rect = element.getBoundingClientRect();
-  const style = window.getComputedStyle(element);
-  return {
-    top: round(rect.top),
-    height: round(rect.height),
-    width: round(rect.width),
-    paddingTop: style.paddingTop,
-    paddingBottom: style.paddingBottom,
-    marginTop: style.marginTop,
-    transform: style.transform,
-  };
 }
 
 function isContactsButton(target: EventTarget | null) {
@@ -50,43 +32,130 @@ function isContactsButton(target: EventTarget | null) {
   return button?.querySelector(".nav-name")?.textContent?.trim() === "Contatos";
 }
 
-function hasLoadedKpis(portal: HTMLElement | null) {
-  if (!portal) return false;
-  return Array.from(portal.querySelectorAll<HTMLElement>(".optimized-kpis b"))
-    .map((node) => node.textContent?.trim() || "")
-    .some((value) => value && value !== "—" && value !== "-");
+function sheetSource(sheet: CSSStyleSheet) {
+  if (sheet.href) {
+    try {
+      const url = new URL(sheet.href);
+      return url.pathname.split("/").pop() || url.pathname;
+    } catch {
+      return sheet.href;
+    }
+  }
+
+  const owner = sheet.ownerNode;
+  if (owner instanceof HTMLElement) {
+    return (
+      owner.getAttribute("data-n-href") ||
+      owner.getAttribute("data-href") ||
+      owner.getAttribute("data-precedence") ||
+      (owner.id ? `#${owner.id}` : owner.tagName.toLowerCase())
+    );
+  }
+  return "inline";
 }
 
-function boxChanged(a: Box | null, b: Box | null) {
-  if (!a && !b) return false;
-  if (!a || !b) return true;
-  return (
-    Math.abs(a.top - b.top) >= 0.5 ||
-    Math.abs(a.height - b.height) >= 0.5 ||
-    Math.abs(a.width - b.width) >= 0.5 ||
-    a.paddingTop !== b.paddingTop ||
-    a.paddingBottom !== b.paddingBottom ||
-    a.marginTop !== b.marginTop ||
-    a.transform !== b.transform
-  );
+function collectRules(
+  rules: CSSRuleList,
+  element: HTMLElement,
+  source: string,
+  output: RuleHit[],
+) {
+  for (const rule of Array.from(rules)) {
+    if (rule instanceof CSSMediaRule) {
+      if (window.matchMedia(rule.conditionText).matches) {
+        collectRules(rule.cssRules, element, source, output);
+      }
+      continue;
+    }
+
+    if (rule instanceof CSSStyleRule) {
+      let matches = false;
+      try {
+        matches = element.matches(rule.selectorText);
+      } catch {
+        matches = false;
+      }
+      if (!matches) continue;
+
+      const style = rule.style;
+      const relevant = [
+        "padding",
+        "padding-top",
+        "padding-bottom",
+        "padding-block",
+        "padding-block-start",
+        "padding-block-end",
+      ].filter((name) => style.getPropertyValue(name));
+      if (!relevant.length) continue;
+
+      output.push({
+        source,
+        selector: rule.selectorText,
+        padding: relevant
+          .map((name) => {
+            const value = style.getPropertyValue(name).trim();
+            const priority = style.getPropertyPriority(name) ? " !important" : "";
+            return `${name}:${value}${priority}`;
+          })
+          .join(";"),
+      });
+      continue;
+    }
+
+    const nested = (rule as CSSRule & { cssRules?: CSSRuleList }).cssRules;
+    if (nested) collectRules(nested, element, source, output);
+  }
 }
 
-function changed(a: Sample, b: Sample) {
-  return (
-    Math.abs(a.scrollY - b.scrollY) >= 0.5 ||
-    a.shellClass !== b.shellClass ||
-    a.workspaceClass !== b.workspaceClass ||
-    a.dataLoaded !== b.dataLoaded ||
-    boxChanged(a.workspace, b.workspace) ||
-    boxChanged(a.portal, b.portal) ||
-    boxChanged(a.optimized, b.optimized) ||
-    boxChanged(a.hero, b.hero)
-  );
+function matchedPaddingRules(element: HTMLElement) {
+  const output: RuleHit[] = [];
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      collectRules(sheet.cssRules, element, sheetSource(sheet), output);
+    } catch {
+      // Folhas sem acesso via CSSOM nao participam do diagnostico textual.
+    }
+  }
+  return output;
 }
 
-function fmt(label: string, value: Box | null) {
-  if (!value) return `${label}: --`;
-  return `${label}: top${value.top} h${value.height} w${value.width} pt${value.paddingTop} pb${value.paddingBottom} mt${value.marginTop} tr${value.transform}`;
+function takeSnapshot(label: string, frame: number, startedAt: number, workspace: HTMLElement): Snapshot {
+  const rect = workspace.getBoundingClientRect();
+  const style = window.getComputedStyle(workspace);
+  return {
+    label,
+    frame,
+    t: round(performance.now() - startedAt),
+    className: workspace.className,
+    top: round(rect.top),
+    height: round(rect.height),
+    paddingTop: style.paddingTop,
+    paddingBottom: style.paddingBottom,
+    scrollY: round(window.scrollY),
+    sheets: document.styleSheets.length,
+    rules: matchedPaddingRules(workspace),
+  };
+}
+
+function formatSnapshot(snapshot: Snapshot) {
+  const importantRules = snapshot.rules
+    .filter((rule) =>
+      rule.selector.includes("workspace") ||
+      rule.selector.includes("contacts") ||
+      rule.padding.includes("!important"),
+    )
+    .slice(-12);
+
+  return [
+    `${snapshot.label} f${snapshot.frame} ${snapshot.t}ms sheets${snapshot.sheets}`,
+    `class:${snapshot.className}`,
+    `computed: top${snapshot.top} h${snapshot.height} pt${snapshot.paddingTop} pb${snapshot.paddingBottom} scroll${snapshot.scrollY}`,
+    ...importantRules.flatMap((rule, index) => [
+      `${index + 1}. ${rule.source}`,
+      `   ${rule.selector}`,
+      `   ${rule.padding}`,
+    ]),
+  ];
 }
 
 export default function ContactsCurrentStateTrace() {
@@ -104,61 +173,45 @@ export default function ContactsCurrentStateTrace() {
       if (running) return;
       running = true;
       const startedAt = performance.now();
-      const samples: Sample[] = [];
       let frame = 0;
-      let loadedFrame: number | null = null;
-      setLines(["TRACE ATUAL: capturando..."]);
-
-      const finish = () => {
-        const changes = samples.filter((item, index) => index === 0 || changed(samples[index - 1], item));
-        const portalFirst = samples.find((item) => item.portal);
-        const loaded = samples.find((item) => item.dataLoaded);
-        const final = samples.at(-1)!;
-        const compact = [samples[0], portalFirst, ...changes.slice(-10), loaded, final].filter(Boolean) as Sample[];
-        const unique = compact.filter((item, index, all) => index === all.findIndex((other) => other.frame === item.frame));
-
-        setLines([
-          "TRACE ATUAL",
-          ...unique.flatMap((item) => [
-            `f${item.frame} ${item.t}ms D${item.dataLoaded ? 1 : 0} scroll${item.scrollY}`,
-            `shell:${item.shellClass}`,
-            `wsclass:${item.workspaceClass}`,
-            fmt("ws", item.workspace),
-            fmt("portal", item.portal),
-            fmt("opt", item.optimized),
-            fmt("hero", item.hero),
-          ]),
-        ].slice(-42));
-        running = false;
-      };
+      let early: Snapshot | null = null;
+      let finalState: Snapshot | null = null;
+      setLines(["TRACE CSS: aguardando estado 0px -> 12px..."]);
 
       const sample = () => {
         const shell = document.querySelector<HTMLElement>(".app-shell");
         const workspace = shell?.querySelector<HTMLElement>(".workspace") ?? null;
         const portal = workspace?.querySelector<HTMLElement>(".vf-contacts-optimized-portal") ?? null;
-        const optimized = portal?.querySelector<HTMLElement>(".optimized-shell") ?? null;
-        const loaded = hasLoadedKpis(portal);
-        if (loaded && loadedFrame == null) loadedFrame = frame;
 
-        samples.push({
-          frame,
-          t: round(performance.now() - startedAt),
-          scrollY: round(window.scrollY),
-          shellClass: shell?.className || "",
-          workspaceClass: workspace?.className || "",
-          workspace: box(workspace),
-          portal: box(portal),
-          optimized: box(optimized),
-          hero: box(portal?.querySelector(".optimized-topbar") ?? null),
-          dataLoaded: loaded,
-        });
+        if (workspace && portal) {
+          const style = window.getComputedStyle(workspace);
+          if (!early && style.paddingTop === "0px") {
+            early = takeSnapshot("ESTADO INICIAL", frame, startedAt, workspace);
+          }
+          if (early && !finalState && style.paddingTop === "12px") {
+            finalState = takeSnapshot("ESTADO FINAL", frame, startedAt, workspace);
+            setLines([
+              ...formatSnapshot(early),
+              "----------------",
+              ...formatSnapshot(finalState),
+            ].slice(-46));
+            running = false;
+            return;
+          }
+        }
 
         frame += 1;
-        if ((loadedFrame == null || frame - loadedFrame < 120) && frame < 720) {
+        if (frame < 720) {
           raf = window.requestAnimationFrame(sample);
           return;
         }
-        finish();
+
+        if (early) {
+          setLines(formatSnapshot(early).slice(-42));
+        } else {
+          setLines(["TRACE CSS: nao capturou o estado inicial de 0px."]);
+        }
+        running = false;
       };
 
       sample();
@@ -185,21 +238,21 @@ export default function ContactsCurrentStateTrace() {
         right: 6,
         bottom: 72,
         zIndex: 2147483647,
-        maxHeight: "52vh",
+        maxHeight: "55vh",
         overflow: "auto",
         margin: 0,
         padding: "8px 9px",
         border: "1px solid rgba(56,189,248,.65)",
         borderRadius: 8,
-        background: "rgba(2,8,20,.94)",
+        background: "rgba(2,8,20,.95)",
         color: "#dff6ff",
-        fontSize: 7.5,
-        lineHeight: 1.2,
+        fontSize: 7,
+        lineHeight: 1.18,
         whiteSpace: "pre-wrap",
         pointerEvents: "none",
       }}
     >
-      {lines.length ? lines.join("\n") : "TRACE ATUAL: toque em Contatos"}
+      {lines.length ? lines.join("\n") : "TRACE CSS: toque em Contatos"}
     </pre>
   );
 }
