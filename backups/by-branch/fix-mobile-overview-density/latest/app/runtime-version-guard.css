@@ -1,0 +1,58 @@
+.vf-runtime-update {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(520px, calc(100vw - 36px));
+  padding: 16px 18px;
+  border: 1px solid rgba(20, 67, 118, 0.18);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(15, 42, 74, 0.2);
+}
+
+.vf-runtime-update div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vf-runtime-update strong {
+  color: #153d6c;
+  font-size: 0.95rem;
+}
+
+.vf-runtime-update span {
+  color: #62748a;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.vf-runtime-update button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #173f70;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .vf-runtime-update {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vf-runtime-update button {
+    width: 100%;
+  }
+}
