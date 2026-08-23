@@ -1,0 +1,194 @@
+/* Cabecalho compacto do Mapa Eleitoral no mobile.
+   Reaproveita o seletor sincronizado da Visao Geral e elimina a repeticao
+   do titulo "Mapa Eleitoral" no topo. Desktop permanece inalterado. */
+@media (max-width: 760px) {
+  body:has(.workspace .full-map) .app-shell .topbar {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 68px !important;
+    height: auto !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .mobile-menu {
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+    gap: 7px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id h1,
+  body:has(.workspace .full-map) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope {
+    display: inline-flex !important;
+    flex: 0 1 150px !important;
+    width: 150px !important;
+    max-width: 150px !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 150px !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.78) !important;
+    border-radius: 11px !important;
+    background: linear-gradient(180deg, #132746 0%, #0f1e3a 100%) !important;
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.10), 0 5px 14px rgba(0, 0, 0, 0.20) !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 33px !important;
+    padding: 0 27px 0 11px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #f8fafc !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap::after {
+    right: 9px !important;
+    color: #7dd3fc !important;
+    font-size: 10px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id > .vf-theme-toggle {
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(56, 189, 248, 0.34) !important;
+    border-radius: 11px !important;
+    background: #0f1e3a !important;
+    color: #fff !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .profile {
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .profile > span {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .profile > div,
+  body:has(.workspace .full-map) .app-shell .topbar .profile > i {
+    display: none !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap {
+    border-color: #2f6fb2 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f3f8fd 100%) !important;
+    box-shadow: 0 0 0 1px rgba(47, 111, 178, 0.08), 0 4px 12px rgba(19, 49, 84, 0.10) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select {
+    color: #173f75 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap::after {
+    color: #1f4e85 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .app-shell .topbar .page-id > .vf-theme-toggle {
+    border-color: #cbd9e7 !important;
+    background: #ffffff !important;
+    color: #153b65 !important;
+    box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10) !important;
+  }
+}
+
+@media (max-width: 410px) {
+  body:has(.workspace .full-map) .app-shell .topbar {
+    padding-inline: 10px !important;
+    gap: 6px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .mobile-menu {
+    flex-basis: 42px !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id {
+    gap: 6px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope {
+    flex-basis: 136px !important;
+    width: 136px !important;
+    max-width: 136px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select-wrap {
+    max-width: 136px !important;
+    height: 34px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .vf-header-scope-select {
+    height: 31px !important;
+    padding-left: 9px !important;
+    padding-right: 24px !important;
+    font-size: 10.5px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .profile,
+  body:has(.workspace .full-map) .app-shell .topbar .profile > span {
+    flex-basis: 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+  }
+}
