@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "ignoreCommand": "if [ \"$VERCEL_PROJECT_ID\" = \"prj_nrdFpuBUyfNOnPKkeCIbtexwqFJ5\" ] || [ \"$VERCEL_GIT_COMMIT_REF\" = \"backup/automatic\" ]; then exit 0; else exit 1; fi",
+  "crons": [
+    {
+      "path": "/api/cron/daily-backup",
+      "schedule": "30 5 * * *"
+    }
+  ]
+}
