@@ -19,13 +19,15 @@ export default function MobileContactRowAccordion() {
           ".contacts-route-scope .optimized-table-wrap tbody > tr",
         )
         .forEach((row) => {
-          if (row.dataset.vfMobileAccordion === "ready") return;
-
-          row.dataset.vfMobileAccordion = "ready";
           row.classList.add("vf-mobile-contact-row");
           row.tabIndex = 0;
           row.setAttribute("role", "button");
-          row.setAttribute("aria-expanded", "false");
+          if (!row.hasAttribute("aria-expanded")) {
+            row.setAttribute("aria-expanded", "false");
+          }
+
+          if (row.dataset.vfMobileAccordion === "ready") return;
+          row.dataset.vfMobileAccordion = "ready";
 
           const toggle = () => {
             const expanded = row.classList.toggle("is-expanded");
@@ -80,6 +82,7 @@ export default function MobileContactRowAccordion() {
         prepareRows();
         return;
       }
+
       document
         .querySelectorAll<HTMLElement>(".contacts-route-scope .vf-mobile-contact-row")
         .forEach((row) => {
