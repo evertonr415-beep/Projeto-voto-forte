@@ -60,10 +60,7 @@ export default function ContactNavigationInterceptor() {
       const kpiLabel = button.querySelector(".kpi b")?.textContent?.trim();
       const buttonText = button.textContent?.trim() || "";
 
-      // A aba Contatos do dashboard deve permanecer na navegação React local.
-      // Assim, no mobile ela reutiliza o cabeçalho padrão com menu, escopo,
-      // alternador de tema e perfil, em vez de cair na rota isolada /contatos.
-      const opensContacts = navLabel === "Gestão";
+      const opensContacts = navLabel === "Contatos" || navLabel === "Gestão";
       const opensVoters =
         kpiLabel === "Eleitores cadastrados" ||
         buttonText.includes("Ver relatório de eleitores");
