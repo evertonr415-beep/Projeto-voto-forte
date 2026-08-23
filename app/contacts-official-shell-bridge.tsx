@@ -17,6 +17,7 @@ import "./contatos/contacts-full-theme.css";
 import "./contatos/contacts-mobile-polish.css";
 import "./contatos/mobile-contact-row-accordion.css";
 import "./contacts-official-shell-bridge.css";
+import "./contacts-stability.css";
 
 type SessionAccount = {
   email: string;
@@ -34,11 +35,37 @@ function setReactSelectValue(select: HTMLSelectElement, value: string) {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function isContactsNavigationTarget(target: EventTarget | null) {
+  const element = target instanceof Element ? target : null;
+  const button = element?.closest<HTMLButtonElement>(".sidebar nav button");
+  return button?.querySelector(".nav-name")?.textContent?.trim() === "Contatos";
+}
+
 export default function ContactsOfficialShellBridge() {
   const [workspace, setWorkspace] = useState<HTMLElement | null>(null);
   const [active, setActive] = useState(false);
   const [account, setAccount] = useState<SessionAccount | null>(null);
   const initialFiltersSeeded = useRef(false);
+  const accountRequest = useRef<Promise<SessionAccount | null> | null>(null);
+
+  const ensureAccount = () => {
+    if (account) return Promise.resolve(account);
+    if (accountRequest.current) return accountRequest.current;
+
+    accountRequest.current = apiFetch("/api/session", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.user) return null;
+        return {
+          email: String(data.user.email || ""),
+          name: String(data.user.name || data.user.email || "Voto Forte"),
+          role: String(data.user.role || "user"),
+        } satisfies SessionAccount;
+      })
+      .catch(() => null);
+
+    return accountRequest.current;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -70,22 +97,28 @@ export default function ContactsOfficialShellBridge() {
   }, []);
 
   useEffect(() => {
+    const warmAccount = (event: Event) => {
+      if (!isContactsNavigationTarget(event.target)) return;
+      void ensureAccount().then((nextAccount) => {
+        if (nextAccount) setAccount((current) => current ?? nextAccount);
+      });
+    };
+
+    document.addEventListener("pointerdown", warmAccount, true);
+    document.addEventListener("click", warmAccount, true);
+    return () => {
+      document.removeEventListener("pointerdown", warmAccount, true);
+      document.removeEventListener("click", warmAccount, true);
+    };
+  }, [account]);
+
+  useEffect(() => {
     if (!active || account) return;
     let cancelled = false;
 
-    void apiFetch("/api/session", { cache: "no-store" })
-      .then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data?.user) return;
-        if (!cancelled) {
-          setAccount({
-            email: String(data.user.email || ""),
-            name: String(data.user.name || data.user.email || "Voto Forte"),
-            role: String(data.user.role || "user"),
-          });
-        }
-      })
-      .catch(() => undefined);
+    void ensureAccount().then((nextAccount) => {
+      if (!cancelled && nextAccount) setAccount(nextAccount);
+    });
 
     return () => {
       cancelled = true;
@@ -94,10 +127,9 @@ export default function ContactsOfficialShellBridge() {
 
   useEffect(() => {
     if (!workspace) return;
-    const enabled = active && Boolean(account);
-    workspace.classList.toggle("vf-contacts-optimized-active", enabled);
+    workspace.classList.toggle("vf-contacts-optimized-active", active);
     return () => workspace.classList.remove("vf-contacts-optimized-active");
-  }, [account, active, workspace]);
+  }, [active, workspace]);
 
   useEffect(() => {
     if (!active || !workspace || !account) return;
@@ -201,22 +233,28 @@ export default function ContactsOfficialShellBridge() {
     if (!account) return null;
     return {
       ...account,
-      // O dashboard oficial considera "admin" administrador. O painel otimizado
-      // historicamente usa outro conjunto de nomes de papel; normalizamos apenas
-      // a apresentação para manter o mesmo seletor de ambiente do shell oficial.
       role: account.role === "admin" ? "master" : account.role,
     };
   }, [account]);
 
-  if (!active || !workspace || !neutralAccount) return null;
+  if (!active || !workspace) return null;
 
   return createPortal(
     <div className="vf-contacts-optimized-portal contacts-route-scope">
-      <NeutralDashboardClient currentUser={neutralAccount} />
-      <MobileContactListEntryCollapse />
-      <MobileContactRowAccordion />
-      <ContactDistrictRanking />
-      <ContactWhatsappQuickQueue />
+      {neutralAccount ? (
+        <>
+          <NeutralDashboardClient currentUser={neutralAccount} />
+          <MobileContactListEntryCollapse />
+          <MobileContactRowAccordion />
+          <ContactDistrictRanking />
+          <ContactWhatsappQuickQueue />
+        </>
+      ) : (
+        <div className="vf-contacts-stable-loading" role="status" aria-live="polite">
+          <span className="vf-contacts-stable-spinner" aria-hidden="true" />
+          <b>Carregando contatos…</b>
+        </div>
+      )}
     </div>,
     workspace,
   );
