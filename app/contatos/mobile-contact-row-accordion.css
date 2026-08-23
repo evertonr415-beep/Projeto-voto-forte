@@ -1,0 +1,92 @@
+@media(max-width:760px){
+  html[data-vf-theme="dark"] .contacts-route-scope .optimized-quick-actions .primary,
+  html:not([data-vf-theme="light"]) .contacts-route-scope .optimized-quick-actions .primary,
+  html[data-vf-theme="dark"] .contacts-route-scope .optimized-kpis article.is-primary,
+  html:not([data-vf-theme="light"]) .contacts-route-scope .optimized-kpis article.is-primary{
+    background:linear-gradient(145deg,#0f1e3a 0%,#091426 100%)!important;
+    border-color:rgba(56,189,248,.16)!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap td[data-label="Responsável"]{
+    display:none!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row{
+    grid-template-columns:28px minmax(0,1fr) 24px!important;
+    gap:4px 8px!important;
+    min-height:62px;
+    padding:10px!important;
+    cursor:pointer;
+    transition:border-color .18s ease,background .18s ease;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row::after{
+    content:"›";
+    grid-column:3;
+    grid-row:1;
+    align-self:center;
+    justify-self:center;
+    color:var(--contacts-muted);
+    font-size:24px;
+    line-height:1;
+    transform:rotate(0deg);
+    transition:transform .18s ease,color .18s ease;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row.is-expanded::after{
+    color:var(--contacts-accent);
+    transform:rotate(90deg);
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row:focus-visible{
+    outline:2px solid var(--contacts-accent);
+    outline-offset:2px;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row>td:first-child{
+    grid-column:1!important;
+    grid-row:1!important;
+    align-self:center;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row>.optimized-contact-cell{
+    grid-column:2!important;
+    grid-row:1!important;
+    min-height:38px!important;
+    padding-right:2px!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row:not(.is-expanded)>td:not(:first-child):not(.optimized-contact-cell):not([data-label="Telefone"]){
+    display:none!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row:not(.is-expanded)>td[data-label="Telefone"]{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:flex!important;
+    min-height:20px!important;
+    padding-left:42px!important;
+    font-size:11.5px!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row:not(.is-expanded)>td[data-label="Telefone"]::before{
+    display:none!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row.is-expanded{
+    padding-bottom:11px!important;
+    border-color:var(--contacts-strong)!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row.is-expanded>td:not(:first-child):not(.optimized-contact-cell):not(.optimized-row-actions){
+    grid-column:2/4!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row.is-expanded>.optimized-row-actions{
+    grid-column:2/4!important;
+  }
+
+  .contacts-route-scope .optimized-table-wrap .vf-mobile-contact-row.is-expanded>td[data-label="Responsável"]{
+    display:none!important;
+  }
+}
