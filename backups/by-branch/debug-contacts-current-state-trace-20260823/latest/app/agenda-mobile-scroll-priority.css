@@ -1,0 +1,34 @@
+/* Prioridade final Agenda Mobile */
+@media (max-width: 768px) {
+  html body .ae-root {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .ae-root .ae-shell {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* Botão Voltar da Agenda - contraste em tema claro */
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #17345c !important;
+  opacity: 1 !important;
+  border-color: rgba(23, 52, 92, 0.18) !important;
+}
+
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] svg,
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] span {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+html body .ae-root[data-theme="dark"] .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
