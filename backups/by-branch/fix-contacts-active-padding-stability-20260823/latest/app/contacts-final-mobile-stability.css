@@ -1,8 +1,11 @@
-/* Contatos mobile: preserva a largura do primeiro frame visível mesmo depois
-   que estilos globais da workspace voltam a participar da cascata. */
+/* Contatos mobile: preserva a geometria final desde o primeiro frame visível,
+   impedindo que o padding global da workspace entre depois e cause deslocamento. */
 @media (max-width: 760px) {
+  .app-shell .workspace.vf-contacts-entering,
   .app-shell .workspace.vf-contacts-optimized-active {
-    padding-left: 0 !important;
+    padding-top: 12px !important;
     padding-right: 0 !important;
+    padding-bottom: 80px !important;
+    padding-left: 0 !important;
   }
 }
