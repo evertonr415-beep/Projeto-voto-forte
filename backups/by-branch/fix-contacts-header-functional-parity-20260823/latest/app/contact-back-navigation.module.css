@@ -10,24 +10,27 @@
   :global(.vf-contact-mobile-header-bar) {
     position: fixed;
     inset: 0 0 auto 0;
-    z-index: 1199;
+    z-index: 1202;
     box-sizing: border-box;
     width: 100%;
     height: 56px;
     min-height: 56px;
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     background: rgba(7, 17, 32, 0.98);
     border-bottom: 1px solid rgba(56, 189, 248, 0.18);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
     backdrop-filter: blur(16px);
-    pointer-events: none;
   }
 
   .backLink {
     box-sizing: border-box;
-    position: fixed;
-    top: 9px;
-    left: 10px;
-    z-index: 1203;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    flex: 0 0 38px;
     width: 38px;
     height: 38px;
     min-width: 38px;
@@ -56,7 +59,9 @@
     box-shadow: 0 -6px 0 #38bdf8, 0 6px 0 #38bdf8;
   }
 
-  .backLink:active {
+  .backLink:active,
+  :global(.vf-contact-mobile-theme:active),
+  :global(.vf-contact-mobile-profile:active) {
     transform: scale(0.97);
   }
 
@@ -87,14 +92,15 @@
 
   :global(.vf-contact-mobile-scope) {
     box-sizing: border-box;
-    position: fixed;
-    top: 11px;
-    right: 94px;
-    z-index: 1201;
-    width: 128px;
-    min-width: 128px;
-    max-width: 128px;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
     height: 34px;
+    margin: 0;
   }
 
   :global(.vf-contact-mobile-scope::after) {
@@ -111,11 +117,11 @@
 
   :global(.vf-contact-mobile-scope-select) {
     box-sizing: border-box;
-    width: 128px;
-    min-width: 128px;
-    max-width: 128px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
     height: 34px;
-    padding: 0 24px 0 9px;
+    padding: 0 24px 0 10px;
     border: 1.5px solid rgba(56, 189, 248, 0.78);
     border-radius: 10px;
     outline: 0;
@@ -125,10 +131,12 @@
     color: #f8fafc;
     box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.10), 0 5px 14px rgba(0, 0, 0, 0.20);
     font: inherit;
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
+    text-overflow: clip;
+    overflow: hidden;
     cursor: pointer;
   }
 
@@ -137,17 +145,39 @@
     color: #ffffff;
   }
 
+  :global(.vf-contact-mobile-theme) {
+    box-sizing: border-box;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: inline-grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(56, 189, 248, 0.34);
+    border-radius: 10px;
+    background: #0f1e3a;
+    color: #fff;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
   :global(.vf-contact-mobile-profile) {
     box-sizing: border-box;
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 1203;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    flex: 0 0 36px;
     width: 36px;
     height: 36px;
     min-width: 36px;
     display: grid;
     place-items: center;
+    margin: 0;
     padding: 0;
     border: 1px solid rgba(56, 189, 248, 0.34);
     border-radius: 50%;
@@ -162,15 +192,9 @@
     overflow: hidden;
   }
 
+  /* A rota Contatos usa seu próprio botão de tema dentro da barra única. */
   :global(body:has(.contacts-route-scope) .vf-theme-toggle.vf-theme-toggle-floating) {
-    top: 12px !important;
-    right: 54px !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
-    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
+    display: none !important;
   }
 
   :global(html[data-vf-theme="light"] .vf-contact-mobile-scope-select) {
@@ -184,6 +208,13 @@
     color: #1f4e85;
   }
 
+  :global(html[data-vf-theme="light"] .vf-contact-mobile-theme) {
+    border-color: #cbd9e7;
+    background: #ffffff;
+    color: #153b65;
+    box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10);
+  }
+
   :global(html[data-vf-theme="light"] .vf-contact-mobile-profile) {
     border-color: #cbd9e7;
     background: #eaf2fb;
@@ -191,8 +222,6 @@
     box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10);
   }
 
-  /* O wrapper apenas hospeda o sidebar oficial; largura, transicao e backdrop
-     ficam integralmente a cargo das mesmas regras globais usadas no dashboard. */
   :global(.vf-contact-official-nav.app-shell) {
     position: fixed !important;
     inset: 0 !important;
@@ -224,49 +253,37 @@
 }
 
 @media (max-width: 430px) {
+  :global(.vf-contact-mobile-header-bar) {
+    padding-inline: 8px;
+    gap: 5px;
+  }
+
   .backLink {
-    top: 10px;
-    left: 8px;
+    flex-basis: 36px;
     width: 36px;
     height: 36px;
     min-width: 36px;
   }
 
-  :global(.vf-contact-mobile-scope) {
-    top: 11px;
-    right: 86px;
-    width: 120px;
-    min-width: 120px;
-    max-width: 120px;
-    height: 34px;
-  }
-
   :global(.vf-contact-mobile-scope-select) {
-    width: 120px;
-    min-width: 120px;
-    max-width: 120px;
-    height: 34px;
+    font-size: 10px;
     padding-left: 9px;
     padding-right: 22px;
-    font-size: 10px;
+  }
+
+  :global(.vf-contact-mobile-theme) {
+    flex-basis: 30px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    font-size: 15px;
   }
 
   :global(.vf-contact-mobile-profile) {
-    top: 11px;
-    right: 8px;
+    flex-basis: 34px;
     width: 34px;
     height: 34px;
     min-width: 34px;
-  }
-
-  :global(body:has(.contacts-route-scope) .vf-theme-toggle.vf-theme-toggle-floating) {
-    top: 13px !important;
-    right: 48px !important;
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
   }
 }
 
