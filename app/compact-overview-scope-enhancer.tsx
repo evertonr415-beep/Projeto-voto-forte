@@ -5,8 +5,10 @@ import { useEffect } from "react";
 const COMPACT_CLASS = "vf-header-scope";
 const SOURCE_HIDDEN_ATTR = "data-vf-scope-source-hidden";
 const CONTEXT_HIDDEN_ATTR = "data-vf-original-context-hidden";
+const MOBILE_TAB_HEADER_ATTR = "data-vf-mobile-compact-tab-header";
 const NETWORK_LABEL = "Todos da rede";
 const MOBILE_QUERY = "(max-width: 760px)";
+const MOBILE_COMPACT_TABS = new Set(["contatos", "administração", "administracao", "whatsapp"]);
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -19,11 +21,18 @@ function displayOptionText(option: HTMLOptionElement) {
   return option.text;
 }
 
+function normalizeTitle(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
+
 export default function CompactOverviewScopeEnhancer() {
   useEffect(() => {
     let disposed = false;
     let scheduled = false;
     let hiddenSource: HTMLLabelElement | null = null;
+    let markedTopbar: HTMLElement | null = null;
 
     const restoreSource = () => {
       if (!hiddenSource) return;
@@ -39,6 +48,12 @@ export default function CompactOverviewScopeEnhancer() {
           element.style.removeProperty("display");
           element.removeAttribute(CONTEXT_HIDDEN_ATTR);
         });
+    };
+
+    const clearMobileTabHeader = () => {
+      if (!markedTopbar) return;
+      markedTopbar.removeAttribute(MOBILE_TAB_HEADER_ATTR);
+      markedTopbar = null;
     };
 
     const removeCompactControls = () => {
@@ -61,10 +76,22 @@ export default function CompactOverviewScopeEnhancer() {
       const isMobile = window.matchMedia(MOBILE_QUERY).matches;
       const mapVisible =
         isMobile && Boolean(document.querySelector(".workspace .full-map"));
-      const compactContextVisible = Boolean(welcome || mapVisible);
-      const pageId = document.querySelector<HTMLElement>(".topbar .page-id");
+      const topbar = document.querySelector<HTMLElement>(".topbar");
+      const pageId = topbar?.querySelector<HTMLElement>(".page-id");
       const pageTitle = pageId?.querySelector<HTMLElement>("h1");
-      const sourceLabel = document.querySelector<HTMLLabelElement>(".topbar .scope-picker");
+      const mobileTargetTab =
+        isMobile && MOBILE_COMPACT_TABS.has(normalizeTitle(pageTitle?.textContent));
+
+      if (markedTopbar && markedTopbar !== topbar) clearMobileTabHeader();
+      if (topbar && mobileTargetTab) {
+        topbar.setAttribute(MOBILE_TAB_HEADER_ATTR, "true");
+        markedTopbar = topbar;
+      } else {
+        clearMobileTabHeader();
+      }
+
+      const compactContextVisible = Boolean(welcome || mapVisible || mobileTargetTab);
+      const sourceLabel = topbar?.querySelector<HTMLLabelElement>(".scope-picker");
       const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>("select");
 
       if (
@@ -201,6 +228,7 @@ export default function CompactOverviewScopeEnhancer() {
       window.removeEventListener("resize", scheduleSync);
       restoreSource();
       restoreContext();
+      clearMobileTabHeader();
       removeCompactControls();
     };
   }, []);
