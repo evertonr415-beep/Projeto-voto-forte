@@ -7,7 +7,7 @@ import ContactDistrictRanking from "./contact-district-ranking";
 import ContactWhatsappQuickQueue from "./contact-whatsapp-quick-queue";
 import MobileContactListEntryCollapse from "./contatos/mobile-contact-list-entry-collapse";
 import MobileContactRowAccordion from "./contatos/mobile-contact-row-accordion";
-import { apiFetch } from "./supabase-client";
+import { apiFetch, prefetchApiGet } from "./supabase-client";
 import "./contatos/coverage-clarity.css";
 import "./contatos/contact-quality-label.css";
 import "./contatos/whatsapp-quick-queue.css";
@@ -28,6 +28,13 @@ type SessionAccount = {
 const ENTERING_CLASS = "vf-contacts-entering";
 const ACTIVE_CLASS = "vf-contacts-active";
 const OPTIMIZED_ACTIVE_CLASS = "vf-contacts-optimized-active";
+const SUMMARY_ADMIN_ROLES = new Set(["admin", "master", "gestor", "lider"]);
+
+function initialSummaryOwner(account: SessionAccount) {
+  return SUMMARY_ADMIN_ROLES.has(String(account.role || "").toLowerCase())
+    ? "all"
+    : account.email;
+}
 
 function setReactSelectValue(select: HTMLSelectElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
@@ -95,6 +102,19 @@ export default function ContactsOfficialShellBridge() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!account) return;
+
+    // Antecipa somente o resumo visível no primeiro frame de Contatos. Não monta
+    // o painel escondido e não consulta a lista paginada, preservando a correção
+    // de estabilidade mobile e evitando um count pesado antes de ser necessário.
+    const owner = initialSummaryOwner(account);
+    void prefetchApiGet(
+      `/api/contacts?mode=summary&owner=${encodeURIComponent(owner)}`,
+      { cache: "no-store" },
+    ).catch(() => undefined);
+  }, [account]);
 
   useEffect(() => {
     let cancelled = false;
