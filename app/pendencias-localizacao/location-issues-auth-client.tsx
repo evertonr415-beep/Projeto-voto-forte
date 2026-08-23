@@ -8,6 +8,7 @@ type CurrentUser = {
   email: string;
   name: string;
   role: string;
+  accessRole?: string;
 };
 
 export default function LocationIssuesAuthClient() {
@@ -27,8 +28,8 @@ export default function LocationIssuesAuthClient() {
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (!active) return;
-        if (!response.ok || !data.user) {
-          window.location.replace("/contatos");
+        if (!response.ok || !data.user || data.user.accessRole !== "adm") {
+          window.location.replace("/");
           return;
         }
         setAccount(data.user);
@@ -67,8 +68,8 @@ export default function LocationIssuesAuthClient() {
             <button type="button" onClick={() => setRetryKey((value) => value + 1)}>
               Tentar novamente
             </button>{" "}
-            <button type="button" onClick={() => window.location.assign("/contatos")}>
-              Voltar aos contatos
+            <button type="button" onClick={() => window.location.assign("/")}>
+              Voltar ao sistema
             </button>
           </div>
         </section>
@@ -79,7 +80,7 @@ export default function LocationIssuesAuthClient() {
   return (
     <main className="issues-shell">
       <section className="issues-panel issues-loading" role="status">
-        {busy ? "Abrindo a Central de Qualidade…" : "Redirecionando para o acesso…"}
+        {busy ? "Validando acesso administrativo…" : "Redirecionando para o sistema…"}
       </section>
     </main>
   );
