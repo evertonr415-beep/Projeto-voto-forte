@@ -11,7 +11,10 @@
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 1199;
-    height: 68px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
     background: rgba(7, 17, 32, 0.98);
     border-bottom: 1px solid rgba(56, 189, 248, 0.18);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
@@ -22,26 +25,35 @@
   .backLink {
     box-sizing: border-box;
     position: fixed;
-    top: 12px;
-    left: 12px;
+    top: 9px;
+    left: 10px;
     z-index: 1203;
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
     margin: 0;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 1.5px solid rgba(56, 189, 248, 0.45);
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(15, 23, 42, 0.85);
-    color: #38bdf8;
+    color: transparent;
     box-shadow: 0 5px 14px rgba(0, 0, 0, 0.18);
     font: inherit;
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 0;
     line-height: 1;
     cursor: pointer;
+  }
+
+  .backLink::before {
+    content: "";
+    width: 18px;
+    height: 2.5px;
+    border-radius: 999px;
+    background: #38bdf8;
+    box-shadow: 0 -6px 0 #38bdf8, 0 6px 0 #38bdf8;
   }
 
   .backLink:active {
@@ -57,7 +69,6 @@
   :global(html[data-vf-theme="light"] .contacts-route-scope) .backLink {
     border-color: #cbd9e7;
     background: #ffffff;
-    color: #1f4e85;
     box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10);
   }
 
@@ -71,26 +82,26 @@
   }
 
   :global(.contacts-route-scope.vf-contact-mobile-scope-active .optimized-shell) {
-    padding-top: 78px !important;
+    padding-top: 66px !important;
   }
 
   :global(.vf-contact-mobile-scope) {
     box-sizing: border-box;
     position: fixed;
-    top: 16px;
-    left: 64px;
-    right: 104px;
+    top: 11px;
+    right: 94px;
     z-index: 1201;
-    width: auto;
-    min-width: 0;
-    height: 36px;
+    width: 128px;
+    min-width: 128px;
+    max-width: 128px;
+    height: 34px;
   }
 
   :global(.vf-contact-mobile-scope::after) {
     content: "⌄";
     position: absolute;
     top: 50%;
-    right: 9px;
+    right: 8px;
     transform: translateY(-56%);
     color: #7dd3fc;
     font-size: 10px;
@@ -100,12 +111,13 @@
 
   :global(.vf-contact-mobile-scope-select) {
     box-sizing: border-box;
-    width: 100%;
-    max-width: none;
-    height: 36px;
-    padding: 0 25px 0 11px;
+    width: 128px;
+    min-width: 128px;
+    max-width: 128px;
+    height: 34px;
+    padding: 0 24px 0 9px;
     border: 1.5px solid rgba(56, 189, 248, 0.78);
-    border-radius: 11px;
+    border-radius: 10px;
     outline: 0;
     appearance: none;
     -webkit-appearance: none;
@@ -113,7 +125,7 @@
     color: #f8fafc;
     box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.10), 0 5px 14px rgba(0, 0, 0, 0.20);
     font: inherit;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
@@ -128,12 +140,12 @@
   :global(.vf-contact-mobile-profile) {
     box-sizing: border-box;
     position: fixed;
-    top: 14px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     z-index: 1203;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     display: grid;
     place-items: center;
     padding: 0;
@@ -143,7 +155,7 @@
     color: #f8fafc;
     box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16);
     font: inherit;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 850;
     line-height: 1;
     cursor: pointer;
@@ -151,13 +163,13 @@
   }
 
   :global(body:has(.contacts-route-scope) .vf-theme-toggle.vf-theme-toggle-floating) {
-    top: 16px !important;
-    right: 60px !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    border-radius: 11px !important;
-    font-size: 17px !important;
+    top: 12px !important;
+    right: 54px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
     box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
   }
 
@@ -179,32 +191,26 @@
     box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10);
   }
 
-  /* Contatos reutiliza o mesmo sidebar/backdrop e as mesmas classes do shell oficial. */
+  /* O wrapper apenas hospeda o sidebar oficial; largura, transicao e backdrop
+     ficam integralmente a cargo das mesmas regras globais usadas no dashboard. */
   :global(.vf-contact-official-nav.app-shell) {
     position: fixed !important;
-    inset: 0 auto auto 0 !important;
+    inset: 0 !important;
     z-index: 2190 !important;
-    width: 0 !important;
-    height: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     min-height: 0 !important;
     display: block !important;
     pointer-events: none;
     background: transparent !important;
   }
 
-  :global(.vf-contact-official-nav .sidebar) {
+  :global(.vf-contact-official-nav.is-open) {
     pointer-events: auto;
   }
 
+  :global(.vf-contact-official-nav .sidebar),
   :global(.vf-contact-official-nav .sidebar-backdrop) {
-    z-index: 2195 !important;
-  }
-
-  :global(.vf-contact-official-nav .sidebar) {
-    z-index: 2200 !important;
-  }
-
-  :global(.vf-contact-official-nav.is-open) {
     pointer-events: auto;
   }
 
@@ -217,44 +223,50 @@
   }
 }
 
-@media (max-width: 410px) {
+@media (max-width: 430px) {
   .backLink {
-    top: 13px;
-    left: 10px;
-    width: 42px;
-    height: 42px;
+    top: 10px;
+    left: 8px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
   }
 
   :global(.vf-contact-mobile-scope) {
-    top: 17px;
-    left: 58px;
-    right: 94px;
+    top: 11px;
+    right: 86px;
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
     height: 34px;
   }
 
   :global(.vf-contact-mobile-scope-select) {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
     height: 34px;
     padding-left: 9px;
     padding-right: 22px;
-    font-size: 10.5px;
+    font-size: 10px;
   }
 
   :global(.vf-contact-mobile-profile) {
-    top: 15px;
-    right: 10px;
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
+    top: 11px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
   }
 
   :global(body:has(.contacts-route-scope) .vf-theme-toggle.vf-theme-toggle-floating) {
-    top: 17px !important;
-    right: 54px !important;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
+    top: 13px !important;
+    right: 48px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
     border-radius: 10px !important;
-    font-size: 16px !important;
+    font-size: 15px !important;
   }
 }
 
