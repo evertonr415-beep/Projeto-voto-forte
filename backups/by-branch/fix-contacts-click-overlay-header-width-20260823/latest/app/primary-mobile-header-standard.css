@@ -1,0 +1,52 @@
+/* Camada final do cabeçalho das áreas principais no mobile.
+   Mantém a mesma geometria mesmo quando a aba não possui seletor de escopo. */
+@media (max-width: 760px) {
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .top-actions > .vf-theme-toggle {
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(56, 189, 248, 0.34) !important;
+    border-radius: 11px !important;
+    background: #0f1e3a !important;
+    color: #fff !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .page-id > div:not(.vf-header-scope) {
+    min-width: 0 !important;
+  }
+
+  html[data-vf-theme="light"] .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .top-actions > .vf-theme-toggle {
+    border-color: #cbd9e7 !important;
+    background: #ffffff !important;
+    color: #153b65 !important;
+    box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10) !important;
+  }
+}
+
+@media (max-width: 410px) {
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .top-actions > .vf-theme-toggle {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+}
