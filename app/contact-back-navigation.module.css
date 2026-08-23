@@ -120,10 +120,6 @@
     cursor: pointer;
   }
 
-  :global(.vf-contact-mobile-scope-select:focus-visible) {
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22), 0 5px 14px rgba(0, 0, 0, 0.20);
-  }
-
   :global(.vf-contact-mobile-scope-select option) {
     background: #0f1e3a;
     color: #ffffff;
@@ -176,11 +172,6 @@
     color: #1f4e85;
   }
 
-  :global(html[data-vf-theme="light"] .vf-contact-mobile-scope-select option) {
-    background: #ffffff;
-    color: #153b65;
-  }
-
   :global(html[data-vf-theme="light"] .vf-contact-mobile-profile) {
     border-color: #cbd9e7;
     background: #eaf2fb;
@@ -188,130 +179,37 @@
     box-shadow: 0 5px 14px rgba(15, 42, 70, 0.10);
   }
 
-  :global(.vf-contact-nav-backdrop) {
-    position: fixed;
-    inset: 0;
-    z-index: 1298;
-    display: block;
-    border: 0;
-    padding: 0;
-    background: rgba(2, 8, 20, 0.66);
-    opacity: 0;
-    visibility: hidden;
+  /* Contatos reutiliza o mesmo sidebar/backdrop e as mesmas classes do shell oficial. */
+  :global(.vf-contact-official-nav.app-shell) {
+    position: fixed !important;
+    inset: 0 auto auto 0 !important;
+    z-index: 2190 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    display: block !important;
     pointer-events: none;
-    transition: opacity .2s ease, visibility .2s ease;
+    background: transparent !important;
   }
 
-  :global(.vf-contact-nav-backdrop.is-open) {
-    opacity: 1;
-    visibility: visible;
+  :global(.vf-contact-official-nav .sidebar) {
     pointer-events: auto;
   }
 
-  :global(.vf-contact-nav-drawer) {
-    position: fixed;
-    inset: 0 auto 0 0;
-    z-index: 1299;
-    width: min(82vw, 300px);
-    padding: 18px 16px 20px;
-    color: #f8fafc;
-    background:
-      linear-gradient(180deg, rgba(5, 14, 29, 0.99), rgba(8, 25, 48, 0.99)),
-      radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.10), transparent 42%);
-    box-shadow: 12px 0 36px rgba(0, 0, 0, 0.34);
-    transform: translateX(-102%);
-    transition: transform .22s ease;
-    overflow-y: auto;
+  :global(.vf-contact-official-nav .sidebar-backdrop) {
+    z-index: 2195 !important;
   }
 
-  :global(.vf-contact-nav-drawer.is-open) {
-    transform: translateX(0);
+  :global(.vf-contact-official-nav .sidebar) {
+    z-index: 2200 !important;
   }
 
-  :global(.vf-contact-nav-header) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 20px;
+  :global(.vf-contact-official-nav.is-open) {
+    pointer-events: auto;
   }
 
-  :global(.vf-contact-nav-brand) {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  :global(.vf-contact-nav-brand img) {
-    width: 42px;
-    height: 42px;
-    object-fit: cover;
-    border-radius: 12px;
-    border: 1px solid rgba(56, 189, 248, 0.28);
-  }
-
-  :global(.vf-contact-nav-brand strong),
-  :global(.vf-contact-nav-brand small) {
-    display: block;
-  }
-
-  :global(.vf-contact-nav-brand strong) {
-    font-size: 14px;
-    letter-spacing: .7px;
-  }
-
-  :global(.vf-contact-nav-brand small) {
-    margin-top: 3px;
-    color: #d7ae60;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 2px;
-  }
-
-  :global(.vf-contact-nav-close) {
-    width: 38px;
-    height: 38px;
-    border: 1px solid rgba(56, 189, 248, 0.20);
-    border-radius: 10px;
-    background: #0f1e3a;
-    color: #dbe7f4;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-  }
-
-  :global(.vf-contact-nav-label) {
-    padding: 0 8px 8px;
-    color: #70909a;
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: 1.6px;
-  }
-
-  :global(.vf-contact-nav-drawer nav) {
-    display: grid;
-    gap: 5px;
-  }
-
-  :global(.vf-contact-nav-drawer nav button) {
-    min-height: 48px;
-    padding: 0 14px;
-    border: 0;
-    border-left: 3px solid transparent;
-    border-radius: 8px;
-    background: transparent;
-    color: #b7c9ce;
-    text-align: left;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  :global(.vf-contact-nav-drawer nav button.is-active) {
-    border-left-color: #38bdf8;
-    background: linear-gradient(90deg, rgba(14, 165, 233, 0.22), rgba(14, 165, 233, 0.04));
-    color: #ffffff;
+  :global(.vf-contact-official-nav .sidebar-message) {
+    margin-top: auto;
   }
 
   :global(body.vf-contact-drawer-open) {
