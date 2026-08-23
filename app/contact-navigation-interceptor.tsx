@@ -16,6 +16,52 @@ export default function ContactNavigationInterceptor() {
   const router = useRouter();
 
   useEffect(() => {
+    let requestedControlObserver: MutationObserver | null = null;
+    let requestedControlFrame = 0;
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedMenu = params.get("menu") === "open";
+    const requestedProfile = params.get("profile") === "open";
+
+    const clearRequestedControl = () => {
+      if (!requestedMenu && !requestedProfile) return;
+      params.delete("menu");
+      params.delete("profile");
+      const query = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+      );
+    };
+
+    const openRequestedControl = () => {
+      if (!requestedMenu && !requestedProfile) return false;
+      const shell = document.querySelector<HTMLElement>(".app-shell");
+      if (!shell) return false;
+
+      if (requestedMenu) {
+        shell.querySelector<HTMLButtonElement>(".mobile-menu")?.click();
+      } else if (requestedProfile) {
+        shell.querySelector<HTMLButtonElement>(".profile")?.click();
+      }
+      clearRequestedControl();
+      return true;
+    };
+
+    if (!openRequestedControl() && (requestedMenu || requestedProfile)) {
+      requestedControlObserver = new MutationObserver(() => {
+        if (!openRequestedControl()) return;
+        requestedControlObserver?.disconnect();
+        requestedControlObserver = null;
+      });
+      requestedControlObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      requestedControlFrame = window.requestAnimationFrame(openRequestedControl);
+    }
+
     const prefetchTimer = window.setTimeout(() => {
       if (
         document.querySelector(".auth-page") ||
@@ -75,6 +121,8 @@ export default function ContactNavigationInterceptor() {
     document.addEventListener("click", handleClick, true);
     return () => {
       window.clearTimeout(prefetchTimer);
+      if (requestedControlFrame) window.cancelAnimationFrame(requestedControlFrame);
+      requestedControlObserver?.disconnect();
       document.removeEventListener("click", handleClick, true);
     };
   }, [router]);

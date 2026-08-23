@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import styles from "./shared-back-navigation.module.css";
-import "./contact-back-navigation.module.css";
+import sharedStyles from "./shared-back-navigation.module.css";
+import contactStyles from "./contact-back-navigation.module.css";
+import { supabase } from "./supabase-client";
 
 const MOBILE_QUERY = "(max-width: 760px)";
 const NETWORK_LABEL = "Todos da rede";
@@ -13,10 +14,23 @@ function optionSignature(select: HTMLSelectElement) {
     .join("\u0001");
 }
 
+function initials(value: string) {
+  return (
+    value
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "VF"
+  );
+}
+
 export default function ContactBackNavigation() {
   useEffect(() => {
     let cancelled = false;
-    let backLink: HTMLAnchorElement | null = null;
+    let menuLink: HTMLAnchorElement | null = null;
+    let profileButton: HTMLButtonElement | null = null;
     let hiddenSystemLink: HTMLElement | null = null;
     let hiddenRefreshButton: HTMLElement | null = null;
     let actions: HTMLElement | null = null;
@@ -118,6 +132,38 @@ export default function ContactBackNavigation() {
       window.addEventListener("resize", syncMobileScope);
     };
 
+    const installMobileProfile = () => {
+      if (!window.matchMedia(MOBILE_QUERY).matches || profileButton?.isConnected) return;
+      profileButton = document.createElement("button");
+      profileButton.type = "button";
+      profileButton.className = "vf-contact-mobile-profile";
+      profileButton.setAttribute("aria-label", "Abrir perfil");
+      profileButton.setAttribute("title", "Abrir perfil");
+      profileButton.textContent = "VF";
+      profileButton.addEventListener("click", () => {
+        window.location.assign("/sistema-completo?profile=open");
+      });
+      document.body.appendChild(profileButton);
+
+      void supabase.auth.getUser().then(({ data }) => {
+        if (!profileButton?.isConnected || !data.user) return;
+        const name = String(
+          data.user.user_metadata?.name ||
+            data.user.user_metadata?.full_name ||
+            data.user.email ||
+            "VF",
+        );
+        const avatarUrl = String(data.user.user_metadata?.avatar_url || "");
+        profileButton.textContent = initials(name);
+        if (avatarUrl) {
+          profileButton.style.backgroundImage = `url(${avatarUrl})`;
+          profileButton.style.backgroundSize = "cover";
+          profileButton.style.backgroundPosition = "center";
+          profileButton.style.color = "transparent";
+        }
+      });
+    };
+
     const install = () => {
       if (cancelled) return true;
 
@@ -125,6 +171,7 @@ export default function ContactBackNavigation() {
       actions = document.querySelector<HTMLElement>(".optimized-quick-actions");
       if (!shell || !actions) return false;
 
+      const isMobile = window.matchMedia(MOBILE_QUERY).matches;
       const systemLink = Array.from(actions.querySelectorAll<HTMLElement>("a")).find(
         (item) => item.textContent?.includes("Sistema completo"),
       );
@@ -132,7 +179,7 @@ export default function ContactBackNavigation() {
         (item) => item.textContent?.includes("Atualizar painel"),
       );
 
-      if (systemLink) {
+      if (systemLink && isMobile) {
         hiddenSystemLink = systemLink;
         systemLink.style.display = "none";
       }
@@ -144,26 +191,31 @@ export default function ContactBackNavigation() {
 
       actions.classList.add("vf-contact-actions");
 
-      backLink = document.createElement("a");
-      backLink.href = "/sistema-completo";
-      backLink.className = styles.backLink;
-      backLink.setAttribute("aria-label", "Voltar ao sistema completo");
+      if (isMobile) {
+        menuLink = document.createElement("a");
+        menuLink.href = "/sistema-completo?menu=open";
+        menuLink.className = `${sharedStyles.backLink} ${contactStyles.backLink}`;
+        menuLink.setAttribute("aria-label", "Abrir menu de navegação");
+        menuLink.setAttribute("title", "Abrir menu");
 
-      const arrow = document.createElement("span");
-      arrow.className = styles.arrow;
-      arrow.setAttribute("aria-hidden", "true");
-      arrow.textContent = "←";
+        const arrow = document.createElement("span");
+        arrow.className = `${sharedStyles.arrow} ${contactStyles.arrow}`;
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = "←";
 
-      const label = document.createElement("span");
-      label.textContent = "Voltar";
+        const label = document.createElement("span");
+        label.textContent = "Voltar";
 
-      backLink.append(arrow, label);
-      shell.prepend(backLink);
+        menuLink.append(arrow, label);
+        shell.prepend(menuLink);
+        installMobileProfile();
+      }
       return true;
     };
 
     const restore = () => {
-      backLink?.remove();
+      menuLink?.remove();
+      profileButton?.remove();
       hiddenSystemLink?.style.removeProperty("display");
       hiddenRefreshButton?.style.removeProperty("display");
       actions?.classList.remove("vf-contact-actions");
