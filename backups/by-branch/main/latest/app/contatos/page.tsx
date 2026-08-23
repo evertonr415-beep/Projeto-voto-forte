@@ -9,15 +9,16 @@ import "./whatsapp-quick-queue.css";
 import "./contacts-ux.css";
 import "./hide-meetings-kpi.css";
 import "./contacts-full-theme.css";
+import "./contacts-mobile-polish.css";
 
 export default function ContactsPage() {
   return (
-    <>
+    <div className="contacts-route-scope">
       <AuthClient dashboardMode="neutral" />
       <MobileContactListEntryCollapse />
       <ContactBackNavigation />
       <ContactDistrictRanking />
       <ContactWhatsappQuickQueue />
-    </>
+    </div>
   );
 }
