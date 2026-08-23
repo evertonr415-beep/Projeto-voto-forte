@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import sharedStyles from "./shared-back-navigation.module.css";
 import contactStyles from "./contact-back-navigation.module.css";
 import { supabase } from "./supabase-client";
 
 const MOBILE_QUERY = "(max-width: 760px)";
 const NETWORK_LABEL = "Todos da rede";
+const PRIMARY_VIEWS = [
+  "Visão Geral",
+  "Contatos",
+  "Mapa Eleitoral",
+  "Painel Eleitoral",
+  "WhatsApp",
+] as const;
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
@@ -29,14 +35,33 @@ function initials(value: string) {
 export default function ContactBackNavigation() {
   useEffect(() => {
     let cancelled = false;
-    let menuLink: HTMLAnchorElement | null = null;
+    let menuButton: HTMLButtonElement | null = null;
     let profileButton: HTMLButtonElement | null = null;
+    let headerBar: HTMLDivElement | null = null;
+    let drawer: HTMLElement | null = null;
+    let drawerBackdrop: HTMLButtonElement | null = null;
     let hiddenSystemLink: HTMLElement | null = null;
     let hiddenRefreshButton: HTMLElement | null = null;
     let actions: HTMLElement | null = null;
     let scopeObserver: MutationObserver | null = null;
     let mobileScope: HTMLDivElement | null = null;
     let mobileSelect: HTMLSelectElement | null = null;
+
+    const closeDrawer = () => {
+      drawer?.classList.remove("is-open");
+      drawerBackdrop?.classList.remove("is-open");
+      drawer?.setAttribute("aria-hidden", "true");
+      menuButton?.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("vf-contact-drawer-open");
+    };
+
+    const openDrawer = () => {
+      drawer?.classList.add("is-open");
+      drawerBackdrop?.classList.add("is-open");
+      drawer?.setAttribute("aria-hidden", "false");
+      menuButton?.setAttribute("aria-expanded", "true");
+      document.body.classList.add("vf-contact-drawer-open");
+    };
 
     const removeMobileScope = () => {
       mobileScope?.remove();
@@ -164,6 +189,71 @@ export default function ContactBackNavigation() {
       });
     };
 
+    const installMobileDrawer = () => {
+      if (!window.matchMedia(MOBILE_QUERY).matches || drawer?.isConnected) return;
+
+      drawerBackdrop = document.createElement("button");
+      drawerBackdrop.type = "button";
+      drawerBackdrop.className = "vf-contact-nav-backdrop";
+      drawerBackdrop.setAttribute("aria-label", "Fechar menu");
+      drawerBackdrop.addEventListener("click", closeDrawer);
+
+      drawer = document.createElement("aside");
+      drawer.className = "vf-contact-nav-drawer";
+      drawer.setAttribute("aria-label", "Navegação principal");
+      drawer.setAttribute("aria-hidden", "true");
+
+      const drawerHeader = document.createElement("div");
+      drawerHeader.className = "vf-contact-nav-header";
+
+      const brand = document.createElement("div");
+      brand.className = "vf-contact-nav-brand";
+      const brandImage = document.createElement("img");
+      brandImage.src = "/voto-forte-bandeira-icon.jpg";
+      brandImage.alt = "";
+      const brandText = document.createElement("div");
+      const brandStrong = document.createElement("strong");
+      brandStrong.textContent = "VOTO FORTE";
+      const brandSmall = document.createElement("small");
+      brandSmall.textContent = "PARANÁ";
+      brandText.append(brandStrong, brandSmall);
+      brand.append(brandImage, brandText);
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "vf-contact-nav-close";
+      closeButton.setAttribute("aria-label", "Fechar menu");
+      closeButton.textContent = "×";
+      closeButton.addEventListener("click", closeDrawer);
+
+      drawerHeader.append(brand, closeButton);
+
+      const label = document.createElement("div");
+      label.className = "vf-contact-nav-label";
+      label.textContent = "NAVEGAÇÃO";
+
+      const nav = document.createElement("nav");
+      PRIMARY_VIEWS.forEach((view) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = view === "Contatos" ? "is-active" : "";
+        item.textContent = view;
+        item.addEventListener("click", () => {
+          if (view === "Contatos") {
+            closeDrawer();
+            return;
+          }
+          window.location.assign(
+            `/sistema-completo?view=${encodeURIComponent(view)}`,
+          );
+        });
+        nav.appendChild(item);
+      });
+
+      drawer.append(drawerHeader, label, nav);
+      document.body.append(drawerBackdrop, drawer);
+    };
+
     const install = () => {
       if (cancelled) return true;
 
@@ -192,30 +282,34 @@ export default function ContactBackNavigation() {
       actions.classList.add("vf-contact-actions");
 
       if (isMobile) {
-        menuLink = document.createElement("a");
-        menuLink.href = "/sistema-completo?menu=open";
-        menuLink.className = `${sharedStyles.backLink} ${contactStyles.backLink}`;
-        menuLink.setAttribute("aria-label", "Abrir menu de navegação");
-        menuLink.setAttribute("title", "Abrir menu");
+        headerBar = document.createElement("div");
+        headerBar.className = "vf-contact-mobile-header-bar";
+        headerBar.setAttribute("aria-hidden", "true");
+        document.body.appendChild(headerBar);
 
-        const arrow = document.createElement("span");
-        arrow.className = `${sharedStyles.arrow} ${contactStyles.arrow}`;
-        arrow.setAttribute("aria-hidden", "true");
-        arrow.textContent = "←";
+        menuButton = document.createElement("button");
+        menuButton.type = "button";
+        menuButton.className = contactStyles.backLink;
+        menuButton.setAttribute("aria-label", "Abrir menu de navegação");
+        menuButton.setAttribute("title", "Abrir menu");
+        menuButton.setAttribute("aria-expanded", "false");
+        menuButton.textContent = "☰";
+        menuButton.addEventListener("click", openDrawer);
+        document.body.appendChild(menuButton);
 
-        const label = document.createElement("span");
-        label.textContent = "Voltar";
-
-        menuLink.append(arrow, label);
-        shell.prepend(menuLink);
+        installMobileDrawer();
         installMobileProfile();
       }
       return true;
     };
 
     const restore = () => {
-      menuLink?.remove();
+      closeDrawer();
+      menuButton?.remove();
       profileButton?.remove();
+      headerBar?.remove();
+      drawer?.remove();
+      drawerBackdrop?.remove();
       hiddenSystemLink?.style.removeProperty("display");
       hiddenRefreshButton?.style.removeProperty("display");
       actions?.classList.remove("vf-contact-actions");
