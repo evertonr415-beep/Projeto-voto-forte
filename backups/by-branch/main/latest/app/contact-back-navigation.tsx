@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import contactStyles from "./contact-back-navigation.module.css";
-import { apiFetch, supabase } from "./supabase-client";
+import { apiFetch } from "./supabase-client";
 
 const MOBILE_QUERY = "(max-width: 760px)";
 const NETWORK_LABEL = "Todos da rede";
+const THEME_STORAGE_KEY = "voto-forte-theme";
 const PRIMARY_VIEWS = [
   ["Visão Geral", "⌂"],
   ["Contatos", "👥"],
@@ -32,10 +33,13 @@ function initials(value: string) {
   );
 }
 
+type Theme = "dark" | "light";
+
 export default function ContactBackNavigation() {
   useEffect(() => {
     let cancelled = false;
     let menuButton: HTMLButtonElement | null = null;
+    let themeButton: HTMLButtonElement | null = null;
     let profileButton: HTMLButtonElement | null = null;
     let headerBar: HTMLDivElement | null = null;
     let navShell: HTMLDivElement | null = null;
@@ -154,7 +158,7 @@ export default function ContactBackNavigation() {
       if (cancelled) return;
       const route = document.querySelector<HTMLElement>(".contacts-route-scope");
       const sourceSelect = document.querySelector<HTMLSelectElement>(".contacts-route-scope .optimized-scope-control select");
-      if (!route || !sourceSelect || !window.matchMedia(MOBILE_QUERY).matches) {
+      if (!route || !sourceSelect || !window.matchMedia(MOBILE_QUERY).matches || !headerBar) {
         removeMobileScope();
         return;
       }
@@ -178,7 +182,7 @@ export default function ContactBackNavigation() {
           liveSource.dispatchEvent(new Event("change", { bubbles: true }));
         });
         mobileScope.appendChild(mobileSelect);
-        document.body.appendChild(mobileScope);
+        headerBar.insertBefore(mobileScope, themeButton ?? profileButton);
       }
 
       route.classList.add("vf-contact-mobile-scope-active");
@@ -207,8 +211,33 @@ export default function ContactBackNavigation() {
       window.addEventListener("resize", syncMobileScope);
     };
 
+    const syncThemeButton = () => {
+      if (!themeButton) return;
+      const theme = (document.documentElement.dataset.vfTheme as Theme) || "dark";
+      themeButton.textContent = theme === "dark" ? "☀️" : "🌙";
+      themeButton.title = theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro";
+      themeButton.setAttribute("aria-label", themeButton.title);
+    };
+
+    const installMobileTheme = () => {
+      if (!headerBar || themeButton?.isConnected) return;
+      themeButton = document.createElement("button");
+      themeButton.type = "button";
+      themeButton.className = "vf-contact-mobile-theme";
+      themeButton.addEventListener("click", () => {
+        const current = (document.documentElement.dataset.vfTheme as Theme) || "dark";
+        const next: Theme = current === "dark" ? "light" : "dark";
+        document.documentElement.dataset.vfTheme = next;
+        document.documentElement.style.colorScheme = next;
+        localStorage.setItem(THEME_STORAGE_KEY, next);
+        syncThemeButton();
+      });
+      syncThemeButton();
+      headerBar.appendChild(themeButton);
+    };
+
     const installMobileProfile = () => {
-      if (!window.matchMedia(MOBILE_QUERY).matches || profileButton?.isConnected) return;
+      if (!headerBar || profileButton?.isConnected) return;
       profileButton = document.createElement("button");
       profileButton.type = "button";
       profileButton.className = "vf-contact-mobile-profile";
@@ -216,20 +245,23 @@ export default function ContactBackNavigation() {
       profileButton.setAttribute("title", "Abrir perfil");
       profileButton.textContent = "VF";
       profileButton.addEventListener("click", () => window.location.assign("/sistema-completo?profile=open"));
-      document.body.appendChild(profileButton);
+      headerBar.appendChild(profileButton);
 
-      void supabase.auth.getUser().then(({ data }) => {
-        if (!profileButton?.isConnected || !data.user) return;
-        const name = String(data.user.user_metadata?.name || data.user.user_metadata?.full_name || data.user.email || "VF");
-        const avatarUrl = String(data.user.user_metadata?.avatar_url || "");
-        profileButton.textContent = initials(name);
-        if (avatarUrl) {
-          profileButton.style.backgroundImage = `url(${avatarUrl})`;
-          profileButton.style.backgroundSize = "cover";
-          profileButton.style.backgroundPosition = "center";
-          profileButton.style.color = "transparent";
-        }
-      });
+      void apiFetch("/api/session", { cache: "no-store" })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!profileButton?.isConnected) return;
+          const name = String(data?.user?.name || data?.user?.fullName || data?.user?.email || "VF");
+          profileButton.textContent = initials(name);
+          const avatarUrl = String(data?.user?.avatarUrl || data?.user?.avatar_url || "");
+          if (avatarUrl) {
+            profileButton.style.backgroundImage = `url(${avatarUrl})`;
+            profileButton.style.backgroundSize = "cover";
+            profileButton.style.backgroundPosition = "center";
+            profileButton.style.color = "transparent";
+          }
+        })
+        .catch(() => undefined);
     };
 
     const install = () => {
@@ -254,7 +286,8 @@ export default function ContactBackNavigation() {
       if (isMobile) {
         headerBar = document.createElement("div");
         headerBar.className = "vf-contact-mobile-header-bar";
-        headerBar.setAttribute("aria-hidden", "true");
+        headerBar.setAttribute("role", "toolbar");
+        headerBar.setAttribute("aria-label", "Navegação de Contatos");
         document.body.appendChild(headerBar);
 
         menuButton = document.createElement("button");
@@ -263,12 +296,12 @@ export default function ContactBackNavigation() {
         menuButton.setAttribute("aria-label", "Abrir menu de navegação");
         menuButton.setAttribute("title", "Abrir menu");
         menuButton.setAttribute("aria-expanded", "false");
-        menuButton.textContent = "☰";
         menuButton.addEventListener("click", openDrawer);
-        document.body.appendChild(menuButton);
+        headerBar.appendChild(menuButton);
 
-        void buildOfficialSidebar();
+        installMobileTheme();
         installMobileProfile();
+        void buildOfficialSidebar();
       }
       return true;
     };
@@ -276,6 +309,7 @@ export default function ContactBackNavigation() {
     const restore = () => {
       closeDrawer();
       menuButton?.remove();
+      themeButton?.remove();
       profileButton?.remove();
       headerBar?.remove();
       navShell?.remove();
