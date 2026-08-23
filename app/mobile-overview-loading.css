@@ -77,7 +77,13 @@ html[data-vf-theme="light"] .loading-state {
     background: #06101f !important;
   }
 
-  body:has(.app-shell .workspace > .loading-state) .workspace {
+  /*
+   * O loading legado pode permanecer no DOM por alguns frames enquanto Contatos
+   * ja esta entrando/ativo. Nessa janela ele nao pode zerar o padding da workspace,
+   * pois a geometria definitiva de Contatos ja foi aplicada pelo bridge.
+   */
+  body:has(.app-shell .workspace > .loading-state)
+    .workspace:not(.vf-contacts-entering):not(.vf-contacts-optimized-active) {
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
