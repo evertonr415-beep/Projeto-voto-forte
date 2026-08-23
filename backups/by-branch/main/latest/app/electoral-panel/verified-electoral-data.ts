@@ -1,3 +1,5 @@
+import { VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES } from "./verified-electoral-2022-general";
+
 export type VerifiedCandidate = {
   name: string;
   ballotNumber: number | string;
@@ -18,8 +20,9 @@ export type VerifiedOfficeData = {
   blankNullVotes?: number;
   abstentions: number;
   totalElectorate: number;
-  coverage: "complete" | "elected-only";
+  coverage: "complete" | "elected-only" | "top-candidates";
   sourceLabel: string;
+  sourceUrl?: string;
   candidates: VerifiedCandidate[];
 };
 
@@ -38,7 +41,9 @@ export type VerifiedElectionYear = {
  *   identificam o TSE como fonte;
  * - nenhuma votacao por local/colegio e estimada ou projetada;
  * - quando a fonte consultada publica apenas os eleitos do Legislativo,
- *   a cobertura e marcada explicitamente como "elected-only".
+ *   a cobertura e marcada explicitamente como "elected-only";
+ * - rankings parciais sao marcados como "top-candidates" e nunca exibidos
+ *   como se fossem a lista completa da disputa.
  */
 export const VERIFIED_ARAPONGAS_ELECTIONS: VerifiedElectionYear[] = [
   {
@@ -154,6 +159,7 @@ export const VERIFIED_ARAPONGAS_ELECTIONS: VerifiedElectionYear[] = [
           { name: "Vera", ballotNumber: 16, party: "PSTU", votes: 6, percentage: 0.01, situation: "Não eleito" },
         ],
       },
+      ...VERIFIED_ARAPONGAS_2022_GENERAL_OFFICES,
     ],
   },
   {
