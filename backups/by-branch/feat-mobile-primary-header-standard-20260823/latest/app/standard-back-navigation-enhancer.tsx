@@ -62,6 +62,18 @@ export default function StandardBackNavigationEnhancer() {
         const shell = root?.querySelector<HTMLElement>(shellSelector);
         if (!root || !shell) return;
 
+        hideLegacyBackControls(root, rootSelector, legacySelector);
+
+        // Painel Eleitoral e Agenda são áreas principais quando renderizados
+        // dentro do dashboard. O menu lateral já é a navegação oficial, então
+        // não deve existir um segundo controle "Voltar" concorrendo com ele.
+        if (root.closest(".app-shell")) {
+          shell
+            .querySelectorAll<HTMLElement>("[data-vf-standard-back='true']")
+            .forEach((element) => element.remove());
+          return;
+        }
+
         if (!shell.querySelector("[data-vf-standard-back='true']")) {
           const button = document.createElement("button");
           button.type = "button";
@@ -112,8 +124,6 @@ export default function StandardBackNavigationEnhancer() {
 
           shell.prepend(button);
         }
-
-        hideLegacyBackControls(root, rootSelector, legacySelector);
       });
     };
 
