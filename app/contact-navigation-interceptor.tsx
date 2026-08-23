@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 const CONTACTS_ROUTE = "/contatos";
 const QUICK_ACTION_ROUTES = new Set([
-  CONTACTS_ROUTE,
   "/importar-contatos",
   "/pendencias-localizacao",
   "/sistema-completo",
@@ -22,11 +21,13 @@ export default function ContactNavigationInterceptor() {
     const params = new URLSearchParams(window.location.search);
     const requestedMenu = params.get("menu") === "open";
     const requestedProfile = params.get("profile") === "open";
+    const requestedView = params.get("view") || "";
 
     const clearRequestedControl = () => {
-      if (!requestedMenu && !requestedProfile) return;
+      if (!requestedMenu && !requestedProfile && !requestedView) return;
       params.delete("menu");
       params.delete("profile");
+      params.delete("view");
       const query = params.toString();
       window.history.replaceState(
         {},
@@ -36,20 +37,37 @@ export default function ContactNavigationInterceptor() {
     };
 
     const openRequestedControl = () => {
-      if (!requestedMenu && !requestedProfile) return false;
+      if (!requestedMenu && !requestedProfile && !requestedView) return false;
       const shell = document.querySelector<HTMLElement>(".app-shell");
       if (!shell) return false;
 
-      if (requestedMenu) {
-        shell.querySelector<HTMLButtonElement>(".mobile-menu")?.click();
+      if (requestedView) {
+        const viewButton = Array.from(
+          shell.querySelectorAll<HTMLButtonElement>(".sidebar nav button"),
+        ).find(
+          (button) =>
+            button.querySelector(".nav-name")?.textContent?.trim() === requestedView,
+        );
+        if (!viewButton) return false;
+        viewButton.click();
+      } else if (requestedMenu) {
+        const menuButton = shell.querySelector<HTMLButtonElement>(".mobile-menu");
+        if (!menuButton) return false;
+        menuButton.click();
       } else if (requestedProfile) {
-        shell.querySelector<HTMLButtonElement>(".profile")?.click();
+        const profileButton = shell.querySelector<HTMLButtonElement>(".profile");
+        if (!profileButton) return false;
+        profileButton.click();
       }
+
       clearRequestedControl();
       return true;
     };
 
-    if (!openRequestedControl() && (requestedMenu || requestedProfile)) {
+    if (
+      !openRequestedControl() &&
+      (requestedMenu || requestedProfile || requestedView)
+    ) {
       requestedControlObserver = new MutationObserver(() => {
         if (!openRequestedControl()) return;
         requestedControlObserver?.disconnect();
@@ -87,6 +105,20 @@ export default function ContactNavigationInterceptor() {
       const target = event.target as HTMLElement | null;
       const link = target?.closest<HTMLAnchorElement>("a[href]");
       const quickActionRoute = link?.getAttribute("href") || "";
+
+      // /contatos deixa de ser uma aplicação paralela. Links diretos entram
+      // no dashboard oficial e selecionam a aba Contatos.
+      if (
+        link &&
+        quickActionRoute === CONTACTS_ROUTE &&
+        (!link.target || link.target === "_self")
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        router.push("/sistema-completo?view=Contatos");
+        return;
+      }
+
       const interceptQuickAction =
         Boolean(link) &&
         QUICK_ACTION_ROUTES.has(quickActionRoute) &&
@@ -96,26 +128,10 @@ export default function ContactNavigationInterceptor() {
         event.preventDefault();
         event.stopPropagation();
         router.push(quickActionRoute);
-        return;
       }
 
-      const button = target?.closest("button");
-      if (!button) return;
-
-      const navLabel = button.querySelector(".nav-name")?.textContent?.trim();
-      const kpiLabel = button.querySelector(".kpi b")?.textContent?.trim();
-      const buttonText = button.textContent?.trim() || "";
-
-      const opensContacts = navLabel === "Contatos" || navLabel === "Gestão";
-      const opensVoters =
-        kpiLabel === "Eleitores cadastrados" ||
-        buttonText.includes("Ver relatório de eleitores");
-
-      if (!opensContacts && !opensVoters) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      router.push(CONTACTS_ROUTE);
+      // Importante: não interceptar botões Contatos/Eleitores. O DashboardClient
+      // já faz essa navegação localmente e preserva o shell/menu oficial.
     }
 
     document.addEventListener("click", handleClick, true);
