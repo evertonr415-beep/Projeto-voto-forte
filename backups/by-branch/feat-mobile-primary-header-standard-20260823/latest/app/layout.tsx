@@ -53,6 +53,7 @@ import "./overview-mobile-header-final.css";
 import "./overview-mobile-density-fix.css";
 import "./map-mobile-header-compact.css";
 import "./mobile-tab-header-standard.css";
+import "./primary-mobile-header-standard.css";
 import "./mobile-overview-loading.css";
 import "./agenda-mobile-scroll-priority.css";
 
