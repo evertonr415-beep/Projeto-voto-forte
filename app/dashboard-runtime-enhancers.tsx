@@ -11,6 +11,7 @@ import MapNeighborhoodInfoEnhancer from "./map-neighborhood-info-enhancer";
 import NeighborhoodInfoDrawer from "./neighborhood-info-drawer";
 import AccountSettingsEnhancer from "./account-settings-enhancer";
 import ContactNavigationInterceptor from "./contact-navigation-interceptor";
+import ContactsOfficialShellBridge from "./contacts-official-shell-bridge";
 import ImportCompletionEnhancer from "./import-completion-enhancer";
 import ContactExportEnhancer from "./contact-export-enhancer";
 import IntelligenceNavigation from "./intelligence-navigation";
@@ -67,6 +68,7 @@ export default function DashboardRuntimeEnhancers() {
           <NeighborhoodInfoDrawer />
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
+          <ContactsOfficialShellBridge />
           <AccountSettingsEnhancer />
           <ContactNavigationInterceptor />
           <ImportCompletionEnhancer />
