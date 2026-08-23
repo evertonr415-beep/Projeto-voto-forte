@@ -106,8 +106,8 @@ export default function ContactsOfficialShellBridge() {
       const title = shell?.querySelector<HTMLElement>(".topbar h1")?.textContent?.trim();
       const nextActive = Boolean(nextWorkspace && title === "Contatos");
 
-      // O DOM recebe o estado visual final no mesmo ciclo em que o Dashboard
-      // confirma a view Contatos, antes do React montar o portal otimizado.
+      // Esta é a única fonte de controle do estado visual ativo de Contatos.
+      // Evita que outro efeito remova a classe entre renders e provoque reflow.
       shell?.classList.toggle(ACTIVE_CLASS, nextActive);
       nextWorkspace?.classList.toggle(OPTIMIZED_ACTIVE_CLASS, nextActive);
       setWorkspace((current) => (current === nextWorkspace ? current : nextWorkspace));
@@ -173,12 +173,6 @@ export default function ContactsOfficialShellBridge() {
       cancelled = true;
     };
   }, [account, active]);
-
-  useEffect(() => {
-    if (!workspace) return;
-    workspace.classList.toggle(OPTIMIZED_ACTIVE_CLASS, active);
-    return () => workspace.classList.remove(OPTIMIZED_ACTIVE_CLASS);
-  }, [active, workspace]);
 
   useEffect(() => {
     if (!active || !account) return;
