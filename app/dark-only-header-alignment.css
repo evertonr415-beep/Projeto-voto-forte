@@ -26,10 +26,76 @@
   .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .page-id:not(:has(.vf-header-scope)) {
     flex: 1 1 auto !important;
   }
+
+  /* Painel Eleitoral: usa o espaço central do cabeçalho para identificar a área
+     e o município, eliminando o card de título redundante no conteúdo mobile. */
+  body:has(.tse-panel-root)
+    .app-shell
+    .topbar[data-vf-mobile-compact-tab-header="true"]
+    .page-id {
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.tse-panel-root)
+    .app-shell
+    .topbar[data-vf-mobile-compact-tab-header="true"]
+    .page-id h1 {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    max-width: 180px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    color: #f8fafc !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.01em !important;
+    text-align: center !important;
+  }
+
+  body:has(.tse-panel-root)
+    .app-shell
+    .topbar[data-vf-mobile-compact-tab-header="true"]
+    .page-id h1::after {
+    content: "Arapongas / PR";
+    display: block;
+    margin-top: 3px;
+    color: #d7ae60;
+    font-size: 9.5px;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: 0.025em;
+  }
+
+  body:has(.tse-panel-root) .tse-panel-topbar {
+    display: none !important;
+  }
 }
 
 @media (max-width: 430px) {
   .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .profile {
     margin-left: 5px !important;
+  }
+
+  body:has(.tse-panel-root)
+    .app-shell
+    .topbar[data-vf-mobile-compact-tab-header="true"]
+    .page-id h1 {
+    max-width: 158px !important;
+    font-size: 12px !important;
+  }
+
+  body:has(.tse-panel-root)
+    .app-shell
+    .topbar[data-vf-mobile-compact-tab-header="true"]
+    .page-id h1::after {
+    font-size: 9px;
   }
 }
