@@ -28,6 +28,7 @@ import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
+import ElectoralMobileTopbarIdentity from "./electoral-mobile-topbar-identity";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -69,6 +70,7 @@ export default function DashboardRuntimeEnhancers() {
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
           <ContactsOfficialShellBridge />
+          <ElectoralMobileTopbarIdentity />
           <AccountSettingsEnhancer />
           <ContactNavigationInterceptor />
           <ImportCompletionEnhancer />
