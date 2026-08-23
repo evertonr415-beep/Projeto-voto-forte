@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 /**
  * Executa somente na rota /contatos. No mobile, garante que a primeira
- * apresentação do painel venha recolhida. Como este componente monta junto
- * com a própria rota, ele funciona também na navegação SPA sem depender do
- * carregamento inicial da aplicação.
+ * apresentação do painel venha recolhida antes do primeiro paint. Como este
+ * componente monta junto com o painel, funciona também na navegação SPA.
  */
 export default function MobileContactListEntryCollapse() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!window.matchMedia("(max-width: 760px)").matches) return;
 
     let disposed = false;
@@ -42,13 +41,15 @@ export default function MobileContactListEntryCollapse() {
 
       if (button && label === "ocultar lista" && !button.disabled) {
         button.click();
+        return;
       }
 
       timer = window.setTimeout(ensureCollapsed, 100);
     };
 
-    // A rota já está ativa; aguardamos apenas o NeutralDashboardClient montar.
-    timer = window.setTimeout(ensureCollapsed, 0);
+    // O DOM já foi commitado; recolhe imediatamente durante o layout effect,
+    // antes de o navegador exibir um frame com a lista aberta.
+    ensureCollapsed();
 
     return () => {
       disposed = true;
