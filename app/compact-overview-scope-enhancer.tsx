@@ -24,6 +24,10 @@ const PRIMARY_MOBILE_TABS = new Set([
   "comunicacao institucional",
 ]);
 
+// O Painel Eleitoral usa filtros próprios de município/ano/cargo e não deve
+// expor o seletor de escopo de usuários no cabeçalho.
+const MOBILE_TABS_WITHOUT_SCOPE = new Set(["painel eleitoral"]);
+
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)
     .map((option) => `${option.value}\u0000${option.text}`)
@@ -94,6 +98,7 @@ export default function CompactOverviewScopeEnhancer() {
       const normalizedTitle = normalizeTitle(pageTitle?.textContent);
       const primaryMobileTab =
         isMobile && PRIMARY_MOBILE_TABS.has(normalizedTitle);
+      const hideScopeForTab = MOBILE_TABS_WITHOUT_SCOPE.has(normalizedTitle);
 
       if (markedTopbar && markedTopbar !== topbar) clearMobileTabHeader();
       if (topbar && primaryMobileTab) {
@@ -105,6 +110,18 @@ export default function CompactOverviewScopeEnhancer() {
 
       const sourceLabel = topbar?.querySelector<HTMLLabelElement>(".scope-picker");
       const sourceSelect = sourceLabel?.querySelector<HTMLSelectElement>("select");
+
+      if (hideScopeForTab) {
+        restoreContext();
+        removeCompactControls();
+        if (sourceLabel) {
+          if (hiddenSource && hiddenSource !== sourceLabel) restoreSource();
+          hiddenSource = sourceLabel;
+          sourceLabel.style.setProperty("display", "none", "important");
+          sourceLabel.setAttribute(SOURCE_HIDDEN_ATTR, "true");
+        }
+        return;
+      }
 
       if (
         !primaryMobileTab ||
