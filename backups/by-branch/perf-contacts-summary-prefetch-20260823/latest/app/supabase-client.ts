@@ -4,6 +4,11 @@ let browserClient: SupabaseClient | null = null;
 let browserAuthProxy: SupabaseClient["auth"] | null = null;
 let sessionReadInFlight: ReturnType<SupabaseClient["auth"]["getSession"]> | null = null;
 const inFlightReads = new Map<string, Promise<Response>>();
+const prefetchedReads = new Map<
+  string,
+  { response: Response; expiresAt: number }
+>();
+const PREFETCH_TTL_MS = 30_000;
 
 function getBrowserSupabase() {
   if (browserClient) return browserClient;
@@ -90,28 +95,42 @@ function requestUrl(input: RequestInfo | URL) {
   return String(input);
 }
 
-export async function apiFetch(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-) {
-  // Chamadas disparadas no mesmo instante compartilham a mesma leitura de
-  // sessão. Isso reduz trabalho duplicado na inicialização do mobile.
+async function authorizedHeaders(input: RequestInfo | URL, init: RequestInit) {
   const { data } = await getCoalescedSession();
   const headers = new Headers(input instanceof Request ? input.headers : undefined);
   new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   if (data.session?.access_token) {
     headers.set("authorization", `Bearer ${data.session.access_token}`);
   }
+  return headers;
+}
+
+function readKey(input: RequestInfo | URL, headers: Headers) {
+  return `${requestUrl(input)}\n${headers.get("authorization") || ""}`;
+}
+
+export async function apiFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+) {
+  // Chamadas disparadas no mesmo instante compartilham a mesma leitura de
+  // sessão. Isso reduz trabalho duplicado na inicialização do mobile.
+  const headers = await authorizedHeaders(input, init);
 
   const method = requestMethod(input, init);
   if (method !== "GET" || init.body) {
     return fetch(input, { ...init, headers });
   }
 
-  // Coalesce only requests that are simultaneously in flight. Nothing is
-  // persisted or reused after completion, so authenticated data never becomes
-  // stale and cache semantics remain unchanged.
-  const dedupeKey = `${requestUrl(input)}\n${headers.get("authorization") || ""}`;
+  const dedupeKey = readKey(input, headers);
+  const prefetched = prefetchedReads.get(dedupeKey);
+  if (prefetched) {
+    prefetchedReads.delete(dedupeKey);
+    if (prefetched.expiresAt > Date.now()) return prefetched.response.clone();
+  }
+
+  // Coalesce only requests that are simultaneously in flight. Completed reads
+  // are reused only when they were explicitly prefetched, once, above.
   const existing = inFlightReads.get(dedupeKey);
   if (existing) return (await existing).clone();
 
@@ -122,4 +141,27 @@ export async function apiFetch(
   } finally {
     inFlightReads.delete(dedupeKey);
   }
+}
+
+export async function prefetchApiGet(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+) {
+  if (requestMethod(input, init) !== "GET" || init.body) return;
+
+  const headers = await authorizedHeaders(input, init);
+  const key = readKey(input, headers);
+  const current = prefetchedReads.get(key);
+  if (current?.expiresAt && current.expiresAt > Date.now()) return;
+
+  const existing = inFlightReads.get(key);
+  const response = existing
+    ? (await existing).clone()
+    : await fetch(input, { ...init, headers });
+
+  if (!response.ok) return;
+  prefetchedReads.set(key, {
+    response: response.clone(),
+    expiresAt: Date.now() + PREFETCH_TTL_MS,
+  });
 }
