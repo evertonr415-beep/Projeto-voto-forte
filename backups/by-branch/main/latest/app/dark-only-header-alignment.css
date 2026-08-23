@@ -1,0 +1,35 @@
+/* Modo escuro fixo: remove qualquer alternador residual e realinha o cabeçalho.
+   Mantém a geometria padrão das áreas principais sem reservar espaço para tema. */
+.vf-theme-toggle,
+[data-vf-theme-toggle] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .page-id {
+    justify-content: flex-end !important;
+  }
+
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .top-actions {
+    gap: 0 !important;
+  }
+
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .vf-header-scope {
+    margin-left: auto !important;
+  }
+
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .profile {
+    margin-left: 7px !important;
+  }
+
+  /* Abas principais sem seletor: mantém avatar alinhado no extremo direito. */
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .page-id:not(:has(.vf-header-scope)) {
+    flex: 1 1 auto !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] .profile {
+    margin-left: 5px !important;
+  }
+}
