@@ -3,31 +3,26 @@
 import { useEffect, useState } from "react";
 
 type BoxSample = {
-  x: number;
-  width: number;
-  paddingLeft: string;
-  paddingRight: string;
-  marginLeft: string;
-  marginRight: string;
+  top: number;
+  height: number;
+  paddingTop: string;
+  marginTop: string;
 };
 
 type TraceSample = {
   frame: number;
   t: number;
-  innerWidth: number;
-  visualWidth: number | null;
-  visualScale: number | null;
-  hasWelcome: boolean;
+  scrollY: number;
+  scrollingTop: number;
+  vvOffsetTop: number | null;
+  vvPageTop: number | null;
   entering: boolean;
   active: boolean;
+  dataLoaded: boolean;
   workspace: BoxSample | null;
   portal: BoxSample | null;
   optimized: BoxSample | null;
   hero: BoxSample | null;
-  quick: BoxSample | null;
-  overview: BoxSample | null;
-  kpis: BoxSample | null;
-  content: BoxSample | null;
 };
 
 function round(value: number) {
@@ -39,12 +34,10 @@ function box(element: Element | null): BoxSample | null {
   const rect = element.getBoundingClientRect();
   const style = window.getComputedStyle(element);
   return {
-    x: round(rect.x),
-    width: round(rect.width),
-    paddingLeft: style.paddingLeft,
-    paddingRight: style.paddingRight,
-    marginLeft: style.marginLeft,
-    marginRight: style.marginRight,
+    top: round(rect.top),
+    height: round(rect.height),
+    paddingTop: style.paddingTop,
+    marginTop: style.marginTop,
   };
 }
 
@@ -54,40 +47,43 @@ function isContactsButton(target: EventTarget | null) {
   return button?.querySelector(".nav-name")?.textContent?.trim() === "Contatos";
 }
 
-function boxChanged(a: BoxSample | null, b: BoxSample | null) {
-  if (!a && !b) return false;
-  if (!a || !b) return true;
-  return (
-    Math.abs(a.x - b.x) >= 0.5 ||
-    Math.abs(a.width - b.width) >= 0.5 ||
-    a.paddingLeft !== b.paddingLeft ||
-    a.paddingRight !== b.paddingRight ||
-    a.marginLeft !== b.marginLeft ||
-    a.marginRight !== b.marginRight
-  );
+function hasLoadedKpis(portal: HTMLElement | null) {
+  if (!portal) return false;
+  const values = Array.from(portal.querySelectorAll<HTMLElement>(".optimized-kpis b"))
+    .map((node) => node.textContent?.trim() || "")
+    .filter(Boolean);
+  return values.length > 0 && values.some((value) => value !== "—" && value !== "-");
 }
 
-function sampleChanged(a: TraceSample, b: TraceSample) {
+function changed(a: TraceSample, b: TraceSample) {
+  const topChanged = (left: BoxSample | null, right: BoxSample | null) => {
+    if (!left && !right) return false;
+    if (!left || !right) return true;
+    return (
+      Math.abs(left.top - right.top) >= 0.5 ||
+      left.paddingTop !== right.paddingTop ||
+      left.marginTop !== right.marginTop
+    );
+  };
+
   return (
-    Math.abs((a.visualWidth ?? 0) - (b.visualWidth ?? 0)) >= 0.5 ||
-    Math.abs((a.visualScale ?? 0) - (b.visualScale ?? 0)) >= 0.01 ||
+    Math.abs(a.scrollY - b.scrollY) >= 0.5 ||
+    Math.abs(a.scrollingTop - b.scrollingTop) >= 0.5 ||
+    Math.abs((a.vvOffsetTop ?? 0) - (b.vvOffsetTop ?? 0)) >= 0.5 ||
+    Math.abs((a.vvPageTop ?? 0) - (b.vvPageTop ?? 0)) >= 0.5 ||
     a.entering !== b.entering ||
     a.active !== b.active ||
-    a.hasWelcome !== b.hasWelcome ||
-    boxChanged(a.workspace, b.workspace) ||
-    boxChanged(a.portal, b.portal) ||
-    boxChanged(a.optimized, b.optimized) ||
-    boxChanged(a.hero, b.hero) ||
-    boxChanged(a.quick, b.quick) ||
-    boxChanged(a.overview, b.overview) ||
-    boxChanged(a.kpis, b.kpis) ||
-    boxChanged(a.content, b.content)
+    a.dataLoaded !== b.dataLoaded ||
+    topChanged(a.workspace, b.workspace) ||
+    topChanged(a.portal, b.portal) ||
+    topChanged(a.optimized, b.optimized) ||
+    topChanged(a.hero, b.hero)
   );
 }
 
 function formatBox(label: string, value: BoxSample | null) {
   if (!value) return `${label}: --`;
-  return `${label}: x${value.x} w${value.width} p${value.paddingLeft}/${value.paddingRight} m${value.marginLeft}/${value.marginRight}`;
+  return `${label}: top${value.top} h${value.height} pt${value.paddingTop} mt${value.marginTop}`;
 }
 
 export default function ContactsLayoutTrace() {
@@ -108,65 +104,69 @@ export default function ContactsLayoutTrace() {
       const startedAt = performance.now();
       const samples: TraceSample[] = [];
       let frame = 0;
+      let loadedFrame: number | null = null;
 
-      setLines(["TRACE CONTATOS: capturando elementos internos..."]);
+      setLines(["TRACE VERTICAL: aguardando indicadores..."]);
+
+      const finish = () => {
+        const changes = samples.filter((item, index) => {
+          if (index === 0) return true;
+          return changed(samples[index - 1], item);
+        });
+        const portalFirst = samples.find((item) => item.portal);
+        const loaded = samples.find((item) => item.dataLoaded);
+        const final = samples.at(-1)!;
+        const compact = [samples[0], portalFirst, ...changes.slice(-8), loaded, final].filter(Boolean) as TraceSample[];
+        const unique = compact.filter((item, index, array) => index === array.findIndex((other) => other.frame === item.frame));
+
+        const output = [
+          "TRACE VERTICAL",
+          ...unique.flatMap((item) => [
+            `f${item.frame} ${item.t}ms E${item.entering ? 1 : 0} A${item.active ? 1 : 0} D${item.dataLoaded ? 1 : 0} scroll${item.scrollY} root${item.scrollingTop} vvOff${item.vvOffsetTop ?? "--"} vvPage${item.vvPageTop ?? "--"}`,
+            formatBox("ws", item.workspace),
+            formatBox("portal", item.portal),
+            formatBox("shell", item.optimized),
+            formatBox("hero", item.hero),
+          ]),
+        ];
+
+        setLines(output.slice(-34));
+        running = false;
+      };
 
       const sampleFrame = () => {
         const shell = document.querySelector<HTMLElement>(".app-shell");
         const workspace = shell?.querySelector<HTMLElement>(".workspace") ?? null;
         const portal = workspace?.querySelector<HTMLElement>(".vf-contacts-optimized-portal") ?? null;
         const optimized = portal?.querySelector<HTMLElement>(".optimized-shell") ?? null;
+        const dataLoaded = hasLoadedKpis(portal);
 
-        const sample: TraceSample = {
+        if (dataLoaded && loadedFrame == null) loadedFrame = frame;
+
+        samples.push({
           frame,
           t: round(performance.now() - startedAt),
-          innerWidth: window.innerWidth,
-          visualWidth: window.visualViewport ? round(window.visualViewport.width) : null,
-          visualScale: window.visualViewport ? round(window.visualViewport.scale) : null,
-          hasWelcome: Boolean(document.querySelector(".welcome-pro")),
+          scrollY: round(window.scrollY),
+          scrollingTop: round(document.scrollingElement?.scrollTop || 0),
+          vvOffsetTop: window.visualViewport ? round(window.visualViewport.offsetTop) : null,
+          vvPageTop: window.visualViewport ? round(window.visualViewport.pageTop) : null,
           entering: Boolean(shell?.classList.contains("vf-contacts-entering")),
           active: Boolean(shell?.classList.contains("vf-contacts-active")),
+          dataLoaded,
           workspace: box(workspace),
           portal: box(portal),
           optimized: box(optimized),
           hero: box(portal?.querySelector(".optimized-topbar") ?? null),
-          quick: box(portal?.querySelector(".optimized-quick-actions") ?? null),
-          overview: box(portal?.querySelector(".optimized-overview") ?? null),
-          kpis: box(portal?.querySelector(".optimized-kpis") ?? null),
-          content: box(portal?.querySelector(".optimized-content") ?? null),
-        };
-        samples.push(sample);
+        });
 
         frame += 1;
-        if (frame < 180) {
+        const enoughAfterLoad = loadedFrame != null && frame - loadedFrame >= 90;
+        const timeout = frame >= 720;
+        if (!enoughAfterLoad && !timeout) {
           raf = window.requestAnimationFrame(sampleFrame);
           return;
         }
-
-        const changes = samples.filter((item, index) => {
-          if (index === 0) return true;
-          return sampleChanged(samples[index - 1], item);
-        });
-
-        const portalFirst = samples.find((item) => item.portal);
-        const final = samples.at(-1)!;
-        const compact = [samples[0], portalFirst, ...changes.slice(-6), final].filter(Boolean) as TraceSample[];
-        const unique = compact.filter((item, index, array) => index === array.findIndex((other) => other.frame === item.frame));
-
-        const output = [
-          `TRACE INTERNO | viewport ${final.innerWidth} | vv ${final.visualWidth ?? "--"} | scale ${final.visualScale ?? "--"}`,
-          ...unique.flatMap((item) => [
-            `f${item.frame} ${item.t}ms E${item.entering ? 1 : 0} A${item.active ? 1 : 0} V${item.hasWelcome ? 1 : 0}`,
-            formatBox("ws", item.workspace),
-            formatBox("shell", item.optimized),
-            formatBox("hero", item.hero),
-            formatBox("quick", item.quick),
-            formatBox("kpis", item.kpis),
-            formatBox("content", item.content),
-          ]),
-        ];
-        setLines(output.slice(-34));
-        running = false;
+        finish();
       };
 
       sampleFrame();
@@ -187,7 +187,7 @@ export default function ContactsLayoutTrace() {
 
   return (
     <pre
-      aria-label="Diagnóstico interno de geometria de Contatos"
+      aria-label="Diagnóstico vertical de Contatos"
       style={{
         position: "fixed",
         left: 6,
@@ -208,7 +208,7 @@ export default function ContactsLayoutTrace() {
         pointerEvents: "none",
       }}
     >
-      {lines.length ? lines.join("\n") : "TRACE CONTATOS: toque em Contatos"}
+      {lines.length ? lines.join("\n") : "TRACE VERTICAL: toque em Contatos"}
     </pre>
   );
 }
