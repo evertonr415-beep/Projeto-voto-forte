@@ -25,6 +25,9 @@ type SessionAccount = {
   role: string;
 };
 
+const ENTERING_CLASS = "vf-contacts-entering";
+const ACTIVE_CLASS = "vf-contacts-active";
+
 function setReactSelectValue(select: HTMLSelectElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
     HTMLSelectElement.prototype,
@@ -35,10 +38,21 @@ function setReactSelectValue(select: HTMLSelectElement, value: string) {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function isContactsNavigationTarget(target: EventTarget | null) {
+function getNavigationButton(target: EventTarget | null) {
   const element = target instanceof Element ? target : null;
-  const button = element?.closest<HTMLButtonElement>(".sidebar nav button");
+  return element?.closest<HTMLButtonElement>(".sidebar nav button") ?? null;
+}
+
+function isContactsNavigationTarget(target: EventTarget | null) {
+  const button = getNavigationButton(target);
   return button?.querySelector(".nav-name")?.textContent?.trim() === "Contatos";
+}
+
+function setEnteringState(entering: boolean) {
+  const shell = document.querySelector<HTMLElement>(".app-shell");
+  const workspace = shell?.querySelector<HTMLElement>(".workspace") ?? null;
+  shell?.classList.toggle(ENTERING_CLASS, entering);
+  workspace?.classList.toggle(ENTERING_CLASS, entering);
 }
 
 export default function ContactsOfficialShellBridge() {
@@ -70,6 +84,20 @@ export default function ContactsOfficialShellBridge() {
   useEffect(() => {
     let cancelled = false;
 
+    // Deixa a sessão pronta antes do usuário abrir Contatos. Assim a troca de aba
+    // não precisa esperar uma nova ida ao servidor para montar o painel atual.
+    void ensureAccount().then((nextAccount) => {
+      if (!cancelled && nextAccount) setAccount((current) => current ?? nextAccount);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
     const sync = () => {
       if (cancelled) return;
       const shell = document.querySelector<HTMLElement>(".app-shell");
@@ -79,6 +107,8 @@ export default function ContactsOfficialShellBridge() {
 
       setWorkspace((current) => (current === nextWorkspace ? current : nextWorkspace));
       setActive((current) => (current === nextActive ? current : nextActive));
+      shell?.classList.toggle(ACTIVE_CLASS, nextActive);
+
       if (!nextActive) initialFiltersSeeded.current = false;
     };
 
@@ -93,22 +123,34 @@ export default function ContactsOfficialShellBridge() {
     return () => {
       cancelled = true;
       observer.disconnect();
+      document.querySelector<HTMLElement>(".app-shell")?.classList.remove(ACTIVE_CLASS);
     };
   }, []);
 
   useEffect(() => {
-    const warmAccount = (event: Event) => {
-      if (!isContactsNavigationTarget(event.target)) return;
-      void ensureAccount().then((nextAccount) => {
-        if (nextAccount) setAccount((current) => current ?? nextAccount);
-      });
+    const prepareNavigation = (event: Event) => {
+      const button = getNavigationButton(event.target);
+      if (!button) return;
+
+      if (isContactsNavigationTarget(event.target)) {
+        // A geometria de Contatos entra já no pointerdown, antes do onClick do
+        // Dashboard trocar a view. Isso evita o "zoom/enquadramento" posterior.
+        setEnteringState(true);
+        void ensureAccount().then((nextAccount) => {
+          if (nextAccount) setAccount((current) => current ?? nextAccount);
+        });
+        return;
+      }
+
+      setEnteringState(false);
     };
 
-    document.addEventListener("pointerdown", warmAccount, true);
-    document.addEventListener("click", warmAccount, true);
+    document.addEventListener("pointerdown", prepareNavigation, true);
+    document.addEventListener("click", prepareNavigation, true);
     return () => {
-      document.removeEventListener("pointerdown", warmAccount, true);
-      document.removeEventListener("click", warmAccount, true);
+      document.removeEventListener("pointerdown", prepareNavigation, true);
+      document.removeEventListener("click", prepareNavigation, true);
+      setEnteringState(false);
     };
   }, [account]);
 
@@ -130,6 +172,15 @@ export default function ContactsOfficialShellBridge() {
     workspace.classList.toggle("vf-contacts-optimized-active", active);
     return () => workspace.classList.remove("vf-contacts-optimized-active");
   }, [active, workspace]);
+
+  useEffect(() => {
+    if (!active || !account) return;
+
+    // Mantém a classe de entrada até o portal poder ser renderizado. Depois disso,
+    // a classe ACTIVE preserva exatamente a mesma geometria, sem um segundo reflow.
+    const frame = window.requestAnimationFrame(() => setEnteringState(false));
+    return () => window.cancelAnimationFrame(frame);
+  }, [account, active]);
 
   useEffect(() => {
     if (!active || !workspace || !account) return;
