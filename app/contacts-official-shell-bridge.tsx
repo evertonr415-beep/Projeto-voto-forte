@@ -133,8 +133,6 @@ export default function ContactsOfficialShellBridge() {
       if (!button) return;
 
       if (isContactsNavigationTarget(event.target)) {
-        // A geometria de Contatos entra já no pointerdown, antes do onClick do
-        // Dashboard trocar a view. Isso evita o "zoom/enquadramento" posterior.
         setEnteringState(true);
         void ensureAccount().then((nextAccount) => {
           if (nextAccount) setAccount((current) => current ?? nextAccount);
@@ -176,8 +174,6 @@ export default function ContactsOfficialShellBridge() {
   useEffect(() => {
     if (!active || !account) return;
 
-    // Mantém a classe de entrada até o portal poder ser renderizado. Depois disso,
-    // a classe ACTIVE preserva exatamente a mesma geometria, sem um segundo reflow.
     const frame = window.requestAnimationFrame(() => setEnteringState(false));
     return () => window.cancelAnimationFrame(frame);
   }, [account, active]);
@@ -288,10 +284,14 @@ export default function ContactsOfficialShellBridge() {
     };
   }, [account]);
 
-  if (!active || !workspace) return null;
+  if (!workspace) return null;
 
   return createPortal(
-    <div className="vf-contacts-optimized-portal contacts-route-scope">
+    <div
+      className="vf-contacts-optimized-portal contacts-route-scope"
+      style={{ display: active ? undefined : "none" }}
+      aria-hidden={!active}
+    >
       {neutralAccount ? (
         <>
           <NeutralDashboardClient currentUser={neutralAccount} />
