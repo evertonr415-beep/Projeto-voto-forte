@@ -105,7 +105,6 @@
     display: none !important;
   }
 
-  /* Controles compactos do mapa no canto superior direito. */
   .full-map .vf-map-mobile-controls {
     position: absolute;
     top: 12px;
@@ -131,7 +130,6 @@
     -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Esconde a apresentacao original dos mesmos botoes, mas preserva a logica. */
   .full-map.vf-mobile-map-ui .real-map-toolbar {
     display: none !important;
   }
@@ -188,7 +186,6 @@
     font: 700 8.8px/1.1 Arial, sans-serif;
   }
 
-  /* Os paineis deixam de ocupar espaco no estado normal. */
   body:has(.workspace .full-map) .vf-mobile-district-host,
   body:has(.workspace .full-map) .vf-territorial-center-host {
     display: none !important;
@@ -241,19 +238,78 @@
     border-radius: 10px !important;
   }
 
-  body:has(.workspace .full-map) .vf-district-map-list,
+  .vf-map-district-search {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin: 0 10px 8px;
+    padding: 0 11px;
+    min-height: 42px;
+    border: 1px solid rgba(92, 155, 205, 0.24);
+    border-radius: 12px;
+    background: rgba(255,255,255,.055);
+  }
+
+  .vf-map-district-search > span {
+    color: #d7aa4a;
+    font: 800 18px/1 Arial, sans-serif;
+  }
+
+  .vf-map-district-search input {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #f8fbff;
+    font: 700 11px/1.2 Arial, sans-serif;
+  }
+
+  .vf-map-district-search input::placeholder {
+    color: #8fa9bd;
+  }
+
+  body:has(.workspace .full-map) .vf-district-map-list {
+    max-height: min(54dvh, 430px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 8px 10px !important;
+  }
+
   body:has(.workspace .full-map) .vf-territorial-body {
     max-height: none !important;
     overflow: visible !important;
   }
 
-  /* No modo detalhe o header interno e redundante: o novo header ja identifica a tela. */
   .vf-map-mobile-detail-panel-active .vf-district-map-control > header,
   .vf-map-mobile-detail-panel-active .vf-territorial-center > header {
     border-bottom: 1px solid rgba(78, 143, 196, 0.16) !important;
   }
 
-  /* Se ADM escolher marcar referencia, volta ao mapa e exibe apenas uma orientacao curta. */
+  .vf-map-mobile-detail-panel-active .vf-district-map-row {
+    min-height: 56px !important;
+    margin: 0 0 6px !important;
+    padding: 9px 11px !important;
+    border: 1px solid rgba(88, 146, 193, 0.13) !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,.045) !important;
+  }
+
+  .vf-map-mobile-detail-panel-active .vf-district-map-row b {
+    color: #f8fbff !important;
+    font-size: 12px !important;
+  }
+
+  .vf-map-mobile-detail-panel-active .vf-district-map-row small {
+    color: #9fb5c9 !important;
+  }
+
+  .vf-map-mobile-detail-panel-active .vf-district-map-row > :last-child {
+    color: #f2c45f !important;
+  }
+
   .full-map .vf-map-capture-banner {
     position: absolute;
     left: 12px;
@@ -338,5 +394,14 @@
     border-color: #d4e0eb;
     background: rgba(255,255,255,.96);
     color: #93651d;
+  }
+
+  html[data-vf-theme="light"] .vf-map-district-search {
+    border-color: #d3e0eb;
+    background: #f5f9fc;
+  }
+
+  html[data-vf-theme="light"] .vf-map-district-search input {
+    color: #173b67;
   }
 }
