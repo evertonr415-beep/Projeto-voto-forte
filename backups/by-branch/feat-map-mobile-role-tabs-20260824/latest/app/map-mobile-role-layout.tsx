@@ -22,6 +22,14 @@ function compactPendingSummary(text: string) {
   return contacts ? `${contacts[1]} contatos para revisar` : "Revisão territorial";
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
   useLayoutEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
@@ -32,6 +40,8 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     let detailHeader: HTMLElement | null = null;
     let mapControls: HTMLElement | null = null;
     let captureBanner: HTMLElement | null = null;
+    let districtSearch: HTMLInputElement | null = null;
+    let districtSearchWrap: HTMLElement | null = null;
     let currentFullMap: HTMLElement | null = null;
     let currentDistrictHost: HTMLElement | null = null;
 
@@ -61,6 +71,43 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       if (toggle && toggle.getAttribute("aria-expanded") !== "true") toggle.click();
     };
 
+    const filterDistrictRows = () => {
+      if (!districtSearch || !currentDistrictHost) return;
+      const query = normalizeSearch(districtSearch.value);
+      currentDistrictHost
+        .querySelectorAll<HTMLButtonElement>(".vf-district-map-row")
+        .forEach((button) => {
+          const label = normalizeSearch(button.textContent || "");
+          button.hidden = Boolean(query && !label.includes(query));
+        });
+    };
+
+    const ensureDistrictSearch = () => {
+      const panel = districtPanel();
+      const list = panel?.querySelector<HTMLElement>(".vf-district-map-list");
+      if (!panel || !list) return;
+      if (districtSearchWrap?.isConnected && districtSearchWrap.nextElementSibling === list) {
+        filterDistrictRows();
+        return;
+      }
+
+      districtSearchWrap?.remove();
+      districtSearchWrap = document.createElement("label");
+      districtSearchWrap.className = "vf-map-district-search";
+      districtSearchWrap.innerHTML = `
+        <span aria-hidden="true">⌕</span>
+        <input type="search" inputmode="search" autocomplete="off" placeholder="Buscar bairro…" aria-label="Buscar bairro" />
+      `;
+      districtSearch = districtSearchWrap.querySelector("input");
+      districtSearch?.addEventListener("input", filterDistrictRows);
+      list.insertAdjacentElement("beforebegin", districtSearchWrap);
+    };
+
+    const resetDistrictSearch = () => {
+      if (districtSearch) districtSearch.value = "";
+      filterDistrictRows();
+    };
+
     const updateDetailHeader = () => {
       if (!detailHeader || !activeSection) return;
       const title = detailHeader.querySelector<HTMLElement>("strong");
@@ -69,7 +116,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
 
       if (activeSection === "districts") {
         title.textContent = "Escolha um bairro";
-        subtitle.textContent = "Toque em um bairro para localizar no mapa";
+        subtitle.textContent = "Toque para localizar e abrir no mapa";
       } else {
         const raw =
           pendingHost()?.querySelector<HTMLElement>(
@@ -158,8 +205,12 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
         activeSection === "pending" && isAdm,
       );
 
-      if (activeSection === "districts") setDistrictExpanded(true);
-      else setDistrictExpanded(false);
+      if (activeSection === "districts") {
+        setDistrictExpanded(true);
+        ensureDistrictSearch();
+      } else {
+        setDistrictExpanded(false);
+      }
 
       if (activeSection === "pending" && isAdm && pending) ensurePendingExpanded();
       updateDetailHeader();
@@ -169,6 +220,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     const closeDetail = () => {
       if (!activeSection) return;
       activeSection = null;
+      resetDistrictSearch();
       applyViewState();
       refreshMapAfterReturn();
     };
@@ -178,6 +230,9 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       returnScrollY = window.scrollY;
       activeSection = section;
       applyViewState();
+      if (section === "districts") {
+        window.requestAnimationFrame(() => districtSearch?.focus({ preventScroll: true }));
+      }
     };
 
     const makeNavButton = (label: string, section: MapSection) => {
@@ -252,10 +307,14 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       nav?.remove();
       detailHeader?.remove();
       mapControls?.remove();
+      districtSearch?.removeEventListener("input", filterDistrictRows);
+      districtSearchWrap?.remove();
       removeCaptureBanner();
       nav = null;
       detailHeader = null;
       mapControls = null;
+      districtSearch = null;
+      districtSearchWrap = null;
       currentFullMap = null;
       currentDistrictHost = null;
     };
@@ -298,11 +357,13 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       const button = target?.closest<HTMLButtonElement>(".vf-district-map-row");
       if (!button || button.disabled) return;
 
-      // O handler original da linha ja centraliza, destaca e agenda a abertura
-      // do popup. Apenas restauramos o mapa logo depois, antes do popup abrir.
+      // O handler original da linha centraliza o mapa, aplica zoom >= 15,
+      // destaca o ponto azul e agenda a abertura do popup. Aqui apenas
+      // restauramos o mapa logo depois da escolha.
       window.setTimeout(() => {
         if (activeSection !== "districts") return;
         activeSection = null;
+        resetDistrictSearch();
         applyViewState();
         refreshMapAfterReturn();
       }, 0);
