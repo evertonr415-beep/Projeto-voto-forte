@@ -110,6 +110,83 @@ function updateMapCopy(municipality: Municipality) {
   setTextIfChanged(home, municipality.name);
 }
 
+function installMunicipalitySelector(
+  context: MunicipalityContext,
+  onChange: (municipalityId: number, select: HTMLSelectElement) => void,
+) {
+  const mapRoot = document.querySelector<HTMLElement>(".full-map");
+  if (!mapRoot) return;
+
+  const existing = mapRoot.querySelector<HTMLElement>("[data-vf-map-municipality-selector]");
+  if (existing) {
+    const select = existing.querySelector<HTMLSelectElement>("select");
+    if (select && Number(select.value) !== Number(context.currentMunicipalityId)) {
+      select.value = String(context.currentMunicipalityId);
+    }
+    return;
+  }
+
+  const host = document.createElement("div");
+  host.dataset.vfMapMunicipalitySelector = "true";
+  host.style.display = "flex";
+  host.style.alignItems = "center";
+  host.style.gap = "8px";
+  host.style.flexWrap = "wrap";
+  host.style.padding = "8px 10px";
+  host.style.margin = "0 0 10px";
+  host.style.border = "1px solid rgba(148, 163, 184, 0.22)";
+  host.style.borderRadius = "12px";
+  host.style.background = "rgba(15, 23, 42, 0.78)";
+  host.style.backdropFilter = "blur(10px)";
+
+  const label = document.createElement("label");
+  label.textContent = "Município";
+  label.style.fontSize = "12px";
+  label.style.fontWeight = "700";
+  label.style.color = "#cbd5e1";
+  label.htmlFor = "vf-map-municipality-select";
+
+  const select = document.createElement("select");
+  select.id = "vf-map-municipality-select";
+  select.setAttribute("aria-label", "Selecionar município no mapa");
+  select.style.minWidth = "220px";
+  select.style.maxWidth = "100%";
+  select.style.height = "38px";
+  select.style.padding = "0 34px 0 12px";
+  select.style.borderRadius = "10px";
+  select.style.border = "1px solid rgba(148, 163, 184, 0.28)";
+  select.style.background = "#0f172a";
+  select.style.color = "#f8fafc";
+  select.style.fontWeight = "650";
+  select.style.cursor = "pointer";
+
+  for (const item of context.municipalities) {
+    const option = document.createElement("option");
+    option.value = String(item.id);
+    option.textContent = `${item.name} - ${item.state}`;
+    select.appendChild(option);
+  }
+  select.value = String(context.currentMunicipalityId);
+
+  const total = document.createElement("small");
+  total.textContent = `${context.municipalities.length} município${context.municipalities.length === 1 ? "" : "s"} disponível${context.municipalities.length === 1 ? "" : "is"}`;
+  total.style.color = "#94a3b8";
+  total.style.fontSize = "11px";
+
+  select.addEventListener("change", () => {
+    const municipalityId = Number(select.value);
+    if (!Number.isInteger(municipalityId) || municipalityId <= 0) return;
+    if (municipalityId === Number(context.currentMunicipalityId)) return;
+    onChange(municipalityId, select);
+  });
+
+  host.append(label, select, total);
+
+  const toolbar = mapRoot.querySelector<HTMLElement>(".real-map-toolbar");
+  if (toolbar?.parentElement) toolbar.insertAdjacentElement("afterend", host);
+  else mapRoot.prepend(host);
+}
+
 async function loadMunicipalityGeometry(municipality: Municipality) {
   const name = municipality.name.replace(/["\\]/g, " ").trim();
   const state = municipality.state.replace(/["\\]/g, " ").trim();
@@ -135,6 +212,7 @@ export default function MunicipalElectoralMapContext() {
   useEffect(() => {
     let cancelled = false;
     let municipality: Municipality | null = null;
+    let municipalityContext: MunicipalityContext | null = null;
     let activeMap: any = null;
     let municipalLayer: any = null;
     let municipalBounds: any = null;
@@ -144,13 +222,46 @@ export default function MunicipalElectoralMapContext() {
     let contextRequested = false;
     let copyUpdateQueued = false;
     let legacyLayerGuard: ((event: any) => void) | null = null;
+    let switchingMunicipality = false;
+
+    const switchMunicipality = async (municipalityId: number, select: HTMLSelectElement) => {
+      if (switchingMunicipality) return;
+      switchingMunicipality = true;
+      select.disabled = true;
+      const original = select.style.opacity;
+      select.style.opacity = "0.65";
+      try {
+        const response = await apiFetch("/api/municipality-context", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ municipalityId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Não foi possível trocar o município.");
+        window.location.reload();
+      } catch (error) {
+        select.disabled = false;
+        select.style.opacity = original;
+        if (municipalityContext) select.value = String(municipalityContext.currentMunicipalityId);
+        window.alert(error instanceof Error ? error.message : "Não foi possível trocar o município.");
+        switchingMunicipality = false;
+      }
+    };
+
+    const ensureSelector = () => {
+      if (!municipalityContext) return;
+      installMunicipalitySelector(municipalityContext, switchMunicipality);
+    };
 
     const scheduleCopyUpdate = () => {
       if (!municipality || copyUpdateQueued) return;
       copyUpdateQueued = true;
       window.requestAnimationFrame(() => {
         copyUpdateQueued = false;
-        if (!cancelled && municipality) updateMapCopy(municipality);
+        if (!cancelled && municipality) {
+          updateMapCopy(municipality);
+          ensureSelector();
+        }
       });
     };
 
@@ -282,6 +393,7 @@ export default function MunicipalElectoralMapContext() {
 
     const onBaseMapReady = (event: Event) => {
       const map = (event as CustomEvent<{ map?: any }>).detail?.map;
+      ensureSelector();
       if (map) void decorateMap(map);
     };
 
@@ -313,13 +425,16 @@ export default function MunicipalElectoralMapContext() {
           const current = context?.municipalities?.find(
             (item) => Number(item.id) === Number(context.currentMunicipalityId),
           );
-          if (!current) return;
+          if (!context || !current) return;
+          municipalityContext = context;
           municipality = current;
-          if (isArapongas(current)) return;
 
           updateMapCopy(current);
+          ensureSelector();
           observer = new MutationObserver(() => scheduleCopyUpdate());
           observer.observe(document.body, { childList: true, subtree: true });
+
+          if (isArapongas(current)) return;
           const existing = (window as any).__vfBaseElectoralMap;
           if (existing?._container) void decorateMap(existing);
         })
@@ -353,6 +468,7 @@ export default function MunicipalElectoralMapContext() {
       authObserver?.disconnect();
       window.removeEventListener("voto-forte:base-electoral-map-ready", onBaseMapReady);
       document.removeEventListener("click", onHomeClick, true);
+      document.querySelector("[data-vf-map-municipality-selector]")?.remove();
       if (activeMap && legacyLayerGuard) {
         try {
           activeMap.off?.("layeradd", legacyLayerGuard);
