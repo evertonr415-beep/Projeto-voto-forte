@@ -24,9 +24,10 @@ jobs:
       BACKUP_DIR: /tmp/voto-forte-db-backup
       DRIVE_FOLDER_ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU
       RETENTION_DAYS: '30'
-      GOOGLE_PROJECT_ID: project-a31eb72f-bb21-40ad-a56
-      GOOGLE_SERVICE_ACCOUNT: voto-forte-backup@project-a31eb72f-bb21-40ad-a56.iam.gserviceaccount.com
-      GOOGLE_WIF_PROVIDER: projects/479310325106/locations/global/workloadIdentityPools/github-voto-forte/providers/github
+      GOOGLE_PROJECT_ID: voto-forte-backup
+      GOOGLE_PROJECT_NUMBER: '369166280632'
+      GOOGLE_SERVICE_ACCOUNT: voto-forte-backup@voto-forte-backup.iam.gserviceaccount.com
+      GOOGLE_WIF_PROVIDER: projects/369166280632/locations/global/workloadIdentityPools/github-voto-forte/providers/github
 
     steps:
       - name: Checkout
@@ -60,6 +61,7 @@ jobs:
 
           HTTP_CODE="$(curl -sS -o /tmp/drive-folder.json -w '%{http_code}' \
             -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
             "https://www.googleapis.com/drive/v3/files/${DRIVE_FOLDER_ID}?fields=id,name,mimeType,capabilities(canAddChildren)&supportsAllDrives=true")"
 
           if [ "$HTTP_CODE" != '200' ]; then
@@ -145,6 +147,7 @@ jobs:
           curl -sS -D "$HEADER_FILE" -o /tmp/drive-upload-init.json \
             -X POST \
             -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
             -H 'Content-Type: application/json; charset=UTF-8' \
             -H "X-Upload-Content-Type: application/octet-stream" \
             -H "X-Upload-Content-Length: $BACKUP_SIZE_BYTES" \
@@ -190,6 +193,7 @@ jobs:
           curl -sS -D /tmp/drive-side-headers.txt -o /tmp/drive-side-init.json \
             -X POST \
             -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
             -H 'Content-Type: application/json; charset=UTF-8' \
             -H 'X-Upload-Content-Type: text/plain' \
             -H "X-Upload-Content-Length: $SIDE_SIZE" \
@@ -215,6 +219,7 @@ jobs:
           set -euo pipefail
           curl -sS \
             -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
             "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?fields=id,name,size,md5Checksum,parents,createdTime&supportsAllDrives=true" \
             -o /tmp/drive-file-metadata.json
 
@@ -238,14 +243,14 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
         run: |
           set -euo pipefail
-          python3 - "$DRIVE_FOLDER_ID" "$RETENTION_DAYS" "$GOOGLE_ACCESS_TOKEN" <<'PY'
+          python3 - "$DRIVE_FOLDER_ID" "$RETENTION_DAYS" "$GOOGLE_ACCESS_TOKEN" "$GOOGLE_PROJECT_ID" <<'PY'
           import datetime as dt
           import json
           import sys
           import urllib.parse
           import urllib.request
 
-          folder_id, retention_days, token = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          folder_id, retention_days, token, project_id = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
           cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=retention_days)
           query = f"'{folder_id}' in parents and trashed = false and name contains 'votoforte-postgres-'"
           params = urllib.parse.urlencode({
@@ -255,10 +260,11 @@ jobs:
               'supportsAllDrives': 'true',
               'includeItemsFromAllDrives': 'true',
           })
-          req = urllib.request.Request(
-              'https://www.googleapis.com/drive/v3/files?' + params,
-              headers={'Authorization': 'Bearer ' + token},
-          )
+          headers = {
+              'Authorization': 'Bearer ' + token,
+              'X-Goog-User-Project': project_id,
+          }
+          req = urllib.request.Request('https://www.googleapis.com/drive/v3/files?' + params, headers=headers)
           with urllib.request.urlopen(req) as response:
               files = json.load(response).get('files', [])
 
@@ -269,7 +275,7 @@ jobs:
                   continue
               delete_req = urllib.request.Request(
                   'https://www.googleapis.com/drive/v3/files/' + urllib.parse.quote(item['id']),
-                  headers={'Authorization': 'Bearer ' + token},
+                  headers=headers,
                   method='DELETE',
               )
               with urllib.request.urlopen(delete_req):
@@ -288,6 +294,7 @@ jobs:
             echo
             echo "- Run: ${{ github.run_id }}"
             echo "- Time (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo '- Google Cloud project: voto-forte-backup (369166280632)'
             echo '- Authentication: GitHub OIDC + Google Workload Identity Federation'
             echo '- Destination: Google Drive / Voto Forte / Backups / PostgreSQL'
             if [ -n "${BACKUP_FILE:-}" ] && [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
