@@ -21,7 +21,8 @@ jobs:
 
     env:
       BACKUP_DIR: /tmp/voto-forte-db-backup
-      DRIVE_TARGET: gdrive:Voto Forte/Backups/PostgreSQL
+      DRIVE_FOLDER_ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU
+      DRIVE_TARGET: gdrive:
       RETENTION_DAYS: '30'
 
     steps:
@@ -29,34 +30,44 @@ jobs:
         shell: bash
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           test -n "$SUPABASE_DB_URL" || { echo 'Missing secret: SUPABASE_DB_URL'; exit 1; }
-          test -n "$RCLONE_CONFIG" || { echo 'Missing secret: RCLONE_CONFIG'; exit 1; }
+          test -n "$GDRIVE_SERVICE_ACCOUNT_JSON" || { echo 'Missing secret: GDRIVE_SERVICE_ACCOUNT_JSON'; exit 1; }
 
-      - name: Install PostgreSQL client and rclone
+      - name: Install rclone
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y postgresql-client rclone
-          pg_dump --version
-          pg_restore --version
+          sudo apt-get install -y rclone
           rclone version
+          docker pull postgres:17-alpine
 
-      - name: Configure Google Drive remote
+      - name: Configure Google Drive service account
         shell: bash
         env:
-          RCLONE_CONFIG_CONTENT: ${{ secrets.RCLONE_CONFIG }}
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.config/rclone"
-          printf '%s' "$RCLONE_CONFIG_CONTENT" > "$HOME/.config/rclone/rclone.conf"
-          chmod 600 "$HOME/.config/rclone/rclone.conf"
-          rclone listremotes | grep -qx 'gdrive:'
+          printf '%s' "$GDRIVE_SERVICE_ACCOUNT_JSON" > /tmp/gdrive-service-account.json
+          chmod 600 /tmp/gdrive-service-account.json
 
-      - name: Create PostgreSQL dump
+          cat > "$HOME/.config/rclone/rclone.conf" <<EOF
+          [gdrive]
+          type = drive
+          scope = drive
+          service_account_file = /tmp/gdrive-service-account.json
+          root_folder_id = ${DRIVE_FOLDER_ID}
+          EOF
+          chmod 600 "$HOME/.config/rclone/rclone.conf"
+
+          rclone listremotes | grep -qx 'gdrive:'
+          rclone lsf "$DRIVE_TARGET" >/dev/null
+
+      - name: Create PostgreSQL 17 dump
         shell: bash
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -67,34 +78,50 @@ jobs:
           FILE="votoforte-postgres-${TS}.dump"
           echo "BACKUP_FILE=$FILE" >> "$GITHUB_ENV"
 
-          pg_dump \
-            --dbname="$SUPABASE_DB_URL" \
-            --format=custom \
-            --compress=9 \
-            --no-owner \
-            --no-privileges \
-            --file="$BACKUP_DIR/$FILE"
+          docker run --rm \
+            -e SUPABASE_DB_URL \
+            -e BACKUP_FILE="$FILE" \
+            -v "$BACKUP_DIR:/backup" \
+            postgres:17-alpine \
+            sh -ec 'pg_dump \
+              --dbname="$SUPABASE_DB_URL" \
+              --format=custom \
+              --compress=9 \
+              --no-owner \
+              --no-privileges \
+              --file="/backup/$BACKUP_FILE"'
 
       - name: Validate dump integrity
         shell: bash
         run: |
           set -euo pipefail
           test -s "$BACKUP_DIR/$BACKUP_FILE"
-          pg_restore --list "$BACKUP_DIR/$BACKUP_FILE" > "$BACKUP_DIR/$BACKUP_FILE.contents.txt"
+
+          docker run --rm \
+            -e BACKUP_FILE="$BACKUP_FILE" \
+            -v "$BACKUP_DIR:/backup" \
+            postgres:17-alpine \
+            sh -ec 'pg_restore --list "/backup/$BACKUP_FILE" > "/backup/$BACKUP_FILE.contents.txt"'
+
           test -s "$BACKUP_DIR/$BACKUP_FILE.contents.txt"
           sha256sum "$BACKUP_DIR/$BACKUP_FILE" > "$BACKUP_DIR/$BACKUP_FILE.sha256"
 
           SIZE_BYTES="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
-          echo "Backup validated: $BACKUP_FILE ($SIZE_BYTES bytes)"
+          ENTRY_COUNT="$(grep -vc '^;' "$BACKUP_DIR/$BACKUP_FILE.contents.txt" || true)"
+          test "$SIZE_BYTES" -gt 1024 || { echo 'Backup unexpectedly small'; exit 1; }
+          test "$ENTRY_COUNT" -gt 0 || { echo 'Backup contains no restore entries'; exit 1; }
+
+          echo "BACKUP_SIZE_BYTES=$SIZE_BYTES" >> "$GITHUB_ENV"
+          echo "BACKUP_ENTRY_COUNT=$ENTRY_COUNT" >> "$GITHUB_ENV"
+          echo "Backup validated: $BACKUP_FILE ($SIZE_BYTES bytes, $ENTRY_COUNT restore entries)"
 
       - name: Upload backup to Google Drive
         shell: bash
         run: |
           set -euo pipefail
-          rclone mkdir "$DRIVE_TARGET"
           rclone copyto \
             "$BACKUP_DIR/$BACKUP_FILE" \
-            "$DRIVE_TARGET/$BACKUP_FILE" \
+            "$DRIVE_TARGET$BACKUP_FILE" \
             --retries 5 \
             --low-level-retries 10 \
             --checkers 4 \
@@ -102,7 +129,7 @@ jobs:
 
           rclone copyto \
             "$BACKUP_DIR/$BACKUP_FILE.sha256" \
-            "$DRIVE_TARGET/$BACKUP_FILE.sha256" \
+            "$DRIVE_TARGET$BACKUP_FILE.sha256" \
             --retries 5
 
       - name: Verify uploaded backup
@@ -110,13 +137,14 @@ jobs:
         run: |
           set -euo pipefail
           LOCAL_SIZE="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
-          REMOTE_SIZE="$(rclone size "$DRIVE_TARGET/$BACKUP_FILE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])')"
+          REMOTE_SIZE="$(rclone size "$DRIVE_TARGET$BACKUP_FILE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])')"
 
           test "$LOCAL_SIZE" = "$REMOTE_SIZE" || {
             echo "Upload verification failed: local=$LOCAL_SIZE remote=$REMOTE_SIZE"
             exit 1
           }
 
+          rclone cat "$DRIVE_TARGET$BACKUP_FILE.sha256" | grep -Fq "$(sha256sum "$BACKUP_DIR/$BACKUP_FILE" | cut -d' ' -f1)"
           echo "Google Drive upload verified: $BACKUP_FILE ($REMOTE_SIZE bytes)"
 
       - name: Apply 30-day retention
@@ -126,8 +154,7 @@ jobs:
           rclone delete "$DRIVE_TARGET" \
             --min-age "${RETENTION_DAYS}d" \
             --include 'votoforte-postgres-*.dump' \
-            --include 'votoforte-postgres-*.dump.sha256' \
-            --rmdirs || true
+            --include 'votoforte-postgres-*.dump.sha256' || true
 
       - name: Write backup summary
         if: always()
@@ -138,10 +165,11 @@ jobs:
             echo
             echo "- Run: ${{ github.run_id }}"
             echo "- Time (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-            echo "- Destination: Google Drive / Voto Forte / Backups / PostgreSQL"
+            echo '- Destination: Google Drive / Voto Forte / Backups / PostgreSQL'
             if [ -n "${BACKUP_FILE:-}" ] && [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
               echo "- File: $BACKUP_FILE"
               echo "- Size: $(du -h "$BACKUP_DIR/$BACKUP_FILE" | cut -f1)"
+              echo "- Restore entries: ${BACKUP_ENTRY_COUNT:-unknown}"
               echo '- Local dump validation: OK'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
