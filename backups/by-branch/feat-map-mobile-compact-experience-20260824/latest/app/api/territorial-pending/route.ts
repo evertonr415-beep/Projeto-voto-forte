@@ -1,7 +1,6 @@
 import {
   getAccount,
   getVisibleUsers,
-  isAdministrator,
 } from "../../server-identity";
 
 const MAX_PAGE_SIZE = 50;
@@ -74,6 +73,14 @@ async function readJsonBody(request: Request): Promise<CorrectionBody | null> {
   }
 }
 
+function requireAdm(account: Account) {
+  if (account.accessRole === "adm") return null;
+  return Response.json(
+    { error: "Somente o ADM pode acessar pendências territoriais" },
+    { status: 403 },
+  );
+}
+
 async function resolveScope(account: Account, requestedOwner?: string | null) {
   const users = await getVisibleUsers(account);
   const emails = users
@@ -83,7 +90,7 @@ async function resolveScope(account: Account, requestedOwner?: string | null) {
 
   const requested = requestedOwner?.trim().toLowerCase();
   let scope = account.email;
-  if (requested === "all" && isAdministrator(account.role)) scope = "all";
+  if (requested === "all" && account.accessRole === "adm") scope = "all";
   else if (requested && emails.includes(requested)) scope = requested;
   else if (requested && requested !== account.email)
     return {
@@ -130,6 +137,9 @@ export async function GET(request: Request) {
   const account = await getAccount();
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
+
+  const forbidden = requireAdm(account);
+  if (forbidden) return forbidden;
 
   const url = new URL(request.url);
   const resolved = await resolveScope(account, url.searchParams.get("owner"));
@@ -269,7 +279,7 @@ export async function GET(request: Request) {
         (sum, item) => sum + item.total,
         0,
       ),
-      canManageReferences: account.role === "master",
+      canManageReferences: account.accessRole === "adm",
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
@@ -280,17 +290,14 @@ export async function PATCH(request: Request) {
   if (!account)
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
+  const forbidden = requireAdm(account);
+  if (forbidden) return forbidden;
+
   const body = await readJsonBody(request);
   if (!body)
     return Response.json({ error: "Dados da correção inválidos" }, { status: 400 });
 
   if (typeof body.referenceDistrict === "string") {
-    if (account.role !== "master")
-      return Response.json(
-        { error: "Somente o Administrador Master pode definir referências territoriais globais" },
-        { status: 403 },
-      );
-
     const latitude = Number(body.latitude);
     const longitude = Number(body.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
