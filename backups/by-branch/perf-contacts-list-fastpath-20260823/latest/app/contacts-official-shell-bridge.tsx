@@ -92,8 +92,6 @@ export default function ContactsOfficialShellBridge() {
   useEffect(() => {
     let cancelled = false;
 
-    // Deixa a sessão pronta antes do usuário abrir Contatos. Assim a troca de aba
-    // não precisa esperar uma nova ida ao servidor para montar o painel atual.
     void ensureAccount().then((nextAccount) => {
       if (!cancelled && nextAccount) setAccount((current) => current ?? nextAccount);
     });
@@ -104,17 +102,14 @@ export default function ContactsOfficialShellBridge() {
   }, []);
 
   useEffect(() => {
-    if (!account) return;
+    if (!account || active) return;
 
-    // Antecipa somente o resumo visível no primeiro frame de Contatos. Não monta
-    // o painel escondido e não consulta a lista paginada, preservando a correção
-    // de estabilidade mobile e evitando um count pesado antes de ser necessário.
     const owner = initialSummaryOwner(account);
     void prefetchApiGet(
       `/api/contacts?mode=summary&owner=${encodeURIComponent(owner)}`,
       { cache: "no-store" },
     ).catch(() => undefined);
-  }, [account]);
+  }, [account, active]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,8 +121,6 @@ export default function ContactsOfficialShellBridge() {
       const title = shell?.querySelector<HTMLElement>(".topbar h1")?.textContent?.trim();
       const nextActive = Boolean(nextWorkspace && title === "Contatos");
 
-      // O DOM recebe o estado visual final no mesmo ciclo em que o Dashboard
-      // confirma a view Contatos, antes do React montar o portal otimizado.
       shell?.classList.toggle(ACTIVE_CLASS, nextActive);
       nextWorkspace?.classList.toggle(OPTIMIZED_ACTIVE_CLASS, nextActive);
       setWorkspace((current) => (current === nextWorkspace ? current : nextWorkspace));
@@ -160,8 +153,6 @@ export default function ContactsOfficialShellBridge() {
       if (!button) return;
 
       if (isContactsNavigationTarget(event.target)) {
-        // A geometria de Contatos entra já no pointerdown, antes do onClick do
-        // Dashboard trocar a view. Isso evita o "zoom/enquadramento" posterior.
         setEnteringState(true);
         void ensureAccount().then((nextAccount) => {
           if (nextAccount) setAccount((current) => current ?? nextAccount);
@@ -202,9 +193,6 @@ export default function ContactsOfficialShellBridge() {
 
   useEffect(() => {
     if (!active || !account) return;
-
-    // Mantém a classe de entrada até o portal poder ser renderizado. Depois disso,
-    // a classe ACTIVE preserva exatamente a mesma geometria, sem um segundo reflow.
     const frame = window.requestAnimationFrame(() => setEnteringState(false));
     return () => window.cancelAnimationFrame(frame);
   }, [account, active]);
