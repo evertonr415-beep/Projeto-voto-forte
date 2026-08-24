@@ -3,12 +3,57 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 let browserClient: SupabaseClient | null = null;
 let browserAuthProxy: SupabaseClient["auth"] | null = null;
 let sessionReadInFlight: ReturnType<SupabaseClient["auth"]["getSession"]> | null = null;
+let logoutInFlight: Promise<unknown> | null = null;
 const inFlightReads = new Map<string, Promise<Response>>();
 const prefetchedReads = new Map<
   string,
   { response: Response; expiresAt: number }
 >();
 const PREFETCH_TTL_MS = 30_000;
+
+function markSigningOutUi() {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.dataset.vfSigningOut = "1";
+
+  document
+    .querySelectorAll<HTMLButtonElement>("button.logout-link, button.auth-link")
+    .forEach((button) => {
+      const label = button.textContent?.trim().toLowerCase() || "";
+      if (!label.startsWith("sair")) return;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Saindo…";
+    });
+
+  if (document.getElementById("vf-signing-out-overlay")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "vf-signing-out-overlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  Object.assign(overlay.style, {
+    position: "fixed",
+    inset: "0",
+    zIndex: "2147483647",
+    display: "grid",
+    placeItems: "center",
+    background: "#06101f",
+    color: "#ffffff",
+    fontFamily: "inherit",
+    fontSize: "18px",
+    fontWeight: "700",
+    letterSpacing: "0.01em",
+  });
+  overlay.textContent = "Saindo com segurança…";
+  document.body.appendChild(overlay);
+}
+
+function clearAuthorizedReadState() {
+  sessionReadInFlight = null;
+  inFlightReads.clear();
+  prefetchedReads.clear();
+}
 
 function getBrowserSupabase() {
   if (browserClient) return browserClient;
@@ -50,6 +95,39 @@ function getBrowserAuth() {
             if (event === "TOKEN_REFRESHED") return;
             callback(event, session);
           });
+      }
+
+      if (property === "signOut") {
+        return (...args: Parameters<typeof auth.signOut>) => {
+          const scope = args[0]?.scope;
+          if (scope === "others") return auth.signOut(...args);
+          if (logoutInFlight) return logoutInFlight;
+
+          markSigningOutUi();
+
+          const run = (async () => {
+            try {
+              const result = await auth.signOut(...args);
+              if (result.error) {
+                // Se a sessão já expirou no servidor, ainda precisamos limpar
+                // o estado persistido no navegador para não cair na tela de
+                // validação entre o clique e a volta ao login.
+                await auth.signOut({ scope: "local" });
+              }
+              return result;
+            } finally {
+              clearAuthorizedReadState();
+              if (typeof window !== "undefined") {
+                window.location.replace("/");
+              }
+            }
+          })();
+
+          logoutInFlight = run.finally(() => {
+            logoutInFlight = null;
+          });
+          return logoutInFlight;
+        };
       }
 
       const value = Reflect.get(target, property);
