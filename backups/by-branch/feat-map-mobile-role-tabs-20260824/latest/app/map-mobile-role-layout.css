@@ -1,5 +1,5 @@
-/* Experiencia mobile map-first: o mapa vira protagonista; bairros e pendencias
-   aparecem como ferramentas flutuantes e abrem em bottom sheet. */
+/* Experiencia mobile: nada funcional cobre o mapa.
+   A barra territorial fica fora do mapa; detalhes abrem em area dedicada. */
 @media (max-width: 760px) {
   body:has(.workspace .full-map) .workspace > .page-head {
     margin-bottom: 12px !important;
@@ -27,6 +27,71 @@
     font-size: 10.5px !important;
   }
 
+  .vf-map-mobile-nav {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+    margin: 0 0 16px;
+  }
+
+  .vf-map-mobile-nav-adm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vf-map-mobile-nav-gestor {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-map-mobile-nav-hidden {
+    display: none !important;
+  }
+
+  .vf-map-mobile-nav-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 9px 12px 9px 13px;
+    border: 1px solid rgba(78, 143, 196, 0.26);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(7, 31, 56, 0.92), rgba(11, 48, 81, 0.9));
+    color: #f8fbff;
+    box-shadow: 0 7px 18px rgba(2, 15, 29, 0.14);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .vf-map-mobile-nav-button span {
+    min-width: 0;
+  }
+
+  .vf-map-mobile-nav-button b {
+    display: block;
+    font: 850 12px/1.1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-nav-button small {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #9fb5c9;
+    font: 700 8.8px/1.1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-nav-button i {
+    color: #d7aa4a;
+    font: 400 24px/1 Arial, sans-serif;
+    font-style: normal;
+  }
+
+  .vf-map-mobile-nav-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
   body:has(.workspace .full-map) .workspace > .full-map {
     position: relative !important;
     margin-top: 0 !important;
@@ -36,296 +101,242 @@
     height: 74vh !important;
   }
 
-  /* Hosts deixam de ocupar espaco no fluxo. Viram sheets apenas quando abertos. */
-  body:has(.workspace .full-map) .vf-mobile-district-host,
-  body:has(.workspace .full-map) .vf-territorial-center-host {
-    position: fixed !important;
-    left: 10px !important;
-    right: 10px !important;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 2101 !important;
+  .full-map.vf-map-mobile-map-hidden {
     display: none !important;
-    width: auto !important;
-    max-height: min(72dvh, 620px) !important;
-    margin: 0 !important;
-    overflow: hidden !important;
   }
 
-  body:has(.workspace .full-map) .vf-mobile-district-host.vf-map-sheet-open,
-  body:has(.workspace .full-map) .vf-territorial-center-host.vf-map-sheet-open {
+  /* Controles compactos do mapa no canto superior direito. */
+  .full-map .vf-map-mobile-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1260;
+    display: grid;
+    gap: 7px;
+  }
+
+  .full-map .vf-map-mobile-controls button {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.58);
+    border-radius: 12px;
+    background: rgba(7, 35, 64, 0.93);
+    color: #f2c45f;
+    box-shadow: 0 7px 17px rgba(3,17,32,.22);
+    font: 800 21px/1 Arial, sans-serif;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Esconde a apresentacao original dos mesmos botoes, mas preserva a logica. */
+  .full-map.vf-mobile-map-ui .real-map-toolbar {
+    display: none !important;
+  }
+
+  .full-map.vf-mobile-map-ui .leaflet-control-zoom {
+    margin-top: 106px !important;
+  }
+
+  .vf-map-mobile-detail-header {
+    display: none;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 9px 10px;
+    border: 1px solid rgba(78, 143, 196, 0.24);
+    border-radius: 14px;
+    background: rgba(6, 28, 51, 0.88);
+  }
+
+  .vf-map-mobile-detail-header-open {
+    display: grid;
+  }
+
+  .vf-map-mobile-detail-header > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid rgba(106, 164, 211, 0.35);
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    color: #f8fbff;
+    font: 800 10.5px/1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-detail-header > button span {
+    color: #d7aa4a;
+    font-size: 18px;
+  }
+
+  .vf-map-mobile-detail-header strong {
+    display: block;
+    color: #f8fbff;
+    font: 850 12px/1.1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-detail-header small {
+    display: block;
+    margin-top: 3px;
+    color: #9fb5c9;
+    font: 700 8.8px/1.1 Arial, sans-serif;
+  }
+
+  /* Os paineis deixam de ocupar espaco no estado normal. */
+  body:has(.workspace .full-map) .vf-mobile-district-host,
+  body:has(.workspace .full-map) .vf-territorial-center-host {
+    display: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host.vf-map-mobile-detail-panel-active,
+  body:has(.workspace .full-map) .vf-territorial-center-host.vf-map-mobile-detail-panel-active {
     display: block !important;
   }
 
   body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
   body:has(.workspace .full-map) .vf-territorial-center {
+    position: relative !important;
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
-    max-height: min(72dvh, 620px) !important;
     margin: 0 !important;
-    border: 1px solid rgba(96, 166, 220, 0.28) !important;
-    border-radius: 22px !important;
-    background: linear-gradient(160deg, rgba(7, 30, 55, 0.995), rgba(12, 48, 82, 0.99)) !important;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38) !important;
+    border: 1px solid rgba(78, 143, 196, 0.22) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(160deg, rgba(7, 30, 55, 0.98), rgba(12, 48, 82, 0.97)) !important;
+    box-shadow: 0 10px 24px rgba(2, 15, 29, 0.14) !important;
     overflow: hidden !important;
-    color: #f7fbff !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control::before,
-  body:has(.workspace .full-map) .vf-territorial-center::before {
-    content: "";
-    display: block;
-    width: 42px;
-    height: 4px;
-    margin: 8px auto 2px;
-    border-radius: 999px;
-    background: rgba(215, 226, 238, 0.35);
   }
 
   body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header,
   body:has(.workspace .full-map) .vf-territorial-center > header {
     min-height: 58px !important;
-    padding: 8px 12px 10px 14px !important;
-    gap: 10px !important;
+    padding: 9px 11px 9px 13px !important;
+    gap: 9px !important;
     background: transparent !important;
   }
 
   body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header strong,
   body:has(.workspace .full-map) .vf-territorial-center > header strong {
     color: #f8fbff !important;
-    font-size: 13.5px !important;
-    line-height: 1.15 !important;
+    font-size: 13px !important;
   }
 
   body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header small,
   body:has(.workspace .full-map) .vf-territorial-center > header small {
     margin-top: 4px !important;
-    color: #9fb4c9 !important;
+    color: #9fb5c9 !important;
     font-size: 9px !important;
-    line-height: 1.25 !important;
   }
 
   body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-toggle,
   body:has(.workspace .full-map) .vf-territorial-center > header button {
-    display: grid !important;
-    place-items: center !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 !important;
-    border: 1px solid rgba(126, 179, 220, 0.35) !important;
-    border-radius: 12px !important;
-    background: rgba(255, 255, 255, 0.07) !important;
-    color: #f8fbff !important;
-    box-shadow: none !important;
-    font-size: 18px !important;
-    line-height: 1 !important;
+    border-radius: 10px !important;
   }
 
   body:has(.workspace .full-map) .vf-district-map-list,
   body:has(.workspace .full-map) .vf-territorial-body {
-    max-height: calc(min(72dvh, 620px) - 84px) !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
-  .vf-map-mobile-launcher {
+  /* No modo detalhe o header interno e redundante: o novo header ja identifica a tela. */
+  .vf-map-mobile-detail-panel-active .vf-district-map-control > header,
+  .vf-map-mobile-detail-panel-active .vf-territorial-center > header {
+    border-bottom: 1px solid rgba(78, 143, 196, 0.16) !important;
+  }
+
+  /* Se ADM escolher marcar referencia, volta ao mapa e exibe apenas uma orientacao curta. */
+  .full-map .vf-map-capture-banner {
     position: absolute;
-    top: 12px;
     left: 12px;
-    z-index: 1248;
-    display: inline-flex;
-    align-items: stretch;
-    gap: 6px;
-    max-width: calc(100% - 76px);
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.52);
-    border-radius: 16px;
-    background: rgba(7, 30, 55, 0.88);
-    box-shadow: 0 8px 22px rgba(2, 15, 29, 0.22);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-
-  .vf-map-mobile-launcher-gestor {
-    max-width: calc(100% - 76px);
-  }
-
-  .vf-map-mobile-launcher-button {
-    display: grid;
-    grid-template-columns: auto;
-    gap: 2px;
-    min-width: 0;
-    padding: 8px 10px 7px;
-    border: 0;
+    right: 64px;
+    top: 12px;
+    z-index: 1258;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,.55);
     border-radius: 12px;
-    background: transparent;
-    color: #f8fbff;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .vf-map-mobile-launcher-adm .vf-map-mobile-launcher-button {
-    min-width: 102px;
-  }
-
-  .vf-map-mobile-launcher-button span {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font: 850 11px/1.1 Arial, sans-serif;
-  }
-
-  .vf-map-mobile-launcher-button small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: #a9bfd2;
-    font: 700 8.5px/1.1 Arial, sans-serif;
-  }
-
-  .vf-map-mobile-launcher-button[aria-pressed="true"] {
-    background: rgba(37, 88, 133, 0.92);
-    box-shadow: inset 0 -2px 0 #d7aa4a;
-  }
-
-  .vf-map-mobile-launcher-button:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-
-  .vf-map-sheet-scrim {
-    position: fixed;
-    inset: 0;
-    z-index: 2100;
-    display: none;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    border: 0;
-    background: rgba(1, 10, 20, 0.46);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-  }
-
-  .vf-map-sheet-scrim.vf-map-sheet-scrim-open {
-    display: block;
-  }
-
-  body.vf-map-mobile-sheet-lock {
-    overflow: hidden !important;
-    touch-action: none;
-  }
-
-  /* Controles do mapa: Centralizar e Minha localizacao no mesmo eixo superior. */
-  .full-map.vf-mobile-map-ui .real-map-toolbar {
-    top: 12px !important;
-    left: auto !important;
-    right: 12px !important;
-    width: 44px !important;
-    height: auto !important;
-    display: grid !important;
-    gap: 7px !important;
-    pointer-events: none !important;
-  }
-
-  .full-map.vf-mobile-map-ui .real-map-toolbar > div {
-    display: none !important;
-  }
-
-  .full-map.vf-mobile-map-ui .real-map-toolbar button {
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
-    width: 42px !important;
-    height: 42px !important;
-    border: 1px solid rgba(255, 255, 255, 0.56) !important;
-    border-radius: 12px !important;
-    background: rgba(7, 35, 64, 0.92) !important;
-    color: #f2c45f !important;
-    box-shadow: 0 7px 17px rgba(3, 17, 32, 0.22) !important;
-    pointer-events: auto !important;
+    background: rgba(7, 30, 55, 0.91);
+    box-shadow: 0 7px 18px rgba(2,15,29,.19);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
   }
 
-  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1),
-  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
-    display: grid !important;
-    visibility: visible !important;
+  .full-map .vf-map-capture-banner strong {
+    display: block;
+    color: #f8fbff;
+    font: 850 10.5px/1.1 Arial, sans-serif;
   }
 
-  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(3) {
-    display: none !important;
+  .full-map .vf-map-capture-banner small {
+    display: block;
+    margin-top: 3px;
+    color: #c6d5e2;
+    font: 700 8.5px/1.2 Arial, sans-serif;
   }
 
-  .full-map.vf-mobile-map-ui .leaflet-control-zoom {
-    margin-top: 108px !important;
-  }
-
-  /* Antiga camada extra de centralizar nao participa mais do layout map-first. */
   .full-map .vf-mobile-map-recenter,
+  .vf-map-mobile-launcher,
+  .vf-map-sheet-scrim,
   .vf-mobile-map-tabs {
     display: none !important;
   }
 }
 
 @media (max-width: 410px) {
-  .vf-map-mobile-launcher {
+  .vf-map-mobile-nav-adm {
+    gap: 6px;
+  }
+
+  .vf-map-mobile-nav-button {
+    min-height: 54px;
+    padding-inline: 10px;
+  }
+
+  .vf-map-mobile-nav-button b {
+    font-size: 11.5px;
+  }
+
+  .full-map .vf-map-mobile-controls {
     top: 10px;
-    left: 10px;
-    gap: 4px;
-    max-width: calc(100% - 68px);
+    right: 10px;
   }
 
-  .vf-map-mobile-launcher-button {
-    padding: 7px 8px 6px;
-  }
-
-  .vf-map-mobile-launcher-adm .vf-map-mobile-launcher-button {
-    min-width: 92px;
-  }
-
-  .full-map.vf-mobile-map-ui .real-map-toolbar {
-    top: 10px !important;
-    right: 10px !important;
+  .full-map .vf-map-mobile-controls button {
+    width: 40px;
+    height: 40px;
   }
 }
 
 @media (max-width: 760px) {
-  html[data-vf-theme="light"] .vf-map-mobile-launcher {
-    border-color: rgba(40, 82, 122, 0.2);
-    background: rgba(255, 255, 255, 0.93);
-    box-shadow: 0 8px 22px rgba(27, 62, 98, 0.14);
-  }
-
-  html[data-vf-theme="light"] .vf-map-mobile-launcher-button {
+  html[data-vf-theme="light"] .vf-map-mobile-nav-button,
+  html[data-vf-theme="light"] .vf-map-mobile-detail-header {
+    border-color: #cbddea;
+    background: rgba(249, 252, 255, 0.97);
     color: #173b67;
   }
 
-  html[data-vf-theme="light"] .vf-map-mobile-launcher-button small {
-    color: #6d8295;
+  html[data-vf-theme="light"] .vf-map-mobile-nav-button b,
+  html[data-vf-theme="light"] .vf-map-mobile-detail-header strong {
+    color: #173b67;
   }
 
-  html[data-vf-theme="light"] .vf-map-mobile-launcher-button[aria-pressed="true"] {
-    background: #e8f2fa;
-    box-shadow: inset 0 -2px 0 #b98125;
+  html[data-vf-theme="light"] .vf-map-mobile-nav-button small,
+  html[data-vf-theme="light"] .vf-map-mobile-detail-header small {
+    color: #647b91;
   }
 
-  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
-  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-territorial-center {
-    border-color: #cbddea !important;
-    background: linear-gradient(160deg, #ffffff, #eef5fb) !important;
-    color: #173b67 !important;
-    box-shadow: 0 24px 60px rgba(22, 54, 87, 0.24) !important;
-  }
-
-  html[data-vf-theme="light"] .full-map.vf-mobile-map-ui .real-map-toolbar button {
-    border-color: #d4e0eb !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #93651d !important;
+  html[data-vf-theme="light"] .full-map .vf-map-mobile-controls button {
+    border-color: #d4e0eb;
+    background: rgba(255,255,255,.96);
+    color: #93651d;
   }
 }
