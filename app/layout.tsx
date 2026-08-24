@@ -59,6 +59,7 @@ import "./profile-modal-exact.css";
 import "./map-mobile-visual-polish.css";
 import "./map-mobile-theme-contrast.css";
 import "./map-mobile-contacts-panel-theme.css";
+import "./map-mobile-compact-experience.css";
 import "./overview-mobile-visual-polish.css";
 import "./overview-mobile-header-final.css";
 import "./overview-mobile-density-fix.css";
