@@ -179,9 +179,8 @@ jobs:
           SIDE_NAME="$BACKUP_FILE.sha256"
           SIDE_PATH="$BACKUP_DIR/$SIDE_NAME"
           SIDE_SIZE="$(stat -c '%s' "$SIDE_PATH")"
-          METADATA="$(python3 -c 'import json,os; print(json.dumps({"name": os.environ["SIDE_NAME"], "parents": [os.environ["DRIVE_FOLDER_ID"]]}))' SIDE_NAME="$SIDE_NAME")"
-
           export SIDE_NAME
+
           METADATA="$(python3 - <<'PY'
           import json, os
           print(json.dumps({'name': os.environ['SIDE_NAME'], 'parents': [os.environ['DRIVE_FOLDER_ID']]}))
