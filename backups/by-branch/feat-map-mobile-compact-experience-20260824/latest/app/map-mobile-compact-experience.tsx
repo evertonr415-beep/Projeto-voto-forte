@@ -42,6 +42,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
     const media = window.matchMedia(MEDIA);
     let frame = 0;
     let activePanel: Panel = null;
+    let syncingPendingToggle = false;
     let cleanupFns: Array<() => void> = [];
     let shell: HTMLElement | null = null;
     let title: HTMLElement | null = null;
@@ -105,6 +106,15 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       if (!pendingHost()?.querySelector(".vf-territorial-capture")) removeCaptureBanner();
     };
 
+    const clickPendingToggle = (toggle: HTMLButtonElement) => {
+      syncingPendingToggle = true;
+      try {
+        toggle.click();
+      } finally {
+        syncingPendingToggle = false;
+      }
+    };
+
     const applyPanelState = () => {
       if (!currentContactsHost || !currentDistrictHost || !currentMap) return;
       const pending = pendingHost();
@@ -161,8 +171,8 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       if (pending) {
         const toggle = pending.querySelector<HTMLButtonElement>("[data-role='toggle']");
         const expanded = toggle?.getAttribute("aria-expanded") === "true";
-        if (activePanel === "pending" && toggle && !expanded) toggle.click();
-        if (activePanel !== "pending" && toggle && expanded) toggle.click();
+        if (activePanel === "pending" && toggle && !expanded) clickPendingToggle(toggle);
+        if (activePanel !== "pending" && toggle && expanded) clickPendingToggle(toggle);
       }
     };
 
@@ -314,6 +324,13 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         pending.dataset.vfProBound = "true";
         const handler = (event: Event) => {
           const target = event.target instanceof Element ? event.target : null;
+
+          const toggle = target?.closest<HTMLButtonElement>("button[data-role='toggle']");
+          if (toggle) {
+            if (!syncingPendingToggle && activePanel === "pending") setPanel(null);
+            return;
+          }
+
           const capture = target?.closest<HTMLButtonElement>("button[data-role='capture']");
           if (!capture) return;
           const district =
