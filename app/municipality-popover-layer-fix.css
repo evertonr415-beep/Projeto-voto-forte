@@ -1,25 +1,22 @@
 /* Mantém somente o menu de municípios acima dos cards e camadas do mapa. */
 @media (min-width: 1000px) {
-  .topbar {
-    overflow: visible !important;
-  }
-
-  .top-actions {
-    position: relative !important;
+  .topbar:has(.vf-municipality-header-menu[open]) {
     z-index: 20000 !important;
     overflow: visible !important;
   }
 
-  .top-actions > .vf-municipality-header-menu {
+  .topbar:has(.vf-municipality-header-menu[open]) .top-actions {
     position: relative !important;
-    z-index: 20001 !important;
+    z-index: 1 !important;
+    overflow: visible !important;
   }
 
-  .top-actions > .vf-municipality-header-menu[open] {
-    z-index: 20002 !important;
+  .vf-municipality-header-menu[open] {
+    position: relative !important;
+    z-index: 2 !important;
   }
 
   .vf-municipality-header-popover {
-    z-index: 20003 !important;
+    z-index: 3 !important;
   }
 }
