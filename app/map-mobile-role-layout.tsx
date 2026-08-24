@@ -5,16 +5,8 @@ import "./map-mobile-role-layout.css";
 
 type MapSection = "districts" | "pending";
 
-function directPendingHost(fullMap: HTMLElement) {
-  const parent = fullMap.parentElement;
-  if (!parent) return null;
-  return (
-    Array.from(parent.children).find(
-      (node) =>
-        node instanceof HTMLElement &&
-        node.classList.contains("vf-territorial-center-host"),
-    ) as HTMLElement | undefined
-  ) ?? null;
+function getPendingHost() {
+  return document.querySelector<HTMLElement>(".vf-territorial-center-host");
 }
 
 function compactDistrictSummary(text: string) {
@@ -24,248 +16,250 @@ function compactDistrictSummary(text: string) {
 }
 
 function compactPendingSummary(text: string) {
-  const match = text.match(/([\d.]+)\s+contatos/i);
-  return match ? `${match[1]} para revisar` : "Revisão territorial";
+  const match = text.match(/([\d.]+)\s+contatos.*?([\d.]+)\s+bairros/i);
+  if (match) return `${match[1]} contatos · ${match[2]} bairros`;
+  const contacts = text.match(/([\d.]+)\s+contatos/i);
+  return contacts ? `${contacts[1]} contatos para revisar` : "Revisão territorial";
 }
 
 export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
   useLayoutEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
-    let activeSection: MapSection = "districts";
-    let sheetOpen = false;
+    let activeSection: MapSection | null = null;
     let frame = 0;
-    let launcher: HTMLElement | null = null;
-    let scrim: HTMLButtonElement | null = null;
+    let returnScrollY = 0;
+    let nav: HTMLElement | null = null;
+    let detailHeader: HTMLElement | null = null;
+    let mapControls: HTMLElement | null = null;
+    let captureBanner: HTMLElement | null = null;
     let currentFullMap: HTMLElement | null = null;
     let currentDistrictHost: HTMLElement | null = null;
-    let districtCloseButton: HTMLButtonElement | null = null;
-    let pendingCloseButton: HTMLButtonElement | null = null;
 
-    const pendingHost = () =>
-      currentFullMap ? directPendingHost(currentFullMap) : null;
+    const districtPanel = () =>
+      currentDistrictHost?.querySelector<HTMLElement>(".vf-district-map-control") ?? null;
 
-    const handleDistrictClose = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      closeSheet();
-    };
+    const districtToggle = () =>
+      currentDistrictHost?.querySelector<HTMLButtonElement>(".vf-district-map-toggle") ?? null;
 
-    const handlePendingClose = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      closeSheet();
-    };
+    const pendingHost = () => getPendingHost();
 
-    const restoreDistrictToggle = () => {
-      if (districtCloseButton) {
-        districtCloseButton.removeEventListener("click", handleDistrictClose, true);
-      }
-      districtCloseButton = null;
-      const panel = currentDistrictHost?.querySelector<HTMLElement>(
-        ".vf-district-map-control",
-      );
-      const toggle = panel?.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
-      if (panel) panel.dataset.collapsed = "true";
+    const pendingToggle = () =>
+      pendingHost()?.querySelector<HTMLButtonElement>("[data-role='toggle']") ?? null;
+
+    const setDistrictExpanded = (expanded: boolean) => {
+      const panel = districtPanel();
+      const toggle = districtToggle();
+      if (panel) panel.dataset.collapsed = expanded ? "false" : "true";
       if (toggle) {
-        toggle.textContent = "+";
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Abrir contatos por bairro");
-        toggle.title = "Abrir contatos por bairro";
+        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        toggle.textContent = expanded ? "−" : "+";
       }
     };
 
-    const restorePendingToggle = () => {
-      if (pendingCloseButton) {
-        pendingCloseButton.removeEventListener("click", handlePendingClose, true);
-      }
-      pendingCloseButton = null;
-      const toggle = pendingHost()?.querySelector<HTMLButtonElement>("[data-role='toggle']");
-      if (toggle) {
-        const expanded = toggle.getAttribute("aria-expanded") === "true";
-        toggle.textContent = expanded ? "Fechar" : "Revisar";
-        toggle.removeAttribute("title");
+    const ensurePendingExpanded = () => {
+      const toggle = pendingToggle();
+      if (toggle && toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+    };
+
+    const updateDetailHeader = () => {
+      if (!detailHeader || !activeSection) return;
+      const title = detailHeader.querySelector<HTMLElement>("strong");
+      const subtitle = detailHeader.querySelector<HTMLElement>("small");
+      if (!title || !subtitle) return;
+
+      if (activeSection === "districts") {
+        const raw =
+          currentDistrictHost?.querySelector<HTMLElement>(
+            ".vf-district-map-control header small",
+          )?.textContent || "";
+        title.textContent = "Contatos por bairro";
+        subtitle.textContent = compactDistrictSummary(raw);
+      } else {
+        const raw =
+          pendingHost()?.querySelector<HTMLElement>(
+            ".vf-territorial-center > header strong",
+          )?.textContent || "";
+        title.textContent = "Pendências territoriais";
+        subtitle.textContent = compactPendingSummary(raw);
       }
     };
 
-    const closeSheet = () => {
-      sheetOpen = false;
-      document.body.classList.remove("vf-map-mobile-sheet-lock");
-      scrim?.classList.remove("vf-map-sheet-scrim-open");
-      scrim?.setAttribute("aria-hidden", "true");
-      currentDistrictHost?.classList.remove("vf-map-sheet-open");
-      pendingHost()?.classList.remove("vf-map-sheet-open");
-      restoreDistrictToggle();
-      restorePendingToggle();
-      syncLauncherState();
-    };
-
-    const openDistrictSheet = () => {
-      const panel = currentDistrictHost?.querySelector<HTMLElement>(
-        ".vf-district-map-control",
-      );
-      const toggle = panel?.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
-      if (!panel || !toggle) return;
-      panel.dataset.collapsed = "false";
-      toggle.textContent = "×";
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.setAttribute("aria-label", "Fechar bairros");
-      toggle.title = "Fechar bairros";
-      if (districtCloseButton !== toggle) {
-        districtCloseButton?.removeEventListener("click", handleDistrictClose, true);
-        toggle.addEventListener("click", handleDistrictClose, true);
-        districtCloseButton = toggle;
-      }
-    };
-
-    const openPendingSheet = () => {
-      const host = pendingHost();
-      if (!host) return;
-      const toggle = host.querySelector<HTMLButtonElement>("[data-role='toggle']");
-      if (!toggle) return;
-      if (toggle.getAttribute("aria-expanded") !== "true") {
-        toggle.click();
-        return;
-      }
-      toggle.textContent = "×";
-      toggle.setAttribute("aria-label", "Fechar pendências");
-      toggle.title = "Fechar pendências";
-      if (pendingCloseButton !== toggle) {
-        pendingCloseButton?.removeEventListener("click", handlePendingClose, true);
-        toggle.addEventListener("click", handlePendingClose, true);
-        pendingCloseButton = toggle;
-      }
-    };
-
-    const syncLauncherLabels = () => {
-      if (!launcher || !currentDistrictHost) return;
-      const districtText =
+    const updateNavLabels = () => {
+      if (!nav || !currentDistrictHost) return;
+      const districtRaw =
         currentDistrictHost.querySelector<HTMLElement>(
           ".vf-district-map-control header small",
         )?.textContent || "";
-      const districtButton = launcher.querySelector<HTMLButtonElement>(
-        "[data-vf-map-section='districts']",
+      const districtSummary = nav.querySelector<HTMLElement>(
+        "[data-vf-map-section='districts'] small",
       );
-      const districtSummary = compactDistrictSummary(districtText);
-      const districtSmall = districtButton?.querySelector<HTMLElement>("small");
-      if (districtSmall && districtSmall.textContent !== districtSummary) {
-        districtSmall.textContent = districtSummary;
+      const compactDistrict = compactDistrictSummary(districtRaw);
+      if (districtSummary && districtSummary.textContent !== compactDistrict) {
+        districtSummary.textContent = compactDistrict;
       }
 
-      const host = pendingHost();
-      const pendingButton = launcher.querySelector<HTMLButtonElement>(
+      const pendingButton = nav.querySelector<HTMLButtonElement>(
         "[data-vf-map-section='pending']",
       );
       if (pendingButton) {
+        const host = pendingHost();
         pendingButton.disabled = !host;
-        const pendingText =
+        const pendingRaw =
           host?.querySelector<HTMLElement>(".vf-territorial-center > header strong")
             ?.textContent || "";
-        const small = pendingButton.querySelector<HTMLElement>("small");
-        const summary = compactPendingSummary(pendingText);
-        if (small && small.textContent !== summary) small.textContent = summary;
+        const summary = pendingButton.querySelector<HTMLElement>("small");
+        const compact = compactPendingSummary(pendingRaw);
+        if (summary && summary.textContent !== compact) summary.textContent = compact;
       }
     };
 
-    const syncLauncherState = () => {
-      launcher
-        ?.querySelectorAll<HTMLButtonElement>("[data-vf-map-section]")
-        .forEach((button) => {
-          const selected =
-            sheetOpen && button.dataset.vfMapSection === activeSection;
-          button.setAttribute("aria-pressed", selected ? "true" : "false");
+    const removeCaptureBanner = () => {
+      captureBanner?.remove();
+      captureBanner = null;
+    };
+
+    const showCaptureBanner = (district: string) => {
+      if (!currentFullMap) return;
+      removeCaptureBanner();
+      captureBanner = document.createElement("div");
+      captureBanner.className = "vf-map-capture-banner";
+      captureBanner.innerHTML = `<strong>Marcar referência</strong><small>Toque no mapa para posicionar ${district || "o bairro"}.</small>`;
+      currentFullMap.appendChild(captureBanner);
+    };
+
+    const refreshCaptureBanner = () => {
+      if (!captureBanner) return;
+      const captureStillActive = Boolean(
+        pendingHost()?.querySelector(".vf-territorial-capture"),
+      );
+      if (!captureStillActive) removeCaptureBanner();
+    };
+
+    const refreshMapAfterReturn = () => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: returnScrollY, behavior: "auto" });
+        window.requestAnimationFrame(() => {
+          window.dispatchEvent(new Event("resize"));
+          window.dispatchEvent(new Event("voto-forte:electoral-map-ready"));
         });
+      });
     };
 
-    const applySheetState = () => {
-      if (!currentDistrictHost) return;
-      const host = pendingHost();
+    const applyViewState = () => {
+      if (!currentFullMap || !currentDistrictHost || !nav || !detailHeader) return;
+      const pending = pendingHost();
+      const showingDetail = activeSection !== null;
 
+      currentFullMap.classList.toggle("vf-map-mobile-map-hidden", showingDetail);
+      nav.classList.toggle("vf-map-mobile-nav-hidden", showingDetail);
+      detailHeader.classList.toggle("vf-map-mobile-detail-header-open", showingDetail);
       currentDistrictHost.classList.toggle(
-        "vf-map-sheet-open",
-        sheetOpen && activeSection === "districts",
+        "vf-map-mobile-detail-panel-active",
+        activeSection === "districts",
       );
-      host?.classList.toggle(
-        "vf-map-sheet-open",
-        sheetOpen && activeSection === "pending" && isAdm,
+      pending?.classList.toggle(
+        "vf-map-mobile-detail-panel-active",
+        activeSection === "pending" && isAdm,
       );
 
-      if (sheetOpen) {
-        document.body.classList.add("vf-map-mobile-sheet-lock");
-        scrim?.classList.add("vf-map-sheet-scrim-open");
-        scrim?.setAttribute("aria-hidden", "false");
-        if (activeSection === "districts") {
-          restorePendingToggle();
-          openDistrictSheet();
-        } else if (isAdm && host) {
-          restoreDistrictToggle();
-          openPendingSheet();
-        }
-      } else {
-        document.body.classList.remove("vf-map-mobile-sheet-lock");
-        scrim?.classList.remove("vf-map-sheet-scrim-open");
-        scrim?.setAttribute("aria-hidden", "true");
-      }
-      syncLauncherState();
-      syncLauncherLabels();
+      if (activeSection === "districts") setDistrictExpanded(true);
+      else setDistrictExpanded(false);
+
+      if (activeSection === "pending" && isAdm && pending) ensurePendingExpanded();
+      updateDetailHeader();
+      updateNavLabels();
     };
 
-    const selectSection = (section: MapSection) => {
+    const closeDetail = () => {
+      if (!activeSection) return;
+      activeSection = null;
+      applyViewState();
+      refreshMapAfterReturn();
+    };
+
+    const openDetail = (section: MapSection) => {
       if (section === "pending" && (!isAdm || !pendingHost())) return;
-      if (sheetOpen && activeSection === section) {
-        closeSheet();
-        return;
-      }
+      returnScrollY = window.scrollY;
       activeSection = section;
-      sheetOpen = true;
-      applySheetState();
+      applyViewState();
     };
 
-    const makeLauncherButton = (label: string, section: MapSection) => {
+    const makeNavButton = (label: string, section: MapSection) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "vf-map-mobile-launcher-button";
+      button.className = "vf-map-mobile-nav-button";
       button.dataset.vfMapSection = section;
-      button.setAttribute("aria-pressed", "false");
-      button.innerHTML = `<span>${label}</span><small>${
+      button.innerHTML = `<span><b>${label}</b><small>${
         section === "districts" ? "Distribuição territorial" : "Revisão territorial"
-      }</small>`;
-      button.addEventListener("click", () => selectSection(section));
+      }</small></span><i aria-hidden="true">›</i>`;
+      button.addEventListener("click", () => openDetail(section));
       return button;
     };
 
-    const ensureLauncher = (fullMap: HTMLElement) => {
-      if (launcher?.isConnected && launcher.parentElement === fullMap) return;
-      launcher?.remove();
-      launcher = document.createElement("div");
-      launcher.className = `vf-map-mobile-launcher ${
-        isAdm ? "vf-map-mobile-launcher-adm" : "vf-map-mobile-launcher-gestor"
-      }`;
-      launcher.setAttribute("aria-label", "Ferramentas territoriais do mapa");
-      launcher.appendChild(makeLauncherButton("Bairros", "districts"));
-      if (isAdm) launcher.appendChild(makeLauncherButton("Pendências", "pending"));
-      fullMap.appendChild(launcher);
+    const ensureNav = (fullMap: HTMLElement) => {
+      if (nav?.isConnected && nav.nextElementSibling === fullMap) return;
+      nav?.remove();
+      nav = document.createElement("nav");
+      nav.className = `vf-map-mobile-nav ${isAdm ? "vf-map-mobile-nav-adm" : "vf-map-mobile-nav-gestor"}`;
+      nav.setAttribute("aria-label", "Ferramentas territoriais");
+      nav.appendChild(makeNavButton("Bairros", "districts"));
+      if (isAdm) nav.appendChild(makeNavButton("Pendências", "pending"));
+      fullMap.insertAdjacentElement("beforebegin", nav);
     };
 
-    const ensureScrim = () => {
-      if (scrim?.isConnected) return;
-      scrim = document.createElement("button");
-      scrim.type = "button";
-      scrim.className = "vf-map-sheet-scrim";
-      scrim.setAttribute("aria-label", "Fechar painel do mapa");
-      scrim.setAttribute("aria-hidden", "true");
-      scrim.addEventListener("click", closeSheet);
-      document.body.appendChild(scrim);
+    const ensureDetailHeader = (districtHost: HTMLElement) => {
+      if (detailHeader?.isConnected) return;
+      detailHeader = document.createElement("div");
+      detailHeader.className = "vf-map-mobile-detail-header";
+      detailHeader.innerHTML = `
+        <button type="button" aria-label="Voltar ao mapa"><span aria-hidden="true">‹</span> Mapa</button>
+        <div><strong>Detalhes territoriais</strong><small></small></div>
+      `;
+      detailHeader.querySelector("button")?.addEventListener("click", closeDetail);
+      districtHost.insertAdjacentElement("beforebegin", detailHeader);
+    };
+
+    const ensureMapControls = (fullMap: HTMLElement) => {
+      if (mapControls?.isConnected && mapControls.parentElement === fullMap) return;
+      mapControls?.remove();
+      const sourceButtons = Array.from(
+        fullMap.querySelectorAll<HTMLButtonElement>(".real-map-toolbar button"),
+      );
+      if (sourceButtons.length < 2) return;
+
+      mapControls = document.createElement("div");
+      mapControls.className = "vf-map-mobile-controls";
+      const labels = ["Centralizar mapa", "Minha localização"];
+      const icons = ["⌖", "◎"];
+      sourceButtons.slice(0, 2).forEach((source, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.title = labels[index];
+        button.setAttribute("aria-label", labels[index]);
+        button.textContent = icons[index];
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          source.click();
+        });
+        mapControls!.appendChild(button);
+      });
+      fullMap.appendChild(mapControls);
     };
 
     const clearGeneratedUi = () => {
-      closeSheet();
-      launcher?.remove();
-      scrim?.removeEventListener("click", closeSheet);
-      scrim?.remove();
-      launcher = null;
-      scrim = null;
+      activeSection = null;
+      setDistrictExpanded(false);
+      currentFullMap?.classList.remove("vf-map-mobile-map-hidden");
+      currentDistrictHost?.classList.remove("vf-map-mobile-detail-panel-active");
+      pendingHost()?.classList.remove("vf-map-mobile-detail-panel-active");
+      nav?.remove();
+      detailHeader?.remove();
+      mapControls?.remove();
+      removeCaptureBanner();
+      nav = null;
+      detailHeader = null;
+      mapControls = null;
       currentFullMap = null;
       currentDistrictHost = null;
     };
@@ -287,9 +281,11 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       currentFullMap = fullMap;
       currentDistrictHost = districtHost;
 
-      ensureLauncher(fullMap);
-      ensureScrim();
-      applySheetState();
+      ensureNav(fullMap);
+      ensureDetailHeader(districtHost);
+      ensureMapControls(fullMap);
+      applyViewState();
+      refreshCaptureBanner();
     };
 
     const scheduleSync = () => {
@@ -300,8 +296,24 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       });
     };
 
+    const handleCaptureAction = (event: Event) => {
+      if (!isAdm || activeSection !== "pending") return;
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest<HTMLButtonElement>("button[data-role='capture']");
+      if (!button) return;
+      const district =
+        button.closest<HTMLElement>("[data-ref-district]")?.dataset.refDistrict || "";
+      window.setTimeout(() => {
+        if (!pendingHost()?.querySelector(".vf-territorial-capture")) return;
+        activeSection = null;
+        applyViewState();
+        showCaptureBanner(district);
+        refreshMapAfterReturn();
+      }, 0);
+    };
+
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && sheetOpen) closeSheet();
+      if (event.key === "Escape" && activeSection) closeDetail();
     };
 
     const observer = new MutationObserver(scheduleSync);
@@ -313,6 +325,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     media.addEventListener("change", scheduleSync);
     window.addEventListener("pageshow", scheduleSync);
     window.addEventListener("voto-forte:electoral-map-ready", scheduleSync);
+    document.addEventListener("click", handleCaptureAction);
     document.addEventListener("keydown", handleKey);
     sync();
 
@@ -321,6 +334,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       media.removeEventListener("change", scheduleSync);
       window.removeEventListener("pageshow", scheduleSync);
       window.removeEventListener("voto-forte:electoral-map-ready", scheduleSync);
+      document.removeEventListener("click", handleCaptureAction);
       document.removeEventListener("keydown", handleKey);
       if (frame) window.cancelAnimationFrame(frame);
       clearGeneratedUi();
