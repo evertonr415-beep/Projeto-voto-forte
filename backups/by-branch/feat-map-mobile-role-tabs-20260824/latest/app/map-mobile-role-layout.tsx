@@ -44,9 +44,16 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     };
 
     const applySection = () => {
-      if (!currentFullMap || !currentDistrictHost || !tabs) return;
+      if (!currentFullMap || !currentDistrictHost) return;
       const pendingHost = directPendingHost(currentFullMap);
       const pendingAvailable = Boolean(isAdm && pendingHost);
+
+      if (!isAdm) {
+        activeSection = "districts";
+        currentDistrictHost.classList.remove("vf-mobile-map-section-hidden");
+        pendingHost?.classList.add("vf-mobile-map-section-hidden");
+        return;
+      }
 
       if (activeSection === "pending" && !pendingAvailable) {
         activeSection = "districts";
@@ -60,18 +67,20 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       if (pendingHost) {
         pendingHost.classList.toggle(
           "vf-mobile-map-section-hidden",
-          !isAdm || activeSection !== "pending",
+          activeSection !== "pending",
         );
       }
 
-      tabs.querySelectorAll<HTMLButtonElement>("[data-vf-map-section]").forEach((button) => {
-        const selected = button.dataset.vfMapSection === activeSection;
-        button.setAttribute("aria-selected", selected ? "true" : "false");
-        button.tabIndex = selected ? 0 : -1;
-        if (button.dataset.vfMapSection === "pending") {
-          button.disabled = !pendingAvailable;
-        }
-      });
+      tabs
+        ?.querySelectorAll<HTMLButtonElement>("[data-vf-map-section]")
+        .forEach((button) => {
+          const selected = button.dataset.vfMapSection === activeSection;
+          button.setAttribute("aria-selected", selected ? "true" : "false");
+          button.tabIndex = selected ? 0 : -1;
+          if (button.dataset.vfMapSection === "pending") {
+            button.disabled = !pendingAvailable;
+          }
+        });
     };
 
     const makeTab = (label: string, section: MapSection) => {
@@ -83,7 +92,6 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       button.setAttribute("aria-selected", section === activeSection ? "true" : "false");
       button.textContent = label;
       button.addEventListener("click", () => {
-        if (section === "pending" && !isAdm) return;
         activeSection = section;
         applySection();
       });
@@ -91,15 +99,19 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     };
 
     const ensureTabs = (districtHost: HTMLElement) => {
+      if (!isAdm) {
+        tabs?.remove();
+        tabs = null;
+        return;
+      }
       if (tabs?.isConnected && tabs.nextElementSibling === districtHost) return;
       tabs?.remove();
       tabs = document.createElement("div");
       tabs.className = "vf-mobile-map-tabs";
-      tabs.dataset.single = isAdm ? "false" : "true";
       tabs.setAttribute("role", "tablist");
       tabs.setAttribute("aria-label", "Seções do mapa eleitoral");
-      tabs.appendChild(makeTab("Contatos por bairro", "districts"));
-      if (isAdm) tabs.appendChild(makeTab("Pendências", "pending"));
+      tabs.appendChild(makeTab("Bairros", "districts"));
+      tabs.appendChild(makeTab("Pendências", "pending"));
       districtHost.insertAdjacentElement("beforebegin", tabs);
     };
 
