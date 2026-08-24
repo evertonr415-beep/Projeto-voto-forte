@@ -68,12 +68,8 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       if (!title || !subtitle) return;
 
       if (activeSection === "districts") {
-        const raw =
-          currentDistrictHost?.querySelector<HTMLElement>(
-            ".vf-district-map-control header small",
-          )?.textContent || "";
-        title.textContent = "Contatos por bairro";
-        subtitle.textContent = compactDistrictSummary(raw);
+        title.textContent = "Escolha um bairro";
+        subtitle.textContent = "Toque em um bairro para localizar no mapa";
       } else {
         const raw =
           pendingHost()?.querySelector<HTMLElement>(
@@ -296,6 +292,22 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       });
     };
 
+    const handleDistrictSelection = (event: Event) => {
+      if (activeSection !== "districts") return;
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest<HTMLButtonElement>(".vf-district-map-row");
+      if (!button || button.disabled) return;
+
+      // O handler original da linha ja centraliza, destaca e agenda a abertura
+      // do popup. Apenas restauramos o mapa logo depois, antes do popup abrir.
+      window.setTimeout(() => {
+        if (activeSection !== "districts") return;
+        activeSection = null;
+        applyViewState();
+        refreshMapAfterReturn();
+      }, 0);
+    };
+
     const handleCaptureAction = (event: Event) => {
       if (!isAdm || activeSection !== "pending") return;
       const target = event.target instanceof Element ? event.target : null;
@@ -325,6 +337,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
     media.addEventListener("change", scheduleSync);
     window.addEventListener("pageshow", scheduleSync);
     window.addEventListener("voto-forte:electoral-map-ready", scheduleSync);
+    document.addEventListener("click", handleDistrictSelection);
     document.addEventListener("click", handleCaptureAction);
     document.addEventListener("keydown", handleKey);
     sync();
@@ -334,6 +347,7 @@ export default function MapMobileRoleLayout({ isAdm }: { isAdm: boolean }) {
       media.removeEventListener("change", scheduleSync);
       window.removeEventListener("pageshow", scheduleSync);
       window.removeEventListener("voto-forte:electoral-map-ready", scheduleSync);
+      document.removeEventListener("click", handleDistrictSelection);
       document.removeEventListener("click", handleCaptureAction);
       document.removeEventListener("keydown", handleKey);
       if (frame) window.cancelAnimationFrame(frame);
