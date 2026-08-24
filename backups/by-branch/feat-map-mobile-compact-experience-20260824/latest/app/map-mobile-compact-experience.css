@@ -1,0 +1,269 @@
+@media (max-width: 760px) {
+  body:has(.workspace .full-map) .workspace > .page-head.vf-map-mobile-head-hidden {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .app-shell .topbar .page-id {
+    align-items: center !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-title {
+    display: flex !important;
+    flex: 0 1 auto !important;
+    min-width: 86px !important;
+    max-width: 108px !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 1px !important;
+    margin-right: 2px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-title strong,
+  body:has(.workspace .full-map) .vf-map-mobile-title small {
+    display: block !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-title strong {
+    color: #f8fbff !important;
+    font: 850 11px/1.08 Arial, sans-serif !important;
+    letter-spacing: -0.1px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-title small {
+    color: rgba(196, 215, 232, 0.72) !important;
+    font: 750 8px/1.08 Arial, sans-serif !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.55px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tools {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+    margin: 4px 0 12px !important;
+    padding: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tools.is-adm {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 0 8px !important;
+    border: 1px solid rgba(93, 164, 219, 0.22) !important;
+    border-radius: 12px !important;
+    background: rgba(7, 31, 56, 0.7) !important;
+    color: #dce8f3 !important;
+    box-shadow: 0 5px 13px rgba(2, 12, 25, 0.12) !important;
+    backdrop-filter: blur(9px) !important;
+    cursor: pointer !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool span {
+    flex: 0 0 auto !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool b {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font: 820 10px/1 Arial, sans-serif !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool[aria-pressed="true"] {
+    border-color: rgba(93, 171, 229, 0.56) !important;
+    background: linear-gradient(145deg, rgba(21, 74, 119, 0.98), rgba(12, 52, 87, 0.98)) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 -2px 0 #d4a843, 0 6px 16px rgba(2, 12, 25, 0.17) !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-panel-hidden {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-panel-open {
+    display: block !important;
+    margin: 0 0 12px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-contacts-host.vf-map-mobile-panel-open {
+    max-height: 118px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-control {
+    padding: 10px 10px 9px !important;
+    border-radius: 14px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-control > strong {
+    margin: 0 0 7px !important;
+    font-size: 12px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-tabs {
+    gap: 5px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-tabs button {
+    min-height: 31px !important;
+    padding: 0 5px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-status {
+    margin: 6px 0 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 8.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-mobile-panel-open
+    .vf-map-contact-legend {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host.vf-map-mobile-panel-open {
+    max-height: 238px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-mobile-panel-open
+    .vf-district-map-control {
+    max-height: 238px !important;
+    border-radius: 14px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-mobile-panel-open
+    .vf-district-map-control header {
+    padding: 8px 9px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-mobile-panel-open
+    .vf-district-map-list {
+    max-height: 176px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-territorial-center-host.vf-map-mobile-panel-open {
+    max-height: 300px !important;
+    overflow: auto !important;
+    margin-top: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .full-map {
+    margin-top: 2px !important;
+  }
+
+  body:has(.workspace .full-map) .full-map .vf-map-mobile-recenter {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 1300 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(111, 179, 229, 0.58) !important;
+    border-radius: 12px !important;
+    background: rgba(8, 42, 75, 0.97) !important;
+    color: #f0c55f !important;
+    box-shadow: 0 7px 18px rgba(2, 12, 25, 0.24) !important;
+    font: 900 20px/1 Arial, sans-serif !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  body:has(.workspace .full-map)
+    .full-map.vf-mobile-map-ui
+    .real-map-toolbar
+    button:nth-of-type(1) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body:has(.workspace .full-map)
+    .full-map.vf-mobile-map-ui
+    .real-map-toolbar
+    button:nth-of-type(2) {
+    top: 55px !important;
+  }
+
+  body:has(.workspace .full-map) .full-map.vf-mobile-map-ui .leaflet-control-zoom {
+    margin-top: 102px !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-map-mobile-title strong {
+    color: #173b67 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-map-mobile-title small {
+    color: #60758c !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-map-mobile-tool {
+    border-color: #c8d9e7 !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    color: #244b72 !important;
+    box-shadow: 0 5px 13px rgba(25, 62, 98, 0.08) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-map-mobile-tool[aria-pressed="true"] {
+    border-color: #1f5a92 !important;
+    background: linear-gradient(145deg, #1f5a92, #173f75) !important;
+    color: #ffffff !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body:has(.workspace .full-map) .vf-map-mobile-title {
+    min-width: 78px !important;
+    max-width: 92px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-title strong {
+    font-size: 10px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool {
+    min-height: 36px !important;
+    padding-inline: 5px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-mobile-tool b {
+    font-size: 9px !important;
+  }
+}
