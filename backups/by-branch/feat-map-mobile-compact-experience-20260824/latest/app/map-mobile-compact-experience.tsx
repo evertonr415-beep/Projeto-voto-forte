@@ -29,9 +29,12 @@ function makeTool(label: string, icon: string, action: Exclude<Panel, null>) {
 
 function compactDistrictSummary(text: string) {
   const match = text.match(/([\d.]+)\s+contatos\s+em\s+([\d.]+)\s+bairros/i);
-  if (match) return `${match[1]} contatos · ${match[2]} bairros`;
-  const fallback = text.split("·").slice(0, 2).join("·").trim();
-  return fallback || "Mapa territorial";
+  if (match) {
+    const contacts = Number(match[1].replace(/\D/g, ""));
+    const districts = Number(match[2].replace(/\D/g, ""));
+    if (contacts > 0 || districts > 0) return `${match[1]} contatos · ${match[2]} bairros`;
+  }
+  return "Arapongas · mapa territorial";
 }
 
 export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }) {
@@ -99,9 +102,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
 
     const syncCaptureBanner = () => {
       if (!captureBanner) return;
-      if (!pendingHost()?.querySelector(".vf-territorial-capture")) {
-        removeCaptureBanner();
-      }
+      if (!pendingHost()?.querySelector(".vf-territorial-capture")) removeCaptureBanner();
     };
 
     const applyPanelState = () => {
@@ -124,10 +125,9 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         ?.querySelectorAll<HTMLButtonElement>("[data-vf-map-mobile-action]")
         .forEach((button) => {
           const action = button.dataset.vfMapMobileAction;
-          button.setAttribute(
-            "aria-pressed",
-            action === activePanel ? "true" : "false",
-          );
+          const active = action === activePanel;
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+          button.setAttribute("aria-expanded", active ? "true" : "false");
           if (action === "pending") button.disabled = isAdm && !pending;
         });
 
@@ -196,7 +196,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       shell.setAttribute("aria-label", "Ferramentas do mapa eleitoral");
 
       shell.append(
-        makeTool("Contatos", "●●", "contacts"),
+        makeTool("Contatos", "👥", "contacts"),
         makeTool("Bairros", "⌖", "districts"),
       );
       if (isAdm) shell.append(makeTool("Pendências", "!", "pending"));
@@ -221,6 +221,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         mapSummary = document.createElement("div");
         mapSummary.className = "vf-map-mobile-summary";
         mapSummary.setAttribute("aria-live", "polite");
+        mapSummary.textContent = "Arapongas · mapa territorial";
         currentMap.appendChild(mapSummary);
       }
 
@@ -411,7 +412,11 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
     };
 
     const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
     media.addEventListener("change", schedule);
     window.addEventListener("pageshow", schedule);
     window.addEventListener("voto-forte:electoral-map-ready", schedule);
