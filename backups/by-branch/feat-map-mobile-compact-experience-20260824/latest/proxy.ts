@@ -16,32 +16,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  try {
-    const sessionUrl = new URL("/api/session", request.url);
-    const sessionResponse = await fetch(sessionUrl, {
-      method: "GET",
-      headers: { authorization },
-      cache: "no-store",
-    });
-    const sessionData = await sessionResponse.json().catch(() => ({}));
-
-    if (
-      !sessionResponse.ok ||
-      sessionData?.access?.state !== "active" ||
-      sessionData?.user?.accessRole !== "adm"
-    ) {
-      return NextResponse.json(
-        { error: "Somente o ADM pode acessar pendências territoriais" },
-        { status: 403 },
-      );
-    }
-  } catch {
-    return NextResponse.json(
-      { error: "Não foi possível validar a permissão administrativa" },
-      { status: 503 },
-    );
-  }
-
+  // A rota /api/territorial-pending já valida a sessão e exige accessRole=adm.
+  // Evitamos uma segunda chamada interna para /api/session aqui porque, em
+  // deployments de preview protegidos, essa requisição interna pode perder o
+  // contexto de autenticação do preview e bloquear um ADM legítimo com 403.
   return NextResponse.next();
 }
 
