@@ -1,133 +1,27 @@
-/* Organização final do Mapa Eleitoral no mobile.
-   ADM recebe seletor compacto Bairros/Pendências; perfis sem pendências
-   não recebem navegação redundante. */
+/* Experiencia mobile map-first: o mapa vira protagonista; bairros e pendencias
+   aparecem como ferramentas flutuantes e abrem em bottom sheet. */
 @media (max-width: 760px) {
   body:has(.workspace .full-map) .workspace > .page-head {
-    margin-bottom: 10px !important;
-    padding: 12px 13px 11px !important;
+    margin-bottom: 12px !important;
+    padding: 11px 12px 10px !important;
     border-radius: 16px !important;
   }
 
-  body:has(.workspace .full-map) .workspace > .page-head span {
-    font-size: 7.5px !important;
-    letter-spacing: 1.45px !important;
-  }
-
   body:has(.workspace .full-map) .workspace > .page-head h2 {
-    margin: 4px 0 5px !important;
-    font-size: clamp(20px, 5.8vw, 24px) !important;
-    line-height: 1.06 !important;
+    margin: 3px 0 4px !important;
+    font-size: clamp(19px, 5.5vw, 23px) !important;
+    line-height: 1.05 !important;
   }
 
   body:has(.workspace .full-map) .workspace > .page-head p {
-    font-size: 10px !important;
-    line-height: 1.32 !important;
+    font-size: 9.5px !important;
+    line-height: 1.3 !important;
   }
 
   body:has(.workspace .full-map) .workspace > .page-head > button,
   body:has(.workspace .full-map) .workspace > .page-head > .vf-mobile-page-contacts-toggle {
-    min-width: 96px !important;
-    min-height: 38px !important;
-    padding-inline: 10px !important;
-    border-radius: 12px !important;
-    font-size: 11px !important;
-  }
-
-  /* Navegação existe apenas para ADM. Visual de seletor, não de CTA. */
-  .vf-mobile-map-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-    width: 100%;
-    margin: 0 0 10px;
-    padding: 3px;
-    border: 1px solid rgba(91, 165, 224, 0.22);
-    border-radius: 12px;
-    background: rgba(5, 24, 44, 0.72);
-    box-shadow: 0 5px 14px rgba(2, 12, 25, 0.12);
-  }
-
-  .vf-mobile-map-tab {
-    min-width: 0;
-    min-height: 36px;
-    padding: 0 9px;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    background: transparent;
-    color: rgba(211, 226, 240, 0.74);
-    font: 800 10.5px/1.1 Arial, sans-serif;
-    text-align: center;
-    cursor: pointer;
-  }
-
-  .vf-mobile-map-tab[aria-selected="true"] {
-    border-color: rgba(92, 168, 224, 0.5);
-    background: rgba(25, 83, 132, 0.84);
-    color: #f8fbff;
-    box-shadow: inset 0 -2px 0 #d7aa4a;
-  }
-
-  .vf-mobile-map-tab:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-
-  .vf-mobile-map-section-hidden {
-    display: none !important;
-  }
-
-  /* Respiração real antes do mapa. */
-  body:has(.workspace .full-map) .vf-mobile-district-host,
-  body:has(.workspace .full-map) .vf-territorial-center-host {
-    margin: 0 0 16px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
-  body:has(.workspace .full-map) .vf-territorial-center {
-    border-radius: 15px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header {
-    min-height: 58px !important;
-    padding: 9px 11px 9px 13px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header strong {
-    font-size: 13px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header small {
-    margin-top: 4px !important;
-    font-size: 9px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-toggle {
-    width: 40px !important;
-    height: 40px !important;
-    flex-basis: 40px !important;
-    border-radius: 11px !important;
-    font-size: 19px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-territorial-center > header {
-    min-height: 64px !important;
-    padding: 10px 11px 10px 13px !important;
-    gap: 9px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-territorial-center > header strong {
-    font-size: 13px !important;
-  }
-
-  body:has(.workspace .full-map) .vf-territorial-center > header small {
-    margin-top: 4px !important;
-    font-size: 9px !important;
-    -webkit-line-clamp: 1 !important;
-  }
-
-  body:has(.workspace .full-map) .vf-territorial-center > header button {
-    min-width: 70px !important;
-    min-height: 38px !important;
+    min-width: 92px !important;
+    min-height: 36px !important;
     padding-inline: 10px !important;
     border-radius: 11px !important;
     font-size: 10.5px !important;
@@ -136,96 +30,302 @@
   body:has(.workspace .full-map) .workspace > .full-map {
     position: relative !important;
     margin-top: 0 !important;
-    border-radius: 16px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    min-height: 560px !important;
+    height: 74vh !important;
   }
 
-  /* Centralizar sobe para a família de controles no canto superior direito. */
-  .full-map .vf-mobile-map-recenter {
-    position: absolute;
-    top: 52px;
-    right: 8px;
-    z-index: 1250;
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border: 1px solid rgba(113, 176, 225, 0.55);
-    border-radius: 12px;
-    background: rgba(8, 42, 75, 0.96);
-    color: #f2c45f;
-    box-shadow: 0 7px 17px rgba(3, 17, 32, 0.24);
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  /* Hosts deixam de ocupar espaco no fluxo. Viram sheets apenas quando abertos. */
+  body:has(.workspace .full-map) .vf-mobile-district-host,
+  body:has(.workspace .full-map) .vf-territorial-center-host {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 2101 !important;
+    display: none !important;
+    width: auto !important;
+    max-height: min(72dvh, 620px) !important;
+    margin: 0 !important;
+    overflow: hidden !important;
   }
 
-  .full-map .vf-mobile-map-recenter span {
+  body:has(.workspace .full-map) .vf-mobile-district-host.vf-map-sheet-open,
+  body:has(.workspace .full-map) .vf-territorial-center-host.vf-map-sheet-open {
+    display: block !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
+  body:has(.workspace .full-map) .vf-territorial-center {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    max-height: min(72dvh, 620px) !important;
+    margin: 0 !important;
+    border: 1px solid rgba(96, 166, 220, 0.28) !important;
+    border-radius: 22px !important;
+    background: linear-gradient(160deg, rgba(7, 30, 55, 0.995), rgba(12, 48, 82, 0.99)) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38) !important;
+    overflow: hidden !important;
+    color: #f7fbff !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control::before,
+  body:has(.workspace .full-map) .vf-territorial-center::before {
+    content: "";
     display: block;
-    transform: translateY(-1px);
-    font: 900 22px/1 Arial, sans-serif;
+    width: 42px;
+    height: 4px;
+    margin: 8px auto 2px;
+    border-radius: 999px;
+    background: rgba(215, 226, 238, 0.35);
   }
 
-  .full-map .vf-mobile-map-recenter:active {
-    transform: scale(0.96);
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header,
+  body:has(.workspace .full-map) .vf-territorial-center > header {
+    min-height: 58px !important;
+    padding: 8px 12px 10px 14px !important;
+    gap: 10px !important;
+    background: transparent !important;
   }
 
-  /* Fonte funcional da ação fica invisível; localização aparece logo abaixo. */
-  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1) {
-    visibility: hidden !important;
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header strong,
+  body:has(.workspace .full-map) .vf-territorial-center > header strong {
+    color: #f8fbff !important;
+    font-size: 13.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header small,
+  body:has(.workspace .full-map) .vf-territorial-center > header small {
+    margin-top: 4px !important;
+    color: #9fb4c9 !important;
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-toggle,
+  body:has(.workspace .full-map) .vf-territorial-center > header button {
+    display: grid !important;
+    place-items: center !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(126, 179, 220, 0.35) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #f8fbff !important;
+    box-shadow: none !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-district-map-list,
+  body:has(.workspace .full-map) .vf-territorial-body {
+    max-height: calc(min(72dvh, 620px) - 84px) !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vf-map-mobile-launcher {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1248;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 6px;
+    max-width: calc(100% - 76px);
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    border-radius: 16px;
+    background: rgba(7, 30, 55, 0.88);
+    box-shadow: 0 8px 22px rgba(2, 15, 29, 0.22);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .vf-map-mobile-launcher-gestor {
+    max-width: calc(100% - 76px);
+  }
+
+  .vf-map-mobile-launcher-button {
+    display: grid;
+    grid-template-columns: auto;
+    gap: 2px;
+    min-width: 0;
+    padding: 8px 10px 7px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #f8fbff;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .vf-map-mobile-launcher-adm .vf-map-mobile-launcher-button {
+    min-width: 102px;
+  }
+
+  .vf-map-mobile-launcher-button span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 850 11px/1.1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-launcher-button small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #a9bfd2;
+    font: 700 8.5px/1.1 Arial, sans-serif;
+  }
+
+  .vf-map-mobile-launcher-button[aria-pressed="true"] {
+    background: rgba(37, 88, 133, 0.92);
+    box-shadow: inset 0 -2px 0 #d7aa4a;
+  }
+
+  .vf-map-mobile-launcher-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .vf-map-sheet-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: none;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(1, 10, 20, 0.46);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .vf-map-sheet-scrim.vf-map-sheet-scrim-open {
+    display: block;
+  }
+
+  body.vf-map-mobile-sheet-lock {
+    overflow: hidden !important;
+    touch-action: none;
+  }
+
+  /* Controles do mapa: Centralizar e Minha localizacao no mesmo eixo superior. */
+  .full-map.vf-mobile-map-ui .real-map-toolbar {
+    top: 12px !important;
+    left: auto !important;
+    right: 12px !important;
+    width: 44px !important;
+    height: auto !important;
+    display: grid !important;
+    gap: 7px !important;
     pointer-events: none !important;
   }
 
+  .full-map.vf-mobile-map-ui .real-map-toolbar > div {
+    display: none !important;
+  }
+
+  .full-map.vf-mobile-map-ui .real-map-toolbar button {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    border: 1px solid rgba(255, 255, 255, 0.56) !important;
+    border-radius: 12px !important;
+    background: rgba(7, 35, 64, 0.92) !important;
+    color: #f2c45f !important;
+    box-shadow: 0 7px 17px rgba(3, 17, 32, 0.22) !important;
+    pointer-events: auto !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1),
   .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
-    top: 99px !important;
+    display: grid !important;
+    visibility: visible !important;
+  }
+
+  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(3) {
+    display: none !important;
   }
 
   .full-map.vf-mobile-map-ui .leaflet-control-zoom {
-    margin-top: 104px !important;
+    margin-top: 108px !important;
+  }
+
+  /* Antiga camada extra de centralizar nao participa mais do layout map-first. */
+  .full-map .vf-mobile-map-recenter,
+  .vf-mobile-map-tabs {
+    display: none !important;
   }
 }
 
 @media (max-width: 410px) {
-  .vf-mobile-map-tab {
-    min-height: 34px;
-    padding-inline: 7px;
-    font-size: 10px;
+  .vf-map-mobile-launcher {
+    top: 10px;
+    left: 10px;
+    gap: 4px;
+    max-width: calc(100% - 68px);
   }
 
-  .full-map .vf-mobile-map-recenter {
-    top: 50px;
-    right: 8px;
-    width: 40px;
-    height: 40px;
+  .vf-map-mobile-launcher-button {
+    padding: 7px 8px 6px;
   }
 
-  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
-    top: 95px !important;
+  .vf-map-mobile-launcher-adm .vf-map-mobile-launcher-button {
+    min-width: 92px;
+  }
+
+  .full-map.vf-mobile-map-ui .real-map-toolbar {
+    top: 10px !important;
+    right: 10px !important;
   }
 }
 
 @media (max-width: 760px) {
-  html[data-vf-theme="light"] .vf-mobile-map-tabs {
-    border-color: #cadbea;
-    background: rgba(246, 250, 253, 0.94);
-    box-shadow: 0 5px 14px rgba(27, 62, 98, 0.08);
+  html[data-vf-theme="light"] .vf-map-mobile-launcher {
+    border-color: rgba(40, 82, 122, 0.2);
+    background: rgba(255, 255, 255, 0.93);
+    box-shadow: 0 8px 22px rgba(27, 62, 98, 0.14);
   }
 
-  html[data-vf-theme="light"] .vf-mobile-map-tab {
-    color: #5f7489;
-  }
-
-  html[data-vf-theme="light"] .vf-mobile-map-tab[aria-selected="true"] {
-    border-color: #8cb4d5;
-    background: #e8f2fa;
+  html[data-vf-theme="light"] .vf-map-mobile-launcher-button {
     color: #173b67;
+  }
+
+  html[data-vf-theme="light"] .vf-map-mobile-launcher-button small {
+    color: #6d8295;
+  }
+
+  html[data-vf-theme="light"] .vf-map-mobile-launcher-button[aria-pressed="true"] {
+    background: #e8f2fa;
     box-shadow: inset 0 -2px 0 #b98125;
   }
 
-  html[data-vf-theme="light"] .full-map .vf-mobile-map-recenter {
-    border-color: #c5d8e8;
-    background: rgba(255, 255, 255, 0.97);
-    color: #93651d;
-    box-shadow: 0 7px 16px rgba(27, 62, 98, 0.16);
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
+  html[data-vf-theme="light"] body:has(.workspace .full-map) .vf-territorial-center {
+    border-color: #cbddea !important;
+    background: linear-gradient(160deg, #ffffff, #eef5fb) !important;
+    color: #173b67 !important;
+    box-shadow: 0 24px 60px rgba(22, 54, 87, 0.24) !important;
+  }
+
+  html[data-vf-theme="light"] .full-map.vf-mobile-map-ui .real-map-toolbar button {
+    border-color: #d4e0eb !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #93651d !important;
   }
 }
