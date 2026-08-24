@@ -115,7 +115,11 @@ export async function GET(request: Request) {
   if ("error" in resolved) return resolved.error;
   const { scope, emails, isAdmOrGestor } = resolved;
 
-  const mode = url.searchParams.get("mode") ?? "page";
+  // Mantém compatibilidade com consumidores antigos que ainda usam ?summary=1.
+  // Sem isso, essa chamada cai na paginação e dispara um count exato desnecessário.
+  const mode =
+    url.searchParams.get("mode") ??
+    (url.searchParams.get("summary") === "1" ? "summary" : "page");
 
   try {
     if (mode === "summary") {
@@ -300,9 +304,15 @@ export async function GET(request: Request) {
       queryText || profile === "Eleitor" || profile === "Liderança",
     );
 
+    // Na abertura normal, a página de 25/50 contatos não precisa recalcular o
+    // count exato junto da leitura das linhas. O RPC abaixo foi criado para esse
+    // total de paginação e usa o mesmo escopo autorizado do dashboard.
     let query = account.supabase
       .from("vf_owned_records")
-      .select("id,owner_email,payload,created_at,updated_at", { count: "exact" })
+      .select(
+        "id,owner_email,payload,created_at,updated_at",
+        hasFilters ? { count: "exact" } : undefined,
+      )
       .eq("kind", "contact")
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
@@ -328,10 +338,41 @@ export async function GET(request: Request) {
       query = query.or(terms.join(","));
     }
 
-    const { data, count, error } = await query;
-    if (error) throw new Error(error.message);
+    let data: ContactRow[] = [];
+    let total = 0;
 
-    const total = count ?? (Array.isArray(data) ? data.length : 0);
+    if (hasFilters) {
+      const { data: rows, count, error } = await query;
+      if (error) throw new Error(error.message);
+      data = ((rows ?? []) as ContactRow[]);
+      total = count ?? data.length;
+    } else {
+      const ownerEmails = scope === "all" ? emails : [scope];
+      const [rowsResult, totalResult] = await Promise.all([
+        query,
+        account.supabase.rpc("vf_contact_scope_total", {
+          p_owner_emails: ownerEmails,
+        }),
+      ]);
+
+      if (rowsResult.error) throw new Error(rowsResult.error.message);
+      data = ((rowsResult.data ?? []) as ContactRow[]);
+
+      const fastTotal = Number(totalResult.data);
+      if (!totalResult.error && Number.isFinite(fastTotal)) {
+        total = fastTotal;
+      } else {
+        // Compatibilidade defensiva caso o banco ainda não tenha o RPC aplicado.
+        let countQuery = account.supabase
+          .from("vf_owned_records")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "contact");
+        countQuery = applyScope(countQuery, scope, emails, isAdmOrGestor);
+        const { count: fallbackCount, error: fallbackError } = await countQuery;
+        if (fallbackError) throw new Error(fallbackError.message);
+        total = fallbackCount ?? data.length;
+      }
+    }
 
     return Response.json(
       {
@@ -340,7 +381,7 @@ export async function GET(request: Request) {
         pageSize,
         total,
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
-        contacts: ((data ?? []) as ContactRow[]).map(mapContact),
+        contacts: data.map(mapContact),
       },
       {
         headers: {
