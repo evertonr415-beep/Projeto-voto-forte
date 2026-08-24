@@ -1,0 +1,227 @@
+/* Organização final do Mapa Eleitoral no mobile.
+   ADM recebe duas abas (Contatos/Pendências); perfis sem pendências recebem
+   somente Contatos por bairro, sem reservar espaço para uma aba inexistente. */
+@media (max-width: 760px) {
+  body:has(.workspace .full-map) .workspace > .page-head {
+    margin-bottom: 9px !important;
+    padding: 12px 13px 11px !important;
+    border-radius: 16px !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .page-head span {
+    font-size: 7.5px !important;
+    letter-spacing: 1.45px !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .page-head h2 {
+    margin: 4px 0 5px !important;
+    font-size: clamp(20px, 5.8vw, 24px) !important;
+    line-height: 1.06 !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .page-head p {
+    font-size: 10px !important;
+    line-height: 1.32 !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .page-head > button,
+  body:has(.workspace .full-map) .workspace > .page-head > .vf-mobile-page-contacts-toggle {
+    min-width: 96px !important;
+    min-height: 38px !important;
+    padding-inline: 10px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+  }
+
+  .vf-mobile-map-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    margin: 0 0 8px;
+    padding: 4px;
+    border: 1px solid rgba(91, 165, 224, 0.22);
+    border-radius: 14px;
+    background: rgba(5, 24, 44, 0.72);
+    box-shadow: 0 7px 18px rgba(2, 12, 25, 0.14);
+  }
+
+  .vf-mobile-map-tabs[data-single="true"] {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-mobile-map-tab {
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: rgba(211, 226, 240, 0.72);
+    font: 800 11px/1.15 Arial, sans-serif;
+    letter-spacing: -0.1px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .vf-mobile-map-tab[aria-selected="true"] {
+    border-color: rgba(244, 202, 108, 0.55);
+    background: linear-gradient(135deg, #dcae49, #b98125);
+    color: #fffaf0;
+    box-shadow: 0 5px 13px rgba(159, 104, 25, 0.23);
+  }
+
+  .vf-mobile-map-tab:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .vf-mobile-map-section-hidden {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host,
+  body:has(.workspace .full-map) .vf-territorial-center-host {
+    margin: 0 0 9px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control,
+  body:has(.workspace .full-map) .vf-territorial-center {
+    border-radius: 15px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header {
+    min-height: 58px !important;
+    padding: 9px 11px 9px 13px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header strong {
+    font-size: 13px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-control header small {
+    margin-top: 4px !important;
+    font-size: 9px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-district-host .vf-district-map-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    flex-basis: 40px !important;
+    border-radius: 11px !important;
+    font-size: 19px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-territorial-center > header {
+    min-height: 64px !important;
+    padding: 10px 11px 10px 13px !important;
+    gap: 9px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-territorial-center > header strong {
+    font-size: 13px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-territorial-center > header small {
+    margin-top: 4px !important;
+    font-size: 9px !important;
+    -webkit-line-clamp: 1 !important;
+  }
+
+  body:has(.workspace .full-map) .vf-territorial-center > header button {
+    min-width: 70px !important;
+    min-height: 38px !important;
+    padding-inline: 10px !important;
+    border-radius: 11px !important;
+    font-size: 10.5px !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .full-map {
+    position: relative !important;
+    margin-top: 0 !important;
+    border-radius: 16px !important;
+  }
+
+  .full-map .vf-mobile-map-recenter {
+    position: absolute;
+    right: 12px;
+    bottom: 14px;
+    z-index: 1250;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border: 1px solid rgba(244, 202, 108, 0.72);
+    border-radius: 50%;
+    background: rgba(7, 36, 67, 0.96);
+    color: #f0bd52;
+    box-shadow: 0 8px 20px rgba(3, 17, 32, 0.28);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .full-map .vf-mobile-map-recenter span {
+    display: block;
+    transform: translateY(-1px);
+    font: 900 25px/1 Arial, sans-serif;
+  }
+
+  .full-map .vf-mobile-map-recenter:active {
+    transform: scale(0.96);
+  }
+
+  /* Os controles técnicos originais continuam funcionais como fonte da ação,
+     mas ficam fora do caminho visual; o botão flutuante chama Centralizar. */
+  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(1) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .full-map.vf-mobile-map-ui .real-map-toolbar button:nth-of-type(2) {
+    top: 44px !important;
+  }
+
+  .full-map.vf-mobile-map-ui .leaflet-control-zoom {
+    margin-top: 58px !important;
+  }
+}
+
+@media (max-width: 410px) {
+  .vf-mobile-map-tab {
+    min-height: 40px;
+    padding-inline: 7px;
+    font-size: 10.5px;
+  }
+
+  .full-map .vf-mobile-map-recenter {
+    right: 10px;
+    bottom: 12px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 760px) {
+  html[data-vf-theme="light"] .vf-mobile-map-tabs {
+    border-color: #cadbea;
+    background: rgba(246, 250, 253, 0.94);
+    box-shadow: 0 6px 16px rgba(27, 62, 98, 0.08);
+  }
+
+  html[data-vf-theme="light"] .vf-mobile-map-tab {
+    color: #5f7489;
+  }
+
+  html[data-vf-theme="light"] .vf-mobile-map-tab[aria-selected="true"] {
+    color: #102b49;
+  }
+
+  html[data-vf-theme="light"] .full-map .vf-mobile-map-recenter {
+    border-color: #d9a63d;
+    background: rgba(255, 255, 255, 0.97);
+    color: #93651d;
+    box-shadow: 0 8px 18px rgba(27, 62, 98, 0.18);
+  }
+}
