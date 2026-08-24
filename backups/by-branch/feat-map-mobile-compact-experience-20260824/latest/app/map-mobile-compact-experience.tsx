@@ -84,7 +84,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         districtToggle.setAttribute("aria-expanded", districtsOpen ? "true" : "false");
         districtToggle.setAttribute(
           "aria-label",
-          districtsOpen ? "Recolher contatos por bairro" : "Abrir contatos por bairro",
+          districtsOpen ? "Fechar contatos por bairro" : "Abrir contatos por bairro",
         );
       }
 
@@ -173,6 +173,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       if (!shell?.isConnected) {
         shell = document.createElement("nav");
         shell.className = `vf-map-mobile-tools${isAdm ? " is-adm" : ""}`;
+        shell.dataset.vfMapRole = isAdm ? "adm" : "gestor";
         shell.setAttribute("aria-label", "Ferramentas do mapa eleitoral");
 
         shell.append(
@@ -214,17 +215,30 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
 
       if (!districtHost.dataset.vfCompactBound) {
         districtHost.dataset.vfCompactBound = "true";
-        const handleDistrictSelection = (event: Event) => {
+
+        const handleDistrictInteraction = (event: Event) => {
           const target = event.target instanceof Element ? event.target : null;
-          const row = target?.closest<HTMLButtonElement>(".vf-district-map-row");
+          if (!target) return;
+
+          const toggle = target.closest<HTMLButtonElement>(".vf-district-map-toggle");
+          if (toggle) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            if (activePanel === "districts") setPanel(null);
+            return;
+          }
+
+          const row = target.closest<HTMLButtonElement>(".vf-district-map-row");
           if (!row || row.disabled) return;
           window.setTimeout(() => {
             if (activePanel === "districts") setPanel(null);
           }, 0);
         };
-        districtHost.addEventListener("click", handleDistrictSelection);
+
+        districtHost.addEventListener("click", handleDistrictInteraction, true);
         cleanupFns.push(() => {
-          districtHost.removeEventListener("click", handleDistrictSelection);
+          districtHost.removeEventListener("click", handleDistrictInteraction, true);
           delete districtHost.dataset.vfCompactBound;
         });
       }
