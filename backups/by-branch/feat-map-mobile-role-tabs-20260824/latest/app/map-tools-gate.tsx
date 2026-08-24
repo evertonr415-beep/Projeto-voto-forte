@@ -5,6 +5,7 @@ import MapCityMarkers from "./map-city-markers";
 import MapContactLayer from "./map-contact-layer";
 import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
+import MapMobileRoleLayout from "./map-mobile-role-layout";
 import TerritorialPendingCenter from "./territorial-pending-center";
 import { apiFetch } from "./supabase-client";
 
@@ -53,6 +54,7 @@ export default function MapToolsGate() {
       {protectedAccessReady && <MapCityMarkers />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
+      {protectedAccessReady && <MapMobileRoleLayout isAdm={isAdm} />}
       {protectedAccessReady && isAdm && <TerritorialPendingCenter />}
     </>
   );
