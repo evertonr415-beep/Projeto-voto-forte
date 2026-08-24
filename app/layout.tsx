@@ -44,6 +44,7 @@ import "./account-session-security.css";
 import "./sidebar-scroll-fix.css";
 import "./contact-export-history.css";
 import "./municipality-multitenant.css";
+import "./municipality-popover-layer-fix.css";
 import "./municipality-management.css";
 import "./gestor-access-ui.css";
 import "./runtime-version-guard.css";
