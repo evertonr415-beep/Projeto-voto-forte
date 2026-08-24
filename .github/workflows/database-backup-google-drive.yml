@@ -1,0 +1,147 @@
+name: Database backup to Google Drive
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:30 UTC = 03:30 America/Sao_Paulo (BRT)
+    - cron: '30 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voto-forte-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.GDRIVE_BACKUP_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      BACKUP_DIR: /tmp/voto-forte-db-backup
+      DRIVE_TARGET: gdrive:Voto Forte/Backups/PostgreSQL
+      RETENTION_DAYS: '30'
+
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo 'Missing secret: SUPABASE_DB_URL'; exit 1; }
+          test -n "$RCLONE_CONFIG" || { echo 'Missing secret: RCLONE_CONFIG'; exit 1; }
+
+      - name: Install PostgreSQL client and rclone
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client rclone
+          pg_dump --version
+          pg_restore --version
+          rclone version
+
+      - name: Configure Google Drive remote
+        shell: bash
+        env:
+          RCLONE_CONFIG_CONTENT: ${{ secrets.RCLONE_CONFIG }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/rclone"
+          printf '%s' "$RCLONE_CONFIG_CONTENT" > "$HOME/.config/rclone/rclone.conf"
+          chmod 600 "$HOME/.config/rclone/rclone.conf"
+          rclone listremotes | grep -qx 'gdrive:'
+
+      - name: Create PostgreSQL dump
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$BACKUP_DIR"
+          TS="$(date -u '+%Y-%m-%dT%H-%M-%SZ')"
+          FILE="votoforte-postgres-${TS}.dump"
+          echo "BACKUP_FILE=$FILE" >> "$GITHUB_ENV"
+
+          pg_dump \
+            --dbname="$SUPABASE_DB_URL" \
+            --format=custom \
+            --compress=9 \
+            --no-owner \
+            --no-privileges \
+            --file="$BACKUP_DIR/$FILE"
+
+      - name: Validate dump integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$BACKUP_DIR/$BACKUP_FILE"
+          pg_restore --list "$BACKUP_DIR/$BACKUP_FILE" > "$BACKUP_DIR/$BACKUP_FILE.contents.txt"
+          test -s "$BACKUP_DIR/$BACKUP_FILE.contents.txt"
+          sha256sum "$BACKUP_DIR/$BACKUP_FILE" > "$BACKUP_DIR/$BACKUP_FILE.sha256"
+
+          SIZE_BYTES="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
+          echo "Backup validated: $BACKUP_FILE ($SIZE_BYTES bytes)"
+
+      - name: Upload backup to Google Drive
+        shell: bash
+        run: |
+          set -euo pipefail
+          rclone mkdir "$DRIVE_TARGET"
+          rclone copyto \
+            "$BACKUP_DIR/$BACKUP_FILE" \
+            "$DRIVE_TARGET/$BACKUP_FILE" \
+            --retries 5 \
+            --low-level-retries 10 \
+            --checkers 4 \
+            --transfers 1
+
+          rclone copyto \
+            "$BACKUP_DIR/$BACKUP_FILE.sha256" \
+            "$DRIVE_TARGET/$BACKUP_FILE.sha256" \
+            --retries 5
+
+      - name: Verify uploaded backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_SIZE="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
+          REMOTE_SIZE="$(rclone size "$DRIVE_TARGET/$BACKUP_FILE" --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])')"
+
+          test "$LOCAL_SIZE" = "$REMOTE_SIZE" || {
+            echo "Upload verification failed: local=$LOCAL_SIZE remote=$REMOTE_SIZE"
+            exit 1
+          }
+
+          echo "Google Drive upload verified: $BACKUP_FILE ($REMOTE_SIZE bytes)"
+
+      - name: Apply 30-day retention
+        shell: bash
+        run: |
+          set -euo pipefail
+          rclone delete "$DRIVE_TARGET" \
+            --min-age "${RETENTION_DAYS}d" \
+            --include 'votoforte-postgres-*.dump' \
+            --include 'votoforte-postgres-*.dump.sha256' \
+            --rmdirs || true
+
+      - name: Write backup summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Voto Forte — Database Backup'
+            echo
+            echo "- Run: ${{ github.run_id }}"
+            echo "- Time (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo "- Destination: Google Drive / Voto Forte / Backups / PostgreSQL"
+            if [ -n "${BACKUP_FILE:-}" ] && [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
+              echo "- File: $BACKUP_FILE"
+              echo "- Size: $(du -h "$BACKUP_DIR/$BACKUP_FILE" | cut -f1)"
+              echo '- Local dump validation: OK'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
