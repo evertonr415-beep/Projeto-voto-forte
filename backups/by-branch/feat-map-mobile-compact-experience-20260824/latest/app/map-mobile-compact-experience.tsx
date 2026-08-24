@@ -3,22 +3,26 @@
 import { useLayoutEffect } from "react";
 
 const MEDIA = "(max-width: 760px)";
+type Panel = "contacts" | "districts" | "pending" | null;
 
-function closestPendingHost(fullMap: HTMLElement) {
-  const parent = fullMap.parentElement;
+function closestPendingHost(fullMap: HTMLElement | null) {
+  const parent = fullMap?.parentElement;
   if (!parent) return null;
-  return Array.from(parent.children).find(
-    (node) =>
-      node instanceof HTMLElement &&
-      node.classList.contains("vf-territorial-center-host"),
-  ) as HTMLElement | undefined | null;
+  return (
+    (Array.from(parent.children).find(
+      (node) =>
+        node instanceof HTMLElement &&
+        node.classList.contains("vf-territorial-center-host"),
+    ) as HTMLElement | undefined) ?? null
+  );
 }
 
-function makeTool(label: string, icon: string, action: string) {
+function makeTool(label: string, icon: string, action: Exclude<Panel, null>) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "vf-map-mobile-tool";
   button.dataset.vfMapMobileAction = action;
+  button.setAttribute("aria-pressed", "false");
   button.innerHTML = `<span aria-hidden="true">${icon}</span><b>${label}</b>`;
   return button;
 }
@@ -35,6 +39,70 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
     let currentPageHead: HTMLElement | null = null;
     let currentContactsHost: HTMLElement | null = null;
     let currentDistrictHost: HTMLElement | null = null;
+    let activePanel: Panel = null;
+
+    const applyPanelState = () => {
+      if (!currentContactsHost || !currentDistrictHost || !currentMap) return;
+      const pending = closestPendingHost(currentMap);
+
+      const pairs: Array<[HTMLElement | null, boolean]> = [
+        [currentContactsHost, activePanel === "contacts"],
+        [currentDistrictHost, activePanel === "districts"],
+        [pending, activePanel === "pending"],
+      ];
+
+      pairs.forEach(([host, open]) => {
+        if (!host) return;
+        host.classList.toggle("vf-map-mobile-panel-open", open);
+        host.classList.toggle("vf-map-mobile-panel-hidden", !open);
+      });
+
+      shell
+        ?.querySelectorAll<HTMLButtonElement>("[data-vf-map-mobile-action]")
+        .forEach((button) => {
+          const action = button.dataset.vfMapMobileAction;
+          const active = action === activePanel;
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+          if (action === "pending") button.disabled = isAdm && !pending;
+        });
+
+      currentContactsHost.classList.toggle(
+        "vf-mobile-contacts-open",
+        activePanel === "contacts",
+      );
+
+      const districtPanel = currentDistrictHost.querySelector<HTMLElement>(
+        ".vf-district-map-control",
+      );
+      const districtToggle = currentDistrictHost.querySelector<HTMLButtonElement>(
+        ".vf-district-map-toggle",
+      );
+      const districtsOpen = activePanel === "districts";
+      if (districtPanel) districtPanel.dataset.collapsed = districtsOpen ? "false" : "true";
+      if (districtToggle) {
+        districtToggle.textContent = districtsOpen ? "−" : "+";
+        districtToggle.setAttribute("aria-expanded", districtsOpen ? "true" : "false");
+        districtToggle.setAttribute(
+          "aria-label",
+          districtsOpen ? "Recolher contatos por bairro" : "Abrir contatos por bairro",
+        );
+      }
+
+      if (pending) {
+        const pendingToggle = pending.querySelector<HTMLButtonElement>("[data-role='toggle']");
+        const pendingExpanded = pendingToggle?.getAttribute("aria-expanded") === "true";
+        if (activePanel === "pending" && pendingToggle && !pendingExpanded) {
+          pendingToggle.click();
+        } else if (activePanel !== "pending" && pendingToggle && pendingExpanded) {
+          pendingToggle.click();
+        }
+      }
+    };
+
+    const setPanel = (panel: Panel) => {
+      activePanel = panel;
+      applyPanelState();
+    };
 
     const teardown = () => {
       cleanupFns.forEach((fn) => fn());
@@ -47,62 +115,25 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       recenter = null;
 
       currentPageHead?.classList.remove("vf-map-mobile-head-hidden");
-      currentContactsHost?.classList.remove("vf-map-mobile-panel-open", "vf-map-mobile-panel-hidden");
-      currentDistrictHost?.classList.remove("vf-map-mobile-panel-open", "vf-map-mobile-panel-hidden");
-      closestPendingHost(currentMap as HTMLElement)?.classList.remove(
+      currentContactsHost?.classList.remove(
+        "vf-map-mobile-panel-open",
+        "vf-map-mobile-panel-hidden",
+        "vf-mobile-contacts-open",
+      );
+      currentDistrictHost?.classList.remove(
+        "vf-map-mobile-panel-open",
+        "vf-map-mobile-panel-hidden",
+      );
+      closestPendingHost(currentMap)?.classList.remove(
         "vf-map-mobile-panel-open",
         "vf-map-mobile-panel-hidden",
       );
 
+      activePanel = null;
       currentMap = null;
       currentPageHead = null;
       currentContactsHost = null;
       currentDistrictHost = null;
-    };
-
-    const setPanel = (panel: "contacts" | "districts" | "pending" | null) => {
-      if (!currentContactsHost || !currentDistrictHost || !currentMap) return;
-      const pending = closestPendingHost(currentMap);
-
-      const pairs: Array<[HTMLElement | null | undefined, boolean]> = [
-        [currentContactsHost, panel === "contacts"],
-        [currentDistrictHost, panel === "districts"],
-        [pending, panel === "pending"],
-      ];
-
-      pairs.forEach(([host, open]) => {
-        if (!host) return;
-        host.classList.toggle("vf-map-mobile-panel-open", open);
-        host.classList.toggle("vf-map-mobile-panel-hidden", !open);
-      });
-
-      shell
-        ?.querySelectorAll<HTMLButtonElement>("[data-vf-map-mobile-action]")
-        .forEach((button) => {
-          const active = button.dataset.vfMapMobileAction === panel;
-          button.setAttribute("aria-pressed", active ? "true" : "false");
-        });
-
-      if (panel === "contacts") {
-        currentContactsHost.classList.add("vf-mobile-contacts-open");
-      } else {
-        currentContactsHost.classList.remove("vf-mobile-contacts-open");
-      }
-
-      if (panel === "districts") {
-        const panelNode = currentDistrictHost.querySelector<HTMLElement>(".vf-district-map-control");
-        const toggle = currentDistrictHost.querySelector<HTMLButtonElement>(".vf-district-map-toggle");
-        if (panelNode) panelNode.dataset.collapsed = "false";
-        if (toggle) {
-          toggle.textContent = "−";
-          toggle.setAttribute("aria-expanded", "true");
-        }
-      }
-
-      if (panel === "pending" && pending) {
-        const toggle = pending.querySelector<HTMLButtonElement>("[data-role='toggle']");
-        if (toggle?.getAttribute("aria-expanded") !== "true") toggle?.click();
-      }
     };
 
     const mount = () => {
@@ -116,6 +147,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       const contactsHost = document.querySelector<HTMLElement>(".vf-mobile-contacts-host");
       const districtHost = document.querySelector<HTMLElement>(".vf-mobile-district-host");
       const topbarPageId = document.querySelector<HTMLElement>(".app-shell .topbar .page-id");
+      const mobileMenu = topbarPageId?.querySelector<HTMLElement>(".mobile-menu");
 
       if (!fullMap || !pageHead || !contactsHost || !districtHost || !topbarPageId) return;
 
@@ -131,8 +163,11 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         title = document.createElement("div");
         title.className = "vf-map-mobile-title";
         title.setAttribute("aria-label", "Mapa eleitoral de Arapongas");
-        title.innerHTML = "<strong>Mapa eleitoral</strong><small>Arapongas</small>";
-        topbarPageId.prepend(title);
+        title.innerHTML = "<strong>Mapa eleitoral</strong>";
+        if (mobileMenu) mobileMenu.insertAdjacentElement("afterend", title);
+        else topbarPageId.prepend(title);
+      } else if (mobileMenu && title.previousElementSibling !== mobileMenu) {
+        mobileMenu.insertAdjacentElement("afterend", title);
       }
 
       if (!shell?.isConnected) {
@@ -140,24 +175,24 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         shell.className = `vf-map-mobile-tools${isAdm ? " is-adm" : ""}`;
         shell.setAttribute("aria-label", "Ferramentas do mapa eleitoral");
 
-        const contactsButton = makeTool("Contatos", "👥", "contacts");
-        const districtsButton = makeTool("Bairros", "⌖", "districts");
-        shell.append(contactsButton, districtsButton);
+        shell.append(
+          makeTool("Contatos", "👥", "contacts"),
+          makeTool("Bairros", "⌖", "districts"),
+        );
+        if (isAdm) shell.append(makeTool("Pendências", "!", "pending"));
 
-        if (isAdm) shell.append(makeTool("Pendências", "⚠", "pending"));
+        contactsHost.insertAdjacentElement("beforebegin", shell);
 
-        const mountPoint = contactsHost;
-        mountPoint.insertAdjacentElement("beforebegin", shell);
-
-        shell.querySelectorAll<HTMLButtonElement>("[data-vf-map-mobile-action]").forEach((button) => {
-          const handler = () => {
-            const action = button.dataset.vfMapMobileAction as "contacts" | "districts" | "pending";
-            const isActive = button.getAttribute("aria-pressed") === "true";
-            setPanel(isActive ? null : action);
-          };
-          button.addEventListener("click", handler);
-          cleanupFns.push(() => button.removeEventListener("click", handler));
-        });
+        shell
+          .querySelectorAll<HTMLButtonElement>("[data-vf-map-mobile-action]")
+          .forEach((button) => {
+            const handler = () => {
+              const action = button.dataset.vfMapMobileAction as Exclude<Panel, null>;
+              setPanel(activePanel === action ? null : action);
+            };
+            button.addEventListener("click", handler);
+            cleanupFns.push(() => button.removeEventListener("click", handler));
+          });
       }
 
       if (!recenter?.isConnected) {
@@ -177,7 +212,59 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
         fullMap.appendChild(recenter);
       }
 
-      setPanel(null);
+      if (!districtHost.dataset.vfCompactBound) {
+        districtHost.dataset.vfCompactBound = "true";
+        const handleDistrictSelection = (event: Event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          const row = target?.closest<HTMLButtonElement>(".vf-district-map-row");
+          if (!row || row.disabled) return;
+          window.setTimeout(() => {
+            if (activePanel === "districts") setPanel(null);
+          }, 0);
+        };
+        districtHost.addEventListener("click", handleDistrictSelection);
+        cleanupFns.push(() => {
+          districtHost.removeEventListener("click", handleDistrictSelection);
+          delete districtHost.dataset.vfCompactBound;
+        });
+      }
+
+      if (!contactsHost.dataset.vfCompactBound) {
+        contactsHost.dataset.vfCompactBound = "true";
+        const handleContactProfile = (event: Event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          const profile = target?.closest<HTMLButtonElement>("[data-profile]");
+          if (!profile) return;
+          window.setTimeout(() => {
+            if (activePanel === "contacts") setPanel(null);
+          }, 120);
+        };
+        contactsHost.addEventListener("click", handleContactProfile);
+        cleanupFns.push(() => {
+          contactsHost.removeEventListener("click", handleContactProfile);
+          delete contactsHost.dataset.vfCompactBound;
+        });
+      }
+
+      const pending = closestPendingHost(fullMap);
+      if (pending && !pending.dataset.vfCompactBound) {
+        pending.dataset.vfCompactBound = "true";
+        const handlePendingAction = (event: Event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          const capture = target?.closest<HTMLButtonElement>("button[data-role='capture']");
+          if (!capture) return;
+          window.setTimeout(() => {
+            if (pending.querySelector(".vf-territorial-capture")) setPanel(null);
+          }, 0);
+        };
+        pending.addEventListener("click", handlePendingAction);
+        cleanupFns.push(() => {
+          pending.removeEventListener("click", handlePendingAction);
+          delete pending.dataset.vfCompactBound;
+        });
+      }
+
+      applyPanelState();
     };
 
     const schedule = () => {
@@ -188,11 +275,16 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       });
     };
 
+    const handleDistrictSelected = () => {
+      if (activePanel === "districts") setPanel(null);
+    };
+
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });
     media.addEventListener("change", schedule);
     window.addEventListener("pageshow", schedule);
     window.addEventListener("voto-forte:electoral-map-ready", schedule);
+    window.addEventListener("voto-forte:district-selected", handleDistrictSelected);
     schedule();
 
     return () => {
@@ -200,6 +292,7 @@ export default function MapMobileCompactExperience({ isAdm }: { isAdm: boolean }
       media.removeEventListener("change", schedule);
       window.removeEventListener("pageshow", schedule);
       window.removeEventListener("voto-forte:electoral-map-ready", schedule);
+      window.removeEventListener("voto-forte:district-selected", handleDistrictSelected);
       if (frame) cancelAnimationFrame(frame);
       teardown();
     };
