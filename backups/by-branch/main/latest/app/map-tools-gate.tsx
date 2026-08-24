@@ -11,17 +11,20 @@ import { apiFetch } from "./supabase-client";
 
 export default function MapToolsGate() {
   const [protectedAccessReady, setProtectedAccessReady] = useState(false);
+  const [mapPresent, setMapPresent] = useState(false);
   const [isAdm, setIsAdm] = useState(false);
 
   useEffect(() => {
-    const syncProtectedAccess = () => {
+    const syncRuntimeState = () => {
       const ready = !document.querySelector(".auth-page");
+      const hasMap = Boolean(document.querySelector(".workspace .full-map"));
       setProtectedAccessReady((current) => (current === ready ? current : ready));
+      setMapPresent((current) => (current === hasMap ? current : hasMap));
     };
 
-    const observer = new MutationObserver(syncProtectedAccess);
+    const observer = new MutationObserver(syncRuntimeState);
     observer.observe(document.body, { childList: true, subtree: true });
-    syncProtectedAccess();
+    syncRuntimeState();
 
     return () => observer.disconnect();
   }, []);
@@ -54,7 +57,7 @@ export default function MapToolsGate() {
       {protectedAccessReady && <MapCityMarkers />}
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
-      {protectedAccessReady && <MapMobileCompactExperience isAdm={isAdm} />}
+      {protectedAccessReady && mapPresent && <MapMobileCompactExperience isAdm={isAdm} />}
       {protectedAccessReady && isAdm && <TerritorialPendingCenter />}
     </>
   );
