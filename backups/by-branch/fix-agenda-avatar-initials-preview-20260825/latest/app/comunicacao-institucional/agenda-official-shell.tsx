@@ -44,6 +44,13 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function safeInitials(value: string) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9À-ÖØ-Þ]/g, "")
+    .slice(0, 4);
+}
+
 function roleLabel(role: string) {
   const normalized = role.toLowerCase();
   if (normalized === "master") return "Administrador Master";
@@ -54,9 +61,11 @@ function roleLabel(role: string) {
 export default function AgendaOfficialShell({
   children,
   initialUser,
+  initialInitials = "",
 }: {
   children: React.ReactNode;
   initialUser?: SessionUser;
+  initialInitials?: string;
 }) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -102,6 +111,7 @@ export default function AgendaOfficialShell({
   const isAdmin = ["master", "admin"].includes(user.role.toLowerCase());
   const profileTitle = user.name || "Perfil";
   const profileAriaLabel = user.name ? `Perfil de ${user.name}` : "Perfil";
+  const profileInitials = initials(user.name) || safeInitials(initialInitials);
 
   return (
     <div className={`app-shell vf-agenda-official-shell ${collapsed ? "collapsed" : ""}`}>
@@ -265,7 +275,7 @@ export default function AgendaOfficialShell({
               title={profileTitle}
               aria-label={profileAriaLabel}
             >
-              <span>{initials(user.name)}</span>
+              <span>{profileInitials}</span>
               <div>
                 <b>{user.name}</b>
                 <small>{roleLabel(user.role)}</small>
