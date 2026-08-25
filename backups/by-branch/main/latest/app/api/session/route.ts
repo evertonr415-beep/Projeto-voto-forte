@@ -6,6 +6,7 @@ const LAST_SEEN_WRITE_INTERVAL_MS = 5 * 60 * 1000;
 const PRIVATE_NO_STORE_HEADERS = {
   "Cache-Control": "private, no-store, max-age=0",
 };
+const PROFILE_INITIALS_COOKIE = "vf_profile_initials";
 
 type SessionAccessState =
   | "active"
@@ -38,6 +39,28 @@ function jsonResponse(body: unknown, init: ResponseInit = {}) {
       ...(init.headers || {}),
     },
   });
+}
+
+function profileInitials(name: unknown) {
+  return String(name || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .replace(/[^A-Z0-9À-ÖØ-Þ]/g, "")
+    .slice(0, 4);
+}
+
+function attachProfileInitialsCookie(response: Response, name: unknown) {
+  const value = profileInitials(name);
+  if (!value) return response;
+  response.headers.append(
+    "Set-Cookie",
+    `${PROFILE_INITIALS_COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax; Secure`,
+  );
+  return response;
 }
 
 async function getAuthenticatedContext() {
@@ -145,15 +168,18 @@ async function activeSessionResponse(
     });
   }
 
-  return jsonResponse({
-    access,
-    user: {
-      email: account.email,
-      name: account.name,
-      role: account.accessRole === "gestor" ? "master" : account.role,
-      accessRole: account.accessRole,
-    },
-  });
+  return attachProfileInitialsCookie(
+    jsonResponse({
+      access,
+      user: {
+        email: account.email,
+        name: account.name,
+        role: account.accessRole === "gestor" ? "master" : account.role,
+        accessRole: account.accessRole,
+      },
+    }),
+    account.name,
+  );
 }
 
 export async function GET() {
