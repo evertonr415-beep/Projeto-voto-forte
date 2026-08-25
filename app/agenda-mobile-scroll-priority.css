@@ -34,24 +34,59 @@
   html body .vf-agenda-official-shell .ae-root .ae-shell > .ae-modal .ae-modal-card {
     width: min(100%, 520px) !important;
     max-width: 520px !important;
-    max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom))) !important;
+    max-height: calc(100dvh - max(22px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))) !important;
     margin: 0 auto !important;
     border-radius: 22px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
     pointer-events: auto !important;
   }
 
-  /* O formulario mobile deve seguir uma unica coluna, como o restante do sistema. */
-  html body .vf-agenda-official-shell .ae-modal .ae-modal-body {
-    padding: 16px 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  /* Cabecalho fixo do bottom sheet: permanece visivel durante o preenchimento. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head {
+    position: relative !important;
+    z-index: 4 !important;
+    flex: 0 0 auto !important;
+    padding: 14px 16px !important;
+    min-height: 62px !important;
+    background: var(--ae-card-solid) !important;
+    border-bottom: 1px solid var(--ae-line) !important;
   }
 
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head h2 {
+    margin: 0 !important;
+    font-size: 1.08rem !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head .ae-mini-btn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  /* Corpo rolavel independente para o teclado do iPhone nao esconder o campo ativo. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-top: 12px !important;
+    scroll-padding-bottom: 92px !important;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Formulario em uma coluna e com densidade visual mais proxima do app. */
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 14px !important;
+    gap: 11px !important;
     width: 100% !important;
   }
 
@@ -62,6 +97,12 @@
     min-width: 0 !important;
   }
 
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label {
+    margin-bottom: 5px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+  }
+
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid .ae-field,
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid input:not([type="checkbox"]),
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid select,
@@ -69,10 +110,27 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
+    font-size: 16px !important;
+    border-radius: 12px !important;
   }
 
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input:not([type="checkbox"]),
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid select {
+    min-height: 46px !important;
+    height: 46px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid textarea {
+    min-height: 104px !important;
+    resize: vertical !important;
+  }
+
+  /* Linha de destaque para compromisso importante. */
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid > div:has(input[type="checkbox"]) {
-    padding-top: 0 !important;
+    padding: 0 !important;
+    margin-top: 1px !important;
   }
 
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid label:has(input[type="checkbox"]) {
@@ -80,28 +138,55 @@
     align-items: center !important;
     gap: 10px !important;
     width: 100% !important;
-    min-height: 44px !important;
+    min-height: 48px !important;
+    padding: 10px 12px !important;
     margin: 0 !important;
+    border: 1px solid var(--ae-line) !important;
+    border-radius: 12px !important;
+    background: rgba(56, 189, 248, 0.045) !important;
+    color: var(--ae-text) !important;
   }
 
   html body .vf-agenda-official-shell .ae-modal .ae-form-grid input[type="checkbox"] {
-    width: 20px !important;
-    height: 20px !important;
-    flex: 0 0 20px !important;
+    width: 21px !important;
+    height: 21px !important;
+    flex: 0 0 21px !important;
     margin: 0 !important;
+    accent-color: var(--ae-accent) !important;
   }
 
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label:has(input[type="checkbox"]) span {
+    font-size: 0.86rem !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Rodape de acoes sempre acessivel, inclusive com o teclado aberto. */
   html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child {
+    position: sticky !important;
+    bottom: calc(-14px - env(safe-area-inset-bottom)) !important;
+    z-index: 5 !important;
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr) !important;
     gap: 10px !important;
-    width: 100% !important;
+    width: calc(100% + 32px) !important;
+    margin: 14px -16px calc(-14px - env(safe-area-inset-bottom)) !important;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) !important;
+    background: var(--ae-card-solid) !important;
+    border-top: 1px solid var(--ae-line) !important;
+    box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.16) !important;
   }
 
   html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child .ae-btn {
     width: 100% !important;
-    min-height: 44px !important;
+    min-height: 46px !important;
     justify-content: center !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child .ae-btn-primary {
+    font-weight: 800 !important;
   }
 
   html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary {
