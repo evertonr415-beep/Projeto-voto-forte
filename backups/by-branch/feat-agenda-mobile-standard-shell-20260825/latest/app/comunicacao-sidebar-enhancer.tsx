@@ -6,30 +6,47 @@ function normalizedText(element: Element | null) {
   return (element?.textContent || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizedLower(element: Element | null) {
+  return normalizedText(element).toLocaleLowerCase("pt-BR");
+}
+
 function findNavigationButton(nav: HTMLElement, label: string) {
+  const expected = label.toLocaleLowerCase("pt-BR");
   return Array.from(nav.querySelectorAll<HTMLButtonElement>("button")).find(
-    (button) =>
-      normalizedText(button.querySelector(".nav-name")).toLocaleLowerCase("pt-BR") ===
-      label.toLocaleLowerCase("pt-BR"),
+    (button) => normalizedLower(button.querySelector(".nav-name")) === expected,
   );
 }
 
-function findAgendaTrigger(shell: HTMLElement) {
-  return Array.from(
-    shell.querySelectorAll<HTMLElement>("button, [role='button']"),
-  ).find((element) => {
-    const text = normalizedText(element).toLocaleLowerCase("pt-BR");
-    return (
-      text.includes("abrir agenda inteligente") ||
-      text.includes("ver agenda completa")
-    );
-  });
+function currentViewTitle(shell: HTMLElement) {
+  return normalizedLower(shell.querySelector(".topbar .page-id h1"));
+}
+
+function findNativeAgendaTrigger(shell: HTMLElement) {
+  const workspace = shell.querySelector<HTMLElement>(".workspace");
+  if (!workspace) return null;
+
+  return (
+    Array.from(workspace.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => {
+        const text = normalizedLower(button);
+        return (
+          text.includes("reuniões agendadas") &&
+          text.includes("abrir agenda inteligente")
+        );
+      },
+    ) ||
+    Array.from(workspace.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => normalizedLower(button).includes("ver agenda completa"),
+    ) ||
+    null
+  );
 }
 
 export default function ComunicacaoSidebarEnhancer() {
   useEffect(() => {
     let agendaNavigationObserver: MutationObserver | null = null;
     let agendaNavigationTimeout = 0;
+    let agendaTriggerClicked = false;
 
     const stopAgendaNavigation = () => {
       agendaNavigationObserver?.disconnect();
@@ -38,6 +55,7 @@ export default function ComunicacaoSidebarEnhancer() {
         window.clearTimeout(agendaNavigationTimeout);
         agendaNavigationTimeout = 0;
       }
+      agendaTriggerClicked = false;
     };
 
     const openAgendaInsideDashboard = (nav: HTMLElement) => {
@@ -46,12 +64,23 @@ export default function ComunicacaoSidebarEnhancer() {
       const shell = document.querySelector<HTMLElement>(".app-shell");
       if (!shell) return;
 
-      const openAgenda = () => {
-        const trigger = findAgendaTrigger(shell);
+      const sync = () => {
+        const title = currentViewTitle(shell);
+
+        if (title === "agenda inteligente" || shell.querySelector(".ae-root")) {
+          stopAgendaNavigation();
+          return true;
+        }
+
+        if (title !== "visão geral") return false;
+        if (agendaTriggerClicked) return false;
+
+        const trigger = findNativeAgendaTrigger(shell);
         if (!trigger) return false;
+
+        agendaTriggerClicked = true;
         trigger.click();
-        stopAgendaNavigation();
-        return true;
+        return false;
       };
 
       const overviewButton = findNavigationButton(nav, "Visão Geral");
@@ -59,27 +88,24 @@ export default function ComunicacaoSidebarEnhancer() {
         overviewButton.click();
       }
 
-      if (openAgenda()) return;
+      sync();
 
-      const workspace = shell.querySelector<HTMLElement>(".workspace") || shell;
-      agendaNavigationObserver = new MutationObserver(() => {
-        openAgenda();
-      });
-      agendaNavigationObserver.observe(workspace, {
+      agendaNavigationObserver = new MutationObserver(sync);
+      agendaNavigationObserver.observe(shell, {
         childList: true,
         subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["class"],
       });
 
-      // A Visão Geral sempre oferece um acesso nativo para a Agenda.
-      // O prazo apenas evita manter um observer vivo caso a tela seja desmontada.
-      agendaNavigationTimeout = window.setTimeout(stopAgendaNavigation, 2500);
+      agendaNavigationTimeout = window.setTimeout(stopAgendaNavigation, 4000);
     };
 
     const ensureComunicacaoSidebarItem = () => {
       const nav = document.querySelector<HTMLElement>(".sidebar nav");
       if (!nav) return;
 
-      // Se o botão já existe ou já é um item nativo do menu, não duplica.
       if (
         nav.querySelector(".vf-comunicacao-sidebar-btn") ||
         Array.from(nav.querySelectorAll(".nav-name, button")).some((el) =>
@@ -121,7 +147,6 @@ export default function ComunicacaoSidebarEnhancer() {
         openAgendaInsideDashboard(nav);
       });
 
-      // Inserção ordenada: logo abaixo de "Informações TSE" ou "Disparo em Massa".
       if (tseBtn && tseBtn.nextSibling) {
         nav.insertBefore(btn, tseBtn.nextSibling);
       } else if (broadcastBtn && broadcastBtn.nextSibling) {
