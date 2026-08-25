@@ -51,14 +51,22 @@ function roleLabel(role: string) {
   return "Usuário";
 }
 
-export default function AgendaOfficialShell({ children }: { children: React.ReactNode }) {
+export default function AgendaOfficialShell({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: SessionUser;
+}) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [user, setUser] = useState<SessionUser>({
-    email: "",
-    name: "",
-    role: "user",
-  });
+  const [user, setUser] = useState<SessionUser>(
+    initialUser || {
+      email: "",
+      name: "",
+      role: "user",
+    },
+  );
 
   useEffect(() => {
     let cancelled = false;
