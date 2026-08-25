@@ -27,16 +27,81 @@
     display: flex !important;
     align-items: flex-end !important;
     justify-content: center !important;
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom)) !important;
     pointer-events: auto !important;
   }
 
   html body .vf-agenda-official-shell .ae-root .ae-shell > .ae-modal .ae-modal-card {
-    width: 100% !important;
-    max-width: none !important;
-    max-height: min(88dvh, 760px) !important;
+    width: min(100%, 520px) !important;
+    max-width: 520px !important;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom))) !important;
+    margin: 0 auto !important;
+    border-radius: 22px !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
     pointer-events: auto !important;
+  }
+
+  /* O formulario mobile deve seguir uma unica coluna, como o restante do sistema. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body {
+    padding: 16px 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid > div,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid .full {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid .ae-field,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input:not([type="checkbox"]),
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid select,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid > div:has(input[type="checkbox"]) {
+    padding-top: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label:has(input[type="checkbox"]) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    flex: 0 0 20px !important;
+    margin: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child .ae-btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
   }
 
   html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary {
