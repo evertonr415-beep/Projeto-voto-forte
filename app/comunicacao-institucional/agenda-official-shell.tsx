@@ -35,15 +35,13 @@ const coreMenu = [
 const AGENDA_HEADER_TITLE = "Agenda Eleitoral";
 
 function initials(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "VF"
-  );
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 function roleLabel(role: string) {
@@ -58,7 +56,7 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<SessionUser>({
     email: "",
-    name: "Voto Forte",
+    name: "",
     role: "user",
   });
 
@@ -70,7 +68,7 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
         if (!cancelled && response.ok && data?.user) {
           setUser({
             email: String(data.user.email || ""),
-            name: String(data.user.name || data.user.email || "Voto Forte"),
+            name: String(data.user.name || data.user.email || ""),
             role: String(data.user.role || "user"),
           });
         }
@@ -94,6 +92,8 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
   };
 
   const isAdmin = ["master", "admin"].includes(user.role.toLowerCase());
+  const profileTitle = user.name || "Perfil";
+  const profileAriaLabel = user.name ? `Perfil de ${user.name}` : "Perfil";
 
   return (
     <div className={`app-shell vf-agenda-official-shell ${collapsed ? "collapsed" : ""}`}>
@@ -254,8 +254,8 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
             <button
               type="button"
               className="profile"
-              title={user.name}
-              aria-label={`Perfil de ${user.name}`}
+              title={profileTitle}
+              aria-label={profileAriaLabel}
             >
               <span>{initials(user.name)}</span>
               <div>
