@@ -1,0 +1,4 @@
+/* Administração: remove somente o bloco introdutório antes das abas administrativas. */
+.page-head:has(+ .management-filter[role="tablist"][aria-label="Seções administrativas"]) {
+  display: none !important;
+}
