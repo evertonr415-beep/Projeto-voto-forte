@@ -1,0 +1,33 @@
+/* Agenda oficial dentro da casca visual nativa do Voto Forte. */
+.vf-agenda-official-shell .vf-agenda-route-content {
+  min-width: 0;
+}
+
+@media (max-width: 1050px) {
+  .vf-agenda-official-shell .vf-agenda-route-content .vf-ic-back-link,
+  .vf-agenda-official-shell .vf-agenda-route-content [data-vf-standard-back-navigation] {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell,
+  .vf-agenda-official-shell .main,
+  .vf-agenda-official-shell .workspace,
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    background: #051929 !important;
+    background-color: #051929 !important;
+  }
+
+  .vf-agenda-official-shell .workspace {
+    min-height: calc(100dvh - 60px) !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    width: 100% !important;
+    min-height: calc(100dvh - 60px) !important;
+    padding: 0 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content > .ae-root {
+    margin: 0 !important;
+  }
+}
