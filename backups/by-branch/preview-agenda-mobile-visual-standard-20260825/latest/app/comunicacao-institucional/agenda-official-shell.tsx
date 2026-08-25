@@ -32,6 +32,8 @@ const coreMenu = [
   },
 ] as const;
 
+const AGENDA_HEADER_TITLE = "Agenda Inteligente — Pedro Lupion & Sérgio Onofre";
+
 function initials(name: string) {
   return (
     name
@@ -236,9 +238,15 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
                 <rect x="3" y="17" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
               </svg>
             </button>
-            <div className="vf-agenda-header-title-wrap">
-              <small>VOTO FORTE PARANÁ</small>
-              <h1>Agenda Inteligente</h1>
+
+            <div className="vf-agenda-header-title-wrap" title={AGENDA_HEADER_TITLE}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/voto-forte-bandeira-icon.jpg"
+                alt="Paraná"
+                className="vf-agenda-header-logo"
+              />
+              <h1>{AGENDA_HEADER_TITLE}</h1>
             </div>
           </div>
 
