@@ -1,0 +1,66 @@
+/* Prioridade final Agenda Mobile */
+@media (max-width: 768px) {
+  html body .ae-root {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .ae-root .ae-shell {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Mantem o formulario de Novo Evento fora das regras de compactacao da Agenda. */
+  html body .vf-agenda-official-shell .ae-root .ae-shell > .ae-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    z-index: 10050 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    pointer-events: auto !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-root .ae-shell > .ae-modal .ae-modal-card {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(88dvh, 760px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    pointer-events: auto !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary {
+    position: relative !important;
+    z-index: 2 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* Botão Voltar da Agenda - contraste em tema claro */
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #17345c !important;
+  opacity: 1 !important;
+  border-color: rgba(23, 52, 92, 0.18) !important;
+}
+
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] svg,
+html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] span {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+html body .ae-root[data-theme="dark"] .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
