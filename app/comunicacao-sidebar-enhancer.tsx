@@ -21,25 +21,20 @@ function currentViewTitle(shell: HTMLElement) {
   return normalizedLower(shell.querySelector(".topbar .page-id h1"));
 }
 
-function findNativeAgendaTrigger(shell: HTMLElement) {
-  const workspace = shell.querySelector<HTMLElement>(".workspace");
-  if (!workspace) return null;
+function findNativeAgendaKpi(shell: HTMLElement) {
+  const candidates = Array.from(
+    shell.querySelectorAll<HTMLButtonElement>(".workspace button.kpi.kpi-link"),
+  ).filter((button) => {
+    const label = normalizedLower(button.querySelector("b"));
+    const hint = normalizedLower(button.querySelector("small"));
+    return (
+      label === "reuniões agendadas" &&
+      hint.includes("abrir agenda inteligente")
+    );
+  });
 
-  return (
-    Array.from(workspace.querySelectorAll<HTMLButtonElement>("button")).find(
-      (button) => {
-        const text = normalizedLower(button);
-        return (
-          text.includes("reuniões agendadas") &&
-          text.includes("abrir agenda inteligente")
-        );
-      },
-    ) ||
-    Array.from(workspace.querySelectorAll<HTMLButtonElement>("button")).find(
-      (button) => normalizedLower(button).includes("ver agenda completa"),
-    ) ||
-    null
-  );
+  // Nunca escolhe por aproximação: se o KPI oficial não for único, não clica.
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 export default function ComunicacaoSidebarEnhancer() {
@@ -72,14 +67,13 @@ export default function ComunicacaoSidebarEnhancer() {
           return true;
         }
 
-        if (title !== "visão geral") return false;
-        if (agendaTriggerClicked) return false;
+        if (title !== "visão geral" || agendaTriggerClicked) return false;
 
-        const trigger = findNativeAgendaTrigger(shell);
-        if (!trigger) return false;
+        const agendaKpi = findNativeAgendaKpi(shell);
+        if (!agendaKpi) return false;
 
         agendaTriggerClicked = true;
-        trigger.click();
+        agendaKpi.click();
         return false;
       };
 
