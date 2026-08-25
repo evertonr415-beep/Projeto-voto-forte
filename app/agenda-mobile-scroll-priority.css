@@ -27,16 +27,183 @@
     display: flex !important;
     align-items: flex-end !important;
     justify-content: center !important;
+    padding: 8px 12px calc(72px + env(safe-area-inset-bottom)) !important;
     pointer-events: auto !important;
   }
 
   html body .vf-agenda-official-shell .ae-root .ae-shell > .ae-modal .ae-modal-card {
-    width: 100% !important;
-    max-width: none !important;
-    max-height: min(88dvh, 760px) !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    width: min(100%, 520px) !important;
+    max-width: 520px !important;
+    max-height: min(70dvh, 620px) !important;
+    margin: 0 auto !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
     pointer-events: auto !important;
+  }
+
+  /* Cabecalho compacto e sempre visivel. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head {
+    position: relative !important;
+    z-index: 4 !important;
+    flex: 0 0 auto !important;
+    padding: 10px 14px !important;
+    min-height: 54px !important;
+    background: var(--ae-card-solid) !important;
+    border-bottom: 1px solid var(--ae-line) !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head h2 {
+    margin: 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-card > .ae-card-head .ae-mini-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  /* Corpo rolavel: o rodape permanece acessivel e o teclado nao cobre o campo ativo. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-top: 10px !important;
+    scroll-padding-bottom: 76px !important;
+    padding: 10px 12px 10px !important;
+  }
+
+  /* Formulario em uma coluna e mais compacto no mobile. */
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid > div,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid .full {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label {
+    margin-bottom: 4px !important;
+    font-size: 0.73rem !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid .ae-field,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input:not([type="checkbox"]),
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid select,
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 16px !important;
+    border-radius: 11px !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input:not([type="checkbox"]),
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid select {
+    min-height: 42px !important;
+    height: 42px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid textarea {
+    min-height: 78px !important;
+    max-height: 110px !important;
+    resize: vertical !important;
+  }
+
+  /* Linha propria para compromisso importante. */
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid > div:has(input[type="checkbox"]) {
+    padding: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label:has(input[type="checkbox"]) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    width: 100% !important;
+    min-height: 44px !important;
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    border: 1px solid var(--ae-line) !important;
+    border-radius: 11px !important;
+    background: rgba(56, 189, 248, 0.045) !important;
+    color: var(--ae-text) !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    flex: 0 0 20px !important;
+    margin: 0 !important;
+    accent-color: var(--ae-accent) !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-form-grid label:has(input[type="checkbox"]) span {
+    font-size: 0.82rem !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Rodape de acoes preso dentro do card e acima da interface do Safari. */
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 6 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) !important;
+    gap: 8px !important;
+    width: calc(100% + 24px) !important;
+    margin: 10px -12px -10px !important;
+    padding: 10px 12px !important;
+    background: var(--ae-card-solid) !important;
+    border-top: 1px solid var(--ae-line) !important;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child .ae-btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    border-radius: 11px !important;
+    font-size: 0.8rem !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-modal .ae-modal-body > div:last-child .ae-btn-primary {
+    font-weight: 800 !important;
+  }
+
+  /* O botao principal deve mostrar somente "Novo Evento", sem icone ou sinais de +. */
+  html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary[title^="Cadastrar novo compromisso"] svg {
+    display: none !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary[title^="Cadastrar novo compromisso"] span {
+    font-size: 0 !important;
+  }
+
+  html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary[title^="Cadastrar novo compromisso"] span::after {
+    content: "Novo Evento" !important;
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+    font-weight: 750 !important;
   }
 
   html body .vf-agenda-official-shell .ae-toolbar > button.ae-btn-primary {
@@ -47,7 +214,7 @@
   }
 }
 
-/* Botão Voltar da Agenda - contraste em tema claro */
+/* Botao Voltar da Agenda - contraste em tema claro */
 html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
   color: #17345c !important;
   opacity: 1 !important;
