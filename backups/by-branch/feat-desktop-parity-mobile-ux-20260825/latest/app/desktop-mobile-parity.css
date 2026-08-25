@@ -1,0 +1,75 @@
+/*
+ * Paridade visual Desktop x Mobile
+ *
+ * Replica no desktop as decisoes de UX aprovadas no mobile sem copiar a
+ * geometria de tela pequena: elimina cabecalhos duplicados, preserva o shell
+ * oficial e deixa o conteudo funcional aparecer mais cedo na pagina.
+ */
+
+@media (min-width: 761px) {
+  /* Contatos: o topbar oficial ja identifica a aba e o escopo. */
+  .app-shell.vf-contacts-active .vf-contacts-optimized-portal .optimized-topbar,
+  .app-shell:has(.vf-contacts-optimized-portal) .vf-contacts-optimized-portal .optimized-topbar {
+    display: none !important;
+  }
+
+  .app-shell.vf-contacts-active .vf-contacts-optimized-portal > .optimized-shell,
+  .app-shell:has(.vf-contacts-optimized-portal) .vf-contacts-optimized-portal > .optimized-shell {
+    padding-top: 0 !important;
+  }
+
+  /* WhatsApp: remove o cabecalho introdutorio redundante, como no mobile. */
+  .page-head:has(+ .wa-layout) {
+    display: none !important;
+  }
+
+  /* Painel Eleitoral: a identificacao fica no shell principal. */
+  body:has(.tse-panel-root) .tse-panel-topbar {
+    display: none !important;
+  }
+
+  body:has(.tse-panel-root) .tse-panel-root {
+    padding-top: 0 !important;
+  }
+
+  /* Agenda: usa a identidade do shell e remove a marca repetida no conteudo. */
+  .vf-agenda-official-shell,
+  .vf-agenda-official-shell .main,
+  .vf-agenda-official-shell .workspace,
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    background: #051929 !important;
+    background-color: #051929 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar .ae-brand {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar {
+    padding-top: 14px !important;
+  }
+
+  /* Mapa: o topbar oficial ja informa a aba; elimina o bloco introdutorio. */
+  body:has(.workspace .full-map) .workspace > .page-head {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .workspace {
+    padding-top: 18px !important;
+  }
+
+  /* Mantem os controles operacionais do mapa mais proximos do conteudo. */
+  body:has(.workspace .full-map) .vf-mobile-contacts-host,
+  body:has(.workspace .full-map) .vf-mobile-district-host,
+  body:has(.workspace .full-map) .vf-territorial-center-host {
+    margin-top: 0 !important;
+  }
+
+  /* Padrao visual unico para blocos funcionais nas principais abas. */
+  .vf-contacts-optimized-portal .optimized-quick-actions,
+  body:has(.workspace .full-map) .vf-map-contact-control,
+  body:has(.workspace .full-map) .vf-district-map-control,
+  .vf-agenda-official-shell .ae-topbar {
+    scroll-margin-top: 96px;
+  }
+}
