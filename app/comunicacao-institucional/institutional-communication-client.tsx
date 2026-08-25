@@ -1312,9 +1312,9 @@ export default function InstitutionalCommunicationClient({
                             className={`ae-timeline-item ${ev.done ? "done" : ""} ${isSelected ? "selected" : ""}`}
                             onClick={() => setSelectedEventId(ev.id)}
                           >
-                            {/* BADGE DE DATA TIMELINE */}
-                            <div className="ae-date-block">
-                              <div className="ae-date-day">{dayNumber(ev.date)}</div>
+                            {/* BADGE DE DATA TIMELINE COM COR DA FASE */}
+                            <div className="ae-date-block" style={{ background: catStyle.bg, borderColor: catStyle.border }}>
+                              <div className="ae-date-day" style={{ color: catStyle.text }}>{dayNumber(ev.date)}</div>
                               <div className="ae-date-month">{monthShortLabel(ev.date)}</div>
                               <div className="ae-date-dow">{weekdayLabel(ev.date)}</div>
                             </div>
