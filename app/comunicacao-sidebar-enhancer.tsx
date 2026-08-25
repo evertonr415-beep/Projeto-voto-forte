@@ -1,134 +1,76 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const PENDING_VIEW_KEY = "vf-pending-dashboard-view";
 
 function normalizedText(element: Element | null) {
   return (element?.textContent || "").replace(/\s+/g, " ").trim();
 }
 
-function normalizedLower(element: Element | null) {
-  return normalizedText(element).toLocaleLowerCase("pt-BR");
+function findDashboardShell() {
+  return Array.from(document.querySelectorAll<HTMLElement>(".app-shell")).find(
+    (shell) => Boolean(shell.querySelector(":scope > main .workspace")),
+  );
 }
 
 function findNavigationButton(nav: HTMLElement, label: string) {
   const expected = label.toLocaleLowerCase("pt-BR");
   return Array.from(nav.querySelectorAll<HTMLButtonElement>("button")).find(
-    (button) => normalizedLower(button.querySelector(".nav-name")) === expected,
+    (button) =>
+      normalizedText(button.querySelector(".nav-name")).toLocaleLowerCase("pt-BR") ===
+      expected,
   );
 }
 
-function currentViewTitle(shell: HTMLElement) {
-  return normalizedLower(shell.querySelector(".topbar .page-id h1"));
-}
-
-function findNativeAgendaKpi(shell: HTMLElement) {
-  const candidates = Array.from(
-    shell.querySelectorAll<HTMLButtonElement>(".workspace button.kpi.kpi-link"),
-  ).filter((button) => {
-    const label = normalizedLower(button.querySelector("b"));
-    const hint = normalizedLower(button.querySelector("small"));
-    return (
-      label === "reuniões agendadas" &&
-      hint.includes("abrir agenda inteligente")
-    );
-  });
-
-  return candidates.length === 1 ? candidates[0] : null;
-}
-
 export default function ComunicacaoSidebarEnhancer() {
+  const router = useRouter();
+
   useEffect(() => {
-    let agendaNavigationObserver: MutationObserver | null = null;
-    let agendaNavigationTimeout = 0;
-    let agendaTriggerClicked = false;
+    let pendingTimer = 0;
 
-    const stopAgendaNavigation = () => {
-      agendaNavigationObserver?.disconnect();
-      agendaNavigationObserver = null;
-      if (agendaNavigationTimeout) {
-        window.clearTimeout(agendaNavigationTimeout);
-        agendaNavigationTimeout = 0;
+    const consumePendingDashboardView = (nav: HTMLElement) => {
+      let pendingView = "";
+      try {
+        pendingView = sessionStorage.getItem(PENDING_VIEW_KEY) || "";
+      } catch {
+        return;
       }
-      agendaTriggerClicked = false;
-    };
+      if (!pendingView) return;
 
-    const syncAgendaActiveState = (nav: HTMLElement) => {
-      const shell = document.querySelector<HTMLElement>(".app-shell");
-      const button = nav.querySelector<HTMLButtonElement>(".vf-comunicacao-sidebar-btn");
-      if (!shell || !button) return;
-
-      const isAgenda =
-        currentViewTitle(shell) === "agenda inteligente" ||
-        Boolean(shell.querySelector(".workspace .ae-root"));
-
-      button.classList.toggle("active", isAgenda);
-    };
-
-    const openAgendaInsideDashboard = (nav: HTMLElement) => {
-      stopAgendaNavigation();
-
-      const shell = document.querySelector<HTMLElement>(".app-shell");
-      if (!shell) return;
-
-      const sync = () => {
-        const title = currentViewTitle(shell);
-
-        if (title === "agenda inteligente" || shell.querySelector(".workspace .ae-root")) {
-          syncAgendaActiveState(nav);
-          stopAgendaNavigation();
-          return true;
-        }
-
-        if (title !== "visão geral" || agendaTriggerClicked) return false;
-
-        const agendaKpi = findNativeAgendaKpi(shell);
-        if (!agendaKpi) return false;
-
-        agendaTriggerClicked = true;
-        agendaKpi.click();
-        return false;
-      };
-
-      const overviewButton = findNavigationButton(nav, "Visão Geral");
-      if (overviewButton && !overviewButton.classList.contains("active")) {
-        overviewButton.click();
-      }
-
-      sync();
-
-      agendaNavigationObserver = new MutationObserver(sync);
-      agendaNavigationObserver.observe(shell, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ["class"],
-      });
-
-      agendaNavigationTimeout = window.setTimeout(stopAgendaNavigation, 4000);
-    };
-
-    const ensureComunicacaoSidebarItem = () => {
-      const nav = document.querySelector<HTMLElement>(".sidebar nav");
-      if (!nav) return;
-
-      const existing = nav.querySelector<HTMLButtonElement>(".vf-comunicacao-sidebar-btn");
-      if (existing) {
-        syncAgendaActiveState(nav);
+      const target = findNavigationButton(nav, pendingView);
+      if (!target) {
+        pendingTimer = window.setTimeout(
+          () => consumePendingDashboardView(nav),
+          80,
+        );
         return;
       }
 
-      const nativeAgenda = Array.from(nav.querySelectorAll<HTMLButtonElement>("button")).find(
-        (button) => normalizedLower(button.querySelector(".nav-name")) === "agenda inteligente",
-      );
+      try {
+        sessionStorage.removeItem(PENDING_VIEW_KEY);
+      } catch {}
+      target.click();
+    };
+
+    const ensureAgendaSidebarItem = () => {
+      const shell = findDashboardShell();
+      const nav = shell?.querySelector<HTMLElement>(":scope > .sidebar nav");
+      if (!shell || !nav) return;
+
+      consumePendingDashboardView(nav);
+
+      const nativeAgenda = findNavigationButton(nav, "Agenda Inteligente");
       if (nativeAgenda) return;
 
-      const tseBtn = nav.querySelector(".tse-info-sidebar-btn");
-      const broadcastBtn = nav.querySelector(".whaticket-broadcast-sidebar-btn");
-      const exportHistoryBtn = nav.querySelector(
-        ".vf-export-history-nav-item, [data-vf-export-history-nav]",
+      const existing = nav.querySelector<HTMLButtonElement>(
+        ".vf-comunicacao-sidebar-btn",
       );
-      const adminBtn = nav.querySelector(".administration-nav-item");
+      if (existing) return;
+
+      const contactsButton = findNavigationButton(nav, "Contatos");
+      const mapButton = findNavigationButton(nav, "Mapa Eleitoral");
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -147,40 +89,30 @@ export default function ComunicacaoSidebarEnhancer() {
       btn.append(icon, name);
 
       btn.addEventListener("click", () => {
-        window.dispatchEvent(new CustomEvent("voto-forte:close-mobile-sidebar"));
-        openAgendaInsideDashboard(nav);
+        window.dispatchEvent(
+          new CustomEvent("voto-forte:close-mobile-sidebar"),
+        );
+        router.push("/comunicacao-institucional");
       });
 
-      if (tseBtn && tseBtn.nextSibling) {
-        nav.insertBefore(btn, tseBtn.nextSibling);
-      } else if (broadcastBtn && broadcastBtn.nextSibling) {
-        nav.insertBefore(btn, broadcastBtn.nextSibling);
-      } else if (exportHistoryBtn) {
-        nav.insertBefore(btn, exportHistoryBtn);
-      } else if (adminBtn) {
-        nav.insertBefore(btn, adminBtn);
+      if (contactsButton?.nextSibling) {
+        nav.insertBefore(btn, contactsButton.nextSibling);
+      } else if (mapButton) {
+        nav.insertBefore(btn, mapButton);
       } else {
         nav.appendChild(btn);
       }
-
-      syncAgendaActiveState(nav);
     };
 
-    ensureComunicacaoSidebarItem();
-    const observer = new MutationObserver(ensureComunicacaoSidebarItem);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    ensureAgendaSidebarItem();
+    const observer = new MutationObserver(ensureAgendaSidebarItem);
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
-      stopAgendaNavigation();
+      if (pendingTimer) window.clearTimeout(pendingTimer);
     };
-  }, []);
+  }, [router]);
 
   return null;
 }
