@@ -91,6 +91,8 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
     router.push(href);
   };
 
+  const isAdmin = ["master", "admin"].includes(user.role.toLowerCase());
+
   return (
     <div className={`app-shell vf-agenda-official-shell ${collapsed ? "collapsed" : ""}`}>
       <div
@@ -124,33 +126,101 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
               </div>
             </div>
           </button>
+          <button
+            type="button"
+            className="sidebar-close-mobile-btn"
+            onClick={() => setCollapsed(false)}
+            aria-label="Fechar menu lateral"
+            title="Fechar menu"
+          >
+            ✕
+          </button>
         </div>
+
+        <div className="menu-label">NAVEGAÇÃO</div>
 
         <nav>
           {coreMenu.map((item) => (
+            <React.Fragment key={item.label}>
+              <button
+                type="button"
+                title={item.label}
+                onClick={() => navigate(item.href)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-name">{item.label}</span>
+              </button>
+
+              {item.label === "WhatsApp" && (
+                <>
+                  <button
+                    type="button"
+                    className="whaticket-broadcast-sidebar-btn"
+                    onClick={() => {
+                      setCollapsed(false);
+                      window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
+                    }}
+                    title="Disparo em Massa"
+                  >
+                    <span
+                      className="nav-icon"
+                      style={{ color: "#2ddd7f", display: "inline-flex", alignItems: "center" }}
+                    >
+                      <Icons.Lightning size={17} color="#2ddd7f" />
+                    </span>
+                    <span className="nav-name">Disparo em Massa</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vf-comunicacao-sidebar-btn active"
+                    title="Agenda Inteligente"
+                    onClick={() => setCollapsed(false)}
+                    aria-current="page"
+                  >
+                    <span className="nav-icon" aria-hidden="true">📅</span>
+                    <span className="nav-name">Agenda Inteligente</span>
+                  </button>
+                </>
+              )}
+            </React.Fragment>
+          ))}
+
+          {isAdmin && (
             <button
               type="button"
-              key={item.label}
-              title={item.label}
-              onClick={() => navigate(item.href)}
+              className="administration-nav-item"
+              onClick={() => navigate("/sistema-completo?view=Administra%C3%A7%C3%A3o")}
+              title="Administração"
             >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-name">{item.label}</span>
+              <span className="nav-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                <Icons.Admin size={17} />
+              </span>
+              <span className="nav-name">Administração</span>
             </button>
-          ))}
+          )}
         </nav>
 
         <div className="sidebar-message">
           <span>🇧🇷</span>
           <div>
-            <b>Voto Forte Paraná</b>
-            <small>Gestão inteligente de campanha</small>
+            <b>Compromisso com Arapongas</b>
+            <small>Estratégia, organização e resultado.</small>
           </div>
         </div>
+
+        <button className="collapse" type="button" onClick={() => setCollapsed((current) => !current)}>
+          {collapsed ? "›" : "‹"}
+          <span>Recolher menu</span>
+        </button>
       </aside>
 
       <main className="main">
-        <header className="topbar">
+        <header
+          className="topbar"
+          data-vf-mobile-compact-tab-header="true"
+          data-vf-agenda-header="true"
+        >
           <div className="page-id">
             <button
               type="button"
@@ -158,10 +228,15 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
               onClick={() => setCollapsed((current) => !current)}
               aria-label="Abrir menu de navegação"
               aria-expanded={collapsed}
+              title="Abrir menu"
             >
-              <span aria-hidden="true">☰</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="3" y="4.5" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+                <rect x="3" y="10.75" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+                <rect x="3" y="17" width="18" height="2.5" rx="1.25" fill="#38bdf8" />
+              </svg>
             </button>
-            <div>
+            <div className="vf-agenda-header-title-wrap">
               <small>VOTO FORTE PARANÁ</small>
               <h1>Agenda Inteligente</h1>
             </div>
