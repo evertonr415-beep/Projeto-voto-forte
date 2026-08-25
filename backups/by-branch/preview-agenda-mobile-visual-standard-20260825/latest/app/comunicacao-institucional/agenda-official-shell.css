@@ -32,7 +32,7 @@
   }
 }
 
-/* Replica o cabeçalho compacto das abas principais, mas mantém o título da Agenda visível. */
+/* Replica o cabeçalho compacto das abas principais e move a identidade da Agenda para o topo. */
 @media (max-width: 760px) {
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] {
     box-sizing: border-box !important;
@@ -61,7 +61,7 @@
     align-items: center !important;
     justify-content: flex-start !important;
     min-width: 0 !important;
-    gap: 6px !important;
+    gap: 7px !important;
     overflow: hidden !important;
   }
 
@@ -70,22 +70,38 @@
     flex: 1 1 auto !important;
     min-width: 0 !important;
     align-items: center !important;
+    gap: 7px !important;
+    overflow: hidden !important;
   }
 
-  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap small {
-    display: none !important;
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-logo {
+    display: block !important;
+    flex: 0 0 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+    object-fit: cover !important;
+    object-position: center 45% !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(56, 189, 248, 0.30) !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22) !important;
   }
 
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap h1 {
     display: block !important;
+    flex: 1 1 auto !important;
     width: auto !important;
     min-width: 0 !important;
     max-width: 100% !important;
     margin: 0 !important;
     color: #f8fafc !important;
-    font-size: 14px !important;
-    line-height: 1.1 !important;
+    font-size: 12px !important;
+    line-height: 1.12 !important;
     font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -118,6 +134,15 @@
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > div,
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > i {
     display: none !important;
+  }
+
+  /* Remove a identidade duplicada no card da Agenda; ações continuam visíveis. */
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar .ae-brand {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar {
+    padding-top: 12px !important;
   }
 
   /* Drawer mobile igual ao dashboard real. */
@@ -180,8 +205,22 @@
     max-width: 36px !important;
   }
 
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap {
+    gap: 6px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-logo {
+    flex-basis: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+  }
+
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap h1 {
-    font-size: 13px !important;
+    font-size: 11.5px !important;
   }
 
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile,
