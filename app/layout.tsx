@@ -71,6 +71,7 @@ import "./dark-only-header-alignment.css";
 import "./mobile-overview-loading.css";
 import "./agenda-mobile-scroll-priority.css";
 import "./contacts-final-mobile-stability.css";
+import "./whatsapp-mobile-cleanup.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
