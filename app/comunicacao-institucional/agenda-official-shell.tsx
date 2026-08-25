@@ -35,15 +35,20 @@ const coreMenu = [
 const AGENDA_HEADER_TITLE = "Agenda Eleitoral";
 
 function initials(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "VF"
-  );
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function safeInitials(value: string) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9À-ÖØ-Þ]/g, "")
+    .slice(0, 4);
 }
 
 function roleLabel(role: string) {
@@ -53,14 +58,24 @@ function roleLabel(role: string) {
   return "Usuário";
 }
 
-export default function AgendaOfficialShell({ children }: { children: React.ReactNode }) {
+export default function AgendaOfficialShell({
+  children,
+  initialUser,
+  initialInitials = "",
+}: {
+  children: React.ReactNode;
+  initialUser?: SessionUser;
+  initialInitials?: string;
+}) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [user, setUser] = useState<SessionUser>({
-    email: "",
-    name: "Voto Forte",
-    role: "user",
-  });
+  const [user, setUser] = useState<SessionUser>(
+    initialUser || {
+      email: "",
+      name: "",
+      role: "user",
+    },
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +85,7 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
         if (!cancelled && response.ok && data?.user) {
           setUser({
             email: String(data.user.email || ""),
-            name: String(data.user.name || data.user.email || "Voto Forte"),
+            name: String(data.user.name || data.user.email || ""),
             role: String(data.user.role || "user"),
           });
         }
@@ -94,6 +109,9 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
   };
 
   const isAdmin = ["master", "admin"].includes(user.role.toLowerCase());
+  const profileTitle = user.name || "Perfil";
+  const profileAriaLabel = user.name ? `Perfil de ${user.name}` : "Perfil";
+  const profileInitials = initials(user.name) || safeInitials(initialInitials);
 
   return (
     <div className={`app-shell vf-agenda-official-shell ${collapsed ? "collapsed" : ""}`}>
@@ -254,10 +272,10 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
             <button
               type="button"
               className="profile"
-              title={user.name}
-              aria-label={`Perfil de ${user.name}`}
+              title={profileTitle}
+              aria-label={profileAriaLabel}
             >
-              <span>{initials(user.name)}</span>
+              <span>{profileInitials}</span>
               <div>
                 <b>{user.name}</b>
                 <small>{roleLabel(user.role)}</small>
