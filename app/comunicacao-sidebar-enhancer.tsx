@@ -1,104 +1,58 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const PENDING_VIEW_KEY = "vf-pending-dashboard-view";
 
 function normalizedText(element: Element | null) {
   return (element?.textContent || "").replace(/\s+/g, " ").trim();
 }
 
-function normalizedLower(element: Element | null) {
-  return normalizedText(element).toLocaleLowerCase("pt-BR");
-}
-
 function findNavigationButton(nav: HTMLElement, label: string) {
   const expected = label.toLocaleLowerCase("pt-BR");
   return Array.from(nav.querySelectorAll<HTMLButtonElement>("button")).find(
-    (button) => normalizedLower(button.querySelector(".nav-name")) === expected,
+    (button) =>
+      normalizedText(button.querySelector(".nav-name")).toLocaleLowerCase("pt-BR") ===
+      expected,
   );
 }
 
-function currentViewTitle(shell: HTMLElement) {
-  return normalizedLower(shell.querySelector(".topbar .page-id h1"));
-}
-
-function findNativeAgendaKpi(shell: HTMLElement) {
-  const candidates = Array.from(
-    shell.querySelectorAll<HTMLButtonElement>(".workspace button.kpi.kpi-link"),
-  ).filter((button) => {
-    const label = normalizedLower(button.querySelector("b"));
-    const hint = normalizedLower(button.querySelector("small"));
-    return (
-      label === "reuniões agendadas" &&
-      hint.includes("abrir agenda inteligente")
-    );
-  });
-
-  // Nunca escolhe por aproximação: se o KPI oficial não for único, não clica.
-  return candidates.length === 1 ? candidates[0] : null;
-}
-
 export default function ComunicacaoSidebarEnhancer() {
+  const router = useRouter();
+
   useEffect(() => {
-    let agendaNavigationObserver: MutationObserver | null = null;
-    let agendaNavigationTimeout = 0;
-    let agendaTriggerClicked = false;
+    let pendingNavigationTimer = 0;
 
-    const stopAgendaNavigation = () => {
-      agendaNavigationObserver?.disconnect();
-      agendaNavigationObserver = null;
-      if (agendaNavigationTimeout) {
-        window.clearTimeout(agendaNavigationTimeout);
-        agendaNavigationTimeout = 0;
+    const consumePendingDashboardView = (nav: HTMLElement) => {
+      let pendingView = "";
+      try {
+        pendingView = sessionStorage.getItem(PENDING_VIEW_KEY) || "";
+      } catch {
+        return;
       }
-      agendaTriggerClicked = false;
-    };
+      if (!pendingView) return;
 
-    const openAgendaInsideDashboard = (nav: HTMLElement) => {
-      stopAgendaNavigation();
-
-      const shell = document.querySelector<HTMLElement>(".app-shell");
-      if (!shell) return;
-
-      const sync = () => {
-        const title = currentViewTitle(shell);
-
-        if (title === "agenda inteligente" || shell.querySelector(".ae-root")) {
-          stopAgendaNavigation();
-          return true;
-        }
-
-        if (title !== "visão geral" || agendaTriggerClicked) return false;
-
-        const agendaKpi = findNativeAgendaKpi(shell);
-        if (!agendaKpi) return false;
-
-        agendaTriggerClicked = true;
-        agendaKpi.click();
-        return false;
-      };
-
-      const overviewButton = findNavigationButton(nav, "Visão Geral");
-      if (overviewButton && !overviewButton.classList.contains("active")) {
-        overviewButton.click();
+      const target = findNavigationButton(nav, pendingView);
+      if (!target) {
+        pendingNavigationTimer = window.setTimeout(
+          () => consumePendingDashboardView(nav),
+          80,
+        );
+        return;
       }
 
-      sync();
-
-      agendaNavigationObserver = new MutationObserver(sync);
-      agendaNavigationObserver.observe(shell, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ["class"],
-      });
-
-      agendaNavigationTimeout = window.setTimeout(stopAgendaNavigation, 4000);
+      try {
+        sessionStorage.removeItem(PENDING_VIEW_KEY);
+      } catch {}
+      target.click();
     };
 
     const ensureComunicacaoSidebarItem = () => {
       const nav = document.querySelector<HTMLElement>(".sidebar nav");
       if (!nav) return;
+
+      consumePendingDashboardView(nav);
 
       if (
         nav.querySelector(".vf-comunicacao-sidebar-btn") ||
@@ -133,12 +87,13 @@ export default function ComunicacaoSidebarEnhancer() {
       btn.append(icon, name);
 
       btn.addEventListener("click", () => {
-        const appShell = document.querySelector<HTMLElement>(".app-shell");
-        if (!appShell) return;
-
-        appShell.classList.remove("collapsed");
+        const appShell = document.querySelector(".app-shell");
+        if (appShell) appShell.classList.remove("collapsed");
         window.dispatchEvent(new CustomEvent("voto-forte:close-mobile-sidebar"));
-        openAgendaInsideDashboard(nav);
+
+        // A agenda oficial e a pagina /comunicacao-institucional.
+        // Mantemos essa origem para preservar exatamente o conteudo aprovado.
+        router.push("/comunicacao-institucional");
       });
 
       if (tseBtn && tseBtn.nextSibling) {
@@ -160,9 +115,9 @@ export default function ComunicacaoSidebarEnhancer() {
 
     return () => {
       observer.disconnect();
-      stopAgendaNavigation();
+      if (pendingNavigationTimer) window.clearTimeout(pendingNavigationTimer);
     };
-  }, []);
+  }, [router]);
 
   return null;
 }
