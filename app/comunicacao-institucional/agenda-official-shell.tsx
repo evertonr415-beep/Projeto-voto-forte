@@ -32,7 +32,7 @@ const coreMenu = [
   },
 ] as const;
 
-const AGENDA_HEADER_TITLE = "Agenda Inteligente — Pedro Lupion & Sérgio Onofre";
+const AGENDA_HEADER_TITLE = "Agenda Eleitoral";
 
 function initials(name: string) {
   return (
@@ -246,7 +246,7 @@ export default function AgendaOfficialShell({ children }: { children: React.Reac
                 alt="Paraná"
                 className="vf-agenda-header-logo"
               />
-              <h1>{AGENDA_HEADER_TITLE}</h1>
+              <span className="vf-agenda-header-label">{AGENDA_HEADER_TITLE}</span>
             </div>
           </div>
 
