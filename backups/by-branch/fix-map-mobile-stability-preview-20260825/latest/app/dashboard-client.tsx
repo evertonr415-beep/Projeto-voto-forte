@@ -1424,10 +1424,6 @@ function CityMap({
   const mapElement = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const contactLayer = useRef<any>(null);
-  const contactsRef = useRef(contacts);
-  const meetingsRef = useRef(meetings);
-  contactsRef.current = contacts;
-  meetingsRef.current = meetings;
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState(
     "Mapa real de Arapongas",
@@ -1461,12 +1457,7 @@ function CityMap({
       map.on("movestart zoomstart", closePopup);
       map._vfClosePopup = closePopup;
       contactLayer.current = L.layerGroup().addTo(map);
-      renderMapMarkers(
-        L,
-        contactLayer.current,
-        contactsRef.current,
-        meetingsRef.current,
-      );
+      renderMapMarkers(L, contactLayer.current, contacts, meetings);
       setTimeout(() => map.invalidateSize(), 100);
       const query =
         '[out:json][timeout:25];area["name"="Arapongas"]["boundary"="administrative"]->.a;(relation["boundary"="administrative"]["admin_level"~"10|11"](area.a);way["boundary"="administrative"]["admin_level"~"10|11"](area.a);node["place"~"neighbourhood|suburb"]["name"](area.a););out tags center geom;';
@@ -1542,7 +1533,7 @@ function CityMap({
         contactLayer.current = null;
       }
     };
-  }, []);
+  }, [contacts, meetings]);
 
   useEffect(() => {
     const L = (window as any).L,

@@ -57,13 +57,13 @@ export default function DashboardRuntimeEnhancers() {
   return (
     <>
       <NetworkScopeLabelNormalizer />
-      <MapInstantContactBootstrap />
       {ready ? (
         <>
           <MunicipalityContextEnhancer />
           <MunicipalityFieldEnhancer />
           <MunicipalElectoralMapContext />
           <CepFallbackEnhancer />
+          <MapInstantContactBootstrap />
           <MapToolsGate />
           <MapNeighborhoodInfoEnhancer />
           <NeighborhoodInfoDrawer />
