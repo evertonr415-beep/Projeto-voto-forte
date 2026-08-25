@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import AuthClient from "../auth-client";
-import AgendaAutoOpen from "./agenda-auto-open";
+import InstitutionalCommunicationClient from "./institutional-communication-client";
+import InstitutionalBackNavigation from "./institutional-back-navigation";
 
 export const metadata: Metadata = {
-  title: "Agenda Inteligente · VOTO FORTE PARANÁ",
-  description: "Agenda Inteligente integrada ao painel principal do VOTO FORTE PARANÁ.",
+  title: "Comunicação Institucional · VOTO FORTE PARANÁ",
+  description: "Planejamento editorial, rotina de entregas, frentes de mandato e conformidade territorial.",
 };
 
 export default function InstitutionalCommunicationPage() {
   return (
     <>
-      <AuthClient dashboardMode="full" />
-      <AgendaAutoOpen />
+      <InstitutionalCommunicationClient />
+      <InstitutionalBackNavigation />
     </>
   );
 }
