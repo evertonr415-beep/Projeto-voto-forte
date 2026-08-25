@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getAccount } from "../server-identity";
 import InstitutionalCommunicationClient from "./institutional-communication-client";
 import InstitutionalBackNavigation from "./institutional-back-navigation";
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function InstitutionalCommunicationPage() {
   const account = await getAccount();
+  const cookieInitials = (await cookies()).get("vf_profile_initials")?.value || "";
   const initialUser = account
     ? {
         email: String(account.email || ""),
@@ -20,7 +22,7 @@ export default async function InstitutionalCommunicationPage() {
     : undefined;
 
   return (
-    <AgendaOfficialShell initialUser={initialUser}>
+    <AgendaOfficialShell initialUser={initialUser} initialInitials={cookieInitials}>
       <InstitutionalCommunicationClient />
       <InstitutionalBackNavigation />
     </AgendaOfficialShell>
