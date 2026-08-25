@@ -13,22 +13,172 @@
     max-height: none !important;
     overflow: visible !important;
   }
+
+  /*
+   * A Agenda Inteligente e uma area principal do sistema no mobile.
+   * Mantem o mesmo shell escuro das demais abas e reutiliza o cabecalho
+   * nativo do dashboard (hamburguer, ambiente e perfil), sem criar uma
+   * segunda navegacao concorrente.
+   */
+  html:has(body .ae-root),
+  body:has(.ae-root),
+  body:has(.ae-root) .app-shell,
+  body:has(.ae-root) .app-shell > .main,
+  body:has(.ae-root) .app-shell > .main > .workspace {
+    background: #061426 !important;
+    background-color: #061426 !important;
+  }
+
+  html:has(body .ae-root),
+  body:has(.ae-root) {
+    color-scheme: dark !important;
+  }
+
+  body:has(.ae-root) .app-shell > .main > .workspace {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-top: 14px !important;
+    border: 0 !important;
+  }
+
+  /* Remove o segundo fluxo de navegacao "Voltar" da Agenda. */
+  body:has(.ae-root) [data-vf-standard-back="true"],
+  body:has(.ae-root) .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
+    display: none !important;
+  }
+
+  /* Garante o cabecalho oficial do sistema mesmo contra regras antigas da Agenda. */
+  body:has(.ae-root) .app-shell .topbar {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+    background: #071526 !important;
+    background-color: #071526 !important;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .mobile-menu {
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+  }
+
+  /* O titulo nativo ja acompanha a view; apenas o trazemos para a linha compacta. */
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) {
+    display: flex !important;
+    flex: 0 1 112px !important;
+    width: auto !important;
+    min-width: 70px !important;
+    max-width: 112px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) > small {
+    display: none !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) > h1 {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    color: #f7fbff !important;
+    font-size: 14px !important;
+    font-weight: 850 !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.15px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .vf-header-scope {
+    margin-left: auto !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 7px !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .notification {
+    display: none !important;
+  }
+
+  /* A Agenda mantem seu desenho interno, agora sobre um fundo continuo escuro. */
+  body:has(.ae-root) .ae-root,
+  body:has(.ae-root) .ae-root .ae-shell {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
 }
 
-/* Botão Voltar da Agenda - contraste em tema claro */
-html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
-  color: #17345c !important;
-  opacity: 1 !important;
-  border-color: rgba(23, 52, 92, 0.18) !important;
+@media (max-width: 430px) {
+  body:has(.ae-root) .app-shell .topbar {
+    padding-inline: 8px !important;
+    gap: 5px !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .mobile-menu {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id {
+    gap: 5px !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) {
+    flex-basis: 100px !important;
+    min-width: 62px !important;
+    max-width: 100px !important;
+  }
+
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) > h1 {
+    font-size: 13px !important;
+  }
 }
 
-html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] svg,
-html body .ae-root .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] span {
-  color: inherit !important;
-  stroke: currentColor !important;
-}
+@media (max-width: 370px) {
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) {
+    flex-basis: 86px !important;
+    max-width: 86px !important;
+  }
 
-html body .ae-root[data-theme="dark"] .ae-topbar button.ae-btn.ae-btn-ghost[title="Voltar para a Visão Geral"] {
-  color: #ffffff !important;
-  border-color: rgba(255,255,255,0.18) !important;
+  body:has(.ae-root) .app-shell .topbar .page-id > div:not(.vf-header-scope) > h1 {
+    font-size: 12px !important;
+  }
 }
