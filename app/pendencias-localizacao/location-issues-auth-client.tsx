@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import LocationIssuesClient from "./location-issues-client";
+import "./quality-readonly.css";
 
 type CurrentUser = {
   email: string;
@@ -10,6 +11,8 @@ type CurrentUser = {
   role: string;
   accessRole?: string;
 };
+
+const QUALITY_ACCESS_ROLES = new Set(["adm", "gestor"]);
 
 export default function LocationIssuesAuthClient() {
   const [account, setAccount] = useState<CurrentUser | null>(null);
@@ -28,11 +31,18 @@ export default function LocationIssuesAuthClient() {
       .then(async (response) => ({ response, data: await response.json() }))
       .then(({ response, data }) => {
         if (!active) return;
-        if (!response.ok || !data.user || data.user.accessRole !== "adm") {
+        if (!response.ok || !data.user) {
           window.location.replace("/");
           return;
         }
-        setAccount(data.user);
+
+        const accessRole = String(data.user.accessRole || "").trim().toLowerCase();
+        if (!QUALITY_ACCESS_ROLES.has(accessRole)) {
+          window.location.replace("/");
+          return;
+        }
+
+        setAccount({ ...data.user, accessRole });
       })
       .catch((error) => {
         if (!active) return;
@@ -55,6 +65,12 @@ export default function LocationIssuesAuthClient() {
       controller.abort();
     };
   }, [retryKey]);
+
+  useEffect(() => {
+    const readOnly = account?.accessRole === "gestor";
+    document.documentElement.classList.toggle("vf-quality-readonly", readOnly);
+    return () => document.documentElement.classList.remove("vf-quality-readonly");
+  }, [account]);
 
   if (account) return <LocationIssuesClient currentUser={account} />;
 
@@ -80,7 +96,7 @@ export default function LocationIssuesAuthClient() {
   return (
     <main className="issues-shell">
       <section className="issues-panel issues-loading" role="status">
-        {busy ? "Validando acesso administrativo…" : "Redirecionando para o sistema…"}
+        {busy ? "Validando acesso à Central de Qualidade…" : "Redirecionando para o sistema…"}
       </section>
     </main>
   );
