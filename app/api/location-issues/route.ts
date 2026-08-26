@@ -110,6 +110,61 @@ async function resolveScope(
   return { scope: requested, emails, canUseAll };
 }
 
+async function loadGestorQualitySummary(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+  scope: string,
+  isGlobalScope: boolean,
+) {
+  let owners: string[] = [];
+
+  if (isGlobalScope) {
+    const { data, error } = await account.supabase.rpc(
+      "vf_gestor_operational_owner_emails",
+    );
+    if (error) throw error;
+    owners = (Array.isArray(data) ? data : [])
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean);
+  } else {
+    owners = [scope.trim().toLowerCase()].filter(Boolean);
+  }
+
+  const uniqueOwners = [...new Set(owners)];
+  const aggregate: Record<string, number> = {
+    all: 0,
+    needs_review: 0,
+    invalid_phone: 0,
+    missing_name: 0,
+    incomplete_name: 0,
+    missing_district: 0,
+    location_divergence: 0,
+    missing_street: 0,
+  };
+
+  const summaries = await Promise.all(
+    uniqueOwners.map(async (ownerEmail) => {
+      const { data, error } = await account.supabase.rpc(
+        "vf_contact_quality_filter_summary_for_owner",
+        { p_owner_email: ownerEmail },
+      );
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    }),
+  );
+
+  for (const rows of summaries) {
+    for (const item of rows) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as { filter_code?: unknown; total?: unknown };
+      const code = String(row.filter_code || "");
+      if (!code) continue;
+      aggregate[code] = (aggregate[code] || 0) + safeCount(row.total);
+    }
+  }
+
+  return aggregate;
+}
+
 async function loadSummaryMap(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
   scope: string,
@@ -123,33 +178,45 @@ async function loadSummaryMap(
   }
 
   let summaryMap: Record<string, number> = {};
+  const isGestor = String(account.accessRole || "").trim().toLowerCase() === "gestor";
 
-  try {
-    const { data: scopedRows, error: scopedError } = await account.supabase.rpc(
-      "vf_contact_quality_scope_summary",
-      { p_owner_email: isGlobalScope ? "all" : scope },
-    );
-
-    if (scopedError) throw scopedError;
-    const scoped = Array.isArray(scopedRows) ? scopedRows[0] : scopedRows;
-    if (scoped && typeof scoped === "object") {
-      const row = scoped as Record<string, unknown>;
-      summaryMap = {
-        all: safeCount(row.total_contacts),
-        needs_review: safeCount(row.total_issues),
-        invalid_phone: safeCount(row.invalid_phone),
-        missing_name: safeCount(row.missing_name),
-        incomplete_name: safeCount(row.incomplete_name),
-        missing_district: safeCount(row.missing_district),
-        location_divergence: safeCount(row.location_divergence),
-        missing_street: safeCount(row.missing_street),
-        critical: safeCount(row.critical),
-        warning: safeCount(row.warning),
-        info: safeCount(row.info),
-      };
+  if (isGestor) {
+    try {
+      summaryMap = await loadGestorQualitySummary(account, scope, isGlobalScope);
+    } catch (error) {
+      console.error("Failed to load Gestor quality summary", error);
+      summaryMap = {};
     }
-  } catch {
-    // Mantém compatibilidade com a função anterior se a RPC de escopo estiver indisponível.
+  }
+
+  if (!("all" in summaryMap)) {
+    try {
+      const { data: scopedRows, error: scopedError } = await account.supabase.rpc(
+        "vf_contact_quality_scope_summary",
+        { p_owner_email: isGlobalScope ? "all" : scope },
+      );
+
+      if (scopedError) throw scopedError;
+      const scoped = Array.isArray(scopedRows) ? scopedRows[0] : scopedRows;
+      if (scoped && typeof scoped === "object") {
+        const row = scoped as Record<string, unknown>;
+        summaryMap = {
+          all: safeCount(row.total_contacts),
+          needs_review: safeCount(row.total_issues),
+          invalid_phone: safeCount(row.invalid_phone),
+          missing_name: safeCount(row.missing_name),
+          incomplete_name: safeCount(row.incomplete_name),
+          missing_district: safeCount(row.missing_district),
+          location_divergence: safeCount(row.location_divergence),
+          missing_street: safeCount(row.missing_street),
+          critical: safeCount(row.critical),
+          warning: safeCount(row.warning),
+          info: safeCount(row.info),
+        };
+      }
+    } catch {
+      // Mantém compatibilidade com a função anterior se a RPC de escopo estiver indisponível.
+    }
   }
 
   if (!("all" in summaryMap)) {
