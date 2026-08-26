@@ -1,0 +1,56 @@
+/* Microinteracao sutil da bandeira do Parana no branding principal. */
+.parana-icon {
+  transform-origin: 50% 72%;
+  will-change: transform, filter;
+  animation: vf-parana-logo-intro 720ms cubic-bezier(.22,.78,.24,1) both;
+}
+
+@keyframes vf-parana-logo-intro {
+  0% {
+    transform: translateY(2px) rotate(-1.4deg) scale(.985);
+    filter: brightness(.96) drop-shadow(0 0 0 rgba(214,173,94,0));
+  }
+  55% {
+    transform: translateY(-1px) rotate(.8deg) scale(1.01);
+    filter: brightness(1.035) drop-shadow(0 3px 8px rgba(60,165,230,.18));
+  }
+  100% {
+    transform: translateY(0) rotate(0) scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(214,173,94,0));
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brand-lockup:hover .parana-icon,
+  .brand-button:hover .parana-icon {
+    animation: vf-parana-logo-hover 620ms cubic-bezier(.22,.78,.24,1) both;
+  }
+
+  @keyframes vf-parana-logo-hover {
+    0% {
+      transform: translateY(0) rotate(0) scale(1);
+      filter: brightness(1) drop-shadow(0 0 0 rgba(214,173,94,0));
+    }
+    35% {
+      transform: translateY(-2px) rotate(-1.8deg) scale(1.015);
+      filter: brightness(1.04) drop-shadow(0 4px 9px rgba(60,165,230,.22));
+    }
+    68% {
+      transform: translateY(-1px) rotate(1.2deg) scale(1.01);
+      filter: brightness(1.025) drop-shadow(0 3px 8px rgba(214,173,94,.14));
+    }
+    100% {
+      transform: translateY(0) rotate(0) scale(1);
+      filter: brightness(1) drop-shadow(0 0 0 rgba(214,173,94,0));
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parana-icon,
+  .brand-lockup:hover .parana-icon,
+  .brand-button:hover .parana-icon {
+    animation: none !important;
+    transform: none !important;
+  }
+}
