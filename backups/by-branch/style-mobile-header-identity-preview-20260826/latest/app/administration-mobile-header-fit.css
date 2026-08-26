@@ -21,4 +21,19 @@
     .page-id > div:not(.vf-mobile-header-brand):not(.vf-header-scope) {
     display: none !important;
   }
+
+  /* Nas abas que possuem o seletor de escopo, desloca somente o bloco
+     "Todos da rede" para a esquerda. Assim criamos respiro antes do avatar
+     sem alterar bandeira, título, tamanho do seletor ou avatar. */
+  html body .app-shell .main > .topbar[data-vf-mobile-compact-tab-header="true"][data-vf-mobile-header-identity="true"]
+    .page-id:has(> .vf-header-scope) > .vf-header-scope {
+    transform: translateX(-6px) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  html body .app-shell .main > .topbar[data-vf-mobile-compact-tab-header="true"][data-vf-mobile-header-identity="true"]
+    .page-id:has(> .vf-header-scope) > .vf-header-scope {
+    transform: translateX(-8px) !important;
+  }
 }
