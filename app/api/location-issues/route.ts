@@ -125,24 +125,54 @@ async function loadSummaryMap(
   let summaryMap: Record<string, number> = {};
 
   try {
-    const { data: summaryRows, error } = isGlobalScope
-      ? await account.supabase.rpc("vf_contact_quality_filter_summary")
-      : await account.supabase.rpc(
-          "vf_contact_quality_filter_summary_for_owner",
-          { p_owner_email: scope },
-        );
+    const { data: scopedRows, error: scopedError } = await account.supabase.rpc(
+      "vf_contact_quality_scope_summary",
+      { p_owner_email: isGlobalScope ? "all" : scope },
+    );
 
-    if (error) throw error;
-    if (Array.isArray(summaryRows)) {
-      for (const item of summaryRows) {
-        if (!item || typeof item !== "object") continue;
-        const code = String((item as { filter_code?: unknown }).filter_code || "");
-        if (!code) continue;
-        summaryMap[code] = safeCount((item as { total?: unknown }).total);
-      }
+    if (scopedError) throw scopedError;
+    const scoped = Array.isArray(scopedRows) ? scopedRows[0] : scopedRows;
+    if (scoped && typeof scoped === "object") {
+      const row = scoped as Record<string, unknown>;
+      summaryMap = {
+        all: safeCount(row.total_contacts),
+        needs_review: safeCount(row.total_issues),
+        invalid_phone: safeCount(row.invalid_phone),
+        missing_name: safeCount(row.missing_name),
+        incomplete_name: safeCount(row.incomplete_name),
+        missing_district: safeCount(row.missing_district),
+        location_divergence: safeCount(row.location_divergence),
+        missing_street: safeCount(row.missing_street),
+        critical: safeCount(row.critical),
+        warning: safeCount(row.warning),
+        info: safeCount(row.info),
+      };
     }
   } catch {
-    // O fallback abaixo preserva o painel caso a RPC esteja temporariamente indisponível.
+    // Mantém compatibilidade com a função anterior se a RPC de escopo estiver indisponível.
+  }
+
+  if (!("all" in summaryMap)) {
+    try {
+      const { data: summaryRows, error } = isGlobalScope
+        ? await account.supabase.rpc("vf_contact_quality_filter_summary")
+        : await account.supabase.rpc(
+            "vf_contact_quality_filter_summary_for_owner",
+            { p_owner_email: scope },
+          );
+
+      if (error) throw error;
+      if (Array.isArray(summaryRows)) {
+        for (const item of summaryRows) {
+          if (!item || typeof item !== "object") continue;
+          const code = String((item as { filter_code?: unknown }).filter_code || "");
+          if (!code) continue;
+          summaryMap[code] = safeCount((item as { total?: unknown }).total);
+        }
+      }
+    } catch {
+      // O fallback abaixo preserva o painel caso as RPCs estejam temporariamente indisponíveis.
+    }
   }
 
   if (!("all" in summaryMap)) {
@@ -158,13 +188,13 @@ async function loadSummaryMap(
       locDivRes,
       missStreetRes,
     ] = await Promise.all([
-      baseQualityQuery.select("record_id", { count: "exact", head: true }),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_invalid_phone", true),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_name", true),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_incomplete_name", true),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_district", true),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_location_divergence", true),
-      baseQualityQuery.select("record_id", { count: "exact", head: true }).eq("has_missing_street", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_invalid_phone", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_missing_name", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_incomplete_name", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_missing_district", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_location_divergence", true),
+      baseQualityQuery.select("record_id", { count: "planned", head: true }).eq("has_missing_street", true),
     ]);
 
     summaryMap = {
@@ -216,7 +246,7 @@ export async function GET(request: Request) {
     : "";
   const queryText = sanitizeSearch(url.searchParams.get("q") ?? "");
   const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const toWithProbe = from + PAGE_SIZE;
 
   try {
     const summaryMap = await loadSummaryMap(account, scope, isGlobalScope);
@@ -231,12 +261,13 @@ export async function GET(request: Request) {
     };
 
     const severityCounts = {
-      critical: categoryCounts.invalid_phone + categoryCounts.missing_name,
+      critical: summaryMap.critical || categoryCounts.invalid_phone + categoryCounts.missing_name,
       warning:
+        summaryMap.warning ||
         categoryCounts.incomplete_name +
-        categoryCounts.missing_district +
-        categoryCounts.location_divergence,
-      info: categoryCounts.missing_street,
+          categoryCounts.missing_district +
+          categoryCounts.location_divergence,
+      info: summaryMap.info || categoryCounts.missing_street,
     };
 
     const totalContacts = summaryMap.all || 0;
@@ -251,7 +282,6 @@ export async function GET(request: Request) {
       .from("vf_contact_quality")
       .select(
         "record_id,owner_email,contact_name,phone,phone_normalized,district_original,city,state,street,street_number,cep,is_rural,issue_codes,severity,updated_at",
-        { count: "exact" },
       )
       .order("updated_at", { ascending: false });
 
@@ -264,13 +294,9 @@ export async function GET(request: Request) {
     else if (category === "location_divergence") query = query.eq("has_location_divergence", true);
     else if (category === "missing_street") query = query.eq("has_missing_street", true);
 
-    // Categoria e prioridade são filtros cumulativos. Antes, escolher uma categoria
-    // fazia a prioridade ser ignorada, o que dava a impressão de filtro incorreto.
     if (severity) {
       query = query.eq("severity", severity);
     } else if (!category) {
-      // A visão padrão é de pendências essenciais. "Sem rua" continua disponível
-      // como filtro complementar, mas não força a leitura de quase toda a base.
       query = query.in("severity", ["critical", "warning"]);
     }
 
@@ -280,14 +306,25 @@ export async function GET(request: Request) {
       );
     }
 
-    query = query.range(from, to);
-    const { data: tableData, count: tableCount, error: tableError } = await query;
+    const { data: tableData, error: tableError } = await query.range(from, toWithProbe);
     if (tableError) throw tableError;
 
-    const issues = Array.isArray(tableData)
+    const rawIssues = Array.isArray(tableData)
       ? (tableData as Array<Record<string, unknown>>)
       : [];
-    const total = tableCount ?? issues.length;
+    const hasMore = rawIssues.length > PAGE_SIZE;
+    const issues = rawIssues.slice(0, PAGE_SIZE);
+
+    let knownTotal: number | null = null;
+    if (!queryText && category && !severity) knownTotal = categoryCounts[category] ?? 0;
+    else if (!queryText && severity && !category) knownTotal = severityCounts[severity] ?? 0;
+    else if (!queryText && !category && !severity) knownTotal = totalIssues;
+
+    const observedTotal = from + issues.length + (hasMore ? 1 : 0);
+    const total = knownTotal === null ? observedTotal : knownTotal;
+    const totalPages = knownTotal === null
+      ? Math.max(1, page + (hasMore ? 1 : 0))
+      : Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return Response.json(
       {
@@ -300,7 +337,7 @@ export async function GET(request: Request) {
         requiredIncomplete,
         categoryCounts,
         severityCounts,
-        totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+        totalPages,
         issues,
       },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
