@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import LocationIssuesClient from "./location-issues-client";
 import "./quality-readonly.css";
+import "./quality-theme-v2.css";
 
 type CurrentUser = {
   email: string;
