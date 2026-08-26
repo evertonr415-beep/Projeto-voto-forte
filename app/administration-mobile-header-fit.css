@@ -1,0 +1,146 @@
+/* Ajuste final do cabecalho mobile da Administracao.
+   Mantem a ordem visual: menu -> Administracao -> escopo -> avatar. */
+@media (max-width: 760px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 56px !important;
+    padding: 7px 9px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  /* Remove o titulo artificial que era inserido depois do seletor. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .mobile-menu {
+    order: 1 !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    margin: 0 !important;
+  }
+
+  /* Reutiliza o h1 real da pagina para que o titulo fique logo apos o hamburguer. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > div:not(.vf-header-scope) {
+    order: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 102px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > div:not(.vf-header-scope) small {
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > div:not(.vf-header-scope) h1 {
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    color: #f8fafc !important;
+    font-size: 13px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    letter-spacing: -0.025em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+  }
+
+  /* Quando o seletor compacto e injetado dentro do page-id, ele fica depois do titulo. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > .vf-header-scope {
+    order: 3 !important;
+    flex: 0 0 116px !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    margin-left: auto !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > .vf-header-scope .vf-header-scope-select-wrap {
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+  }
+
+  /* Quando o escopo permanece em top-actions, preserva escopo + avatar sem esmagar o titulo. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 6px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .top-actions .scope-picker {
+    flex: 0 0 116px !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .profile,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .profile > span {
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar {
+    padding-inline: 7px !important;
+    gap: 5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id {
+    gap: 5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > div:not(.vf-header-scope) {
+    max-width: 92px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > div:not(.vf-header-scope) h1 {
+    font-size: 12px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > .vf-header-scope,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .top-actions .scope-picker {
+    flex-basis: 112px !important;
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .topbar .page-id > .vf-header-scope .vf-header-scope-select-wrap {
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+  }
+}
