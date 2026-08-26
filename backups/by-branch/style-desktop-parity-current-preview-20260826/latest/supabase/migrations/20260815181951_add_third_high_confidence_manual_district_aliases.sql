@@ -1,0 +1,40 @@
+insert into public.vf_arapongas_district_aliases (alias_key, canonical_name, active, updated_at)
+values
+  ('BONONI JD','Jardim Bononi',true,now()),
+  ('CASA GRANDE 2','Jardim Casa Grande II',true,now()),
+  ('C FLAMINGOS','Conjunto Flamingos',true,now()),
+  ('CJO FLAMINGOS','Conjunto Flamingos',true,now()),
+  ('CJTO CENTAURO','Conjunto Centauro',true,now()),
+  ('CJTO FLAMINGO','Conjunto Flamingos',true,now()),
+  ('CONJUNTO FLAMINMGOS','Conjunto Flamingos',true,now()),
+  ('CONJUNTO PALMARO','Conjunto Palmares',true,now()),
+  ('CONJUNTO RES BUSSADOR','Conjunto Bussadori',true,now()),
+  ('CONJUTO BUSSADORI','Conjunto Bussadori',true,now()),
+  ('D MARTINA','Jardim Dona Martinha',true,now()),
+  ('DN MARTINHA','Jardim Dona Martinha',true,now()),
+  ('INTERLAGOS','Jardim Interlagos',true,now()),
+  ('J S RAFAEL','Jardim San Raphael',true,now()),
+  ('J S RAFAEL II','Jardim San Raphael II',true,now()),
+  ('JARDIMSAORAFAELII','Jardim San Raphael II',true,now()),
+  ('JARDIM BANDEIRA','Jardim Bandeirantes',true,now()),
+  ('JARDIM BANDEIRAN','Jardim Bandeirantes',true,now()),
+  ('JARDIM D MARTINHA','Jardim Dona Martinha',true,now()),
+  ('JARDIM DANAPINA','Jardim Dona Pina',true,now()),
+  ('JARDIM DOS PASSARO','Jardim dos Pássaros',true,now()),
+  ('JARDIM DOS PSSAROS','Jardim dos Pássaros',true,now()),
+  ('JARDIM EUDORADO','Jardim Eldorado',true,now()),
+  ('JARDIM INTERLAG','Jardim Interlagos',true,now()),
+  ('JARDIM LOURENA','Jardim Lorena',true,now()),
+  ('JARDIM MTE CARLO','Jardim Monte Carlo',true,now()),
+  ('JARDIM NOVO BARONEZA','Jardim Nova Baroneza',true,now()),
+  ('JARDIM NOVO FLAMINGO','Jardim Novo Flamingos',true,now()),
+  ('JARDIM P FEDRIGO','Jardim Paulino Fedrigo',true,now()),
+  ('JARDIM PORTAL DAS FOLRES','Jardim Portal das Flores',true,now()),
+  ('JARDIM S CARL','Jardim São Carlos',true,now()),
+  ('JARDIM S CRISTIVA','Jardim São Cristóvão',true,now()),
+  ('JARDIM S CRISTOVA','Jardim São Cristóvão',true,now()),
+  ('JARDIM S O CRISTOVAO','Jardim São Cristóvão',true,now())
+on conflict (alias_key) do nothing;
+
+select * from public.vf_refresh_arapongas_district_summary();
+select * from public.vf_refresh_contact_location_issues();
