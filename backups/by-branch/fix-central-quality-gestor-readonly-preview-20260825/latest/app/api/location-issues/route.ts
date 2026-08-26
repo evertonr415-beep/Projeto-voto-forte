@@ -65,6 +65,12 @@ async function readJsonBody<T>(request: Request): Promise<T | null> {
   }
 }
 
+function canMutateQuality(
+  account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
+) {
+  return String(account.accessRole || "").trim().toLowerCase() === "adm";
+}
+
 async function visibleEmails(
   account: NonNullable<Awaited<ReturnType<typeof getAccount>>>,
 ) {
@@ -327,6 +333,8 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!canMutateQuality(account))
+    return Response.json({ error: "Somente o ADM pode alterar dados pela Central de Qualidade." }, { status: 403 });
 
   const body = await readJsonBody<QualityUpdateBody>(request);
   if (!body)
@@ -388,6 +396,8 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!canMutateQuality(account))
+    return Response.json({ error: "Somente o ADM pode excluir dados pela Central de Qualidade." }, { status: 403 });
 
   const body = await readJsonBody<QualityDeleteBody>(request);
   if (!body)
