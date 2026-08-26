@@ -74,6 +74,7 @@ import "./contacts-final-mobile-stability.css";
 import "./whatsapp-mobile-cleanup.css";
 import "./administration-cleanup.css";
 import "./administration-mobile-header-fit.css";
+import "./parana-logo-microinteraction.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
