@@ -280,6 +280,9 @@ function getCurrentSectionTitle(topbar: HTMLElement) {
   const headingText = normalizeTitle(heading?.textContent);
 
   if (headingText) return headingText;
+  if (document.querySelector(".vf-agenda-mobile-hero, [data-vf-agenda-heading]")) {
+    return "Agenda Inteligente";
+  }
   if (document.querySelector(".tse-panel-root")) return "Painel Eleitoral";
   return "Voto Forte";
 }
