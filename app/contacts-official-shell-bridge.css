@@ -40,6 +40,12 @@
     padding-top: 0 !important;
   }
 
+  /* No mobile, o cabeçalho oficial já identifica a aba Contatos.
+     Mantemos o hero no desktop, mas removemos a duplicação no celular. */
+  .vf-contacts-optimized-portal .optimized-topbar {
+    display: none !important;
+  }
+
   /* A mesma geometria vale durante ENTERING e ACTIVE.
      Não dependemos mais de :has(.portal), portanto o iPhone não recebe uma
      largura de cabeçalho e depois outra quando o portal aparece. */
