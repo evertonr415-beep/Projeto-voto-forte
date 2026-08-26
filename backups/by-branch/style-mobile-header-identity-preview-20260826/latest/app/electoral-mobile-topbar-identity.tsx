@@ -11,7 +11,7 @@ const MOBILE_HEADER_CSS = `
 .${BRAND_CLASS} { display: none; }
 
 @media (max-width: 760px) {
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] {
     box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
@@ -23,54 +23,73 @@ const MOBILE_HEADER_CSS = `
     overflow: hidden !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .mobile-menu {
-    flex: 0 0 36px !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    max-width: 36px !important;
-    margin: 0 !important;
-  }
-
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id {
-    display: flex !important;
-    flex: 1 1 0 !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id {
+    display: grid !important;
     align-items: center !important;
+    flex: 1 1 0 !important;
     width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    gap: 6px !important;
+    column-gap: 6px !important;
     overflow: hidden !important;
   }
 
-  /* A faixa mobile deve ter somente identidade + escopo. O bloco original do
-     título continua no DOM para a lógica do sistema, mas não ocupa espaço. */
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+    .page-id:has(> .vf-header-scope) {
+    grid-template-columns: 36px minmax(0, 1fr) 118px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+    .page-id:not(:has(> .vf-header-scope)) {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .mobile-menu {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: none !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    margin: 0 !important;
+  }
+
+  /* O bloco de título original permanece no DOM para a lógica interna,
+     mas não participa da geometria do cabeçalho compacto. */
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
     .page-id > div:not(.${BRAND_CLASS}):not(.vf-header-scope) {
     display: none !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > h1,
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > small,
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .vf-theme-toggle {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > h1,
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > small,
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .vf-theme-toggle {
     display: none !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id::after {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id::after {
     content: none !important;
     display: none !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .${BRAND_CLASS} {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .${BRAND_CLASS} {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     display: flex !important;
-    flex: 1 1 0 !important;
     align-items: center !important;
+    width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
     gap: 6px !important;
     overflow: hidden !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-logo {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-logo {
     flex: 0 0 27px !important;
     width: 27px !important;
     height: 27px !important;
@@ -82,55 +101,65 @@ const MOBILE_HEADER_CSS = `
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16) !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
     display: -webkit-box !important;
     min-width: 0 !important;
+    max-width: 100% !important;
     overflow: hidden !important;
     color: inherit !important;
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     line-height: 1.08 !important;
     font-weight: 850 !important;
-    letter-spacing: -0.015em !important;
+    letter-spacing: -0.02em !important;
     white-space: normal !important;
-    overflow-wrap: normal !important;
     -webkit-box-orient: vertical !important;
     -webkit-line-clamp: 2 !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .vf-header-scope {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
     display: inline-flex !important;
-    flex: 0 0 118px !important;
+    flex: none !important;
     width: 118px !important;
     min-width: 118px !important;
     max-width: 118px !important;
     margin: 0 !important;
+    overflow: visible !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select-wrap {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select-wrap {
     width: 118px !important;
     min-width: 118px !important;
     max-width: 118px !important;
   }
 
-  /* Padronização aprovada: hambúrguer -> identidade -> escopo -> avatar.
-     Controles auxiliares continuam funcionais no sistema, mas não disputam
-     espaço com o cabeçalho compacto. */
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .top-actions {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding-left: 8px !important;
+    padding-right: 22px !important;
+    font-size: 9.5px !important;
+  }
+
+  /* Ordem única: hambúrguer -> bandeira/nome -> escopo -> avatar. */
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .top-actions {
     display: flex !important;
-    flex: 0 0 auto !important;
     align-items: center !important;
     justify-content: flex-end !important;
+    flex: 0 0 auto !important;
     width: auto !important;
     min-width: 0 !important;
     margin: 0 !important;
     gap: 0 !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .top-actions > :not(.profile) {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .top-actions > :not(.profile) {
     display: none !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile {
     display: flex !important;
     flex: 0 0 34px !important;
     width: 34px !important;
@@ -139,15 +168,15 @@ const MOBILE_HEADER_CSS = `
     margin: 0 !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > span {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > span {
     width: 34px !important;
     height: 34px !important;
     min-width: 34px !important;
     max-width: 34px !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > div,
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > i {
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > div,
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .profile > i {
     display: none !important;
   }
 
@@ -157,40 +186,86 @@ const MOBILE_HEADER_CSS = `
 }
 
 @media (max-width: 430px) {
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] {
-    padding-inline: 8px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] {
+    padding-inline: 7px !important;
     gap: 5px !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id,
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .${BRAND_CLASS} {
-    gap: 5px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id {
+    column-gap: 5px !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-logo {
-    flex-basis: 26px !important;
-    width: 26px !important;
-    height: 26px !important;
-    min-width: 26px !important;
-    max-width: 26px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+    .page-id:has(> .vf-header-scope) {
+    grid-template-columns: 34px minmax(0, 1fr) 112px !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
-    font-size: 11px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+    .page-id:not(:has(> .vf-header-scope)) {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .mobile-menu {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-logo {
+    flex-basis: 25px !important;
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px !important;
+    max-width: 25px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
+    font-size: 10.5px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .vf-header-scope,
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select-wrap {
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
   }
 }
 
 @media (max-width: 360px) {
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope,
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select-wrap {
-    flex-basis: 108px !important;
-    width: 108px !important;
-    min-width: 108px !important;
-    max-width: 108px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"]
+    .page-id:has(> .vf-header-scope) {
+    grid-template-columns: 32px minmax(0, 1fr) 106px !important;
   }
 
-  .app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
-    font-size: 10px !important;
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .mobile-menu {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .page-id > .vf-header-scope,
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-header-scope-select-wrap {
+    width: 106px !important;
+    min-width: 106px !important;
+    max-width: 106px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-logo {
+    flex-basis: 23px !important;
+    width: 23px !important;
+    height: 23px !important;
+    min-width: 23px !important;
+    max-width: 23px !important;
+  }
+
+  html body .app-shell .main > .topbar[${PRIMARY_HEADER_ATTR}="true"][${HEADER_ATTR}="true"] .vf-mobile-header-title {
+    font-size: 9.7px !important;
   }
 }
 `;
@@ -239,6 +314,7 @@ export default function ElectoralMobileTopbarIdentity() {
         `.app-shell .topbar[${PRIMARY_HEADER_ATTR}="true"]`,
       );
       const pageId = topbar?.querySelector<HTMLElement>(".page-id");
+      const mobileMenu = pageId?.querySelector<HTMLElement>(":scope > .mobile-menu");
       const isMobile = window.matchMedia("(max-width: 760px)").matches;
 
       if (!isMobile || !topbar || !pageId) {
@@ -267,7 +343,8 @@ export default function ElectoralMobileTopbarIdentity() {
         title.className = "vf-mobile-header-title";
 
         brand.append(image, title);
-        pageId.prepend(brand);
+        if (mobileMenu) mobileMenu.insertAdjacentElement("afterend", brand);
+        else pageId.prepend(brand);
       }
 
       brand.setAttribute("aria-label", `${titleText} — Paraná`);
