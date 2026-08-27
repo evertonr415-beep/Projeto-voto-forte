@@ -77,6 +77,7 @@ import "./administration-mobile-header-fit.css";
 import "./desktop-parity-current.css";
 import "./desktop-parity-fixes.css";
 import "./desktop-unified-experience.css";
+import "./desktop-preview-recovery-fixes.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
