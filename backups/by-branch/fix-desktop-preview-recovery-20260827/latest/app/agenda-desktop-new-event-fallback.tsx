@@ -13,30 +13,33 @@ function alignDesktopModal(modal: HTMLElement) {
   if (!root) return;
 
   const rootRect = root.getBoundingClientRect();
+  const topGutter = 82;
+  const bottomGutter = 18;
+  const availableHeight = Math.max(420, window.innerHeight - topGutter - bottomGutter);
 
-  // A Agenda vive dentro de uma pagina longa. Posicionamos o overlay na faixa
-  // que esta visivel agora, sem mover o usuario para o fim da pagina.
+  // Mantem o formulario dentro da area util do desktop, abaixo do cabecalho.
   modal.style.setProperty("position", "absolute", "important");
   modal.style.setProperty("inset", "auto", "important");
-  modal.style.setProperty("top", `${-rootRect.top}px`, "important");
+  modal.style.setProperty("top", `${topGutter - rootRect.top}px`, "important");
   modal.style.setProperty("left", "0", "important");
   modal.style.setProperty("right", "0", "important");
   modal.style.setProperty("width", "100%", "important");
-  modal.style.setProperty("height", `${window.innerHeight}px`, "important");
-  modal.style.setProperty("min-height", `${window.innerHeight}px`, "important");
+  modal.style.setProperty("height", `${availableHeight}px`, "important");
+  modal.style.setProperty("min-height", "0", "important");
   modal.style.setProperty("margin", "0", "important");
-  modal.style.setProperty("padding", "24px", "important");
+  modal.style.setProperty("padding", "14px 24px", "important");
   modal.style.setProperty("display", "flex", "important");
   modal.style.setProperty("align-items", "center", "important");
   modal.style.setProperty("justify-content", "center", "important");
-  modal.style.setProperty("overflow", "auto", "important");
+  modal.style.setProperty("overflow", "hidden", "important");
   modal.style.setProperty("z-index", "2147483000", "important");
 
   const card = modal.querySelector<HTMLElement>(".ae-modal-card");
   if (card) {
+    card.style.setProperty("width", "min(640px, calc(100% - 24px))", "important");
+    card.style.setProperty("max-height", `${Math.max(380, availableHeight - 28)}px`, "important");
     card.style.setProperty("margin", "auto", "important");
-    card.style.setProperty("max-height", "calc(100dvh - 48px)", "important");
-    card.style.setProperty("overflow", "auto", "important");
+    card.style.setProperty("overflow", "hidden", "important");
   }
 }
 
@@ -61,8 +64,7 @@ export default function AgendaDesktopNewEventFallback() {
           return;
         }
 
-        // Fallback seguro: reutiliza o atalho nativo da propria Agenda.
-        // O componente oficial escuta a tecla N no document e chama openModal(null).
+        // Reutiliza o atalho nativo da Agenda para preservar a logica oficial.
         document.dispatchEvent(
           new KeyboardEvent("keydown", {
             key: "n",
@@ -84,13 +86,11 @@ export default function AgendaDesktopNewEventFallback() {
     observer.observe(document.body, { childList: true, subtree: true });
     document.addEventListener("click", handleNewEventClick, true);
     window.addEventListener("resize", syncOpenModal);
-    window.addEventListener("scroll", syncOpenModal, true);
 
     return () => {
       observer.disconnect();
       document.removeEventListener("click", handleNewEventClick, true);
       window.removeEventListener("resize", syncOpenModal);
-      window.removeEventListener("scroll", syncOpenModal, true);
     };
   }, []);
 
