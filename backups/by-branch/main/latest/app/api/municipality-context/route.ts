@@ -4,9 +4,14 @@ export async function GET() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
+  const contextRpc =
+    account.accessRole === "gestor"
+      ? "vf_municipality_context_gestor_all"
+      : "vf_municipality_context";
+
   const [{ data: context, error: contextError }, { data: overview, error: overviewError }] =
     await Promise.all([
-      account.supabase.rpc("vf_municipality_context"),
+      account.supabase.rpc(contextRpc),
       account.accessRole === "adm"
         ? account.supabase.rpc("vf_municipality_overview")
         : Promise.resolve({ data: null, error: null }),
@@ -26,7 +31,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Município inválido" }, { status: 400 });
   }
 
-  const { data, error } = await account.supabase.rpc("vf_set_default_municipality", {
+  const switchRpc =
+    account.accessRole === "gestor"
+      ? "vf_set_default_municipality_gestor_all"
+      : "vf_set_default_municipality";
+
+  const { data, error } = await account.supabase.rpc(switchRpc, {
     p_municipality_id: municipalityId,
   });
   if (error) return Response.json({ error: error.message }, { status: 400 });
