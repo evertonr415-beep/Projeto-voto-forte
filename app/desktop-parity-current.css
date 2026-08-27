@@ -1,8 +1,8 @@
 /*
  * VOTO FORTE PARANA - paridade visual desktop x mobile
- * Camada exclusivamente desktop. Nao altera regras abaixo de 761px.
+ * Camada exclusivamente desktop. Nao altera regras abaixo de 1024px.
  */
-@media (min-width: 761px) {
+@media (min-width: 1024px) {
   /* Shell e cabecalho: mesma linguagem visual navy/ciano do mobile, com geometria desktop. */
   .app-shell .topbar {
     min-height: 70px !important;
