@@ -1,0 +1,174 @@
+/* Desktop polish: Mapa, Contatos e Administração.
+   Regras estritamente visuais e limitadas a telas desktop. */
+@media (min-width: 901px) {
+  /* CONTATOS — remove redundância visual sem alterar os dados/filtros. */
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis > article:nth-child(2) {
+    display: none !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-quick-actions > button:last-child {
+    display: none !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  /* MAPA / BAIRROS — o drawer passa a seguir o tema escuro do sistema com
+     contraste alto, em vez de misturar superfícies claras com texto herdado. */
+  html[data-vf-theme="dark"] .vf-neighborhood-info {
+    background: #07192c !important;
+    border-color: rgba(56, 189, 248, 0.26) !important;
+    color: #f8fafc !important;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56) !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-info-tabs {
+    background: #091f38 !important;
+    border-bottom-color: rgba(56, 189, 248, 0.18) !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-info-tabs button {
+    border-color: rgba(56, 189, 248, 0.18) !important;
+    background: #0d2747 !important;
+    color: #c9d9e9 !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-info-tabs button.active {
+    border-color: rgba(56, 189, 248, 0.58) !important;
+    background: linear-gradient(135deg, #126ca8, #1f55a4) !important;
+    color: #fff !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-info-body {
+    background: #07192c !important;
+    color: #e8f1fa !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-summary-card,
+  html[data-vf-theme="dark"] .vf-neighborhood-contact-card,
+  html[data-vf-theme="dark"] .vf-neighborhood-election-card,
+  html[data-vf-theme="dark"] .vf-neighborhood-college-selector button,
+  html[data-vf-theme="dark"] .vf-neighborhood-directions-tab,
+  html[data-vf-theme="dark"] .vf-neighborhood-empty {
+    background: #0d2747 !important;
+    border-color: rgba(56, 189, 248, 0.2) !important;
+    color: #eef6ff !important;
+    box-shadow: none !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-summary-card strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-contact-main strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-section-title h3,
+  html[data-vf-theme="dark"] .vf-neighborhood-college-selector strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-election-head h3,
+  html[data-vf-theme="dark"] .vf-neighborhood-vote-summary strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-candidate > div strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-candidate-votes strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-directions-tab h3,
+  html[data-vf-theme="dark"] .vf-neighborhood-route-places > strong,
+  html[data-vf-theme="dark"] .vf-neighborhood-route-places > a {
+    color: #f8fafc !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-summary-card span,
+  html[data-vf-theme="dark"] .vf-neighborhood-contact-main small,
+  html[data-vf-theme="dark"] .vf-neighborhood-college-selector span,
+  html[data-vf-theme="dark"] .vf-neighborhood-college-selector small,
+  html[data-vf-theme="dark"] .vf-neighborhood-election-head p,
+  html[data-vf-theme="dark"] .vf-neighborhood-vote-summary,
+  html[data-vf-theme="dark"] .vf-neighborhood-candidate > div small,
+  html[data-vf-theme="dark"] .vf-neighborhood-source-note,
+  html[data-vf-theme="dark"] .vf-neighborhood-directions-tab > p,
+  html[data-vf-theme="dark"] .vf-neighborhood-route-places > a small {
+    color: #a9bbd0 !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-election-head,
+  html[data-vf-theme="dark"] .vf-neighborhood-candidate,
+  html[data-vf-theme="dark"] .vf-neighborhood-route-places {
+    border-color: rgba(56, 189, 248, 0.14) !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-election-filters {
+    background: #091f38 !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-election-filters label {
+    color: #b7c8d9 !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-election-filters select,
+  html[data-vf-theme="dark"] .vf-neighborhood-pagination button {
+    border-color: rgba(56, 189, 248, 0.24) !important;
+    background: #071a30 !important;
+    color: #f8fafc !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-candidate > b {
+    background: #123658 !important;
+    color: #80d8ff !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-official-pending {
+    background: #332b18 !important;
+    border-color: rgba(239, 189, 67, 0.35) !important;
+    color: #ead7a9 !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-official-pending strong {
+    color: #ffd77a !important;
+  }
+
+  html[data-vf-theme="dark"] .vf-neighborhood-official-pending small {
+    color: #cbb98d !important;
+  }
+
+  /* ADMINISTRAÇÃO — centraliza a área útil e faz os blocos respeitarem a
+     mesma largura, eliminando o aspecto deslocado no desktop. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .workspace {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding: 24px clamp(24px, 3vw, 44px) 44px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter[role="tablist"][aria-label="Seções administrativas"],
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-admin-municipalities-head,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-admin-municipalities-grid,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-municipality-request-list {
+    box-sizing: border-box !important;
+    width: min(100%, 1320px) !important;
+    max-width: 1320px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin-top: 0 !important;
+    margin-bottom: 20px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel {
+    padding: clamp(20px, 2vw, 28px) !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
