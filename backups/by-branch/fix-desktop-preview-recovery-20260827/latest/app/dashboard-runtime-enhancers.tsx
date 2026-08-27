@@ -28,6 +28,7 @@ import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
+import AgendaDesktopNewEventFallback from "./agenda-desktop-new-event-fallback";
 import ElectoralMobileTopbarIdentity from "./electoral-mobile-topbar-identity";
 import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity";
 
@@ -87,6 +88,7 @@ export default function DashboardRuntimeEnhancers() {
           <ComunicacaoSidebarEnhancer />
           <StandardBackNavigationEnhancer />
           <AgendaMobileCompactEnhancer />
+          <AgendaDesktopNewEventFallback />
           <SystemNotificationsDrawer />
         </>
       ) : null}
