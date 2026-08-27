@@ -86,7 +86,10 @@ export default function MunicipalityContextEnhancer() {
   const [sidebarHost, setSidebarHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 1000px)");
+    // O Dashboard usa o menu hamburguer até 1050px. Mantemos o mesmo corte
+    // aqui para o seletor de município nunca migrar para o cabeçalho antes
+    // de a navegação mobile realmente deixar de existir.
+    const media = window.matchMedia("(min-width: 1051px)");
     let frameId = 0;
     let generatedSidebarHost: HTMLElement | null = null;
 
@@ -104,21 +107,42 @@ export default function MunicipalityContextEnhancer() {
 
       setHeaderHost(null);
 
+      const sidebar = document.querySelector<HTMLElement>(".app-shell .sidebar");
+      if (!sidebar) {
+        setSidebarHost(null);
+        return;
+      }
+
       let sideHost = document.querySelector<HTMLElement>(
         "#vf-sidebar-municipality-host",
       );
 
       if (!sideHost) {
-        const menuLabel = document.querySelector<HTMLElement>(
-          ".sidebar > .menu-label",
-        );
-        if (menuLabel?.parentElement) {
-          sideHost = document.createElement("div");
-          sideHost.id = "vf-sidebar-municipality-host";
-          sideHost.className = "vf-sidebar-municipality-host";
-          menuLabel.parentElement.insertBefore(sideHost, menuLabel);
-          generatedSidebarHost = sideHost;
+        sideHost = document.createElement("div");
+        sideHost.id = "vf-sidebar-municipality-host";
+        sideHost.className = "vf-sidebar-municipality-host";
+        generatedSidebarHost = sideHost;
+      }
+
+      const menuLabel =
+        sidebar.querySelector<HTMLElement>(":scope > .menu-label") ||
+        sidebar.querySelector<HTMLElement>(".menu-label");
+      const headerRow =
+        sidebar.querySelector<HTMLElement>(":scope > .sidebar-header-row") ||
+        sidebar.querySelector<HTMLElement>(".sidebar-header-row");
+
+      // Preferimos o local histórico: logo antes de NAVEGAÇÃO. Se a estrutura
+      // do menu mudar, usamos o cabeçalho ou o início da sidebar como fallback.
+      if (menuLabel?.parentElement === sidebar) {
+        if (sideHost.parentElement !== sidebar || sideHost.nextElementSibling !== menuLabel) {
+          sidebar.insertBefore(sideHost, menuLabel);
         }
+      } else if (headerRow?.parentElement === sidebar) {
+        if (sideHost.parentElement !== sidebar || headerRow.nextElementSibling !== sideHost) {
+          headerRow.insertAdjacentElement("afterend", sideHost);
+        }
+      } else if (sideHost.parentElement !== sidebar) {
+        sidebar.prepend(sideHost);
       }
 
       setSidebarHost((current) => (current === sideHost ? current : sideHost));
