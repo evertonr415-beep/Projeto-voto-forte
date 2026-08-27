@@ -80,6 +80,7 @@ import "./desktop-unified-experience.css";
 import "./desktop-preview-recovery-fixes.css";
 import "./desktop-four-point-fixes.css";
 import "./desktop-agenda-export-fixes.css";
+import "./administration-initial-loading-guard.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
