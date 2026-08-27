@@ -2,7 +2,7 @@
  * VOTO FORTE PARANA - refinamentos desktop da Preview
  * Regras estritamente desktop. O mobile aprovado permanece intocado.
  */
-@media (min-width: 761px) {
+@media (min-width: 1024px) {
   /* Casca especial de Agenda e Historico: impede imagens naturais gigantes. */
   .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"],
   .vf-export-official-shell .topbar[data-vf-export-header="true"] {
@@ -73,8 +73,6 @@
     text-overflow: ellipsis !important;
   }
 
-  /* A rota atual da Agenda usa historicamente o texto Agenda Eleitoral.
-     Na Preview desktop exibimos o nome aprovado: Agenda Inteligente. */
   .vf-agenda-official-shell .vf-agenda-header-label {
     display: block !important;
     min-width: 0 !important;
@@ -102,7 +100,6 @@
     min-width: 0 !important;
   }
 
-  /* Historico: conteudo mais compacto e alinhado ao padrao mobile. */
   .vf-export-official-shell .workspace {
     padding: 22px 28px 36px !important;
   }
@@ -147,7 +144,6 @@
     border-radius: 16px !important;
   }
 
-  /* Agenda: remove identidade interna duplicada e aproxima controles do topo. */
   .vf-agenda-official-shell .workspace {
     padding: 18px 22px 32px !important;
   }
@@ -171,7 +167,6 @@
     display: none !important;
   }
 
-  /* Administracao: conserva estrutura aprovada e uniformiza densidade. */
   body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
     .app-shell .workspace {
     padding-top: 22px !important;
@@ -188,7 +183,6 @@
     min-height: 44px !important;
   }
 
-  /* Em desktop, o mapa ja esta coerente: somente preserva a area util. */
   body:has(.workspace .full-map) .workspace {
     padding-left: 18px !important;
     padding-right: 18px !important;
