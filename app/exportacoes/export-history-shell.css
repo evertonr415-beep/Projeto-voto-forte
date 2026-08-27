@@ -155,6 +155,88 @@
   color: #fff !important;
 }
 
+@media (min-width: 1024px) {
+  /* Desktop: enquadramento real da rota, com um unico eixo para titulo, acoes e cards. */
+  .vf-export-official-shell .workspace {
+    box-sizing: border-box !important;
+    padding: 24px 36px 42px !important;
+    overflow-x: hidden !important;
+  }
+
+  .vf-export-official-shell .vf-export-route-content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 980px !important;
+    margin: 0 auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 980px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 0 18px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 24px !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child {
+    min-width: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child > small,
+  .vf-export-official-shell .vf-export-page-head > div:first-child > p {
+    display: block !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: left !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child > p {
+    max-width: 660px !important;
+    margin-top: 6px !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    align-self: start !important;
+    margin: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-info,
+  .vf-export-official-shell .vf-export-error,
+  .vf-export-official-shell .vf-export-message,
+  .vf-export-official-shell .vf-export-history-card,
+  .vf-export-official-shell .vf-export-summary-grid,
+  .vf-export-official-shell .vf-backup-toast {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-info {
+    margin-top: 0 !important;
+    margin-bottom: 18px !important;
+  }
+
+  .vf-export-official-shell .vf-export-history-card {
+    margin-top: 0 !important;
+  }
+}
+
 @media (max-width: 760px) {
   .vf-export-official-shell .topbar[data-vf-export-header="true"] {
     box-sizing: border-box !important;

@@ -7,6 +7,7 @@ import MapTerritoryEnhancer from "./map-territory-enhancer";
 import MobileMapControls from "./mobile-map-controls";
 import TerritorialPendingCenter from "./territorial-pending-center";
 import MapMobileCompactExperience from "./map-mobile-compact-experience";
+import MapDesktopCompactExperience from "./map-desktop-compact-experience";
 import { apiFetch } from "./supabase-client";
 
 export default function MapToolsGate() {
@@ -58,6 +59,7 @@ export default function MapToolsGate() {
       {protectedAccessReady && <MapTerritoryEnhancer />}
       {protectedAccessReady && <MobileMapControls />}
       {protectedAccessReady && mapPresent && <MapMobileCompactExperience isAdm={isAdm} />}
+      {protectedAccessReady && mapPresent && <MapDesktopCompactExperience isAdm={isAdm} />}
       {protectedAccessReady && isAdm && <TerritorialPendingCenter />}
     </>
   );
