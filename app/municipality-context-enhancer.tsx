@@ -86,12 +86,11 @@ export default function MunicipalityContextEnhancer() {
   const [sidebarHost, setSidebarHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    // O Dashboard usa o menu hamburguer até 1050px. Mantemos o mesmo corte
-    // aqui para o seletor de município nunca migrar para o cabeçalho antes
-    // de a navegação mobile realmente deixar de existir.
+    // O Dashboard mantém a navegação em modo hambúrguer até 1050px.
+    // No mobile usamos o <nav> real como alvo do portal; não criamos mais
+    // nós DOM externos dentro da sidebar, que podiam ser removidos pelo React.
     const media = window.matchMedia("(min-width: 1051px)");
     let frameId = 0;
-    let generatedSidebarHost: HTMLElement | null = null;
 
     const findHosts = () => {
       if (media.matches) {
@@ -100,52 +99,14 @@ export default function MunicipalityContextEnhancer() {
         );
         setHeaderHost((current) => (current === topHost ? current : topHost));
         setSidebarHost(null);
-        generatedSidebarHost?.remove();
-        generatedSidebarHost = null;
         return;
       }
 
       setHeaderHost(null);
-
-      const sidebar = document.querySelector<HTMLElement>(".app-shell .sidebar");
-      if (!sidebar) {
-        setSidebarHost(null);
-        return;
-      }
-
-      let sideHost = document.querySelector<HTMLElement>(
-        "#vf-sidebar-municipality-host",
+      const navHost = document.querySelector<HTMLElement>(
+        ".app-shell .sidebar > nav",
       );
-
-      if (!sideHost) {
-        sideHost = document.createElement("div");
-        sideHost.id = "vf-sidebar-municipality-host";
-        sideHost.className = "vf-sidebar-municipality-host";
-        generatedSidebarHost = sideHost;
-      }
-
-      const menuLabel =
-        sidebar.querySelector<HTMLElement>(":scope > .menu-label") ||
-        sidebar.querySelector<HTMLElement>(".menu-label");
-      const headerRow =
-        sidebar.querySelector<HTMLElement>(":scope > .sidebar-header-row") ||
-        sidebar.querySelector<HTMLElement>(".sidebar-header-row");
-
-      // Preferimos o local histórico: logo antes de NAVEGAÇÃO. Se a estrutura
-      // do menu mudar, usamos o cabeçalho ou o início da sidebar como fallback.
-      if (menuLabel?.parentElement === sidebar) {
-        if (sideHost.parentElement !== sidebar || sideHost.nextElementSibling !== menuLabel) {
-          sidebar.insertBefore(sideHost, menuLabel);
-        }
-      } else if (headerRow?.parentElement === sidebar) {
-        if (sideHost.parentElement !== sidebar || headerRow.nextElementSibling !== sideHost) {
-          headerRow.insertAdjacentElement("afterend", sideHost);
-        }
-      } else if (sideHost.parentElement !== sidebar) {
-        sidebar.prepend(sideHost);
-      }
-
-      setSidebarHost((current) => (current === sideHost ? current : sideHost));
+      setSidebarHost((current) => (current === navHost ? current : navHost));
     };
 
     findHosts();
@@ -163,7 +124,6 @@ export default function MunicipalityContextEnhancer() {
       if (frameId) window.cancelAnimationFrame(frameId);
       observer.disconnect();
       media.removeEventListener("change", findHosts);
-      generatedSidebarHost?.remove();
     };
   }, []);
 
@@ -301,31 +261,41 @@ export default function MunicipalityContextEnhancer() {
 
   if (sidebarHost) {
     const sidebarControl = (
-      <div className="vf-sidebar-municipality-box">
-        <small>{contextLabel}</small>
-        {canSwitchMunicipality ? (
-          <label className="vf-sidebar-municipality-select-wrap">
-            <select
-              aria-label={context.isGestor ? "Selecionar qualquer município" : "Trocar município"}
-              disabled={busy}
-              value={context.currentMunicipalityId}
-              onChange={(event) => void switchMunicipality(event.target.value)}
-            >
-              {context.municipalities.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} - {item.state}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <div className="vf-sidebar-municipality-badge">
-            {current.name} - {current.state}
-          </div>
-        )}
-        {message && (
-          <small className="vf-sidebar-municipality-msg">{message}</small>
-        )}
+      <div
+        className="vf-sidebar-municipality-host"
+        data-vf-municipality-mobile-host="true"
+        style={{ order: -1 }}
+      >
+        <div className="vf-sidebar-municipality-box">
+          <small>{contextLabel}</small>
+          {canSwitchMunicipality ? (
+            <label className="vf-sidebar-municipality-select-wrap">
+              <select
+                aria-label={
+                  context.isGestor
+                    ? "Selecionar qualquer município"
+                    : "Trocar município"
+                }
+                disabled={busy}
+                value={context.currentMunicipalityId}
+                onChange={(event) => void switchMunicipality(event.target.value)}
+              >
+                {context.municipalities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} - {item.state}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div className="vf-sidebar-municipality-badge">
+              {current.name} - {current.state}
+            </div>
+          )}
+          {message && (
+            <small className="vf-sidebar-municipality-msg">{message}</small>
+          )}
+        </div>
       </div>
     );
 
