@@ -84,16 +84,71 @@
     width: 100% !important;
   }
 
-  /* Agenda: o componente continua funcional e o posicionamento final do modal
-     é sincronizado pelo enhancer desktop para a área visível atual. */
+  /* Agenda: mantem o modal inteiro dentro da area util do notebook.
+     Cabecalho e acoes ficam fixos; apenas os campos rolam quando necessario. */
   .vf-agenda-official-shell .vf-agenda-route-content .ae-root {
     position: relative !important;
     overflow: visible !important;
   }
 
   .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card {
-    width: min(740px, calc(100% - 48px)) !important;
-    max-height: calc(100dvh - 48px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: min(640px, calc(100% - 48px)) !important;
+    min-height: 0 !important;
     border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card > .ae-card-head {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 3 !important;
+    padding: 14px 16px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card > .ae-modal-body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 12px 14px 10px !important;
+    gap: 8px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-body > .ae-form-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    padding: 2px 4px 6px 0 !important;
+    gap: 8px 10px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-body > div:last-child {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 4 !important;
+    margin-top: 0 !important;
+    padding: 10px 0 0 !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.16) !important;
+    background: var(--ae-card-solid) !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-form-grid label {
+    margin-bottom: 3px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-field,
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-select {
+    min-height: 38px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-textarea {
+    min-height: 62px !important;
   }
 }
