@@ -1,0 +1,202 @@
+/*
+ * VOTO FORTE PARANA - paridade visual desktop x mobile
+ * Camada exclusivamente desktop. Nao altera regras abaixo de 761px.
+ */
+@media (min-width: 761px) {
+  /* Shell e cabecalho: mesma linguagem visual navy/ciano do mobile, com geometria desktop. */
+  .app-shell .topbar {
+    min-height: 70px !important;
+    padding: 10px 18px !important;
+    gap: 12px !important;
+    background: rgba(7, 17, 32, 0.98) !important;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  .app-shell .page-id {
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .app-shell .page-id h1 {
+    color: #f8fafc !important;
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .app-shell .page-id small {
+    color: #d7ae60 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+
+  .app-shell .top-actions {
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  .app-shell .profile > span {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    border: 1px solid rgba(56, 189, 248, 0.32) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  /* Escopo e controles do topo no mesmo acabamento aprovado no mobile. */
+  .app-shell .scope-picker,
+  .app-shell .vf-header-scope-select-wrap {
+    border: 1.5px solid rgba(56, 189, 248, 0.55) !important;
+    border-radius: 12px !important;
+    background: linear-gradient(180deg, #132746 0%, #0f1e3a 100%) !important;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.20) !important;
+  }
+
+  .app-shell .scope-picker select,
+  .app-shell .vf-header-scope-select {
+    min-height: 40px !important;
+    color: #f8fafc !important;
+    font-weight: 800 !important;
+  }
+
+  /* Navegacao lateral com botoes mais proximos do padrao mobile. */
+  .app-shell .sidebar nav button {
+    min-height: 44px !important;
+    margin: 3px 8px !important;
+    padding: 9px 12px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    color: #cbd5e1 !important;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease !important;
+  }
+
+  .app-shell .sidebar nav button:hover {
+    background: rgba(56, 189, 248, 0.08) !important;
+    border-color: rgba(56, 189, 248, 0.16) !important;
+    color: #ffffff !important;
+    transform: translateX(1px) !important;
+  }
+
+  .app-shell .sidebar nav button.active {
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.22), rgba(14, 165, 233, 0.06)) !important;
+    border-color: rgba(56, 189, 248, 0.24) !important;
+    border-left: 3px solid #38bdf8 !important;
+    color: #ffffff !important;
+  }
+
+  /* Cards, paineis e KPIs com raio/borda/sombra consistentes. */
+  .app-shell .panel,
+  .app-shell .kpi,
+  .app-shell .summary-strip,
+  .app-shell .management-filter,
+  .app-shell .district-contact-filter,
+  .app-shell .contact-directory,
+  .app-shell .meeting-list,
+  .app-shell .optimized-panel,
+  .app-shell .optimized-kpis article,
+  .app-shell .optimized-quick-actions > a,
+  .app-shell .optimized-quick-actions > button {
+    border: 1px solid rgba(56, 189, 248, 0.16) !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg, rgba(15, 30, 58, 0.96), rgba(9, 18, 38, 0.96)) !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  /* Botoes secundarios e operacionais padronizados. */
+  .app-shell .management-filter button,
+  .app-shell .export-buttons button,
+  .app-shell .contact-actions button,
+  .app-shell .import-actions button,
+  .app-shell .table-tools button,
+  .app-shell .optimized-quick-actions > a,
+  .app-shell .optimized-quick-actions > button {
+    min-height: 42px !important;
+    border: 1px solid rgba(56, 189, 248, 0.22) !important;
+    border-radius: 12px !important;
+    background: #101f3a !important;
+    color: #e2e8f0 !important;
+    font-weight: 750 !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
+  }
+
+  .app-shell .management-filter button:hover,
+  .app-shell .export-buttons button:hover,
+  .app-shell .contact-actions button:hover,
+  .app-shell .import-actions button:hover,
+  .app-shell .table-tools button:hover,
+  .app-shell .optimized-quick-actions > a:hover,
+  .app-shell .optimized-quick-actions > button:hover {
+    background: #173052 !important;
+    border-color: rgba(56, 189, 248, 0.46) !important;
+    color: #ffffff !important;
+  }
+
+  .app-shell button.primary,
+  .app-shell .primary,
+  .app-shell .page-head > button {
+    min-height: 42px !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+  }
+
+  /* Campos com mesma densidade e foco visual. */
+  .app-shell input,
+  .app-shell textarea,
+  .app-shell select {
+    min-height: 42px !important;
+    border-radius: 11px !important;
+  }
+
+  /* Remove cabecalhos internos redundantes nas telas que ja possuem contexto no shell. */
+  .app-shell.vf-contacts-active .vf-contacts-optimized-portal .optimized-topbar,
+  .app-shell:has(.vf-contacts-optimized-portal) .vf-contacts-optimized-portal .optimized-topbar {
+    display: none !important;
+  }
+
+  .app-shell.vf-contacts-active .vf-contacts-optimized-portal > .optimized-shell,
+  .app-shell:has(.vf-contacts-optimized-portal) .vf-contacts-optimized-portal > .optimized-shell {
+    padding-top: 0 !important;
+  }
+
+  .page-head:has(+ .wa-layout) {
+    display: none !important;
+  }
+
+  body:has(.tse-panel-root) .tse-panel-topbar {
+    display: none !important;
+  }
+
+  body:has(.tse-panel-root) .tse-panel-root {
+    padding-top: 0 !important;
+  }
+
+  body:has(.workspace .full-map) .workspace > .page-head {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .workspace {
+    padding-top: 18px !important;
+  }
+
+  .vf-agenda-official-shell,
+  .vf-agenda-official-shell .main,
+  .vf-agenda-official-shell .workspace,
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    background: #051929 !important;
+    background-color: #051929 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar .ae-brand {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar {
+    padding-top: 14px !important;
+  }
+
+  /* Limita largura extrema para manter leitura e hierarquia em monitores grandes. */
+  .app-shell .workspace > :not(.full-map):not(.vf-contacts-optimized-portal) {
+    max-width: 1600px;
+  }
+}
