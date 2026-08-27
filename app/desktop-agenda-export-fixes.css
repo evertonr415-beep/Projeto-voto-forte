@@ -1,0 +1,37 @@
+/* Ajustes finais exclusivos do desktop para Agenda e Histórico de Exportações. */
+@media (min-width: 1024px) {
+  /* Histórico de Exportações: usa o mesmo enquadramento central das telas desktop aprovadas. */
+  .vf-export-official-shell .workspace {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding: 22px clamp(26px, 3vw, 44px) 40px !important;
+  }
+
+  .vf-export-official-shell .vf-export-route-content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1180px !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head,
+  .vf-export-official-shell .vf-export-info,
+  .vf-export-official-shell .vf-export-error,
+  .vf-export-official-shell .vf-export-message,
+  .vf-export-official-shell .vf-export-history-card,
+  .vf-export-official-shell .vf-export-summary-grid,
+  .vf-export-official-shell .vf-backup-toast {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
