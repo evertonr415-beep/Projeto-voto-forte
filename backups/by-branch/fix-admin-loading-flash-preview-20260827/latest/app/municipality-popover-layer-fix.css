@@ -1,0 +1,22 @@
+/* Mantém somente o menu de municípios acima dos cards e camadas do mapa. */
+@media (min-width: 1000px) {
+  .topbar:has(.vf-municipality-header-menu[open]) {
+    z-index: 20000 !important;
+    overflow: visible !important;
+  }
+
+  .topbar:has(.vf-municipality-header-menu[open]) .top-actions {
+    position: relative !important;
+    z-index: 1 !important;
+    overflow: visible !important;
+  }
+
+  .vf-municipality-header-menu[open] {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .vf-municipality-header-popover {
+    z-index: 3 !important;
+  }
+}
