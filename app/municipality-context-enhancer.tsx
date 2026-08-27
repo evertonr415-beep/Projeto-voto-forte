@@ -197,14 +197,10 @@ export default function MunicipalityContextEnhancer() {
   const contextLabel = context.isGeneralAdm
     ? "CENTRAL VOTO FORTE"
     : context.isGestor
-      ? "GESTÃO MULTIMUNICIPAL"
+      ? "TODOS OS MUNICÍPIOS"
       : "MUNICÍPIO";
   const canSwitchMunicipality =
     Boolean(context.canSwitchMunicipality) && context.municipalities.length > 1;
-  const hasMobileActions =
-    canSwitchMunicipality ||
-    (context.isGeneralAdm && overview.length > 0) ||
-    Boolean(message);
 
   if (headerHost) {
     const canChooseMunicipality =
@@ -222,7 +218,11 @@ export default function MunicipalityContextEnhancer() {
         <div className="vf-municipality-header-popover">
           <header>
             <small>
-              {context.isGeneralAdm ? "VISÃO ESTADUAL" : "MUNICÍPIOS AUTORIZADOS"}
+              {context.isGeneralAdm
+                ? "VISÃO ESTADUAL"
+                : context.isGestor
+                  ? "TODOS OS MUNICÍPIOS"
+                  : "MUNICÍPIOS AUTORIZADOS"}
             </small>
             <b>{desktopItems.length} município(s)</b>
           </header>
@@ -282,7 +282,7 @@ export default function MunicipalityContextEnhancer() {
         {canSwitchMunicipality ? (
           <label className="vf-sidebar-municipality-select-wrap">
             <select
-              aria-label="Trocar município"
+              aria-label={context.isGestor ? "Selecionar qualquer município" : "Trocar município"}
               disabled={busy}
               value={context.currentMunicipalityId}
               onChange={(event) => void switchMunicipality(event.target.value)}
