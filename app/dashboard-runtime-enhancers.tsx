@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
+import MunicipalElectoralMapIbgeAuthority from "./municipal-electoral-map-ibge-authority";
 import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
 import MapMultimunicipalityDistrictOverlay from "./map-multimunicipality-district-overlay";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
@@ -64,6 +65,7 @@ export default function DashboardRuntimeEnhancers() {
         <>
           <MunicipalityContextEnhancer />
           <MunicipalityFieldEnhancer />
+          <MunicipalElectoralMapIbgeAuthority />
           <MunicipalElectoralMapContext />
           <MapMultimunicipalityDistrictOverlay />
           <CepFallbackEnhancer />
