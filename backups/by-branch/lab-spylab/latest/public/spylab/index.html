@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>SpyLab — laboratório de localização</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://tile.openstreetmap.org" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    :root{color-scheme:dark;--bg:#060812;--panel:#0d1324;--panel2:#111a30;--text:#f4f7ff;--muted:#9aa9c7;--ok:#35d07f;--warn:#ffc857;--danger:#ff5d73;--accent:#6ea8fe;--line:#23304d}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#111936 0,transparent 36%),var(--bg);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);min-height:100vh}
+    .wrap{width:min(980px,100%);margin:auto;padding:calc(20px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}.dot{width:12px;height:12px;border-radius:50%;background:var(--ok);box-shadow:0 0 20px var(--ok)}
+    h1{font-size:clamp(30px,8vw,56px);line-height:1.05;margin:30px 0 12px;letter-spacing:-1.8px}h2{margin:0 0 8px;font-size:20px}.lead{color:var(--muted);max-width:700px;font-size:17px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:26px}.card{background:linear-gradient(180deg,rgba(17,26,48,.96),rgba(13,19,36,.96));border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 16px 60px rgba(0,0,0,.25)}
+    .hero-card{cursor:pointer;transition:.2s transform,.2s border-color}.hero-card:hover{transform:translateY(-2px);border-color:#496496}.hero-card p{color:var(--muted);margin:6px 0 16px}.tag{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#14203b;color:#c8d6f5;font-size:12px;font-weight:700}.btn{appearance:none;border:0;border-radius:14px;background:var(--accent);color:#07101f;font-weight:800;padding:13px 16px;font-size:15px;cursor:pointer;width:100%}.btn.secondary{background:#17233e;color:var(--text);border:1px solid var(--line)}.btn.danger{background:#ff7284;color:#26050a}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .notice{margin:20px 0 0;padding:13px 15px;border:1px solid #394668;border-radius:16px;color:#cbd7ef;background:#0b1225}.notice strong{color:#fff}.status{display:flex;gap:9px;align-items:center}.status i{width:9px;height:9px;border-radius:50%;background:var(--warn)}.status.live i{background:var(--ok);box-shadow:0 0 14px var(--ok)}.status.off i{background:var(--danger)}
+    .session{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#080d1a;border:1px solid var(--line);padding:12px;border-radius:14px;word-break:break-all;margin:12px 0}.row{display:flex;gap:10px}.row>*{flex:1}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{padding:12px;border-radius:14px;background:#0a1120;border:1px solid #1f2b45}.metric small{display:block;color:var(--muted);margin-bottom:4px}.metric b{font-size:16px}.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#b8c8e8;max-height:170px;overflow:auto;background:#080d1a;border:1px solid var(--line);padding:12px;border-radius:14px;margin-top:12px}.log div{padding:3px 0;border-bottom:1px dotted #1b2842}.log div:last-child{border:0}
+    #map{height:430px;border-radius:18px;border:1px solid var(--line);overflow:hidden;background:#0b1020;margin-top:12px}.hidden{display:none!important}.pill{font-size:12px;padding:6px 9px;border-radius:999px;background:#12203a;color:#c7d7f4}.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.back{color:#b9c9e7;text-decoration:none;font-weight:700}.perm{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #1d2943}.perm:last-child{border:0}.perm span{color:var(--muted)}.value{font-weight:800;color:#fff}.footer{color:#71819e;font-size:12px;margin-top:18px}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.wrap{padding-left:14px;padding-right:14px}#map{height:360px}.row{flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="dot"></span> SpyLab <span class="pill">laboratório consentido</span></div>
+
+  <section id="home">
+    <h1>Veja o que um site realmente consegue saber do seu iPhone.</h1>
+    <p class="lead">Teste real, sem instalar aplicativo e sem armazenar sua localização. O iPhone compartilha a posição somente depois que você toca em “Iniciar compartilhamento”.</p>
+    <div class="grid">
+      <div class="card hero-card" id="openSender">
+        <span class="tag">📱 iPhone rastreado</span><h2 style="margin-top:14px">Transmitir localização</h2>
+        <p>Abra esta opção no iPhone que ficará longe. Ele cria uma sessão privada e mostra claramente quando a localização está sendo enviada.</p>
+        <button class="btn">Abrir transmissor</button>
+      </div>
+      <div class="card hero-card" id="openViewer">
+        <span class="tag">🗺️ outro aparelho</span><h2 style="margin-top:14px">Painel remoto</h2>
+        <p>Abra em outro celular ou computador, informe o código da sessão e acompanhe os pontos recebidos em um mapa.</p>
+        <button class="btn secondary">Abrir painel</button>
+      </div>
+    </div>
+    <div class="notice"><strong>Limite proposital:</strong> este laboratório não tenta esconder a coleta nem burlar permissões do iOS. Ele serve para mostrar exatamente a fronteira entre um site comum e um spyware.</div>
+  </section>
+
+  <section id="sender" class="hidden">
+    <div class="topbar"><a class="back" href="#">← início</a><div id="senderStatus" class="status"><i></i><b>aguardando</b></div></div>
+    <div class="card">
+      <h2>Transmissor do iPhone</h2>
+      <p class="lead" style="font-size:14px">Esta sessão usa uma conexão direta em tempo real. Fechar esta página ou tocar em parar encerra o envio.</p>
+      <div class="session" id="sessionCode">criando sessão…</div>
+      <div class="row"><button id="copyLink" class="btn secondary" disabled>Copiar link do painel</button><button id="shareLink" class="btn secondary" disabled>Compartilhar</button></div>
+      <div style="height:10px"></div>
+      <button id="startShare" class="btn" disabled>Iniciar compartilhamento de localização</button>
+      <div style="height:10px"></div>
+      <button id="stopShare" class="btn danger hidden">Parar compartilhamento</button>
+      <div class="metrics">
+        <div class="metric"><small>Latitude</small><b id="sLat">—</b></div><div class="metric"><small>Longitude</small><b id="sLng">—</b></div><div class="metric"><small>Precisão</small><b id="sAcc">—</b></div>
+        <div class="metric"><small>Velocidade</small><b id="sSpeed">—</b></div><div class="metric"><small>Última leitura</small><b id="sTime">—</b></div><div class="metric"><small>Conexões</small><b id="sPeers">0</b></div>
+      </div>
+      <div class="log" id="senderLog"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>O que o navegador expõe</h2>
+      <div class="perm"><span>Sistema/navegador</span><b class="value" id="uaVal">—</b></div>
+      <div class="perm"><span>Idioma</span><b class="value" id="langVal">—</b></div>
+      <div class="perm"><span>Tamanho da tela</span><b class="value" id="screenVal">—</b></div>
+      <div class="perm"><span>Localização</span><b class="value" id="geoVal">não solicitada</b></div>
+      <div class="perm"><span>Câmera</span><button id="cameraTest" class="btn secondary" style="width:auto;padding:8px 11px">Testar permissão</button></div>
+      <div class="perm"><span>Microfone</span><button id="micTest" class="btn secondary" style="width:auto;padding:8px 11px">Testar permissão</button></div>
+      <video id="preview" playsinline muted autoplay class="hidden" style="width:100%;margin-top:12px;border-radius:16px;max-height:280px;background:#000"></video>
+    </div>
+  </section>
+
+  <section id="viewer" class="hidden">
+    <div class="topbar"><a class="back" href="#">← início</a><div id="viewerStatus" class="status"><i></i><b>desconectado</b></div></div>
+    <div class="card">
+      <h2>Painel remoto</h2>
+      <p class="lead" style="font-size:14px">Cole o código/link gerado no iPhone transmissor. O painel só recebe dados enquanto aquela página estiver compartilhando.</p>
+      <div class="row"><input id="roomInput" autocomplete="off" placeholder="código da sessão" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:#080d1a;color:white;font-size:15px"><button id="connectBtn" class="btn" style="max-width:180px">Conectar</button></div>
+      <div class="metrics">
+        <div class="metric"><small>Latitude</small><b id="vLat">—</b></div><div class="metric"><small>Longitude</small><b id="vLng">—</b></div><div class="metric"><small>Precisão</small><b id="vAcc">—</b></div>
+        <div class="metric"><small>Velocidade</small><b id="vSpeed">—</b></div><div class="metric"><small>Atualizado</small><b id="vTime">—</b></div><div class="metric"><small>Pontos</small><b id="vPoints">0</b></div>
+      </div>
+      <div id="map"></div>
+      <div class="log" id="viewerLog"></div>
+    </div>
+  </section>
+  <div class="footer">SpyLab • experimento local e consentido • localização não é gravada por este site</div>
+</div>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+const $=id=>document.getElementById(id);let peer=null,watchId=null,connections=[],map=null,marker=null,path=null,points=[];
+const log=(box,msg)=>{const d=document.createElement('div');d.textContent=`${new Date().toLocaleTimeString()}  ${msg}`;$(box).prepend(d)};
+function route(mode){['home','sender','viewer'].forEach(x=>$(x).classList.add('hidden'));$(mode).classList.remove('hidden');if(mode==='sender') initSender();if(mode==='viewer') initViewer();}
+function randomId(){const a=new Uint8Array(16);crypto.getRandomValues(a);return 'spylab-'+[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function detectMode(){const p=new URLSearchParams(location.search),m=p.get('mode');if(m==='sender'||m==='viewer')route(m);else route('home')}
+$('openSender').onclick=()=>{history.pushState({},'',location.pathname+'?mode=sender');route('sender')};$('openViewer').onclick=()=>{history.pushState({},'',location.pathname+'?mode=viewer');route('viewer')};
+document.querySelectorAll('.back').forEach(a=>a.onclick=e=>{e.preventDefault();history.pushState({},'',location.pathname);location.reload()});
+window.onpopstate=()=>location.reload();
+function setStatus(id,text,cls=''){const e=$(id);e.className='status '+cls;e.querySelector('b').textContent=text}
+function initSender(){if(peer)return; $('uaVal').textContent=(navigator.userAgent.includes('iPhone')?'iPhone / ':'')+(navigator.userAgent.includes('Safari')?'Safari':'navegador');$('langVal').textContent=navigator.language;$('screenVal').textContent=`${screen.width} × ${screen.height}`;
+  const id=randomId();$('sessionCode').textContent=id;peer=new Peer(id,{debug:1});
+  peer.on('open',()=>{setStatus('senderStatus','pronto','live');$('startShare').disabled=false;$('copyLink').disabled=false;$('shareLink').disabled=false;log('senderLog','sessão pronta para conexão')});
+  peer.on('connection',c=>{connections.push(c);$('sPeers').textContent=connections.filter(x=>x.open).length;c.on('open',()=>{ $('sPeers').textContent=connections.filter(x=>x.open).length;log('senderLog','painel remoto conectado')});c.on('close',()=>{$('sPeers').textContent=connections.filter(x=>x.open).length;log('senderLog','painel remoto desconectado')})});
+  peer.on('error',e=>{setStatus('senderStatus','erro','off');log('senderLog','erro de conexão: '+e.type)});
+  const viewerUrl=()=>location.origin+location.pathname+'?mode=viewer&room='+encodeURIComponent(id);
+  $('copyLink').onclick=async()=>{await navigator.clipboard.writeText(viewerUrl());log('senderLog','link do painel copiado')};
+  $('shareLink').onclick=async()=>{const u=viewerUrl();if(navigator.share)await navigator.share({title:'SpyLab — painel',url:u});else await navigator.clipboard.writeText(u)};
+  $('startShare').onclick=()=>startLocation();$('stopShare').onclick=()=>stopLocation();
+  $('cameraTest').onclick=()=>testMedia('video');$('micTest').onclick=()=>testMedia('audio');
+}
+function startLocation(){if(!navigator.geolocation){log('senderLog','geolocalização indisponível');return}$('geoVal').textContent='solicitando…';
+ watchId=navigator.geolocation.watchPosition(pos=>{const c=pos.coords,d={type:'location',lat:c.latitude,lng:c.longitude,accuracy:c.accuracy,speed:c.speed,heading:c.heading,altitude:c.altitude,timestamp:pos.timestamp};$('sLat').textContent=c.latitude.toFixed(6);$('sLng').textContent=c.longitude.toFixed(6);$('sAcc').textContent=Math.round(c.accuracy)+' m';$('sSpeed').textContent=c.speed==null?'—':(c.speed*3.6).toFixed(1)+' km/h';$('sTime').textContent=new Date(pos.timestamp).toLocaleTimeString();$('geoVal').textContent='permitida';connections.filter(x=>x.open).forEach(x=>x.send(d));setStatus('senderStatus','compartilhando','live');},err=>{$('geoVal').textContent='negada/bloqueada';setStatus('senderStatus','localização bloqueada','off');log('senderLog',err.message)},{enableHighAccuracy:true,maximumAge:3000,timeout:15000});$('startShare').classList.add('hidden');$('stopShare').classList.remove('hidden');log('senderLog','solicitação de localização iniciada')}
+function stopLocation(){if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;$('startShare').classList.remove('hidden');$('stopShare').classList.add('hidden');setStatus('senderStatus','parado','off');connections.filter(x=>x.open).forEach(x=>x.send({type:'stopped',timestamp:Date.now()}));log('senderLog','compartilhamento encerrado')}
+async function testMedia(kind){try{const constraints=kind==='video'?{video:{facingMode:'user'},audio:false}:{audio:true,video:false};const stream=await navigator.mediaDevices.getUserMedia(constraints);log('senderLog',(kind==='video'?'câmera':'microfone')+' autorizado');if(kind==='video'){$('preview').srcObject=stream;$('preview').classList.remove('hidden');setTimeout(()=>{stream.getTracks().forEach(t=>t.stop());$('preview').classList.add('hidden')},5000)}else{setTimeout(()=>stream.getTracks().forEach(t=>t.stop()),1200)}}catch(e){log('senderLog',(kind==='video'?'câmera':'microfone')+' não autorizado: '+e.name)}}
+function initViewer(){if(map)return;map=L.map('map').setView([-23.55,-46.63],5);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);path=L.polyline([]).addTo(map);const p=new URLSearchParams(location.search);if(p.get('room'))$('roomInput').value=p.get('room');$('connectBtn').onclick=connectViewer}
+function connectViewer(){const room=$('roomInput').value.trim();if(!room)return;setStatus('viewerStatus','conectando…');log('viewerLog','tentando conectar à sessão');if(peer)try{peer.destroy()}catch{}peer=new Peer(undefined,{debug:1});peer.on('open',()=>{const c=peer.connect(room,{reliable:true});c.on('open',()=>{setStatus('viewerStatus','conectado','live');log('viewerLog','conexão direta estabelecida')});c.on('data',d=>{if(d.type==='location')renderLocation(d);if(d.type==='stopped'){setStatus('viewerStatus','transmissão parada','off');log('viewerLog','o iPhone encerrou o compartilhamento')}});c.on('close',()=>setStatus('viewerStatus','desconectado','off'));c.on('error',()=>setStatus('viewerStatus','erro','off'))});peer.on('error',e=>{setStatus('viewerStatus','não encontrado','off');log('viewerLog','erro: '+e.type)})}
+function renderLocation(d){$('vLat').textContent=d.lat.toFixed(6);$('vLng').textContent=d.lng.toFixed(6);$('vAcc').textContent=Math.round(d.accuracy)+' m';$('vSpeed').textContent=d.speed==null?'—':(d.speed*3.6).toFixed(1)+' km/h';$('vTime').textContent=new Date(d.timestamp).toLocaleTimeString();points.push([d.lat,d.lng]);$('vPoints').textContent=points.length;path.setLatLngs(points);if(!marker){marker=L.marker([d.lat,d.lng]).addTo(map);map.setView([d.lat,d.lng],16)}else marker.setLatLng([d.lat,d.lng]);if(points.length>1)map.fitBounds(path.getBounds(),{padding:[40,40],maxZoom:17});}
+detectMode();
+</script>
+</body></html>
