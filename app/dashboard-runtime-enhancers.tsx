@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
 import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
+import MapMultimunicipalityDistrictOverlay from "./map-multimunicipality-district-overlay";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
@@ -64,6 +65,7 @@ export default function DashboardRuntimeEnhancers() {
           <MunicipalityContextEnhancer />
           <MunicipalityFieldEnhancer />
           <MunicipalElectoralMapContext />
+          <MapMultimunicipalityDistrictOverlay />
           <CepFallbackEnhancer />
           <MapInstantContactBootstrap />
           <MapToolsGate />
