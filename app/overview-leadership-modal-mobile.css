@@ -1,0 +1,305 @@
+/*
+ * Visão Geral — modal "Cadastrar liderança" no mobile.
+ * Escopo deliberadamente restrito ao modal cujo primeiro bloco possui
+ * o seletor Perfil desabilitado em "Liderança".
+ * Não altera os KPIs/atalhos da Visão Geral nem outros modais.
+ */
+@media (max-width: 760px) {
+  .app-shell
+    .modal-backdrop:has(
+      .modal
+        .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    ) {
+    box-sizing: border-box !important;
+    place-items: start center !important;
+    padding:
+      max(72px, calc(env(safe-area-inset-top) + 58px))
+      10px
+      max(10px, env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    ) {
+    box-sizing: border-box !important;
+    width: min(358px, calc(100vw - 20px)) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 84px - env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > header {
+    min-height: 0 !important;
+    padding: 13px 15px !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > header
+    small {
+    font-size: 6px !important;
+    line-height: 1.1 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > header
+    h3 {
+    margin-top: 3px !important;
+    font-size: 17px !important;
+    line-height: 1.15 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > header
+    button {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    padding: 0 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form {
+    box-sizing: border-box !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    padding: 12px 14px 14px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    > div {
+    box-sizing: border-box !important;
+    grid-template-columns: minmax(0, 1fr) 108px !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 8px 0 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    > label,
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    > div
+    > label {
+    min-width: 0 !important;
+    gap: 4px !important;
+    font-size: 8px !important;
+    line-height: 1.15 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    > label
+    + label {
+    margin-top: 8px !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    input,
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    select,
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    textarea {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 9px !important;
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    select:disabled {
+    opacity: 1 !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .locate-contact-button {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 9px !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .address-status {
+    margin: 6px 0 !important;
+    font-size: 8px !important;
+    line-height: 1.25 !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > footer {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    padding:
+      9px
+      12px
+      max(9px, env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr) !important;
+    gap: 8px !important;
+    background: #0b1830 !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.14) !important;
+  }
+
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    > footer
+    button {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-shell
+    .modal:has(
+      .modal-form
+        > div:first-of-type
+        > label:nth-child(2)
+        > select:disabled
+    )
+    .modal-form
+    > div {
+    grid-template-columns: minmax(0, 1fr) 100px !important;
+  }
+}
