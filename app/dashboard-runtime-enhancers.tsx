@@ -27,6 +27,7 @@ import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
+import OverviewAgendaOfficialBridge from "./overview-agenda-official-bridge";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
@@ -75,6 +76,7 @@ export default function DashboardRuntimeEnhancers() {
           <NeighborhoodInfoDrawer />
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
+          <OverviewAgendaOfficialBridge />
           <ContactsOfficialShellBridge />
           <ElectoralMobileTopbarIdentity />
           <ElectoralDesktopTopbarIdentity />
