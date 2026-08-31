@@ -258,7 +258,7 @@ export default function WhaticketBroadcastDrawer() {
     }
     setTestStatus("⏳ Enviando mensagem de teste...");
     try {
-      const res = await fetch("/api/whatsapp/send", {
+      const res = await apiFetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -335,7 +335,7 @@ export default function WhaticketBroadcastDrawer() {
       );
 
       try {
-        const response = await fetch("/api/whatsapp/send", {
+        const response = await apiFetch("/api/whatsapp/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
