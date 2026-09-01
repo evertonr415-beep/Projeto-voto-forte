@@ -34,6 +34,8 @@ export default function SignupMunicipalityEnhancer() {
   const municipalities = useRef<Municipality[]>([]);
   const request = useRef<Promise<Municipality[]> | null>(null);
   const submitting = useRef(false);
+  const registrationInFlight = useRef<string | null>(null);
+  const registrationCompleted = useRef(new Set<string>());
 
   useEffect(() => {
     let active = true;
@@ -96,13 +98,26 @@ export default function SignupMunicipalityEnhancer() {
 
     async function registerConfirmedRequest() {
       const { data } = await supabase.auth.getSession();
-      if (!data.session?.user?.email_confirmed_at) return;
-      const municipalityName = String(data.session.user.user_metadata?.municipalityName ?? "").trim();
+      const session = data.session;
+      if (!session?.user?.email_confirmed_at) return;
+
+      const municipalityName = String(session.user.user_metadata?.municipalityName ?? "").trim();
       if (!municipalityName) return;
+
+      const registrationKey = `${session.user.id}:${municipalityName.toLocaleLowerCase("pt-BR")}`;
+      if (registrationCompleted.current.has(registrationKey)) return;
+      if (registrationInFlight.current === registrationKey) return;
+
+      registrationInFlight.current = registrationKey;
       try {
-        await apiFetch("/api/municipality-registration", { method: "POST" });
+        const response = await apiFetch("/api/municipality-registration", { method: "POST" });
+        if (response.ok) registrationCompleted.current.add(registrationKey);
       } catch {
         // A tela de acesso continuará bloqueada e permitirá nova tentativa no próximo login.
+      } finally {
+        if (registrationInFlight.current === registrationKey) {
+          registrationInFlight.current = null;
+        }
       }
     }
 
@@ -166,7 +181,8 @@ export default function SignupMunicipalityEnhancer() {
     observer.observe(document.body, { childList: true, subtree: true });
     document.addEventListener("submit", handleSubmit, true);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "USER_UPDATED") return;
       window.setTimeout(() => void registerConfirmedRequest(), 0);
     });
 
