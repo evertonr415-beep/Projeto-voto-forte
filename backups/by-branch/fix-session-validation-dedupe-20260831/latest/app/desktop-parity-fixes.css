@@ -1,0 +1,191 @@
+/*
+ * VOTO FORTE PARANA - refinamentos desktop da Preview
+ * Regras estritamente desktop. O mobile aprovado permanece intocado.
+ */
+@media (min-width: 1024px) {
+  /* Casca especial de Agenda e Historico: impede imagens naturais gigantes. */
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"],
+  .vf-export-official-shell .topbar[data-vf-export-header="true"] {
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 70px !important;
+    height: 70px !important;
+    padding: 10px 18px !important;
+    gap: 14px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .mobile-menu,
+  .vf-export-official-shell .topbar[data-vf-export-header="true"] .mobile-menu {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .page-id,
+  .vf-export-official-shell .topbar[data-vf-export-header="true"] .page-id {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-header-title-wrap,
+  .vf-export-official-shell .vf-export-header-title-wrap {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-header-logo,
+  .vf-export-official-shell .vf-export-header-logo {
+    display: block !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    object-fit: cover !important;
+    object-position: center 45% !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(56, 189, 248, 0.34) !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.20) !important;
+  }
+
+  .vf-export-official-shell .vf-export-header-label {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #f8fafc !important;
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+    font-weight: 820 !important;
+    letter-spacing: -0.02em !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-header-label {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-header-label::after {
+    content: "Agenda Inteligente";
+    color: #f8fafc !important;
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+    font-weight: 820 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .top-actions,
+  .vf-export-official-shell .topbar[data-vf-export-header="true"] .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+  }
+
+  .vf-export-official-shell .workspace {
+    padding: 22px 28px 36px !important;
+  }
+
+  .vf-export-official-shell .vf-export-route-content {
+    width: 100% !important;
+    max-width: 1500px !important;
+    margin: 0 auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-page {
+    padding: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 22px !important;
+    margin: 0 0 18px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child {
+    min-width: 0 !important;
+    max-width: 820px !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-info,
+  .vf-export-official-shell .vf-export-history-card {
+    border-radius: 16px !important;
+  }
+
+  .vf-agenda-official-shell .workspace {
+    padding: 18px 22px 32px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    width: 100% !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar {
+    margin-top: 0 !important;
+    padding: 14px 16px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(56, 189, 248, 0.18) !important;
+    background: linear-gradient(145deg, rgba(15, 30, 58, 0.94), rgba(9, 18, 38, 0.94)) !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar .ae-brand {
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .app-shell .workspace {
+    padding-top: 22px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter {
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter button {
+    min-height: 44px !important;
+  }
+
+  body:has(.workspace .full-map) .workspace {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+    padding-bottom: 18px !important;
+  }
+}
