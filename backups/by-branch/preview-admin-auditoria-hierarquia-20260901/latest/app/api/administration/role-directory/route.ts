@@ -60,6 +60,7 @@ export async function GET(request: Request) {
       city: String(payload.city ?? ""),
       ownerEmail: String(row.owner_email ?? ""),
       createdAt: String(row.created_at ?? ""),
+      payload,
     };
   });
 
