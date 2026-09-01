@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { Component, useEffect, useState } from "react";
+import React, { Component, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { CurrentUser } from "./dashboard-client";
 import { apiFetch, supabase } from "./supabase-client";
@@ -104,6 +104,7 @@ export default function AuthClient({
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(true);
   const [validationAttempt, setValidationAttempt] = useState(0);
+  const bootstrapSessionKey = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -124,21 +125,8 @@ export default function AuthClient({
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (cancelled) return;
-        setSession(data.session);
-        if (!data.session) setBusy(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setBusy(false);
-        setMessage(
-          "Não foi possível verificar sua sessão agora. Confira sua conexão e tente entrar novamente.",
-        );
-      });
-    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+
+    const applySessionState = (next: Session | null) => {
       setSession(next);
       if (!next) {
         setAccount(null);
@@ -149,7 +137,35 @@ export default function AuthClient({
         setAccessStatus(null);
         setBusy(true);
       }
+    };
+
+    const applyBootstrapSession = (next: Session | null) => {
+      const nextKey = next?.access_token || null;
+      if (bootstrapSessionKey.current === nextKey) return;
+      bootstrapSessionKey.current = nextKey;
+      applySessionState(next);
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        applyBootstrapSession(data.session);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBusy(false);
+        setMessage(
+          "Não foi possível verificar sua sessão agora. Confira sua conexão e tente entrar novamente.",
+        );
+      });
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
       if (event === "PASSWORD_RECOVERY") setMode("recovery");
+      if (event === "INITIAL_SESSION") {
+        applyBootstrapSession(next);
+        return;
+      }
+      applySessionState(next);
     });
     return () => {
       cancelled = true;
