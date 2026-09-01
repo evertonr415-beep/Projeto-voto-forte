@@ -1,0 +1,299 @@
+/*
+ * VOTO FORTE PARANA - experiencia desktop unificada
+ * Esta camada entra somente em desktop real e nao altera o mobile aprovado.
+ */
+@media (min-width: 1024px) {
+  /* === Cabecalho principal: bandeira + nome da aba === */
+  .app-shell .topbar[data-vf-desktop-header-identity="true"] {
+    min-height: 70px !important;
+    height: 70px !important;
+    padding: 10px 18px !important;
+    gap: 14px !important;
+    background: linear-gradient(180deg, rgba(7, 20, 38, .99), rgba(6, 17, 32, .99)) !important;
+    border-bottom: 1px solid rgba(56, 189, 248, .22) !important;
+    box-shadow: 0 9px 28px rgba(0, 0, 0, .22) !important;
+  }
+
+  .app-shell .topbar[data-vf-desktop-header-identity="true"] .page-id {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell .topbar[data-vf-desktop-header-identity="true"] .page-id > .mobile-menu {
+    display: none !important;
+  }
+
+  .app-shell .topbar[data-vf-desktop-header-identity="true"]
+    .page-id > div:not(.vf-desktop-header-brand):not(.vf-header-scope) {
+    display: none !important;
+  }
+
+  .app-shell .topbar[data-vf-desktop-header-identity="true"] .page-id::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .vf-desktop-header-brand {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-desktop-header-logo {
+    display: block !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    object-fit: cover !important;
+    object-position: center 45% !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(56, 189, 248, .34) !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .20) !important;
+  }
+
+  .vf-desktop-header-title {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: #f8fafc !important;
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+    font-weight: 850 !important;
+    letter-spacing: -.02em !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* === Todos da rede: mesma linguagem do mobile, sem o rotulo VISUALIZANDO === */
+  .app-shell .topbar .scope-picker {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 176px !important;
+    width: 176px !important;
+    min-width: 176px !important;
+    max-width: 176px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1.5px solid rgba(56, 189, 248, .68) !important;
+    border-radius: 12px !important;
+    background: linear-gradient(180deg, #132746 0%, #0f1e3a 100%) !important;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, .22), inset 0 0 0 1px rgba(56, 189, 248, .06) !important;
+  }
+
+  .app-shell .topbar .scope-picker > span {
+    display: none !important;
+  }
+
+  .app-shell .topbar .scope-picker::after {
+    content: "⌄" !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-52%) !important;
+    color: #7dd3fc !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+  }
+
+  .app-shell .topbar .scope-picker select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: block !important;
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 34px 0 14px !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #f8fafc !important;
+    font-size: 12px !important;
+    font-weight: 850 !important;
+    letter-spacing: -.01em !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+  }
+
+  .app-shell .topbar .scope-picker:focus-within {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, .13), 0 6px 18px rgba(0, 0, 0, .24) !important;
+  }
+
+  .app-shell .topbar .scope-picker select option {
+    background: #0b1e38 !important;
+    color: #f8fafc !important;
+  }
+
+  /* Municipio e demais controles seguem a mesma altura visual. */
+  .app-shell .topbar .municipality-context,
+  .app-shell .topbar [data-vf-municipality-context],
+  .app-shell .topbar .vf-municipality-context {
+    min-height: 42px !important;
+    border-radius: 12px !important;
+  }
+
+  .app-shell .topbar .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  /* === Administracao: elimina titulo/subtitulo duplicados e organiza a largura === */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .app-shell .topbar .page-id::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .app-shell .workspace {
+    padding: 22px 24px 38px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 0 16px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .admin-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .admin-kpis article {
+    min-height: 118px !important;
+    padding: 18px 20px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .security-banner {
+    margin-bottom: 16px !important;
+  }
+
+  /* === Mapa: barra segmentada com as mesmas ferramentas do mobile === */
+  body:has(.workspace .full-map) .workspace {
+    padding: 16px 18px 18px !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-tools {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: min(100%, 500px) !important;
+    gap: 4px !important;
+    margin: 0 0 12px !important;
+    padding: 5px !important;
+    border: 1px solid rgba(56, 189, 248, .24) !important;
+    border-radius: 15px !important;
+    background: rgba(7, 27, 50, .96) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .18) !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-tools.is-adm {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: min(100%, 650px) !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-tool {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-height: 42px !important;
+    padding: 0 14px !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    background: transparent !important;
+    color: #b9c9da !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    transition: background .16s ease, border-color .16s ease, color .16s ease !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-tool:hover {
+    background: rgba(56, 189, 248, .08) !important;
+    color: #fff !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-tool[aria-pressed="true"] {
+    border-color: rgba(56, 189, 248, .50) !important;
+    background: linear-gradient(135deg, #164f86, #123d6c) !important;
+    color: #fff !important;
+    box-shadow: inset 0 -2px 0 #38bdf8, 0 5px 14px rgba(0, 0, 0, .16) !important;
+  }
+
+  body:has(.workspace .full-map) .vf-map-desktop-panel-hidden {
+    display: none !important;
+  }
+
+  body:has(.workspace .full-map) .vf-mobile-contacts-host.vf-map-desktop-panel-open,
+  body:has(.workspace .full-map) .vf-mobile-district-host.vf-map-desktop-panel-open,
+  body:has(.workspace .full-map) .vf-territorial-center-host.vf-map-desktop-panel-open {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 12px !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-contacts-host.vf-map-desktop-panel-open .vf-map-contact-control,
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-control {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    border: 1px solid rgba(56, 189, 248, .20) !important;
+    border-radius: 14px !important;
+    background: linear-gradient(145deg, rgba(8, 32, 61, .98), rgba(13, 49, 84, .97)) !important;
+    color: #f8fafc !important;
+    box-shadow: 0 9px 22px rgba(0, 0, 0, .17) !important;
+  }
+
+  body:has(.workspace .full-map) .full-map {
+    margin-top: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .22) !important;
+  }
+
+  /* === Shells especiais: mantem a mesma proporcao de identidade === */
+  .vf-agenda-official-shell .vf-agenda-header-logo,
+  .vf-export-official-shell .vf-export-header-logo {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    border-radius: 10px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-header-label::after,
+  .vf-export-official-shell .vf-export-header-label {
+    font-size: 18px !important;
+    font-weight: 850 !important;
+  }
+}
