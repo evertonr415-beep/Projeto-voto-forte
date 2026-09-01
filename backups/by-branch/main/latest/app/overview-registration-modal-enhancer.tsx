@@ -6,13 +6,27 @@ export default function OverviewRegistrationModalEnhancer() {
   useEffect(() => {
     let initialized = new WeakSet<HTMLElement>();
 
+    const syncOverviewShortcut = () => {
+      document.querySelectorAll<HTMLButtonElement>("button.kpi").forEach((button) => {
+        const label = button.querySelector("b")?.textContent?.trim();
+        if (label !== "Lideranças ativas") return;
+        const helper = button.querySelector<HTMLElement>("small");
+        if (helper && helper.textContent?.trim() !== "Cadastrar usuário") {
+          helper.textContent = "Cadastrar usuário";
+        }
+      });
+    };
+
     const sync = () => {
+      syncOverviewShortcut();
+
       document.querySelectorAll<HTMLElement>(".app-shell .modal").forEach((modal) => {
         const form = modal.querySelector<HTMLFormElement>(".modal-form");
         if (!form) return;
 
         const profileSelect = Array.from(form.querySelectorAll<HTMLSelectElement>("select")).find(
-          (select) => Array.from(select.options).some((option) => option.textContent?.trim() === "Liderança") &&
+          (select) =>
+            Array.from(select.options).some((option) => option.textContent?.trim() === "Liderança") &&
             Array.from(select.options).some((option) => option.textContent?.trim() === "Eleitor"),
         );
         if (!profileSelect) return;
@@ -31,13 +45,11 @@ export default function OverviewRegistrationModalEnhancer() {
 
         if (!initialized.has(modal)) {
           initialized.add(modal);
-
           profileSelect.disabled = false;
           profileSelect.removeAttribute("disabled");
 
-          // O atalho antigo ainda nasce internamente como cadastro_lideranca.
-          // Mudamos apenas a seleção inicial para Eleitor e disparamos o evento
-          // normal do React para que o estado salvo corresponda ao que aparece.
+          // O atalho da Visão Geral passa a ser um cadastro genérico para a pessoa.
+          // Eleitor é o perfil inicial, mas o usuário pode trocar para Liderança.
           if (profileSelect.value !== "Eleitor") {
             profileSelect.value = "Eleitor";
             profileSelect.dispatchEvent(new Event("change", { bubbles: true }));
@@ -46,6 +58,29 @@ export default function OverviewRegistrationModalEnhancer() {
           profileSelect.disabled = false;
           profileSelect.removeAttribute("disabled");
         }
+
+        const leaderLabel = Array.from(form.querySelectorAll<HTMLLabelElement>("label")).find((label) =>
+          label.textContent?.trim().startsWith("Liderança responsável"),
+        );
+
+        const syncLeaderField = () => {
+          if (!leaderLabel) return;
+          const isVoter = profileSelect.value === "Eleitor";
+          leaderLabel.style.display = isVoter ? "" : "none";
+          if (isVoter) {
+            const input = leaderLabel.querySelector<HTMLInputElement>("input");
+            if (leaderLabel.firstChild?.nodeType === Node.TEXT_NODE) {
+              leaderLabel.firstChild.textContent = "Liderança vinculada (opcional)";
+            }
+            if (input) input.placeholder = "Nome da liderança, se houver";
+          }
+        };
+
+        if (!profileSelect.dataset.vfLeaderFieldBound) {
+          profileSelect.dataset.vfLeaderFieldBound = "true";
+          profileSelect.addEventListener("change", syncLeaderField);
+        }
+        syncLeaderField();
 
         const cancel = Array.from(modal.querySelectorAll<HTMLButtonElement>(":scope > footer button")).find(
           (button) => button.textContent?.trim() === "Cancelar",
@@ -61,7 +96,7 @@ export default function OverviewRegistrationModalEnhancer() {
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ["disabled"],
+      attributeFilter: ["disabled", "value"],
     });
 
     return () => {
