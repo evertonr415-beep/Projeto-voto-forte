@@ -26,6 +26,8 @@ type CreateAccessBody = {
 
 type UserUpdateBody = {
   id?: number;
+  action?: "edit" | "remove";
+  name?: string;
   status?: UserStatus;
   municipalityIds?: number[];
 };
@@ -77,8 +79,9 @@ export async function GET() {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const visibleUsers = await getVisibleUsers(account);
-  // Identificadores operacionais sintéticos não representam contas reais.
-  const realVisibleUsers = visibleUsers.filter((user) => Number(user.id) > 0);
+  const realVisibleUsers = visibleUsers.filter(
+    (user) => Number(user.id) > 0 && user.deleted_at == null,
+  );
   const visibleAuthIds = realVisibleUsers
     .map((user) => String(user.auth_user_id))
     .filter(Boolean);
@@ -126,9 +129,6 @@ export async function GET() {
     ),
   );
 
-  // Para um Gestor, contas ADM entram naturalmente na mesma lista visual de
-  // Gestores. O papel real nunca é alterado e as regras do banco continuam
-  // impedindo que um Gestor bloqueie/reative outro Gestor ou ADM.
   if (account.accessRole === "gestor") {
     const { data: activityFeed, error: activityFeedError } = await account.supabase.rpc(
       "vf_administration_activity_feed",
@@ -252,6 +252,27 @@ export async function PATCH(request: Request) {
   const targetId = Number(body.id);
   if (!Number.isInteger(targetId) || targetId <= 0) {
     return Response.json({ error: "Usuário inválido." }, { status: 400 });
+  }
+
+  if (body.action === "edit") {
+    const name = body.name?.trim() ?? "";
+    if (!name) {
+      return Response.json({ error: "Informe o nome." }, { status: 400 });
+    }
+    const { data, error } = await account.supabase.rpc("vf_update_user_admin", {
+      p_user_id: targetId,
+      p_name: name,
+    });
+    if (error) return Response.json({ error: error.message }, { status: 400 });
+    return Response.json({ user: data });
+  }
+
+  if (body.action === "remove") {
+    const { data, error } = await account.supabase.rpc("vf_remove_user_access", {
+      p_user_id: targetId,
+    });
+    if (error) return Response.json({ error: error.message }, { status: 400 });
+    return Response.json({ user: data });
   }
 
   if (Array.isArray(body.municipalityIds)) {
