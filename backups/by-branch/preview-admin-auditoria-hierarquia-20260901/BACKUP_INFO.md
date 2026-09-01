@@ -2,9 +2,9 @@
 
 - Repository: evertonr415-beep/Projeto-voto-forte
 - Source branch: preview/admin-auditoria-hierarquia-20260901
-- Source commit: 9a1812593c201e601fbc71378c368dc572f74c2c
+- Source commit: ebcba925f28449905f8681187127a7d78317daef
 - Triggered by: evertonr415-beep
-- Generated at (UTC): 2026-09-01T13:45:58Z
+- Generated at (UTC): 2026-09-01T13:57:08Z
 
 The  directory contains the complete repository snapshot for this branch at the commit above.
 Previous snapshots remain recoverable through the Git history of the  branch.

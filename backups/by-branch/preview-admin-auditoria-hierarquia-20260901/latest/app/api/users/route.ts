@@ -7,6 +7,16 @@ import {
 
 type UserStatus = "active" | "blocked";
 
+type AdministrationFeedUser = {
+  id?: number;
+  email?: string;
+  name?: string;
+  accessRole?: AccessRole;
+  status?: UserStatus;
+  parentUserId?: number | null;
+  lastSeenAt?: string | null;
+};
+
 type CreateAccessBody = {
   name?: string;
   email?: string;
@@ -67,9 +77,7 @@ export async function GET() {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const visibleUsers = await getVisibleUsers(account);
-  // O Gestor pode receber identificadores operacionais sintéticos para ler
-  // registros historicamente vinculados a um ADM. Eles nunca representam uma
-  // conta real e não podem aparecer na Administração de usuários/auditoria.
+  // Identificadores operacionais sintéticos não representam contas reais.
   const realVisibleUsers = visibleUsers.filter((user) => Number(user.id) > 0);
   const visibleAuthIds = realVisibleUsers
     .map((user) => String(user.auth_user_id))
@@ -111,12 +119,48 @@ export async function GET() {
       }));
   }
 
-  const mappedUsers = realVisibleUsers.map((user) =>
+  let mappedUsers = realVisibleUsers.map((user) =>
     mapUser(
       user as Record<string, unknown>,
       membershipMap.get(Number(user.id)) ?? [],
     ),
   );
+
+  // Para um Gestor, contas ADM entram naturalmente na mesma lista visual de
+  // Gestores. O papel real nunca é alterado e as regras do banco continuam
+  // impedindo que um Gestor bloqueie/reative outro Gestor ou ADM.
+  if (account.accessRole === "gestor") {
+    const { data: activityFeed, error: activityFeedError } = await account.supabase.rpc(
+      "vf_administration_activity_feed",
+      { p_limit: 30 },
+    );
+
+    if (!activityFeedError && activityFeed && typeof activityFeed === "object") {
+      const feedUsers = Array.isArray((activityFeed as { users?: unknown[] }).users)
+        ? ((activityFeed as { users: AdministrationFeedUser[] }).users ?? [])
+        : [];
+      const existingIds = new Set(mappedUsers.map((user) => user.id));
+      const maskedAdministrativeUsers = feedUsers
+        .filter((user) => {
+          const id = Number(user.id);
+          return Number.isInteger(id) && id > 0 && !existingIds.has(id);
+        })
+        .map((user) => ({
+          id: Number(user.id),
+          email: String(user.email ?? ""),
+          name: String(user.name ?? ""),
+          role: "gestor",
+          accessRole: "gestor" as AccessRole,
+          status: (user.status ?? "active") as UserStatus,
+          parentUserId: user.parentUserId == null ? null : Number(user.parentUserId),
+          lastSeenAt: user.lastSeenAt ?? null,
+          createdAt: null,
+          municipalityIds: [] as number[],
+        }));
+
+      mappedUsers = [...mappedUsers, ...maskedAdministrativeUsers];
+    }
+  }
 
   let logsQuery = account.supabase
     .from("vf_audit_logs")
