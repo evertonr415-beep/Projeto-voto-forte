@@ -95,6 +95,7 @@ export default function UserHierarchyPanel() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [activeSection, setActiveSection] = useState<SectionKey>("users");
+  const [selectedDirectoryRole, setSelectedDirectoryRole] = useState<AccessRole>("gestor");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -154,20 +155,27 @@ export default function UserHierarchyPanel() {
     }));
   }, [options, form.accessRole]);
 
-  const userIds = useMemo(() => new Set(users.map((user) => user.id)), [users]);
-  const roots = useMemo(
-    () => users.filter((user) => user.parentUserId == null || !userIds.has(user.parentUserId)),
-    [users, userIds],
+  const visibleRoleOrder = useMemo(
+    () =>
+      options?.currentUser.accessRole === "gestor"
+        ? roleOrder.filter((role) => role !== "adm")
+        : roleOrder,
+    [options?.currentUser.accessRole],
   );
-  const childrenByParent = useMemo(() => {
-    const map = new Map<number, User[]>();
-    for (const user of users) {
-      if (user.parentUserId == null) continue;
-      map.set(user.parentUserId, [...(map.get(user.parentUserId) || []), user]);
+
+  useEffect(() => {
+    if (!visibleRoleOrder.includes(selectedDirectoryRole)) {
+      setSelectedDirectoryRole("gestor");
     }
-    for (const list of map.values()) list.sort((a, b) => a.name.localeCompare(b.name));
-    return map;
-  }, [users]);
+  }, [visibleRoleOrder, selectedDirectoryRole]);
+
+  const directoryUsers = useMemo(
+    () =>
+      users
+        .filter((user) => user.accessRole === selectedDirectoryRole)
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    [users, selectedDirectoryRole],
+  );
 
   const selectedRole = options?.roleOptions.find((role) => role.value === form.accessRole);
   const validParents = options?.parentOptions.filter((parent) => parent.forRole === form.accessRole) || [];
@@ -236,45 +244,44 @@ export default function UserHierarchyPanel() {
     }
   }
 
-  function renderUser(user: User, depth = 0): React.ReactNode {
-    const children = childrenByParent.get(user.id) || [];
+  function renderDirectoryUser(user: User) {
     const canChangeStatus =
       Boolean(options?.canOpenAdministration) &&
       options?.currentUser.id !== user.id &&
       user.accessRole !== "adm" &&
       !(options?.currentUser.accessRole === "gestor" && user.accessRole === "gestor");
+
     return (
-      <div className="vf-hierarchy-branch" key={user.id} style={{ "--depth": depth } as React.CSSProperties}>
-        <article className={`vf-hierarchy-user role-${user.accessRole}`}>
-          <div className="vf-hierarchy-avatar">{initials(user.name)}</div>
-          <div className="vf-hierarchy-main">
-            <strong>{user.name}</strong>
-            <small>{user.email}</small>
-            <div className="vf-hierarchy-tags">
-              <span>{labels[user.accessRole]}</span>
-              <i className={user.status === "active" ? "active" : "blocked"}>
-                {user.status === "active" ? "Ativo" : "Bloqueado"}
-              </i>
-              {user.lastSeenAt && <em>Último acesso: {dateTime(user.lastSeenAt)}</em>}
-            </div>
+      <article className={`vf-hierarchy-user role-${user.accessRole}`} key={user.id}>
+        <div className="vf-hierarchy-avatar">{initials(user.name)}</div>
+        <div className="vf-hierarchy-main">
+          <strong>{user.name}</strong>
+          <small>{user.email}</small>
+          <div className="vf-hierarchy-tags">
+            <span>{labels[user.accessRole]}</span>
+            <i className={user.status === "active" ? "active" : "blocked"}>
+              {user.status === "active" ? "Ativo" : "Bloqueado"}
+            </i>
+            {user.lastSeenAt && <em>Último acesso: {dateTime(user.lastSeenAt)}</em>}
           </div>
-          {canChangeStatus && (
-            <button
-              className="vf-access-status-button"
-              type="button"
-              disabled={saving}
-              onClick={() => void setStatus(user)}
-            >
-              {user.status === "active" ? "Bloquear" : "Reativar"}
-            </button>
-          )}
-        </article>
-        {children.map((child) => renderUser(child, depth + 1))}
-      </div>
+        </div>
+        {canChangeStatus && (
+          <button
+            className="vf-access-status-button"
+            type="button"
+            disabled={saving}
+            onClick={() => void setStatus(user)}
+          >
+            {user.status === "active" ? "Bloquear" : "Reativar"}
+          </button>
+        )}
+      </article>
     );
   }
 
   if (!target) return null;
+
+  const isGestorView = options?.currentUser.accessRole === "gestor";
 
   return createPortal(
     <section className="vf-hierarchy-panel">
@@ -282,7 +289,11 @@ export default function UserHierarchyPanel() {
         <div>
           <small>ADMINISTRAÇÃO DE ACESSOS</small>
           <h3>Usuários, convites e hierarquia</h3>
-          <p>ADM → Gestor → Master → Liderança → Liderado → Eleitor.</p>
+          <p>
+            {isGestorView
+              ? "Gestor → Master → Liderança → Liderado → Eleitor."
+              : "ADM → Gestor → Master → Liderança → Liderado → Eleitor."}
+          </p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}>
           {loading ? "Atualizando..." : "Atualizar"}
@@ -308,19 +319,45 @@ export default function UserHierarchyPanel() {
 
       {activeSection === "users" && (
         <>
-          <div className="vf-hierarchy-summary">
-            {roleOrder.map((role) => (
-              <article key={role} data-vf-gestor-summary={role === "gestor" ? "true" : undefined}>
-                <small>{labels[role].toUpperCase()}</small>
-                <b>{users.filter((user) => user.accessRole === role && user.status === "active").length}</b>
-              </article>
-            ))}
+          <div className="vf-hierarchy-summary" role="tablist" aria-label="Níveis de acesso">
+            {visibleRoleOrder.map((role) => {
+              const total = users.filter((user) => user.accessRole === role).length;
+              const active = selectedDirectoryRole === role;
+              return (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`vf-hierarchy-role-tab${active ? " active" : ""}`}
+                  key={role}
+                  onClick={() => setSelectedDirectoryRole(role)}
+                >
+                  <small>{labels[role].toUpperCase()}</small>
+                  <b>{total}</b>
+                  <span>{total === 1 ? "usuário" : "usuários"}</span>
+                </button>
+              );
+            })}
           </div>
-          <div className="vf-hierarchy-help">
-            <b>Hierarquia protegida:</b> cada usuário visualiza somente o escopo permitido pelo seu nível. O ADM mantém a visão administrativa completa.
-          </div>
-          <div className="vf-hierarchy-tree">
-            {roots.length ? roots.map((user) => renderUser(user)) : !loading && <p>Nenhum usuário encontrado.</p>}
+
+          <div className="vf-role-directory">
+            <header className="vf-role-directory-header">
+              <div>
+                <small>NÍVEL SELECIONADO</small>
+                <h4>{labels[selectedDirectoryRole]}</h4>
+              </div>
+              <span>{directoryUsers.length}</span>
+            </header>
+
+            <div className="vf-hierarchy-help">
+              <b>{labels[selectedDirectoryRole]}:</b> toque nos cards acima para alternar entre os níveis e visualizar quem está em cada grupo.
+            </div>
+
+            <div className="vf-role-directory-list">
+              {directoryUsers.length
+                ? directoryUsers.map((user) => renderDirectoryUser(user))
+                : !loading && <p>Nenhum usuário encontrado neste nível.</p>}
+            </div>
           </div>
         </>
       )}
