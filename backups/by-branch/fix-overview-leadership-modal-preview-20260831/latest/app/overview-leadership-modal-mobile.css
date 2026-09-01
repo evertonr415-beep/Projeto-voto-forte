@@ -1,18 +1,10 @@
 /*
- * Visão Geral — modal "Cadastrar liderança" no mobile.
- * Escopo deliberadamente restrito ao modal cujo primeiro bloco possui
- * o seletor Perfil desabilitado em "Liderança".
- * Não altera os KPIs/atalhos da Visão Geral nem outros modais.
+ * Visão Geral — modal "Cadastro" no mobile.
+ * Escopo deliberadamente restrito ao modal marcado pelo enhancer.
+ * Não altera KPIs, outros modais, navegação ou dados.
  */
 @media (max-width: 760px) {
-  .app-shell
-    .modal-backdrop:has(
-      .modal
-        .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    ) {
+  .app-shell .vf-overview-registration-backdrop {
     box-sizing: border-box !important;
     place-items: start center !important;
     padding:
@@ -22,13 +14,7 @@
     overflow: hidden !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    ) {
+  .app-shell .vf-overview-registration-modal {
     box-sizing: border-box !important;
     width: min(358px, calc(100vw - 20px)) !important;
     max-width: calc(100vw - 20px) !important;
@@ -39,68 +25,30 @@
     overflow: hidden !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > header {
+  .app-shell .vf-overview-registration-modal > header {
     min-height: 0 !important;
     padding: 13px 15px !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > header
-    small {
+  .app-shell .vf-overview-registration-modal > header small {
     font-size: 6px !important;
     line-height: 1.1 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > header
-    h3 {
+  .app-shell .vf-overview-registration-modal > header h3 {
     margin-top: 3px !important;
     font-size: 17px !important;
     line-height: 1.15 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > header
-    button {
+  .app-shell .vf-overview-registration-modal > header button {
     width: 30px !important;
     height: 30px !important;
     min-width: 30px !important;
     padding: 0 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form {
+  .app-shell .vf-overview-registration-modal .modal-form {
     box-sizing: border-box !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -112,88 +60,30 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    > div {
+  .app-shell .vf-overview-registration-modal .modal-form > div {
     box-sizing: border-box !important;
-    grid-template-columns: minmax(0, 1fr) 108px !important;
+    grid-template-columns: minmax(0, 1fr) 118px !important;
     gap: 8px !important;
     width: 100% !important;
     min-width: 0 !important;
     margin: 8px 0 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    > label,
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    > div
-    > label {
+  .app-shell .vf-overview-registration-modal .modal-form > label,
+  .app-shell .vf-overview-registration-modal .modal-form > div > label {
     min-width: 0 !important;
     gap: 4px !important;
     font-size: 8px !important;
     line-height: 1.15 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    > label
-    + label {
+  .app-shell .vf-overview-registration-modal .modal-form > label + label {
     margin-top: 8px !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    input,
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    select,
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    textarea {
+  .app-shell .vf-overview-registration-modal .modal-form input,
+  .app-shell .vf-overview-registration-modal .modal-form select,
+  .app-shell .vf-overview-registration-modal .modal-form textarea {
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -206,27 +96,12 @@
     line-height: 1.15 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    select:disabled {
+  .app-shell .vf-overview-registration-modal .modal-form select {
     opacity: 1 !important;
     -webkit-text-fill-color: #f8fafc !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .locate-contact-button {
+  .app-shell .vf-overview-registration-modal .locate-contact-button {
     min-height: 40px !important;
     padding: 8px 10px !important;
     border-radius: 9px !important;
@@ -234,27 +109,13 @@
     line-height: 1.15 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .address-status {
+  .app-shell .vf-overview-registration-modal .address-status {
     margin: 6px 0 !important;
     font-size: 8px !important;
     line-height: 1.25 !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > footer {
+  .app-shell .vf-overview-registration-modal > footer {
     box-sizing: border-box !important;
     width: 100% !important;
     min-height: 0 !important;
@@ -269,15 +130,7 @@
     border-top: 1px solid rgba(56, 189, 248, 0.14) !important;
   }
 
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    > footer
-    button {
+  .app-shell .vf-overview-registration-modal > footer button {
     box-sizing: border-box !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -288,18 +141,22 @@
     line-height: 1.1 !important;
     white-space: normal !important;
   }
+
+  .app-shell .vf-overview-registration-modal > footer .vf-registration-cancel {
+    background: #101f3a !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(56, 189, 248, 0.22) !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+  }
+
+  .app-shell .vf-overview-registration-modal > footer .vf-registration-cancel:active {
+    background: #173052 !important;
+  }
 }
 
 @media (max-width: 380px) {
-  .app-shell
-    .modal:has(
-      .modal-form
-        > div:first-of-type
-        > label:nth-child(2)
-        > select:disabled
-    )
-    .modal-form
-    > div {
-    grid-template-columns: minmax(0, 1fr) 100px !important;
+  .app-shell .vf-overview-registration-modal .modal-form > div {
+    grid-template-columns: minmax(0, 1fr) 108px !important;
   }
 }
