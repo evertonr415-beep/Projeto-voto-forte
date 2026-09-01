@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { apiFetch } from "./supabase-client";
 
 const ENHANCED_ATTR = "data-vf-district-filter-enhanced";
 
@@ -15,9 +16,8 @@ function findDistrictSelect() {
 }
 
 async function loadCatalog() {
-  const response = await fetch("/api/district-catalog", {
+  const response = await apiFetch("/api/district-catalog", {
     cache: "no-store",
-    credentials: "same-origin",
   });
   if (!response.ok) return [];
   const payload = await response.json();
