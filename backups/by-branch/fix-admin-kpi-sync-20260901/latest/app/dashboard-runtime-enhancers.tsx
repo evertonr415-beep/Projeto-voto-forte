@@ -25,6 +25,7 @@ import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import AdministrationActivityEnhancer from "./administration-activity-enhancer";
 import GestorAdministrationIdentityNormalizer from "./gestor-administration-identity-normalizer";
+import AdministrationKpiRoleSync from "./administration-kpi-role-sync";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
@@ -93,6 +94,7 @@ export default function DashboardRuntimeEnhancers() {
           <TeamPerformanceAdminEnhancer />
           <AdministrationActivityEnhancer />
           <GestorAdministrationIdentityNormalizer />
+          <AdministrationKpiRoleSync />
           <RuntimeVersionGuard />
           <WhaticketBroadcastDrawer />
           <BroadcastNeighborhoodOptionsEnhancer />
