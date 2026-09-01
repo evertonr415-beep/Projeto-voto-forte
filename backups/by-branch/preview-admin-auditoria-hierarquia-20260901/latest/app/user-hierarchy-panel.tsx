@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
 type AccessRole = "adm" | "gestor" | "master" | "lideranca" | "liderado" | "eleitor";
+type DirectoryRole = Exclude<AccessRole, "eleitor">;
 type Status = "active" | "blocked";
 type SectionKey = "users" | "create" | "invitations" | "audit";
 
@@ -16,6 +17,17 @@ type User = {
   status: Status;
   parentUserId: number | null;
   lastSeenAt: string | null;
+};
+
+type LeadershipContact = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  district: string;
+  city: string;
+  ownerEmail: string;
+  createdAt: string;
 };
 
 type RoleOption = {
@@ -70,7 +82,7 @@ const labels: Record<AccessRole, string> = {
   eleitor: "Eleitor",
 };
 
-const roleOrder: AccessRole[] = ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"];
+const directoryRoleOrder: DirectoryRole[] = ["adm", "gestor", "master", "lideranca", "liderado"];
 
 function initials(name: string) {
   return name
@@ -88,14 +100,22 @@ function dateTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("pt-BR");
 }
 
+function phoneLabel(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "Sem telefone";
+  return value;
+}
+
 export default function UserHierarchyPanel() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [leadershipContacts, setLeadershipContacts] = useState<LeadershipContact[]>([]);
+  const [leadershipTotal, setLeadershipTotal] = useState(0);
   const [options, setOptions] = useState<AdministrationOptions | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [activeSection, setActiveSection] = useState<SectionKey>("users");
-  const [selectedDirectoryRole, setSelectedDirectoryRole] = useState<AccessRole>("gestor");
+  const [selectedDirectoryRole, setSelectedDirectoryRole] = useState<DirectoryRole>("gestor");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -109,13 +129,27 @@ export default function UserHierarchyPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiFetch("/api/users");
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Falha ao carregar Administração");
-      setUsers(data.users || []);
-      setOptions(data.administrationOptions || null);
-      setInvitations(data.invitations || []);
-      setLogs(data.logs || []);
+      const [usersResponse, leadershipResponse] = await Promise.all([
+        apiFetch("/api/users"),
+        apiFetch("/api/administration/role-directory?role=lideranca&limit=250", { cache: "no-store" }),
+      ]);
+
+      const usersData = await usersResponse.json();
+      if (!usersResponse.ok) throw new Error(usersData.error || "Falha ao carregar Administração");
+
+      setUsers(usersData.users || []);
+      setOptions(usersData.administrationOptions || null);
+      setInvitations(usersData.invitations || []);
+      setLogs(usersData.logs || []);
+
+      if (leadershipResponse.ok) {
+        const leadershipData = await leadershipResponse.json();
+        setLeadershipContacts(Array.isArray(leadershipData.items) ? leadershipData.items : []);
+        setLeadershipTotal(Number(leadershipData.total || 0));
+      } else {
+        setLeadershipContacts([]);
+        setLeadershipTotal(0);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar a Administração.");
     } finally {
@@ -155,11 +189,11 @@ export default function UserHierarchyPanel() {
     }));
   }, [options, form.accessRole]);
 
-  const visibleRoleOrder = useMemo(
+  const visibleRoleOrder = useMemo<DirectoryRole[]>(
     () =>
       options?.currentUser.accessRole === "gestor"
-        ? roleOrder.filter((role) => role !== "adm")
-        : roleOrder,
+        ? directoryRoleOrder.filter((role) => role !== "adm")
+        : directoryRoleOrder,
     [options?.currentUser.accessRole],
   );
 
@@ -177,8 +211,18 @@ export default function UserHierarchyPanel() {
     [users, selectedDirectoryRole],
   );
 
+  const leadershipAccessUsers = useMemo(
+    () => users.filter((user) => user.accessRole === "lideranca"),
+    [users],
+  );
+
   const selectedRole = options?.roleOptions.find((role) => role.value === form.accessRole);
   const validParents = options?.parentOptions.filter((parent) => parent.forRole === form.accessRole) || [];
+
+  function roleTotal(role: DirectoryRole) {
+    if (role === "lideranca") return leadershipAccessUsers.length + leadershipTotal;
+    return users.filter((user) => user.accessRole === role).length;
+  }
 
   function selectRole(value: AccessRole) {
     const role = options?.roleOptions.find((item) => item.value === value);
@@ -252,7 +296,7 @@ export default function UserHierarchyPanel() {
       !(options?.currentUser.accessRole === "gestor" && user.accessRole === "gestor");
 
     return (
-      <article className={`vf-hierarchy-user role-${user.accessRole}`} key={user.id}>
+      <article className={`vf-hierarchy-user role-${user.accessRole}`} key={`user-${user.id}`}>
         <div className="vf-hierarchy-avatar">{initials(user.name)}</div>
         <div className="vf-hierarchy-main">
           <strong>{user.name}</strong>
@@ -279,9 +323,27 @@ export default function UserHierarchyPanel() {
     );
   }
 
+  function renderLeadershipContact(contact: LeadershipContact) {
+    return (
+      <article className="vf-hierarchy-user role-lideranca vf-leadership-contact" key={`contact-${contact.id}`}>
+        <div className="vf-hierarchy-avatar">{initials(contact.name)}</div>
+        <div className="vf-hierarchy-main">
+          <strong>{contact.name}</strong>
+          <small>{phoneLabel(contact.phone)}{contact.district ? ` · ${contact.district}` : ""}</small>
+          <div className="vf-hierarchy-tags">
+            <span>Liderança</span>
+            <i className="active">Cadastrada</i>
+            {contact.ownerEmail && <em>Responsável: {contact.ownerEmail}</em>}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   if (!target) return null;
 
   const isGestorView = options?.currentUser.accessRole === "gestor";
+  const selectedTotal = roleTotal(selectedDirectoryRole);
 
   return createPortal(
     <section className="vf-hierarchy-panel">
@@ -291,8 +353,8 @@ export default function UserHierarchyPanel() {
           <h3>Usuários, convites e hierarquia</h3>
           <p>
             {isGestorView
-              ? "Gestor → Master → Liderança → Liderado → Eleitor."
-              : "ADM → Gestor → Master → Liderança → Liderado → Eleitor."}
+              ? "Gestor → Master → Liderança → Liderado."
+              : "ADM → Gestor → Master → Liderança → Liderado."}
           </p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}>
@@ -321,7 +383,7 @@ export default function UserHierarchyPanel() {
         <>
           <div className="vf-hierarchy-summary" role="tablist" aria-label="Níveis de acesso">
             {visibleRoleOrder.map((role) => {
-              const total = users.filter((user) => user.accessRole === role).length;
+              const total = roleTotal(role);
               const active = selectedDirectoryRole === role;
               return (
                 <button
@@ -334,7 +396,7 @@ export default function UserHierarchyPanel() {
                 >
                   <small>{labels[role].toUpperCase()}</small>
                   <b>{total}</b>
-                  <span>{total === 1 ? "usuário" : "usuários"}</span>
+                  <span>{role === "lideranca" ? (total === 1 ? "cadastro" : "cadastros") : (total === 1 ? "usuário" : "usuários")}</span>
                 </button>
               );
             })}
@@ -346,17 +408,29 @@ export default function UserHierarchyPanel() {
                 <small>NÍVEL SELECIONADO</small>
                 <h4>{labels[selectedDirectoryRole]}</h4>
               </div>
-              <span>{directoryUsers.length}</span>
+              <span>{selectedTotal}</span>
             </header>
 
             <div className="vf-hierarchy-help">
-              <b>{labels[selectedDirectoryRole]}:</b> toque nos cards acima para alternar entre os níveis e visualizar quem está em cada grupo.
+              {selectedDirectoryRole === "lideranca" ? (
+                <><b>Lideranças:</b> reúne as contas com acesso de Liderança e as pessoas cadastradas como Liderança na base de Contatos.</>
+              ) : (
+                <><b>{labels[selectedDirectoryRole]}:</b> toque nos cards acima para alternar entre os níveis e visualizar quem está em cada grupo.</>
+              )}
             </div>
 
             <div className="vf-role-directory-list">
-              {directoryUsers.length
-                ? directoryUsers.map((user) => renderDirectoryUser(user))
-                : !loading && <p>Nenhum usuário encontrado neste nível.</p>}
+              {selectedDirectoryRole === "lideranca" ? (
+                <>
+                  {leadershipAccessUsers.map((user) => renderDirectoryUser(user))}
+                  {leadershipContacts.map((contact) => renderLeadershipContact(contact))}
+                  {!selectedTotal && !loading && <p>Nenhuma liderança encontrada.</p>}
+                </>
+              ) : directoryUsers.length ? (
+                directoryUsers.map((user) => renderDirectoryUser(user))
+              ) : !loading ? (
+                <p>Nenhum usuário encontrado neste nível.</p>
+              ) : null}
             </div>
           </div>
         </>
