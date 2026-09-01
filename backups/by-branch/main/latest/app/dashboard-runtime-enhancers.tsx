@@ -28,6 +28,7 @@ import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-optio
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
 import OverviewAgendaOfficialBridge from "./overview-agenda-official-bridge";
+import OverviewRegistrationModalEnhancer from "./overview-registration-modal-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
@@ -77,6 +78,7 @@ export default function DashboardRuntimeEnhancers() {
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
           <OverviewAgendaOfficialBridge />
+          <OverviewRegistrationModalEnhancer />
           <ContactsOfficialShellBridge />
           <ElectoralMobileTopbarIdentity />
           <ElectoralDesktopTopbarIdentity />
