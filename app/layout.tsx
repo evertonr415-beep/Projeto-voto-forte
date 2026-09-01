@@ -83,6 +83,7 @@ import "./desktop-four-point-fixes.css";
 import "./desktop-agenda-export-fixes.css";
 import "./administration-initial-loading-guard.css";
 import "./administration-activity-enhancer.css";
+import "./administration-directory-actions.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
