@@ -27,19 +27,20 @@ async function listTemplates(accessToken: string, graphVersion: string, wabaId: 
   return { response, data };
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (account.accessRole !== "adm") {
+    return Response.json({ error: "Acesso restrito aos superusuários." }, { status: 403 });
+  }
 
   try {
-    const body = (await request.json().catch(() => ({}))) as { apiToken?: string };
-    const { accessToken: serverToken, graphVersion, wabaId } = getMetaConfig();
-    const accessToken = serverToken || body.apiToken?.trim() || "";
+    const { accessToken, graphVersion, wabaId } = getMetaConfig();
 
     if (!accessToken) {
       return Response.json(
-        { error: "Informe o token permanente da Meta para consultar ou criar o modelo." },
-        { status: 400 },
+        { error: "Integração Meta ainda não ativada no servidor." },
+        { status: 503 },
       );
     }
 
