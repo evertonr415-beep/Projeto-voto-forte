@@ -1,0 +1,57 @@
+name: Generate Arapongas electoral slice preview
+
+on:
+  push:
+    branches:
+      - preview/painel-eleitoral-locais-20260901
+    paths:
+      - 'scripts/generate-arapongas-electoral-slice.py'
+      - '.github/workflows/generate-electoral-slice-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: preview/painel-eleitoral-locais-20260901
+          fetch-depth: 0
+
+      - name: Generate official Arapongas slices
+        run: python3 scripts/generate-arapongas-electoral-slice.py
+
+      - name: Validate generated slices
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          for year in (2024, 2022):
+              path = f'app/electoral-panel/data/arapongas-{year}.json'
+              with open(path, encoding='utf-8') as f:
+                  data = json.load(f)
+              assert data['meta']['municipalityCode'] == '74276'
+              assert data['meta']['zone'] == 61
+              assert data['meta']['sections']
+              assert data['offices']
+              print(year, len(data['meta']['sections']), sorted(data['offices']))
+          PY
+
+      - name: Commit generated data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'voto-forte-electoral-data-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app/electoral-panel/data/arapongas-2024.json app/electoral-panel/data/arapongas-2022.json
+          if git diff --cached --quiet; then
+            echo 'Electoral slices already up to date.'
+            exit 0
+          fi
+          git commit -m 'Painel eleitoral: armazenar recorte oficial de Arapongas'
+          git push origin HEAD:preview/painel-eleitoral-locais-20260901
