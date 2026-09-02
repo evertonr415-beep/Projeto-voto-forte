@@ -17,6 +17,7 @@ type SendMessagePayload = {
   mediaMimeType?: string;
   templateName?: string;
   templateLanguage?: string;
+  templateParameters?: string[];
 };
 
 async function graphRequest(
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       mediaMimeType,
       templateName,
       templateLanguage,
+      templateParameters,
     } = body;
 
     const { accessToken: serverToken, phoneNumberId } = getMetaConfig();
@@ -77,6 +79,15 @@ export async function POST(request: Request) {
     let payload: Record<string, unknown>;
 
     if (templateName?.trim()) {
+      const components = Array.isArray(templateParameters) && templateParameters.length
+        ? [
+            {
+              type: "body",
+              parameters: templateParameters.map((text) => ({ type: "text", text: String(text) })),
+            },
+          ]
+        : undefined;
+
       payload = {
         messaging_product: "whatsapp",
         to: cleanPhone,
@@ -84,6 +95,7 @@ export async function POST(request: Request) {
         template: {
           name: templateName.trim(),
           language: { code: templateLanguage?.trim() || "pt_BR" },
+          ...(components ? { components } : {}),
         },
       };
     } else if (mediaBase64) {
