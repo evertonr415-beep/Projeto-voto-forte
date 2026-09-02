@@ -79,7 +79,7 @@ class WebStreamReader {
     try {
       await this.reader.cancel();
     } catch {
-      // no-op: request already consumed/closed
+      // request already consumed/closed
     }
   }
 }
@@ -258,7 +258,16 @@ async function loadSchoolResults(year: number, office: string, sections: number[
 
   const response = await fetch(source, {
     cache: "force-cache",
-    headers: { "user-agent": "VotoForte/1.0 school-results" },
+    redirect: "follow",
+    headers: {
+      "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      accept: "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
+      "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+      referer: "https://dadosabertos.tse.jus.br/",
+      "sec-fetch-dest": "document",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-site": "same-site",
+    },
   });
   if (!response.ok) throw new Error(`TSE respondeu ${response.status} ao carregar a votação por seção.`);
 
