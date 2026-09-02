@@ -1,0 +1,16 @@
+/* KPIs do Painel de Contatos.
+   Reuniões continua oculto em todas as telas; no mobile, Eleitores é redundante
+   com Total de contatos e fica oculto sem alterar o desktop. */
+.optimized-overview .optimized-kpis > article:nth-child(5) {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .contacts-route-scope .optimized-overview .optimized-kpis > article:nth-child(2) {
+    display: none !important;
+  }
+
+  .contacts-route-scope .optimized-overview .optimized-kpis > article:first-child {
+    grid-column: 1 / -1 !important;
+  }
+}
