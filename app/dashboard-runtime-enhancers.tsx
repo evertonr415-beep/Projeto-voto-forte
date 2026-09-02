@@ -27,8 +27,6 @@ import AdministrationActivityEnhancer from "./administration-activity-enhancer";
 import GestorAdministrationIdentityNormalizer from "./gestor-administration-identity-normalizer";
 import AdministrationKpiRoleSync from "./administration-kpi-role-sync";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
-import MetaWhatsappTokenPersistence from "./meta-whatsapp-token-persistence";
-import MetaWhatsappTemplateBootstrap from "./meta-whatsapp-template-bootstrap";
 import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
@@ -99,8 +97,6 @@ export default function DashboardRuntimeEnhancers() {
           <AdministrationKpiRoleSync />
           <RuntimeVersionGuard />
           <WhaticketBroadcastDrawer />
-          <MetaWhatsappTokenPersistence />
-          <MetaWhatsappTemplateBootstrap />
           <BroadcastNeighborhoodOptionsEnhancer />
           <TseSidebarEnhancer />
           <ComunicacaoSidebarEnhancer />
