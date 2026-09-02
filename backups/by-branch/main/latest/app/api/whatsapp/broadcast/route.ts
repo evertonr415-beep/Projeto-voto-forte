@@ -1,4 +1,10 @@
 import { getAccount } from "../../../server-identity";
+import {
+  getMetaConfig,
+  metaErrorMessage,
+  normalizeWhatsappPhone,
+  readMetaResponse,
+} from "../meta";
 
 type BroadcastContact = {
   id?: number | string;
@@ -11,24 +17,16 @@ type BroadcastContact = {
 };
 
 type BroadcastPayload = {
-  apiUrl?: string;
   apiToken?: string;
   contacts?: BroadcastContact[];
   messageTemplate?: string;
   delaySeconds?: number;
   dryRun?: boolean;
+  templateName?: string;
+  templateLanguage?: string;
 };
 
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.length === 10 || digits.length === 11) {
-    return `55${digits}`;
-  }
-  return digits;
-}
-
-function parseTemplate(template: string, contact: BroadcastContact): string {
+function parsePreview(template: string, contact: BroadcastContact): string {
   const firstName = (contact.name || "").trim().split(/\s+/)[0] || "";
   return template
     .replace(/\{nome\}/gi, contact.name || "")
@@ -38,68 +36,83 @@ function parseTemplate(template: string, contact: BroadcastContact): string {
     .replace(/\{lideranca\}/gi, contact.leader || "");
 }
 
+async function graphSend(accessToken: string, payload: Record<string, unknown>) {
+  const { graphVersion, phoneNumberId } = getMetaConfig();
+  const response = await fetch(
+    `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  return { response, data: await readMetaResponse(response) };
+}
+
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account) {
-    return Response.json({ error: "Não autenticado" }, { status: 401 });
-  }
+  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   try {
     const body = (await request.json()) as BroadcastPayload;
     const {
-      apiUrl,
       apiToken,
       contacts,
-      messageTemplate,
+      messageTemplate = "",
       delaySeconds = 3,
       dryRun = false,
+      templateName,
+      templateLanguage = "pt_BR",
     } = body;
 
-    if (!apiUrl || !apiToken) {
+    const { accessToken: serverToken } = getMetaConfig();
+    const accessToken = serverToken || apiToken?.trim() || "";
+    if (!accessToken) {
       return Response.json(
-        { error: "Configure a URL da API e o Token da ZapAPI/Whaticket." },
+        { error: "Configure o token permanente da Meta WhatsApp Cloud API." },
         { status: 400 },
       );
     }
 
     if (!Array.isArray(contacts) || !contacts.length) {
+      return Response.json({ error: "Nenhum contato fornecido para o disparo." }, { status: 400 });
+    }
+
+    if (!dryRun && !templateName?.trim()) {
       return Response.json(
-        { error: "Nenhum contato fornecido para o disparo." },
+        {
+          error:
+            "Informe o nome exato do modelo aprovado pela Meta. Disparos iniciados pela empresa precisam usar template aprovado.",
+        },
         { status: 400 },
       );
     }
 
-    if (!messageTemplate || !messageTemplate.trim()) {
-      return Response.json(
-        { error: "O modelo de mensagem é obrigatório." },
-        { status: 400 },
-      );
-    }
-
-    const cleanApiUrl = apiUrl.replace(/\/+$/, "");
     const total = contacts.length;
     const estimatedSeconds = total * Math.max(1, delaySeconds);
 
-    // If dry run, return summary and previews without sending
     if (dryRun) {
-      const samplePreviews = contacts.slice(0, 3).map((c) => ({
-        contact: c.name,
-        phone: normalizePhone(c.phone),
-        message: parseTemplate(messageTemplate, c),
+      const samplePreviews = contacts.slice(0, 3).map((contact) => ({
+        contact: contact.name,
+        phone: normalizeWhatsappPhone(contact.phone),
+        message: parsePreview(messageTemplate, contact),
       }));
-
       return Response.json({
         success: true,
+        provider: "meta-cloud-api",
         dryRun: true,
+        templateName: templateName?.trim() || null,
+        templateLanguage,
         totalContacts: total,
         estimatedMinutes: Math.ceil(estimatedSeconds / 60),
         delaySeconds,
         samplePreviews,
       });
     }
-
-    // Standard endpoints for Whaticket / ZapAPI
-    const sendEndpoint = `${cleanApiUrl}/api/messages/send`;
 
     let successCount = 0;
     let failCount = 0;
@@ -110,90 +123,67 @@ export async function POST(request: Request) {
       error?: string;
     }> = [];
 
-    for (let i = 0; i < contacts.length; i++) {
-      const contact = contacts[i];
-      const cleanPhone = normalizePhone(contact.phone);
-
-      if (!cleanPhone || cleanPhone.length < 10) {
+    for (let index = 0; index < contacts.length; index++) {
+      const contact = contacts[index];
+      const cleanPhone = normalizeWhatsappPhone(contact.phone);
+      if (!cleanPhone || cleanPhone.length < 12 || cleanPhone.length > 15) {
         failCount++;
-        logs.push({
-          contact: contact.name,
-          phone: contact.phone,
-          status: "falha",
-          error: "Telefone inválido",
-        });
+        logs.push({ contact: contact.name, phone: contact.phone, status: "falha", error: "Telefone inválido" });
         continue;
       }
 
-      const personalizedMessage = parseTemplate(messageTemplate, contact);
-
       try {
-        const payload = {
-          number: cleanPhone,
-          body: personalizedMessage,
-          phone: cleanPhone,
-          message: personalizedMessage,
-          readChat: true,
-        };
-
-        const res = await fetch(sendEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiToken.trim()}`,
-            apikey: apiToken.trim(),
-            "X-Token": apiToken.trim(),
+        const result = await graphSend(accessToken, {
+          to: cleanPhone,
+          type: "template",
+          template: {
+            name: templateName!.trim(),
+            language: { code: templateLanguage.trim() || "pt_BR" },
           },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(10_000),
         });
 
-        if (res.ok) {
+        if (result.response.ok) {
           successCount++;
-          logs.push({
-            contact: contact.name,
-            phone: cleanPhone,
-            status: "enviado",
-          });
+          logs.push({ contact: contact.name, phone: cleanPhone, status: "enviado" });
         } else {
-          const errText = await res.text();
           failCount++;
           logs.push({
             contact: contact.name,
             phone: cleanPhone,
             status: "falha",
-            error: `HTTP ${res.status}: ${errText.slice(0, 100)}`,
+            error: metaErrorMessage(result.data, result.response.status),
           });
         }
-      } catch (err) {
+      } catch (error) {
         failCount++;
         logs.push({
           contact: contact.name,
           phone: cleanPhone,
           status: "falha",
-          error: err instanceof Error ? err.message : String(err),
+          error: error instanceof Error ? error.message : String(error),
         });
       }
 
-      // Delay between sends to prevent blocking (except after last message)
-      if (i < contacts.length - 1 && delaySeconds > 0) {
+      if (index < contacts.length - 1 && delaySeconds > 0) {
         await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000));
       }
     }
 
-    // Register audit log
     account.supabase
       .from("vf_audit_logs")
       .insert({
         actor_email: account.email,
-        action: "Disparo em Massa WhatsApp",
-        detail: `Enviados: ${successCount} | Falhas: ${failCount} | Total: ${total}`,
+        action: "Disparo em Massa WhatsApp Meta",
+        detail: `Template: ${templateName} | Enviados: ${successCount} | Falhas: ${failCount} | Total: ${total}`,
       })
       .then(() => undefined)
       .catch(() => undefined);
 
     return Response.json({
       success: true,
+      provider: "meta-cloud-api",
+      templateName,
+      templateLanguage,
       summary: {
         total,
         enviados: successCount,
@@ -204,12 +194,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro inesperado ao processar disparo em massa.",
-      },
+      { error: error instanceof Error ? error.message : "Erro inesperado ao processar disparo em massa." },
       { status: 500 },
     );
   }

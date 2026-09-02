@@ -1,7 +1,12 @@
 import { getAccount } from "../../../server-identity";
+import {
+  getMetaConfig,
+  metaErrorMessage,
+  normalizeWhatsappPhone,
+  readMetaResponse,
+} from "../meta";
 
 type SendMessagePayload = {
-  apiUrl?: string;
   apiToken?: string;
   phone?: string;
   message?: string;
@@ -10,42 +15,37 @@ type SendMessagePayload = {
   mediaUrl?: string;
   mediaName?: string;
   mediaMimeType?: string;
+  templateName?: string;
+  templateLanguage?: string;
+  templateParameters?: string[];
 };
 
-const ZAPAPI_BASE_URL = "https://zapapi.dgsis.com.br";
-const ZAPAPI_TEXT_ENDPOINT = `${ZAPAPI_BASE_URL}/api/messages/send`;
-
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "";
-  // A ZapAPI exige país + DDD + número, sem máscara.
-  // Mantemos a compatibilidade com contatos brasileiros já salvos só com DDD + número.
-  if (digits.length === 10 || digits.length === 11) {
-    return `55${digits}`;
-  }
-  return digits;
-}
-
-async function readResponseData(response: Response): Promise<unknown> {
-  const raw = await response.text();
-  if (!raw) return { ok: response.ok };
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { raw: raw.slice(0, 500) };
-  }
+async function graphRequest(
+  accessToken: string,
+  path: string,
+  init: RequestInit,
+) {
+  const { graphVersion } = getMetaConfig();
+  const headers = new Headers(init.headers || {});
+  headers.set("Authorization", `Bearer ${accessToken}`);
+  const response = await fetch(
+    `https://graph.facebook.com/${graphVersion}/${path.replace(/^\/+/, "")}`,
+    {
+      ...init,
+      headers,
+      signal: init.signal || AbortSignal.timeout(20_000),
+    },
+  );
+  return { response, data: await readMetaResponse(response) };
 }
 
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account) {
-    return Response.json({ error: "Não autenticado" }, { status: 401 });
-  }
+  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   try {
     const body = (await request.json()) as SendMessagePayload;
     const {
-      apiUrl,
       apiToken,
       phone,
       message,
@@ -54,187 +54,130 @@ export async function POST(request: Request) {
       mediaUrl,
       mediaName,
       mediaMimeType,
+      templateName,
+      templateLanguage,
+      templateParameters,
     } = body;
 
-    if (!apiToken?.trim()) {
+    const { accessToken: serverToken, phoneNumberId } = getMetaConfig();
+    const accessToken = serverToken || apiToken?.trim() || "";
+    if (!accessToken) {
       return Response.json(
-        { error: "Configure o Token da conexão ZapAPI antes de enviar mensagens." },
+        { error: "Configure o token permanente da Meta WhatsApp Cloud API." },
         { status: 400 },
       );
     }
 
-    if (!phone || (!message && !mediaBase64 && !mediaUrl)) {
+    const cleanPhone = normalizeWhatsappPhone(phone || "");
+    if (!cleanPhone || cleanPhone.length < 12 || cleanPhone.length > 15) {
       return Response.json(
-        { error: "Telefone e conteúdo da mensagem ou imagem são obrigatórios." },
+        { error: "Número inválido. Informe país + DDD + número." },
         { status: 400 },
       );
     }
 
-    const cleanPhone = normalizePhone(phone);
-    if (cleanPhone.length < 12 || cleanPhone.length > 15) {
+    let payload: Record<string, unknown>;
+
+    if (templateName?.trim()) {
+      const components = Array.isArray(templateParameters) && templateParameters.length
+        ? [
+            {
+              type: "body",
+              parameters: templateParameters.map((text) => ({ type: "text", text: String(text) })),
+            },
+          ]
+        : undefined;
+
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "template",
+        template: {
+          name: templateName.trim(),
+          language: { code: templateLanguage?.trim() || "pt_BR" },
+          ...(components ? { components } : {}),
+        },
+      };
+    } else if (mediaBase64) {
+      const commaIndex = mediaBase64.indexOf(",");
+      const encoded = commaIndex >= 0 ? mediaBase64.slice(commaIndex + 1) : mediaBase64;
+      const bytes = Uint8Array.from(Buffer.from(encoded, "base64"));
+      const form = new FormData();
+      form.set("messaging_product", "whatsapp");
+      form.set(
+        "file",
+        new Blob([bytes], { type: mediaMimeType || "image/jpeg" }),
+        mediaName || "imagem.jpg",
+      );
+      const upload = await graphRequest(accessToken, `${phoneNumberId}/media`, {
+        method: "POST",
+        body: form,
+      });
+      if (!upload.response.ok) {
+        return Response.json(
+          { success: false, error: metaErrorMessage(upload.data, upload.response.status) },
+          { status: 502 },
+        );
+      }
+      const mediaId =
+        upload.data && typeof upload.data === "object" && "id" in upload.data
+          ? String((upload.data as { id?: unknown }).id || "")
+          : "";
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "image",
+        image: { id: mediaId, caption: message?.trim() || undefined },
+      };
+    } else if (mediaUrl) {
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "image",
+        image: { link: mediaUrl, caption: message?.trim() || undefined },
+      };
+    } else {
+      if (!message?.trim()) {
+        return Response.json({ error: "A mensagem é obrigatória." }, { status: 400 });
+      }
+      payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { preview_url: false, body: message.trim() },
+      };
+    }
+
+    const result = await graphRequest(accessToken, `${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!result.response.ok) {
       return Response.json(
         {
-          error:
-            "Número inválido. Informe país + DDD + número, sem máscara ou caracteres especiais.",
+          success: false,
+          phone: cleanPhone,
+          contactName: contactName || "Contato",
+          error: metaErrorMessage(result.data, result.response.status),
         },
-        { status: 400 },
+        { status: 502 },
       );
     }
 
-    const token = apiToken.trim();
-    const hasMedia = Boolean(mediaBase64 || mediaUrl);
-
-    // Mensagens de texto: implementação estrita da documentação oficial fornecida.
-    // POST https://zapapi.dgsis.com.br/api/messages/send
-    // Authorization: Bearer <token>
-    // Content-Type: application/json
-    // Body: { number, body }
-    if (!hasMedia) {
-      if (!message?.trim()) {
-        return Response.json({ error: "A mensagem de texto é obrigatória." }, { status: 400 });
-      }
-
-      let response: Response;
-      try {
-        response = await fetch(ZAPAPI_TEXT_ENDPOINT, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            number: cleanPhone,
-            body: message,
-          }),
-          signal: AbortSignal.timeout(12_000),
-        });
-      } catch (error) {
-        return Response.json(
-          {
-            success: false,
-            phone: cleanPhone,
-            contactName: contactName || "Contato",
-            error:
-              error instanceof Error
-                ? error.message
-                : "Falha ao conectar com o servidor ZapAPI.",
-          },
-          { status: 502 },
-        );
-      }
-
-      const responseData = await readResponseData(response);
-      if (!response.ok) {
-        const detail =
-          responseData && typeof responseData === "object" && "raw" in responseData
-            ? String((responseData as { raw?: unknown }).raw || "")
-            : JSON.stringify(responseData).slice(0, 300);
-        return Response.json(
-          {
-            success: false,
-            phone: cleanPhone,
-            contactName: contactName || "Contato",
-            error: `ZapAPI recusou o envio (HTTP ${response.status})${detail ? `: ${detail}` : ""}`,
-          },
-          { status: 502 },
-        );
-      }
-
-      return Response.json({
-        success: true,
-        phone: cleanPhone,
-        contactName: contactName || "Contato",
-        status: "enviado",
-        endpoint: ZAPAPI_TEXT_ENDPOINT,
-        data: responseData,
-      });
-    }
-
-    // Mídia: a documentação fornecida neste ajuste não informa o contrato do endpoint
-    // de mídia. Para não regredir o recurso já existente na Central de Disparos,
-    // preservamos aqui a compatibilidade anterior exclusivamente para anexos.
-    const cleanApiUrl = (apiUrl || ZAPAPI_BASE_URL).replace(/\/+$/, "");
-    const endpoints = [
-      `${cleanApiUrl}/api/messages/send`,
-      `${cleanApiUrl}/messages/send`,
-      `${cleanApiUrl}/api/v1/send`,
-      `${cleanApiUrl}/send-message`,
-      `${cleanApiUrl}/send-media`,
-    ];
-
-    let lastError = "";
-    let responseData: unknown = null;
-
-    for (const endpoint of endpoints) {
-      try {
-        const payload: Record<string, unknown> = {
-          number: cleanPhone,
-          body: message || "",
-          phone: cleanPhone,
-          message: message || "",
-          caption: message || "",
-          readChat: true,
-          media: mediaBase64 || mediaUrl,
-          mediaUrl,
-          mediaBase64,
-          medias: [
-            {
-              url: mediaUrl,
-              base64: mediaBase64,
-              filename: mediaName || "santinho.jpg",
-              mimetype: mediaMimeType || "image/jpeg",
-            },
-          ],
-        };
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            apikey: token,
-            "X-Token": token,
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(12_000),
-        });
-
-        if (response.ok) {
-          responseData = await readResponseData(response);
-          return Response.json({
-            success: true,
-            phone: cleanPhone,
-            contactName: contactName || "Contato",
-            status: "enviado",
-            data: responseData,
-          });
-        }
-
-        const errorData = await readResponseData(response);
-        lastError = `Status ${response.status}: ${JSON.stringify(errorData).slice(0, 180)}`;
-        if (response.status === 401 || response.status === 403) break;
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : String(error);
-      }
-    }
-
-    return Response.json(
-      {
-        success: false,
-        phone: cleanPhone,
-        contactName: contactName || "Contato",
-        error: lastError || "Falha ao conectar com o servidor ZapAPI para envio de mídia.",
-      },
-      { status: 502 },
-    );
+    return Response.json({
+      success: true,
+      provider: "meta-cloud-api",
+      phone: cleanPhone,
+      contactName: contactName || "Contato",
+      status: "enviado",
+      data: result.data,
+    });
   } catch (error) {
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro inesperado ao processar disparo.",
-      },
+      { error: error instanceof Error ? error.message : "Erro inesperado ao enviar mensagem." },
       { status: 500 },
     );
   }
