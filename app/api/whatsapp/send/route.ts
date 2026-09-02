@@ -7,7 +7,6 @@ import {
 } from "../meta";
 
 type SendMessagePayload = {
-  apiToken?: string;
   phone?: string;
   message?: string;
   contactName?: string;
@@ -46,7 +45,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SendMessagePayload;
     const {
-      apiToken,
       phone,
       message,
       contactName,
@@ -59,12 +57,11 @@ export async function POST(request: Request) {
       templateParameters,
     } = body;
 
-    const { accessToken: serverToken, phoneNumberId } = getMetaConfig();
-    const accessToken = serverToken || apiToken?.trim() || "";
+    const { accessToken, phoneNumberId } = getMetaConfig();
     if (!accessToken) {
       return Response.json(
-        { error: "Configure o token permanente da Meta WhatsApp Cloud API." },
-        { status: 400 },
+        { error: "Integração Meta ainda não ativada no servidor." },
+        { status: 503 },
       );
     }
 
@@ -159,7 +156,6 @@ export async function POST(request: Request) {
       return Response.json(
         {
           success: false,
-          phone: cleanPhone,
           contactName: contactName || "Contato",
           error: metaErrorMessage(result.data, result.response.status),
         },
@@ -170,10 +166,8 @@ export async function POST(request: Request) {
     return Response.json({
       success: true,
       provider: "meta-cloud-api",
-      phone: cleanPhone,
       contactName: contactName || "Contato",
       status: "enviado",
-      data: result.data,
     });
   } catch (error) {
     return Response.json(
