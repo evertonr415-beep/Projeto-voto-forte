@@ -16,6 +16,11 @@ type MetaTemplate = {
   components?: TemplateComponent[];
 };
 
+const META_PUBLIC_TEST_TEMPLATES = new Set([
+  "hello_world",
+  "3p_direct_integration_test_template",
+]);
+
 function bodyParameterCount(components: TemplateComponent[] | undefined) {
   const body = components?.find((component) => component.type === "BODY");
   const matches = String(body?.text || "").match(/\{\{\d+\}\}/g) || [];
@@ -54,34 +59,47 @@ export async function POST(request: Request) {
       );
     }
 
-    const templates =
+    const rawTemplates =
       data && typeof data === "object" && Array.isArray((data as { data?: unknown[] }).data)
         ? ((data as { data: MetaTemplate[] }).data || [])
-            .filter((template) => template.status === "APPROVED")
-            .map((template) => {
-              const components = Array.isArray(template.components) ? template.components : [];
-              const bodyComponent = components.find((component) => component.type === "BODY");
-              const unsupportedHeader = components.some(
-                (component) => component.type === "HEADER" && component.format && component.format !== "TEXT",
-              );
-              return {
-                id: template.id || "",
-                name: template.name || "",
-                status: template.status || "",
-                language: template.language || "pt_BR",
-                category: template.category || "",
-                body: bodyComponent?.text || "",
-                bodyParameterCount: bodyParameterCount(components),
-                unsupportedHeader,
-              };
-            })
-            .filter((template) => template.name)
         : [];
+
+    const approvedTemplates = rawTemplates.filter((template) => template.status === "APPROVED");
+    const ignoredPublicTestTemplates = approvedTemplates.filter((template) =>
+      META_PUBLIC_TEST_TEMPLATES.has(String(template.name || "").toLowerCase()),
+    ).length;
+
+    const templates = approvedTemplates
+      .filter(
+        (template) =>
+          !META_PUBLIC_TEST_TEMPLATES.has(String(template.name || "").toLowerCase()),
+      )
+      .map((template) => {
+        const components = Array.isArray(template.components) ? template.components : [];
+        const bodyComponent = components.find((component) => component.type === "BODY");
+        const unsupportedHeader = components.some(
+          (component) =>
+            component.type === "HEADER" && component.format && component.format !== "TEXT",
+        );
+        return {
+          id: template.id || "",
+          name: template.name || "",
+          status: template.status || "",
+          language: template.language || "pt_BR",
+          category: template.category || "",
+          body: bodyComponent?.text || "",
+          bodyParameterCount: bodyParameterCount(components),
+          unsupportedHeader,
+        };
+      })
+      .filter((template) => template.name);
 
     return Response.json({
       success: true,
       provider: "meta-cloud-api",
       templates,
+      ignoredPublicTestTemplates,
+      productionReady: templates.length > 0,
     });
   } catch (error) {
     return Response.json(
