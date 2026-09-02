@@ -27,19 +27,17 @@ function bodyParameterCount(components: TemplateComponent[] | undefined) {
   return new Set(matches).size;
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   try {
-    const body = (await request.json().catch(() => ({}))) as { apiToken?: string };
-    const { accessToken: serverToken, graphVersion, wabaId } = getMetaConfig();
-    const accessToken = serverToken || body.apiToken?.trim() || "";
+    const { accessToken, graphVersion, wabaId } = getMetaConfig();
 
     if (!accessToken) {
       return Response.json(
-        { error: "Configure o token permanente da Meta WhatsApp Cloud API." },
-        { status: 400 },
+        { error: "Integração Meta ainda não ativada no servidor." },
+        { status: 503 },
       );
     }
 
