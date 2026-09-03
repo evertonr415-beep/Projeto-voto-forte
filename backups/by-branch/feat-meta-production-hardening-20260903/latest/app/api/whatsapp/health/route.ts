@@ -1,10 +1,19 @@
 import { getWhatsappAdminClient, isWhatsappEventStorageConfigured } from "../admin";
 
 export async function GET() {
-  const configured = isWhatsappEventStorageConfigured();
-  if (!configured) {
+  const storageConfigured = isWhatsappEventStorageConfigured();
+  const metaAppSecretConfigured = Boolean(process.env.META_APP_SECRET?.trim());
+  const verifyTokenConfigured = Boolean(process.env.META_WHATSAPP_VERIFY_TOKEN?.trim());
+
+  if (!storageConfigured) {
     return Response.json(
-      { success: false, storageConfigured: false, databaseReachable: false },
+      {
+        success: false,
+        storageConfigured: false,
+        databaseReachable: false,
+        metaAppSecretConfigured,
+        verifyTokenConfigured,
+      },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -20,13 +29,29 @@ export async function GET() {
 
     if (error) throw error;
 
+    const success = metaAppSecretConfigured && verifyTokenConfigured;
     return Response.json(
-      { success: true, storageConfigured: true, databaseReachable: true },
-      { headers: { "Cache-Control": "no-store" } },
+      {
+        success,
+        storageConfigured: true,
+        databaseReachable: true,
+        metaAppSecretConfigured,
+        verifyTokenConfigured,
+      },
+      {
+        status: success ? 200 : 503,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   } catch {
     return Response.json(
-      { success: false, storageConfigured: true, databaseReachable: false },
+      {
+        success: false,
+        storageConfigured: true,
+        databaseReachable: false,
+        metaAppSecretConfigured,
+        verifyTokenConfigured,
+      },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
