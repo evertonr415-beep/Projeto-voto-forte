@@ -1,4 +1,4 @@
-import { getWhatsappAdminClient, isWhatsappEventStorageConfigured } from "../../admin";
+import { getWhatsappAdminClient, isWhatsappEventStorageConfigured } from "../admin";
 
 export async function GET() {
   const configured = isWhatsappEventStorageConfigured();
