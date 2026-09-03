@@ -1,4 +1,5 @@
 import { getAccount } from "../../../server-identity";
+import { recordWhatsappEvent } from "../admin";
 import {
   getMetaConfig,
   metaErrorMessage,
@@ -38,6 +39,15 @@ async function graphRequest(
   return { response, data: await readMetaResponse(response) };
 }
 
+function extractMessageId(data: unknown) {
+  if (!data || typeof data !== "object" || !("messages" in data)) return "";
+  const messages = (data as { messages?: unknown }).messages;
+  if (!Array.isArray(messages) || !messages.length) return "";
+  const first = messages[0];
+  if (!first || typeof first !== "object" || !("id" in first)) return "";
+  return String((first as { id?: unknown }).id || "");
+}
+
 export async function POST(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -74,6 +84,8 @@ export async function POST(request: Request) {
     }
 
     let payload: Record<string, unknown>;
+    let eventMessageType = "text";
+    let eventMessageText = message?.trim() || "";
 
     if (templateName?.trim()) {
       const components = Array.isArray(templateParameters) && templateParameters.length
@@ -95,6 +107,8 @@ export async function POST(request: Request) {
           ...(components ? { components } : {}),
         },
       };
+      eventMessageType = "template";
+      eventMessageText = templateName.trim();
     } else if (mediaBase64) {
       const commaIndex = mediaBase64.indexOf(",");
       const encoded = commaIndex >= 0 ? mediaBase64.slice(commaIndex + 1) : mediaBase64;
@@ -126,6 +140,7 @@ export async function POST(request: Request) {
         type: "image",
         image: { id: mediaId, caption: message?.trim() || undefined },
       };
+      eventMessageType = "image";
     } else if (mediaUrl) {
       payload = {
         messaging_product: "whatsapp",
@@ -133,6 +148,7 @@ export async function POST(request: Request) {
         type: "image",
         image: { link: mediaUrl, caption: message?.trim() || undefined },
       };
+      eventMessageType = "image";
     } else {
       if (!message?.trim()) {
         return Response.json({ error: "A mensagem é obrigatória." }, { status: 400 });
@@ -163,11 +179,33 @@ export async function POST(request: Request) {
       );
     }
 
+    const messageId = extractMessageId(result.data);
+    try {
+      await recordWhatsappEvent({
+        message_id: messageId || null,
+        direction: "outbound",
+        event_type: "message_accepted",
+        status: "accepted",
+        phone: cleanPhone,
+        contact_name: contactName?.trim() || null,
+        message_type: eventMessageType,
+        message_text: eventMessageText || null,
+        occurred_at: new Date().toISOString(),
+        payload: messageId ? { message_id: messageId } : {},
+      });
+    } catch (error) {
+      console.error("[whatsapp-send] event persistence failed", {
+        messageId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     return Response.json({
       success: true,
       provider: "meta-cloud-api",
       contactName: contactName || "Contato",
       status: "enviado",
+      messageId: messageId || null,
     });
   } catch (error) {
     return Response.json(
