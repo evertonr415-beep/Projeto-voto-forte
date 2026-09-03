@@ -17,7 +17,6 @@ type BroadcastContact = {
 };
 
 type BroadcastPayload = {
-  apiToken?: string;
   contacts?: BroadcastContact[];
   messageTemplate?: string;
   delaySeconds?: number;
@@ -60,7 +59,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as BroadcastPayload;
     const {
-      apiToken,
       contacts,
       messageTemplate = "",
       delaySeconds = 3,
@@ -69,12 +67,11 @@ export async function POST(request: Request) {
       templateLanguage = "pt_BR",
     } = body;
 
-    const { accessToken: serverToken } = getMetaConfig();
-    const accessToken = serverToken || apiToken?.trim() || "";
+    const { accessToken } = getMetaConfig();
     if (!accessToken) {
       return Response.json(
-        { error: "Configure o token permanente da Meta WhatsApp Cloud API." },
-        { status: 400 },
+        { error: "Integração Meta ainda não ativada no servidor. Configure o token permanente no ambiente de produção." },
+        { status: 503 },
       );
     }
 
