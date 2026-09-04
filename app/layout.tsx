@@ -52,6 +52,7 @@ import "./ux-audit-fixes.css";
 import "./voto-forte-unified-theme.css";
 import "./theme-toggle-global.css";
 import "./topbar-theme-sync.css";
+import "./profile-modal-premium.css";
 import "./remove-electoral-back-system.css";
 import "./agenda-mobile-compact.css";
 import "./agenda-mobile-direct-fix.css";
