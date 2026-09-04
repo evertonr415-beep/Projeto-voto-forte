@@ -38,6 +38,7 @@ import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
 import AgendaDesktopNewEventFallback from "./agenda-desktop-new-event-fallback";
 import ElectoralMobileTopbarIdentity from "./electoral-mobile-topbar-identity";
 import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity";
+import ElectoralVotingLocationsEnhancer from "./electoral-panel/electoral-voting-locations-enhancer";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -85,6 +86,7 @@ export default function DashboardRuntimeEnhancers() {
           <ContactsOfficialShellBridge />
           <ElectoralMobileTopbarIdentity />
           <ElectoralDesktopTopbarIdentity />
+          <ElectoralVotingLocationsEnhancer />
           <AccountSettingsEnhancer />
           <ContactNavigationInterceptor />
           <ImportCompletionEnhancer />
