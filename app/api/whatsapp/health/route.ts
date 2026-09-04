@@ -4,6 +4,17 @@ export async function GET() {
   const storageConfigured = isWhatsappEventStorageConfigured();
   const metaAppSecretConfigured = Boolean(process.env.META_APP_SECRET?.trim());
   const verifyTokenConfigured = Boolean(process.env.META_WHATSAPP_VERIFY_TOKEN?.trim());
+  const accessTokenConfigured = Boolean(process.env.META_WHATSAPP_ACCESS_TOKEN?.trim());
+  const phoneNumberIdConfigured = Boolean(process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim());
+  const wabaIdConfigured = Boolean(process.env.META_WHATSAPP_WABA_ID?.trim());
+
+  const metaConfig = {
+    metaAppSecretConfigured,
+    verifyTokenConfigured,
+    accessTokenConfigured,
+    phoneNumberIdConfigured,
+    wabaIdConfigured,
+  };
 
   if (!storageConfigured) {
     return Response.json(
@@ -11,8 +22,7 @@ export async function GET() {
         success: false,
         storageConfigured: false,
         databaseReachable: false,
-        metaAppSecretConfigured,
-        verifyTokenConfigured,
+        ...metaConfig,
       },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
@@ -29,14 +39,17 @@ export async function GET() {
 
     if (error) throw error;
 
-    const success = metaAppSecretConfigured && verifyTokenConfigured;
+    const success =
+      metaAppSecretConfigured &&
+      verifyTokenConfigured &&
+      accessTokenConfigured;
+
     return Response.json(
       {
         success,
         storageConfigured: true,
         databaseReachable: true,
-        metaAppSecretConfigured,
-        verifyTokenConfigured,
+        ...metaConfig,
       },
       {
         status: success ? 200 : 503,
@@ -49,8 +62,7 @@ export async function GET() {
         success: false,
         storageConfigured: true,
         databaseReachable: false,
-        metaAppSecretConfigured,
-        verifyTokenConfigured,
+        ...metaConfig,
       },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
