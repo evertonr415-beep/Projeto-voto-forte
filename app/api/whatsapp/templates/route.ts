@@ -16,11 +16,6 @@ type MetaTemplate = {
   components?: TemplateComponent[];
 };
 
-const META_PUBLIC_TEST_TEMPLATES = new Set([
-  "hello_world",
-  "3p_direct_integration_test_template",
-]);
-
 function bodyParameterCount(components: TemplateComponent[] | undefined) {
   const body = components?.find((component) => component.type === "BODY");
   const matches = String(body?.text || "").match(/\{\{\d+\}\}/g) || [];
@@ -63,15 +58,8 @@ export async function POST() {
         : [];
 
     const approvedTemplates = rawTemplates.filter((template) => template.status === "APPROVED");
-    const ignoredPublicTestTemplates = approvedTemplates.filter((template) =>
-      META_PUBLIC_TEST_TEMPLATES.has(String(template.name || "").toLowerCase()),
-    ).length;
 
     const templates = approvedTemplates
-      .filter(
-        (template) =>
-          !META_PUBLIC_TEST_TEMPLATES.has(String(template.name || "").toLowerCase()),
-      )
       .map((template) => {
         const components = Array.isArray(template.components) ? template.components : [];
         const bodyComponent = components.find((component) => component.type === "BODY");
@@ -96,7 +84,6 @@ export async function POST() {
       success: true,
       provider: "meta-cloud-api",
       templates,
-      ignoredPublicTestTemplates,
       productionReady: templates.length > 0,
     });
   } catch (error) {
