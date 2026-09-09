@@ -3,41 +3,7 @@ import { getAutonomousSupabase } from "../../../supabase-server";
 import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 
 // Armazenamento em memória / fallback rápido para respostas de sondagem
-let memorySurveyResponses: SurveyAnalysisResult[] = [
-  {
-    phone: "5543999709710",
-    contactName: "Felipe Moreira",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: "Para deputado estadual eu apoio o Pedro e para federal vou com o Lucas!",
-    stateCandidate: "Pedro",
-    federalCandidate: "Lucas",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    phone: "5543996098821",
-    contactName: "Carlos Eduardo",
-    district: "Jardim Aeroporto",
-    city: "Arapongas",
-    messageText: "Estadual estou fechado com o Pedro, federal ainda estou em dúvida entre dois nomes.",
-    stateCandidate: "Pedro",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "apoio",
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    phone: "5543996100248",
-    contactName: "Ana Paula Silva",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: "Aqui em casa todo mundo vai votar no Marcos para federal e estadual na Fernanda.",
-    stateCandidate: "Fernanda",
-    federalCandidate: "Marcos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 10800000).toISOString(),
-  },
-];
+let memorySurveyResponses: SurveyAnalysisResult[] = [];
 
 export async function GET(request: Request) {
   const account = await getAccount();
