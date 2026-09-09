@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   return Response.json({
     backups: data ?? [],
     automatic: true,
-    schedule: "Diariamente às 03:00 (horário de Brasília)",
+    schedule: "2 vezes ao dia: às 02:30 e às 13:00 (horário de Brasília)",
     retentionDays: 30,
   });
 }

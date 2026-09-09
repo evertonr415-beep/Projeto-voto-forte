@@ -2655,7 +2655,7 @@ function Whatsapp({
             style={{
               width: "100%",
               padding: "16px 20px",
-              background: "linear-gradient(135deg, #17345c, #0f172a)",
+              background: "linear-gradient(135deg, #17345c, #0d2342)",
               border: "1px solid #2ddd7f",
               borderRadius: "14px",
               color: "#fff",
@@ -2668,13 +2668,13 @@ function Whatsapp({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-              <span style={{ fontSize: "26px", color: "#2ddd7f", filter: "drop-shadow(0 0 8px rgba(45, 221, 127, 0.6))" }}>⚡</span>
+              <span style={{ fontSize: "26px", color: "#2ddd7f", filter: "drop-shadow(0 0 8px rgba(45, 221, 127, 0.6))" }}>🛡️</span>
               <div>
                 <strong style={{ fontSize: "15px", display: "block", color: "#2ddd7f" }}>
-                  Disparo em Massa Whaticket / ZapAPI
+                  Central Oficial de Disparos WhatsApp (Meta Cloud API & ZapAPI)
                 </strong>
                 <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                  Envie mensagens em lote para eleitores e lideranças com atraso anti-bloqueio
+                  Disparo em massa oficial com templates aprovados da Meta ou mensagens personalizadas
                 </span>
               </div>
             </div>
@@ -2846,8 +2846,85 @@ function BackupCenter({ tell, embedded = false }: { tell: (message: string) => v
     [selected, setSelected] = useState<File | null>(null),
     [confirmation, setConfirmation] = useState("");
   const [schedule, setSchedule] = useState(
-    "Diariamente às 03:00 (horário de Brasília)",
+    "2 vezes ao dia: às 02:30 e às 13:00 (horário de Brasília)",
   );
+
+  // Estados do Google Drive
+  const [gdriveBusy, setGdriveBusy] = useState(false);
+  const [gdriveWebhookUrl, setGdriveWebhookUrl] = useState("");
+  const [gdriveStatus, setGdriveStatus] = useState<string>("");
+  const [gdriveMessage, setGdriveMessage] = useState<string>("");
+  const [showGdriveCode, setShowGdriveCode] = useState(false);
+
+  useEffect(() => {
+    const savedUrl = localStorage.getItem("vf_gdrive_webhook_url") || "";
+    if (savedUrl) setGdriveWebhookUrl(savedUrl);
+  }, []);
+
+  const handleSaveGdriveUrl = (url: string) => {
+    setGdriveWebhookUrl(url);
+    localStorage.setItem("vf_gdrive_webhook_url", url);
+  };
+
+  const testGdriveConnection = async () => {
+    setGdriveBusy(true);
+    setGdriveMessage("");
+    try {
+      const response = await apiFetch("/api/backups/google-drive", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "test_connection",
+          webhookUrl: gdriveWebhookUrl || undefined,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGdriveStatus("connected");
+        setGdriveMessage("✅ " + data.message);
+        tell("Conexão com Google Drive confirmada com sucesso!");
+      } else {
+        setGdriveStatus("error");
+        setGdriveMessage("❌ " + (data.message || data.error));
+        tell("Erro ao conectar com Google Drive.");
+      }
+    } catch (err) {
+      setGdriveStatus("error");
+      setGdriveMessage("❌ Erro ao testar conexão.");
+    } finally {
+      setGdriveBusy(false);
+    }
+  };
+
+  const syncGdriveNow = async () => {
+    setGdriveBusy(true);
+    setGdriveMessage("");
+    try {
+      const response = await apiFetch("/api/backups/google-drive", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "sync_now",
+          webhookUrl: gdriveWebhookUrl || undefined,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGdriveStatus("connected");
+        setGdriveMessage(`✅ Backup enviado para o Google Drive com sucesso! Arquivo: ${data.filename}`);
+        tell("Backup enviado para a sua pasta do Google Drive!");
+        await load();
+      } else {
+        setGdriveMessage("❌ " + (data.message || data.error));
+        tell("Não foi possível enviar para o Google Drive.");
+      }
+    } catch (err) {
+      setGdriveMessage("❌ Erro na sincronização com Google Drive.");
+    } finally {
+      setGdriveBusy(false);
+    }
+  };
+
   const load = useCallback(async () => {
     const response = await apiFetch("/api/backups");
     const data = await response.json();
@@ -2948,46 +3025,132 @@ function BackupCenter({ tell, embedded = false }: { tell: (message: string) => v
         <PageHead
           eyebrow="PROTEÇÃO E RECUPERAÇÃO"
           title="Banco de Dados e Backup"
-          text="Cópias completas, verificadas e acessíveis somente pelo Administrador Master."
+          text="Cópias completas, verificadas e sincronizadas automaticamente com o Google Drive e Nuvem."
         />
       )}
       <div className="backup-status-grid">
         <article>
           <span>✓</span>
           <div>
-            <small>BACKUP AUTOMÁTICO</small>
-            <b>Ativo</b>
+            <small>ROTINA AUTOMÁTICA</small>
+            <b>2x ao Dia (02:30 e 13:00)</b>
             <p>{schedule}</p>
           </div>
         </article>
         <article>
-          <span>↻</span>
+          <span>☁</span>
           <div>
-            <small>RETENÇÃO</small>
-            <b>30 dias</b>
-            <p>Cópias antigas são removidas automaticamente</p>
+            <small>GOOGLE DRIVE</small>
+            <b>Sincronização Nuvem</b>
+            <p>Salva automaticamente na sua pasta do Google Drive</p>
           </div>
         </article>
         <article>
-          <span>⌁</span>
+          <span>🔔</span>
           <div>
-            <small>CONTEÚDO</small>
-            <b>Base completa</b>
-            <p>Usuários, contatos, reuniões, configurações e auditoria</p>
+            <small>CONFIRMAÇÃO</small>
+            <b>Notificação Ativa</b>
+            <p>Aviso imediato de sucesso no painel após cada backup</p>
           </div>
         </article>
       </div>
-      <article className="security-banner">
-        <span>◆</span>
+
+      <article className="security-banner" style={{ background: "linear-gradient(135deg, #064e3b, #0f766e)", color: "#fff", borderColor: "#14b8a6" }}>
+        <span>🛡️</span>
         <div>
-          <b>Proteção em duas camadas</b>
-          <p>
-            O sistema mantém cópias automáticas diárias. Baixe periodicamente um
-            arquivo para guardar também fora da plataforma.
+          <b style={{ color: "#fff" }}>Proteção Total Contra Desastres & Notificação Ativa</b>
+          <p style={{ color: "rgba(255,255,255,0.9)" }}>
+            O sistema gera 2 backups diários completos (às 02:30 e às 13:00) salvando no Google Drive e no banco. Caso perca acesso ao site, este pacote recupera 100% dos seus contatos, lideranças e histórico exatamente de onde parou.
           </p>
         </div>
-        <i>PROTEGIDO</i>
+        <i style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)" }}>BLINDADO</i>
       </article>
+
+      {/* PAINEL DE CONTROLE GOOGLE DRIVE */}
+      <article className="panel" style={{ border: "1px solid #0284c7", background: "linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%)", borderRadius: "14px", padding: "20px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+          <div>
+            <small style={{ color: "#0284c7", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>INTEGRAÇÃO NUVEM</small>
+            <h3 style={{ margin: "4px 0 0", color: "#0f172a", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>📁</span> Pasta do Google Drive Vinculada
+            </h3>
+            <a
+              href="https://drive.google.com/drive/folders/1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU?hl=pt-br"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#0284c7", fontSize: "0.85rem", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "4px" }}
+            >
+              Abrir pasta no Google Drive (ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU) ↗
+            </a>
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="button"
+              disabled={gdriveBusy}
+              onClick={testGdriveConnection}
+              style={{ padding: "8px 16px", borderRadius: "8px", background: "#f1f5f9", border: "1px solid #cbd5e1", color: "#334155", fontWeight: 600, cursor: "pointer" }}
+            >
+              {gdriveBusy ? "⏳ Testando…" : "⚡ Testar Conexão"}
+            </button>
+            <button
+              type="button"
+              disabled={gdriveBusy}
+              onClick={syncGdriveNow}
+              style={{ padding: "8px 18px", borderRadius: "8px", background: "#0284c7", color: "#fff", border: "none", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              {gdriveBusy ? "⏳ Sincronizando…" : "🚀 Sincronizar Agora com Google Drive"}
+            </button>
+          </div>
+        </div>
+
+        <p style={{ color: "#475569", fontSize: "0.92rem", margin: "0 0 14px" }}>
+          Insira abaixo a <b>URL do Webhook do Google Apps Script</b> da sua pasta do Google Drive (ou configure no arquivo <code>.env</code> como <code>GOOGLE_DRIVE_WEBHOOK_URL</code>):
+        </p>
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "12px" }}>
+          <input
+            type="url"
+            placeholder="https://script.google.com/macros/s/.../exec (Cole a URL do Webhook do seu Google Drive)"
+            value={gdriveWebhookUrl}
+            onChange={(e) => handleSaveGdriveUrl(e.target.value)}
+            style={{ flex: 1, padding: "10px 14px", borderRadius: "8px", border: "1px solid #94a3b8", fontSize: "0.9rem", background: "#fff" }}
+          />
+        </div>
+
+        {gdriveMessage && (
+          <div style={{ padding: "10px 14px", borderRadius: "8px", background: gdriveStatus === "error" ? "#fef2f2" : "#f0fdf4", border: `1px solid ${gdriveStatus === "error" ? "#fca5a5" : "#86efac"}`, color: gdriveStatus === "error" ? "#991b1b" : "#166534", fontSize: "0.9rem", marginBottom: "14px" }}>
+            {gdriveMessage}
+          </div>
+        )}
+
+        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <small style={{ color: "#64748b" }}>
+            ℹ️ Salva contatos, lideranças, bairros, auditoria e usuários com nome formatado por data.
+          </small>
+          <button
+            type="button"
+            onClick={() => setShowGdriveCode(!showGdriveCode)}
+            style={{ background: "transparent", border: "none", color: "#0284c7", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer", textDecoration: "underline" }}
+          >
+            {showGdriveCode ? "Ocultar instruções do script Google Drive" : "Ver como configurar a pasta no Google Drive (1 min) →"}
+          </button>
+        </div>
+
+        {showGdriveCode && (
+          <div style={{ marginTop: "16px", background: "#0f172a", color: "#e2e8f0", padding: "16px", borderRadius: "10px", fontSize: "0.85rem" }}>
+            <h4 style={{ color: "#38bdf8", margin: "0 0 8px" }}>Como conectar com sua pasta do Google Drive em 1 minuto:</h4>
+            <ol style={{ margin: "0 0 12px", paddingLeft: "20px", lineHeight: "1.6" }}>
+              <li>Abra o <b>Google Drive</b> e crie a pasta onde deseja guardar os backups.</li>
+              <li>Acesse <a href="https://script.google.com" target="_blank" rel="noreferrer" style={{ color: "#38bdf8" }}>script.google.com</a> e clique em <b>Novo projeto</b>.</li>
+              <li>Copie e cole o código do arquivo <code>scripts/google-drive-webhook-receiver.js</code>.</li>
+              <li>Coloque o ID da sua pasta na variável <code>FOLDER_ID</code> no início do script.</li>
+              <li>Clique em <b>Implantar</b> &gt; <b>Nova implantação</b> &gt; Tipo: <b>Aplicativo da Web</b> &gt; Acesso: <b>Qualquer pessoa</b>.</li>
+              <li>Copie a URL gerada e cole no campo acima!</li>
+            </ol>
+          </div>
+        )}
+      </article>
+
       <div className="backup-grid">
         <article className="panel backup-create">
           <div className="feature-icon">⇩</div>
@@ -2995,7 +3158,7 @@ function BackupCenter({ tell, embedded = false }: { tell: (message: string) => v
           <h3>Exportar backup completo</h3>
           <p>
             Cria uma fotografia atual de todas as informações do VOTO FORTE e
-            libera o arquivo para download.
+            libera o arquivo para download imediato.
           </p>
           <button disabled={busy} onClick={() => void createBackup()}>
             {busy ? "Processando…" : "Criar novo backup"}
