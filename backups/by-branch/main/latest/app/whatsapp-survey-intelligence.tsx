@@ -241,7 +241,7 @@ export default function WhatsappSurveyIntelligence() {
             </div>
             <div>
               <h2>
-                Apuração & Sondagem WhatsApp <span>🗳️</span>
+                Apuração e Enquete Digital <span>🗳️</span>
               </h2>
               <p>Inteligência de respostas, ranking de deputados e prints</p>
             </div>
@@ -454,7 +454,7 @@ export default function WhatsappSurveyIntelligence() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {responses.length === 0 ? (
                 <div style={{ textAlign: "center", color: "var(--wt-text-muted)", padding: "30px", fontSize: "14px" }}>
-                  Nenhuma resposta recebida ainda. Dispare a sondagem para começar a coletar os votos!
+                  Nenhuma resposta recebida ainda. Dispare a enquete para começar a coletar os votos!
                 </div>
               ) : (
                 responses.map((item, index) => (

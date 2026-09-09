@@ -401,7 +401,7 @@ export default function WhaticketBroadcastDrawer() {
               window.dispatchEvent(new CustomEvent("voto-forte:open-survey-intelligence"));
             }}
           >
-            📊 Ver Apuração de Votos
+            📊 Apuração e Enquete Digital
           </button>
         </nav>
 
