@@ -157,6 +157,18 @@ export async function POST(request: Request) {
         stored: result.stored,
         storageConfigured: result.configured,
       });
+
+      // Processamento inteligente de sondagem para cada mensagem de texto recebida
+      for (const ev of events) {
+        if (ev.direction === "inbound" && ev.message_text && ev.phone) {
+          try {
+            const { analyzeSurveyResponse } = await import("../survey/analyzer");
+            void analyzeSurveyResponse(ev.phone, ev.message_text);
+          } catch {
+            // Silencia para não bloquear o webhook
+          }
+        }
+      }
     } catch (error) {
       console.error("[whatsapp-webhook] persistence failed", {
         events: events.length,
