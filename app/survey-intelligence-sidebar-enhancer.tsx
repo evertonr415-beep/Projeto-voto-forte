@@ -16,7 +16,7 @@ export default function SurveyIntelligenceSidebarEnhancer() {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "vf-survey-intelligence-sidebar-btn";
-      button.title = "Sondagem & Apuração WhatsApp";
+      button.title = "Apuração e Enquete Digital";
       button.style.cursor = "pointer";
 
       const icon = document.createElement("span");
@@ -26,7 +26,7 @@ export default function SurveyIntelligenceSidebarEnhancer() {
 
       const label = document.createElement("span");
       label.className = "nav-name";
-      label.textContent = "Sondagem & Votos";
+      label.textContent = "Enquete Digital";
 
       button.append(icon, label);
       button.addEventListener("click", () => {
