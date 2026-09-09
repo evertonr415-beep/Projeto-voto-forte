@@ -422,23 +422,29 @@ export default function WhatsappSurveyIntelligence() {
                   <span>📍</span> Participação e Respostas por Bairro
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {districtRanking.map((d) => (
-                    <div
-                      key={d.district}
-                      style={{
-                        padding: "6px 12px",
-                        background: "#f1f5f9",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                        border: "1px solid #e2e8f0",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <strong>{d.district}</strong>: <span style={{ color: "#16a34a", fontWeight: 700 }}>{d.total} respostas</span>
+                  {districtRanking.length === 0 ? (
+                    <div style={{ color: "var(--wt-text-muted)", fontSize: "13px", padding: "10px 0" }}>
+                      Nenhum bairro com respostas registradas ainda.
                     </div>
-                  ))}
+                  ) : (
+                    districtRanking.map((d) => (
+                      <div
+                        key={d.district}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#f1f5f9",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          border: "1px solid #e2e8f0",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <strong>{d.district}</strong>: <span style={{ color: "#16a34a", fontWeight: 700 }}>{d.total} respostas</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </section>
             </>
