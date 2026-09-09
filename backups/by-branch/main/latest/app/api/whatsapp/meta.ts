@@ -1,6 +1,8 @@
-const DEFAULT_GRAPH_VERSION = "v25.0";
+const DEFAULT_GRAPH_VERSION = "v20.0";
 const DEFAULT_PHONE_NUMBER_ID = "1319478581243565";
 const DEFAULT_WABA_ID = "3428932017267478";
+const DEFAULT_ACCESS_TOKEN =
+  "EAAe90I6QErgBSbTwmPPgavGXLH9G6P0BshwH5sUY6yzAA4IZCqvX2ngHA4nY9sJZBlH8EpFxvCdilYiAGR1ofZCGQ8h5aNOjEPy1NofZAsVGoo6aEMRHv1JDJNy0giKxMImyKEbNo2MFAJDfZA6sAgtxMjwzjJ2EtZAxSA5l2xzzjLKu52BHPquUy9tUnauizxMpPJOFKg9o8iWcd0fNU5FuMpT5shPQOgxOA2Ew2jijbFkOKu9bjZBo0XxCmjLTZB79k1Oih0YPx9RrgdZBughy2HnUIJbK1Ek2NKHMZD";
 
 export type MetaTemplateParameter = {
   type: "text";
@@ -16,11 +18,21 @@ export type MetaApiResult = {
 export function getMetaConfig() {
   return {
     graphVersion:
-      process.env.META_WHATSAPP_API_VERSION?.trim() || DEFAULT_GRAPH_VERSION,
+      process.env.META_WHATSAPP_API_VERSION?.trim() ||
+      process.env.META_WA_API_VERSION?.trim() ||
+      DEFAULT_GRAPH_VERSION,
     phoneNumberId:
-      process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() || DEFAULT_PHONE_NUMBER_ID,
-    wabaId: process.env.META_WHATSAPP_WABA_ID?.trim() || DEFAULT_WABA_ID,
-    accessToken: process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() || "",
+      process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+      process.env.META_WA_PHONE_NUMBER_ID?.trim() ||
+      DEFAULT_PHONE_NUMBER_ID,
+    wabaId:
+      process.env.META_WHATSAPP_WABA_ID?.trim() ||
+      process.env.META_WA_WABA_ID?.trim() ||
+      DEFAULT_WABA_ID,
+    accessToken:
+      process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
+      process.env.META_WA_ACCESS_TOKEN?.trim() ||
+      DEFAULT_ACCESS_TOKEN,
   };
 }
 
@@ -70,7 +82,7 @@ export async function metaRequest(
       data: {
         error: {
           message:
-            "Token da Meta não configurado no servidor. Defina META_WHATSAPP_ACCESS_TOKEN na Vercel.",
+            "Token da Meta não configurado no servidor.",
         },
       },
     };

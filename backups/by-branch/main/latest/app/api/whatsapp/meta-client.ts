@@ -313,44 +313,105 @@ export async function fetchMetaTemplates(
 /**
  * Verifica integridade do Phone Number ID e Token da Meta
  */
-export async function verifyMetaConnection(
-  phoneNumberId: string,
+/**
+ * Cria e submete um novo template de mensagem para aprovação na Meta
+ */
+export async function createMetaTemplate(
+  wabaId: string,
   accessToken: string,
-): Promise<{
-  success: boolean;
-  verifiedName?: string;
-  displayPhoneNumber?: string;
-  qualityRating?: string;
-  codeVerificationStatus?: string;
-  error?: string;
-}> {
-  if (!phoneNumberId || !accessToken) {
-    return { success: false, error: "Phone Number ID e Token são obrigatórios" };
+  templateData: {
+    name: string;
+    category: "MARKETING" | "UTILITY";
+    language?: string;
+    headerText?: string;
+    bodyText: string;
+    footerText?: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    exampleBodyParams?: string[];
+  },
+): Promise<{ success: boolean; id?: string; status?: string; error?: string; raw?: unknown }> {
+  if (!wabaId || !accessToken) {
+    return { success: false, error: "WABA ID e Access Token são obrigatórios" };
   }
 
-  const endpoint = `${META_GRAPH_URL}/${phoneNumberId.trim()}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status`;
+  const endpoint = `${META_GRAPH_URL}/${wabaId.trim()}/message_templates`;
+  const components: Array<Record<string, unknown>> = [];
+
+  // Header se fornecido
+  if (templateData.headerText) {
+    components.push({
+      type: "HEADER",
+      format: "TEXT",
+      text: templateData.headerText,
+    });
+  }
+
+  // Body com exemplos para aprovação rápida da Meta
+  const bodyComponent: Record<string, unknown> = {
+    type: "BODY",
+    text: templateData.bodyText,
+  };
+
+  if (templateData.exampleBodyParams && templateData.exampleBodyParams.length > 0) {
+    bodyComponent.example = {
+      body_text: [templateData.exampleBodyParams],
+    };
+  }
+
+  components.push(bodyComponent);
+
+  // Footer se fornecido
+  if (templateData.footerText) {
+    components.push({
+      type: "FOOTER",
+      text: templateData.footerText,
+    });
+  }
+
+  // Botão de Link / URL se fornecido
+  if (templateData.buttonText && templateData.buttonUrl) {
+    components.push({
+      type: "BUTTONS",
+      buttons: [
+        {
+          type: "URL",
+          text: templateData.buttonText,
+          url: templateData.buttonUrl,
+        },
+      ],
+    });
+  }
+
+  const payload = {
+    name: templateData.name.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+    category: templateData.category || "MARKETING",
+    language: templateData.language || "pt_BR",
+    components,
+  };
 
   try {
     const res = await fetch(endpoint, {
-      method: "GET",
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken.trim()}`,
       },
-      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15_000),
     });
 
     const data = await res.json();
     if (!res.ok) {
-      const errorMsg = data?.error?.message || `Erro HTTP ${res.status}`;
-      return { success: false, error: errorMsg };
+      const errorMsg = data?.error?.message || data?.error?.error_user_msg || `Erro HTTP ${res.status}`;
+      return { success: false, error: errorMsg, raw: data };
     }
 
     return {
       success: true,
-      verifiedName: data.verified_name || "Conta WhatsApp Business",
-      displayPhoneNumber: data.display_phone_number || "",
-      qualityRating: data.quality_rating || "GREEN",
-      codeVerificationStatus: data.code_verification_status || "VERIFIED",
+      id: data.id,
+      status: data.status || "PENDING",
+      raw: data,
     };
   } catch (err) {
     return {
@@ -359,3 +420,4 @@ export async function verifyMetaConnection(
     };
   }
 }
+
