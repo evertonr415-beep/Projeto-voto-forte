@@ -26,28 +26,16 @@ export async function POST() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-  try {
-    const { accessToken, graphVersion, wabaId } = getMetaConfig();
+    const { wabaId } = getMetaConfig();
 
-    if (!accessToken) {
-      return Response.json(
-        { error: "Integração Meta ainda não ativada no servidor." },
-        { status: 503 },
-      );
-    }
-
-    const response = await fetch(
-      `https://graph.facebook.com/${graphVersion}/${wabaId}/message_templates?fields=id,name,status,language,category,components&limit=100`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(20_000),
-      },
+    const { ok, status, data } = await metaRequest(
+      `${wabaId}/message_templates?fields=id,name,status,language,category,components&limit=100`,
+      { method: "GET" },
     );
-    const data = await readMetaResponse(response);
 
-    if (!response.ok) {
+    if (!ok) {
       return Response.json(
-        { error: metaErrorMessage(data, response.status) },
+        { error: metaErrorMessage(data, status) },
         { status: 502 },
       );
     }
