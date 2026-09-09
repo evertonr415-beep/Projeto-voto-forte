@@ -38,6 +38,8 @@ import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
 import AgendaDesktopNewEventFallback from "./agenda-desktop-new-event-fallback";
 import ElectoralMobileTopbarIdentity from "./electoral-mobile-topbar-identity";
 import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity";
+import WhatsappSurveyIntelligence from "./whatsapp-survey-intelligence";
+import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enhancer";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -104,6 +106,8 @@ export default function DashboardRuntimeEnhancers() {
           <AgendaMobileCompactEnhancer />
           <AgendaDesktopNewEventFallback />
           <SystemNotificationsDrawer />
+          <WhatsappSurveyIntelligence />
+          <SurveyIntelligenceSidebarEnhancer />
         </>
       ) : null}
     </>
