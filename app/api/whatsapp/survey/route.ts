@@ -2,7 +2,7 @@ import { getAccount } from "../../../server-identity";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 
-// Armazenamento em memória / fallback rápido para respostas de sondagem
+// Armazenamento em memória / cache rápido para respostas
 let memorySurveyResponses: SurveyAnalysisResult[] = [];
 
 export async function GET(request: Request) {
@@ -14,9 +14,40 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filterDistrict = searchParams.get("district") || "all";
 
-  let responses = [...memorySurveyResponses];
+  const responsesMap = new Map<string, SurveyAnalysisResult>();
 
-  // Tenta carregar do Supabase registros persistidos de auditoria/respostas
+  // 1. Carrega dados de vf_whatsapp_events (mensagens recebidas via Webhook Oficial)
+  try {
+    const supabase = getAutonomousSupabase();
+    const { data: waEvents } = await supabase
+      .from("vf_whatsapp_events")
+      .select("phone, contact_name, message_text, occurred_at")
+      .eq("direction", "inbound")
+      .not("message_text", "is", null)
+      .order("occurred_at", { ascending: false })
+      .limit(300);
+
+    if (waEvents && waEvents.length > 0) {
+      for (const ev of waEvents) {
+        const phone = ev.phone || "";
+        const text = (ev.message_text || "").trim();
+        const key = `${phone}-${text}`;
+
+        if (text && phone && !responsesMap.has(key)) {
+          const parsed = await analyzeSurveyResponse(phone, text);
+          if (ev.contact_name && parsed.contactName === "Eleitor") {
+            parsed.contactName = ev.contact_name;
+          }
+          parsed.timestamp = ev.occurred_at || new Date().toISOString();
+          responsesMap.set(key, parsed);
+        }
+      }
+    }
+  } catch {
+    // Continua com outros fallbacks
+  }
+
+  // 2. Carrega dados de vf_audit_logs se houver
   try {
     const supabase = getAutonomousSupabase();
     const { data } = await supabase
@@ -32,17 +63,30 @@ export async function GET(request: Request) {
         const detail = row.detail || "";
         const msgMatch = detail.match(/Msg:\s*([^|]+)/i);
         const text = msgMatch ? msgMatch[1].trim() : "";
+        const key = `${phone}-${text}`;
 
-        if (text && !text.startsWith("[Mídia") && !responses.some((r) => r.messageText === text)) {
+        if (text && phone && !responsesMap.has(key)) {
           const parsed = await analyzeSurveyResponse(phone, text);
           parsed.timestamp = row.created_at || new Date().toISOString();
-          responses.unshift(parsed);
+          responsesMap.set(key, parsed);
         }
       }
     }
   } catch {
     // Silencia se indisponível
   }
+
+  // 3. Inclui respostas salvas em memória
+  for (const m of memorySurveyResponses) {
+    const key = `${m.phone}-${m.messageText}`;
+    if (!responsesMap.has(key)) {
+      responsesMap.set(key, m);
+    }
+  }
+
+  let responses = Array.from(responsesMap.values()).sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
 
   // Filtro por Bairro
   if (filterDistrict !== "all") {
@@ -65,7 +109,7 @@ export async function GET(request: Request) {
     if (r.federalCandidate && r.federalCandidate !== "Não especificado / Em aberto") {
       federalCounts[r.federalCandidate] = (federalCounts[r.federalCandidate] || 0) + 1;
     }
-    if (r.district) {
+    if (r.district && r.district !== "Não informado") {
       districtCounts[r.district] = (districtCounts[r.district] || 0) + 1;
     }
   }
@@ -98,8 +142,8 @@ export async function GET(request: Request) {
     totalResponses: responses.length,
     kpis: {
       totalResponses: responses.length,
-      topStateCandidate: stateRanking[0]?.candidate || "Nenhum ainda",
-      topFederalCandidate: federalRanking[0]?.candidate || "Nenhum ainda",
+      topStateCandidate: stateRanking[0]?.candidate || "-",
+      topFederalCandidate: federalRanking[0]?.candidate || "-",
       activeDistrictsCount: districtRanking.length,
     },
     stateRanking,
@@ -116,18 +160,38 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { phone: string; message: string };
-    if (!body.phone || !body.message) {
+    const body = await request.json();
+    const phone = String(body.phone || "").trim();
+    const message = String(body.message || "").trim();
+
+    if (!phone || !message) {
       return Response.json({ error: "Telefone e mensagem são obrigatórios" }, { status: 400 });
     }
 
-    const analyzed = await analyzeSurveyResponse(body.phone, body.message);
+    const analyzed = await analyzeSurveyResponse(phone, message);
     memorySurveyResponses.unshift(analyzed);
 
-    return Response.json({ success: true, analysis: analyzed });
+    // Persiste também no Supabase caso disponível
+    try {
+      const supabase = getAutonomousSupabase();
+      await supabase.from("vf_whatsapp_events").insert({
+        direction: "inbound",
+        event_type: "survey_response_manual",
+        status: "received",
+        phone,
+        contact_name: analyzed.contactName,
+        message_type: "text",
+        message_text: message,
+        occurred_at: new Date().toISOString(),
+      });
+    } catch {
+      // Silencia se indisponível
+    }
+
+    return Response.json({ success: true, result: analyzed });
   } catch (error) {
     return Response.json(
-      { error: error instanceof Error ? error.message : "Erro ao processar resposta." },
+      { error: error instanceof Error ? error.message : "Falha ao processar resposta" },
       { status: 500 },
     );
   }
