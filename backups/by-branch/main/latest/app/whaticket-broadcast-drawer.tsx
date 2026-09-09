@@ -127,9 +127,30 @@ export default function WhaticketBroadcastDrawer() {
   const loadContacts = useCallback(async () => {
     setLoadingContacts(true);
     try {
-      const response = await apiFetch("/api/contacts?pageSize=200&owner=all", { cache: "no-store" });
-      const data = await response.json();
-      if (response.ok && Array.isArray(data.contacts)) setContacts(data.contacts);
+      const all: ContactItem[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore && page <= 10) {
+        const response = await apiFetch(`/api/contacts?pageSize=200&page=${page}&owner=all`, {
+          cache: "no-store",
+        });
+        const data = await response.json();
+        if (response.ok && Array.isArray(data.contacts) && data.contacts.length > 0) {
+          all.push(...data.contacts);
+          if (data.contacts.length < 200) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      setContacts(all);
+    } catch {
+      // Silencia falha
     } finally {
       setLoadingContacts(false);
     }
@@ -371,6 +392,17 @@ export default function WhaticketBroadcastDrawer() {
           >
             Progresso {isExecuting ? "●" : ""}
           </button>
+          <button
+            type="button"
+            className="wt-tab-btn"
+            style={{ marginLeft: "auto", background: "rgba(56,189,248,0.15)", color: "#0284c7", fontWeight: 700 }}
+            onClick={() => {
+              setIsOpen(false);
+              window.dispatchEvent(new CustomEvent("voto-forte:open-survey-intelligence"));
+            }}
+          >
+            📊 Ver Apuração de Votos
+          </button>
         </nav>
 
         <div className="wt-drawer-body">
@@ -397,11 +429,13 @@ export default function WhaticketBroadcastDrawer() {
                   <div className="wt-form-group">
                     <label>Limite</label>
                     <select className="wt-select" value={recipientLimit} onChange={(event) => setRecipientLimit(Number(event.target.value))}>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={300}>300</option>
-                      <option value={9999}>Todos</option>
+                      <option value={20}>20 contatos</option>
+                      <option value={50}>50 contatos</option>
+                      <option value={100}>100 contatos</option>
+                      <option value={250}>250 contatos</option>
+                      <option value={500}>500 contatos</option>
+                      <option value={1000}>1.000 contatos</option>
+                      <option value={99999}>Todos os contatos</option>
                     </select>
                   </div>
                 </div>

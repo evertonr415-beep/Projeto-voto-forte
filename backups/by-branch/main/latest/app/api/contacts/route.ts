@@ -78,15 +78,13 @@ async function resolveScope(
 
   const requested = requestedOwner?.trim().toLowerCase();
   let scope = isAdmOrGestor ? "all" : account.email;
-  if (requested === "all" && isAdmOrGestor) scope = "all";
-  else if (requested && emails.includes(requested)) scope = requested;
-  else if (requested && requested !== account.email && !isAdmOrGestor)
-    return {
-      error: Response.json(
-        { error: "Você não possui acesso a este ambiente" },
-        { status: 403 },
-      ),
-    };
+  if (requested === "all") {
+    scope = isAdmOrGestor ? "all" : account.email;
+  } else if (requested && emails.includes(requested)) {
+    scope = requested;
+  } else if (requested && requested !== account.email && !isAdmOrGestor) {
+    scope = account.email;
+  }
 
   return { scope, emails, isAdmOrGestor };
 }
