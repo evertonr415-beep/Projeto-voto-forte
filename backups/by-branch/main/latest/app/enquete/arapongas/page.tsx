@@ -78,11 +78,13 @@ export default function EnqueteArapongasPage() {
   if (submitted) {
     return (
       <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column" }}>
-        <header style={{ background: "#1d4ed8", color: "#fff", padding: "16px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-          <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>VotoForte</h1>
-          <div style={{ background: "#1e40af", color: "#dbeafe", fontSize: "11px", padding: "4px 0", marginTop: "6px", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}>
-            Enquete - Arapongas
-          </div>
+        {/* Banner Header Oficial */}
+        <header style={{ background: "#0d2342", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", position: "sticky", top: 0, zIndex: 10, textAlign: "center" }}>
+          <img
+            src="/enquete-capa-voto-forte.png"
+            alt="ENQUETE VOTO FORTE PARANÁ"
+            style={{ width: "100%", maxWidth: "480px", height: "auto", display: "block", margin: "0 auto" }}
+          />
         </header>
 
         <main style={{ maxWidth: "480px", margin: "40px auto 20px", padding: "0 16px", flex: 1, width: "100%", boxSizing: "border-box" }}>
@@ -110,15 +112,13 @@ export default function EnqueteArapongasPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <header style={{ background: "#1d4ed8", color: "#fff", padding: "16px 16px 0", textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", paddingBottom: "12px" }}>
-          <span style={{ fontSize: "22px" }}>🗳️</span>
-          <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700, letterSpacing: "0.5px" }}>VotoForte</h1>
-        </div>
-        <div style={{ background: "#1e40af", color: "#dbeafe", fontSize: "11px", padding: "6px 0", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600, margin: "0 -16px" }}>
-          Enquete - Arapongas
-        </div>
+      {/* Banner Header Oficial */}
+      <header style={{ background: "#0d2342", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", position: "sticky", top: 0, zIndex: 10, textAlign: "center" }}>
+        <img
+          src="/enquete-capa-voto-forte.png"
+          alt="ENQUETE VOTO FORTE PARANÁ"
+          style={{ width: "100%", maxWidth: "480px", height: "auto", display: "block", margin: "0 auto" }}
+        />
       </header>
 
       {/* Main Content */}
