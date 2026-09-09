@@ -1,0 +1,31 @@
+.contact-mobile-list-toggle-host{display:none}
+
+@media(max-width:760px){
+  .contacts-panel:not(.mobile-contacts-expanded) .optimized-table-wrap tbody>tr:nth-child(n+6){display:none!important}
+
+  .contact-mobile-list-toggle-host{
+    display:block;
+    margin:12px 0 4px;
+  }
+
+  .contact-mobile-list-toggle{
+    width:100%;
+    min-height:48px;
+    border:1px solid #c8d3df;
+    border-radius:12px;
+    background:#f7f9fc;
+    color:#17345c;
+    font-size:14px;
+    font-weight:850;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(23,52,92,.05);
+  }
+
+  .contact-mobile-list-toggle:active{
+    transform:translateY(1px);
+  }
+
+  .mobile-contacts-expanded .contact-mobile-list-toggle{
+    background:#fff;
+  }
+}
