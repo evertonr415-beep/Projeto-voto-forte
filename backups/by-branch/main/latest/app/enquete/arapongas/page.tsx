@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function EnqueteArapongasPage() {
+function EnqueteArapongasForm() {
   const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -15,10 +15,12 @@ export default function EnqueteArapongasPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    const p = searchParams?.get("tel") || searchParams?.get("phone") || searchParams?.get("p") || "";
-    const n = searchParams?.get("nome") || searchParams?.get("name") || searchParams?.get("n") || "";
-    if (p) setPhone(p);
-    if (n) setName(n);
+    if (typeof window !== "undefined") {
+      const p = searchParams?.get("tel") || searchParams?.get("phone") || searchParams?.get("p") || "";
+      const n = searchParams?.get("nome") || searchParams?.get("name") || searchParams?.get("n") || "";
+      if (p) setPhone(p);
+      if (n) setName(n);
+    }
   }, [searchParams]);
 
   const candidateStateNames: Record<string, string> = {
@@ -65,7 +67,6 @@ export default function EnqueteArapongasPage() {
       if (response.ok) {
         setSubmitted(true);
       } else {
-        // Mesmo com fallback aceita como sucesso
         setSubmitted(true);
       }
     } catch {
@@ -288,5 +289,13 @@ export default function EnqueteArapongasPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function EnqueteArapongasPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "40px", textAlign: "center" }}>Carregando enquete...</div>}>
+      <EnqueteArapongasForm />
+    </Suspense>
   );
 }
