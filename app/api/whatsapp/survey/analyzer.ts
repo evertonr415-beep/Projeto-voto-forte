@@ -127,11 +127,21 @@ export async function analyzeSurveyResponse(
     sentiment = "critica";
   }
 
+  // 1.1 Suporte a Resposta Estruturada da Enquete Web
+  const webMatch = rawText.match(/Estadual:\s*([^|]+)\s*\|\s*Federal:\s*(.+)$/i);
+  if (webMatch && webMatch[1] && webMatch[2]) {
+    const est = sanitizeCandidateRaw(webMatch[1]);
+    const fed = sanitizeCandidateRaw(webMatch[2]);
+    if (est) stateCandidate = est;
+    if (fed) federalCandidate = fed;
+    sentiment = "declarado";
+  }
+
   // 2. Extração de Deputado Estadual
   // Padrão A: Menção com palavra estadual / deputado estadual
   const statePatterns = [
-    /(?:estadual|deputado estadual|deputada estadual|dep[\s.]*estadual|p\/[\s]*estadual|pra[\s]*estadual|para[\s]*estadual)[\s:=–-]*([^\n,;e]+?)(?=(?:\s+e\s+|\s*,\s*|\s*;\s*|\n|federal|deputado federal|deputada federal|$))/i,
-    /(?:voto|apoio|fechado com|vou de)[\s]+([^\n,;e]+?)[\s]+(?:para|pra|p\/|como)?[\s]*(?:estadual|deputado estadual|deputada estadual)/i
+    /(?:estadual|deputado estadual|deputada estadual|dep[\s.]*estadual|p\/[\s]*estadual|pra[\s]*estadual|para[\s]*estadual)[\s:=–-]*([^\n,;e|]+?)(?=(?:\s+e\s+|\s*,\s*|\s*;\s*|\s*\|\s*|\n|federal|deputado federal|deputada federal|$))/i,
+    /(?:voto|apoio|fechado com|vou de)[\s]+([^\n,;e|]+?)[\s]+(?:para|pra|p\/|como)?[\s]*(?:estadual|deputado estadual|deputada estadual)/i
   ];
 
   for (const pattern of statePatterns) {
