@@ -1,0 +1,171 @@
+/* Correcoes pontuais da Preview desktop.
+   Escopo estrito: desktop real. Nenhuma regra abaixo de 1024px. */
+@media (min-width: 1024px) {
+  /* 1) MAPA ELEITORAL / BAIRROS
+     O painel compacto reutiliza estilos claros injetados pelo enhancer.
+     No tema desktop escuro, reforcamos somente a leitura das linhas. */
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-control {
+    color: #f8fafc !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-control header strong {
+    color: #f8fafc !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-control header small {
+    color: #b8c9db !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-row,
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-row:disabled {
+    color: #e8f1fa !important;
+    opacity: 1 !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-row b {
+    color: #f8fafc !important;
+    opacity: 1 !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-row small {
+    color: #b7c8d9 !important;
+    opacity: 1 !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-row:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.09) !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-scale {
+    color: #a9bbd0 !important;
+    border-top-color: rgba(56, 189, 248, 0.16) !important;
+  }
+
+  body:has(.workspace .full-map)
+    .vf-mobile-district-host.vf-map-desktop-panel-open .vf-district-map-scale em {
+    color: #9fb3c9 !important;
+  }
+
+  /* 2) ADMINISTRACAO
+     Mantem a estrutura de duas colunas e cria um enquadramento unico no desktop. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .workspace {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding: 22px clamp(26px, 3vw, 44px) 40px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter[role="tablist"][aria-label="Seções administrativas"],
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-admin-municipalities-head,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-admin-municipalities-grid,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-municipality-request-list {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1180px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+    .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 3) AGENDA INTELIGENTE / NOVO EVENTO
+     Mantem o markup e a logica existentes. No desktop, remove os dois sinais de +
+     visualmente e garante que botao/modal fiquem acima das camadas da casca. */
+  .vf-agenda-official-shell
+    .vf-agenda-route-content .ae-toolbar > button.ae-btn-primary[title*="Cadastrar novo compromisso"] {
+    position: relative !important;
+    z-index: 30 !important;
+    pointer-events: auto !important;
+  }
+
+  .vf-agenda-official-shell
+    .vf-agenda-route-content .ae-toolbar > button.ae-btn-primary[title*="Cadastrar novo compromisso"] > svg {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell
+    .vf-agenda-route-content .ae-toolbar > button.ae-btn-primary[title*="Cadastrar novo compromisso"] > span {
+    font-size: 0 !important;
+  }
+
+  .vf-agenda-official-shell
+    .vf-agenda-route-content .ae-toolbar > button.ae-btn-primary[title*="Cadastrar novo compromisso"] > span::after {
+    content: "Novo Evento" !important;
+    color: inherit !important;
+    font-size: 0.84rem !important;
+    font-weight: 650 !important;
+    line-height: 1.2 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-root {
+    z-index: auto !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card {
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  /* 4) CONTATOS
+     Retira o destaque cromatico especial somente dos dois cards apontados. */
+  .vf-contacts-optimized-portal .optimized-quick-actions > a.primary:first-child,
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis > article.is-primary:first-child {
+    border-color: rgba(56, 189, 248, 0.16) !important;
+    background: linear-gradient(145deg, rgba(15, 30, 58, 0.96), rgba(9, 18, 38, 0.96)) !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-quick-actions > a.primary:first-child .optimized-action-icon {
+    background: #eef4fb !important;
+    color: #1d63a5 !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-quick-actions > a.primary:first-child small,
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis > article.is-primary:first-child .optimized-kpi-label,
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis > article.is-primary:first-child small {
+    color: #a9bbd0 !important;
+  }
+
+  .vf-contacts-optimized-portal .optimized-overview .optimized-kpis > article.is-primary:first-child b {
+    color: #f8fafc !important;
+  }
+}
