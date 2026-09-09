@@ -1,0 +1,20 @@
+{
+  "format": "voto-forte-automated-full-backup",
+  "version": "2.5.0",
+  "platform": "VOTO FORTE PARANÁ",
+  "generatedAt": "2026-08-24T16:56:19.629840",
+  "targetDate": "2026-08-24",
+  "googleDriveFolderId": "1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU",
+  "stats": {
+    "totalContacts": 0,
+    "totalUsers": 0,
+    "totalAuditLogs": 0,
+    "totalExports": 0
+  },
+  "data": {
+    "contacts": [],
+    "users": [],
+    "auditLogs": [],
+    "contactExports": []
+  }
+}
