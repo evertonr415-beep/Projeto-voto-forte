@@ -1,0 +1,6 @@
+/* WhatsApp mobile: remove somente o cabeçalho introdutório que antecede a área funcional. */
+@media (max-width: 760px) {
+  .page-head:has(+ .wa-layout) {
+    display: none !important;
+  }
+}
