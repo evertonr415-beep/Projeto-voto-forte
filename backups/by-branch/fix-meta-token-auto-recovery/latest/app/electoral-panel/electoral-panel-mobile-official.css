@@ -1,0 +1,276 @@
+.tse-panel-integrity-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 12px;
+  background: rgba(14, 116, 144, 0.08);
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tse-panel-integrity-note strong {
+  color: #7dd3fc;
+  white-space: nowrap;
+}
+
+.tse-table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tse-table-heading .tse-section-title {
+  margin: 0;
+}
+
+.tse-table-meta,
+.tse-source-footnote {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.tse-source-footnote {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tse-ballot-number,
+.tse-percent-cell {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.tse-votes-cell,
+.tse-percent-cell {
+  text-align: right;
+}
+
+.tse-votes-cell {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.tse-candidate-mobile-list {
+  display: none;
+}
+
+.tse-compact-select {
+  width: auto;
+  min-width: 170px;
+  max-width: 230px;
+}
+
+/* O escopo de contatos/usuarios nao se aplica ao Painel Eleitoral. */
+body:has(.tse-panel-root) .app-shell .topbar .scope-picker,
+body:has(.tse-panel-root) .app-shell .topbar .vf-header-scope {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  /* Cabecalho principal: menu + nome completo + tema/perfil na mesma linha. */
+  body:has(.tse-panel-root) .app-shell .topbar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    min-height: 74px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .page-id {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    gap: 8px !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .page-id > div {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .page-id h1 {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    font-size: 16px !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .top-actions {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .vf-theme-toggle {
+    position: static !important;
+    inset: auto !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    flex: 0 0 38px !important;
+    margin: 0 !important;
+    border-radius: 11px !important;
+    font-size: 18px !important;
+  }
+
+  body:has(.tse-panel-root) .app-shell .topbar .profile {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  .tse-panel-shell {
+    padding: 10px !important;
+  }
+
+  .tse-panel-topbar {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px !important;
+  }
+
+  .tse-panel-brand {
+    min-width: 0;
+    gap: 8px !important;
+  }
+
+  .tse-panel-heading-copy {
+    min-width: 0;
+  }
+
+  .tse-panel-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .tse-panel-title {
+    display: block !important;
+    font-size: 15px !important;
+    line-height: 1.2;
+  }
+
+  .tse-panel-title > span:first-child {
+    display: block;
+    white-space: normal;
+  }
+
+  .tse-panel-badge {
+    display: none;
+  }
+
+  .tse-panel-subtitle {
+    display: none;
+  }
+
+  .tse-panel-actions {
+    width: auto !important;
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .tse-panel-actions .tse-btn {
+    display: none;
+  }
+
+  .tse-panel-actions .vf-back-dashboard-btn {
+    padding: 8px;
+  }
+
+  .tse-panel-integrity-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+  }
+
+  .tse-filters-bar {
+    gap: 12px !important;
+  }
+
+  .tse-subfilters-verified {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tse-search-input,
+  .tse-compact-select {
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .tse-table-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tse-desktop-table {
+    display: none;
+  }
+
+  .tse-candidate-mobile-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .tse-candidate-mobile-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    background: rgba(15, 30, 58, 0.7);
+  }
+
+  .tse-candidate-mobile-card.elected {
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+
+  .tse-candidate-mobile-top,
+  .tse-candidate-mobile-meta,
+  .tse-candidate-mobile-result {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tse-candidate-mobile-meta,
+  .tse-candidate-mobile-result {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .tse-candidate-mobile-result b {
+    color: #f8fafc;
+  }
+}
