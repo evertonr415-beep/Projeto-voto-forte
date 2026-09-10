@@ -12,6 +12,11 @@ type ContactItem = {
   kind?: "Eleitor" | "Liderança";
 };
 
+type DistrictSummary = {
+  district: string;
+  total: number;
+};
+
 type MetaTemplate = {
   id: string;
   name: string;
@@ -36,6 +41,18 @@ const STORAGE_DELAY_KEY = "voto-forte:meta:delaySeconds";
 const STORAGE_TEMPLATE_KEY = "voto-forte:meta:templateName";
 const STORAGE_LANGUAGE_KEY = "voto-forte:meta:templateLanguage";
 
+function normalizeWhatsappPhone(raw: string): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+  return digits.length >= 10 ? digits : "";
+}
+
 function resolveTag(value: string, contact: ContactItem) {
   const firstName = (contact.name || "").trim().split(/\s+/)[0] || "Amigo(a)";
   return String(value || "")
@@ -50,11 +67,13 @@ export default function WhaticketBroadcastDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"disparo" | "logs">("disparo");
   const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [districtList, setDistrictList] = useState<DistrictSummary[]>([]);
+  const [totalMunicipalityContacts, setTotalMunicipalityContacts] = useState(0);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState("Todos");
   const [selectedKind, setSelectedKind] = useState<"Todos" | "Eleitor" | "Liderança">("Todos");
   const [recipientLimit, setRecipientLimit] = useState(50);
-  const [delaySeconds, setDelaySeconds] = useState(5);
+  const [delaySeconds, setDelaySeconds] = useState(3);
 
   const [templates, setTemplates] = useState<MetaTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -72,10 +91,10 @@ export default function WhaticketBroadcastDrawer() {
 
   useEffect(() => {
     try {
-      const savedDelay = Number(localStorage.getItem(STORAGE_DELAY_KEY) || 5);
+      const savedDelay = Number(localStorage.getItem(STORAGE_DELAY_KEY) || 3);
       const savedTemplate = localStorage.getItem(STORAGE_TEMPLATE_KEY) || "";
       const savedLanguage = localStorage.getItem(STORAGE_LANGUAGE_KEY) || "pt_BR";
-      setDelaySeconds(Number.isFinite(savedDelay) ? savedDelay : 5);
+      setDelaySeconds(Number.isFinite(savedDelay) ? savedDelay : 3);
       setTemplateName(savedTemplate);
       setTemplateLanguage(savedLanguage);
     } catch {}
@@ -124,33 +143,95 @@ export default function WhaticketBroadcastDrawer() {
     };
   }, []);
 
-  const loadContacts = useCallback(async () => {
-    setLoadingContacts(true);
+  // Carrega sumário de bairros completo
+  const loadDistrictsSummary = useCallback(async () => {
     try {
-      const all: ContactItem[] = [];
-      let page = 1;
-      let hasMore = true;
-
-      while (hasMore && page <= 10) {
-        const response = await apiFetch(`/api/contacts?pageSize=200&page=${page}&owner=all`, {
-          cache: "no-store",
-        });
-        const data = await response.json();
-        if (response.ok && Array.isArray(data.contacts) && data.contacts.length > 0) {
-          all.push(...data.contacts);
-          if (data.contacts.length < 200) {
-            hasMore = false;
-          } else {
-            page++;
-          }
-        } else {
-          hasMore = false;
+      const response = await apiFetch("/api/contacts?mode=summary", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok && data) {
+        if (Array.isArray(data.districts)) {
+          setDistrictList(
+            data.districts.map((d: { district?: string; total?: number }) => ({
+              district: String(d.district || "").trim(),
+              total: Number(d.total || 0),
+            })).filter((d: DistrictSummary) => Boolean(d.district)),
+          );
+        }
+        if (Number.isFinite(data.total)) {
+          setTotalMunicipalityContacts(Number(data.total));
         }
       }
-
-      setContacts(all);
     } catch {
-      // Silencia falha
+      // Silencia
+    }
+  }, []);
+
+  // Carrega contatos com filtro no servidor (rápido e preciso)
+  const fetchFilteredContacts = useCallback(async (
+    district: string,
+    kind: "Todos" | "Eleitor" | "Liderança",
+    limit: number,
+  ) => {
+    setLoadingContacts(true);
+    try {
+      const maxToFetch = limit === 99999 ? 500 : limit;
+      const params = new URLSearchParams({
+        page: "1",
+        pageSize: String(Math.min(200, maxToFetch)),
+      });
+
+      if (district && district !== "Todos") {
+        params.set("district", district);
+      }
+      if (kind && kind !== "Todos") {
+        params.set("profile", kind);
+      }
+
+      const response = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data.contacts)) {
+        const loaded: ContactItem[] = data.contacts.map((c: any) => ({
+          id: c.id,
+          name: c.name || "Contato",
+          phone: c.phone || "",
+          district: c.district || district || "Arapongas",
+          leader: c.leader || "",
+          kind: c.kind || "Eleitor",
+        }));
+
+        // Se o usuário pediu mais do que 200 (ex: 250, 500), busca páginas seguintes
+        if (maxToFetch > 200 && data.totalPages > 1) {
+          const remainingPages = Math.min(Math.ceil(maxToFetch / 200), data.totalPages);
+          for (let p = 2; p <= remainingPages; p++) {
+            params.set("page", String(p));
+            try {
+              const nextRes = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+              const nextData = await nextRes.json();
+              if (nextRes.ok && Array.isArray(nextData.contacts)) {
+                loaded.push(
+                  ...nextData.contacts.map((c: any) => ({
+                    id: c.id,
+                    name: c.name || "Contato",
+                    phone: c.phone || "",
+                    district: c.district || district || "Arapongas",
+                    leader: c.leader || "",
+                    kind: c.kind || "Eleitor",
+                  })),
+                );
+              }
+            } catch {
+              break;
+            }
+          }
+        }
+
+        setContacts(loaded);
+      } else {
+        setContacts([]);
+      }
+    } catch {
+      setContacts([]);
     } finally {
       setLoadingContacts(false);
     }
@@ -207,33 +288,41 @@ export default function WhaticketBroadcastDrawer() {
     }
   }, [syncParameterMappings, templateLanguage, templateName]);
 
+  // Ao abrir o drawer
   useEffect(() => {
     if (!isOpen) return;
-    if (contacts.length === 0) void loadContacts();
+    void loadDistrictsSummary();
     void loadTemplates();
+    void fetchFilteredContacts(selectedDistrict, selectedKind, recipientLimit);
   }, [isOpen]);
 
-  const districts = useMemo(() => {
-    const values = new Set<string>();
-    contacts.forEach((contact) => {
-      const district = contact.district?.trim();
-      if (district) values.add(district);
-    });
-    return Array.from(values).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [contacts]);
+  // Ao alterar qualquer filtro
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+    void fetchFilteredContacts(district, selectedKind, recipientLimit);
+  };
 
-  const recipients = useMemo(
-    () =>
-      contacts
-        .filter((contact) => {
-          if (String(contact.phone || "").replace(/\D/g, "").length < 10) return false;
-          if (selectedDistrict !== "Todos" && contact.district !== selectedDistrict) return false;
-          if (selectedKind !== "Todos" && contact.kind !== selectedKind) return false;
-          return true;
-        })
-        .slice(0, recipientLimit > 0 ? recipientLimit : undefined),
-    [contacts, recipientLimit, selectedDistrict, selectedKind],
-  );
+  const handleKindChange = (kind: "Todos" | "Eleitor" | "Liderança") => {
+    setSelectedKind(kind);
+    void fetchFilteredContacts(selectedDistrict, kind, recipientLimit);
+  };
+
+  const handleLimitChange = (limit: number) => {
+    setRecipientLimit(limit);
+    void fetchFilteredContacts(selectedDistrict, selectedKind, limit);
+  };
+
+  const recipients = useMemo(() => {
+    const seen = new Set<string>();
+    return contacts
+      .filter((contact) => {
+        const normalized = normalizeWhatsappPhone(contact.phone || "");
+        if (!normalized || normalized.length < 10 || seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+      })
+      .slice(0, recipientLimit > 0 ? recipientLimit : undefined);
+  }, [contacts, recipientLimit]);
 
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.name === templateName && template.language === templateLanguage) || null,
@@ -371,7 +460,7 @@ export default function WhaticketBroadcastDrawer() {
             </div>
             <div>
               <h2>Central de Disparos <span>⚡</span></h2>
-              <p>Envio oficial pelo WhatsApp</p>
+              <p>Envio oficial pelo WhatsApp (Meta Cloud API)</p>
             </div>
           </div>
           <button type="button" className="wt-close-btn" onClick={() => setIsOpen(false)}>✕</button>
@@ -412,15 +501,29 @@ export default function WhaticketBroadcastDrawer() {
                 <div className="wt-card-title"><span>👥</span> 1. Destinatários</div>
                 <div className="wt-form-group">
                   <label>Bairro</label>
-                  <select className="wt-select" value={selectedDistrict} onChange={(event) => setSelectedDistrict(event.target.value)}>
-                    <option value="Todos">Todos os Bairros ({contacts.length})</option>
-                    {districts.map((district) => <option key={district} value={district}>{district}</option>)}
+                  <select
+                    className="wt-select"
+                    value={selectedDistrict}
+                    onChange={(event) => handleDistrictChange(event.target.value)}
+                  >
+                    <option value="Todos">
+                      Todos os Bairros ({totalMunicipalityContacts > 0 ? `${totalMunicipalityContacts.toLocaleString("pt-BR")} contatos` : "Total"})
+                    </option>
+                    {districtList.map((d) => (
+                      <option key={d.district} value={d.district}>
+                        {d.district} ({d.total.toLocaleString("pt-BR")})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div className="wt-form-group">
                     <label>Perfil</label>
-                    <select className="wt-select" value={selectedKind} onChange={(event) => setSelectedKind(event.target.value as "Todos" | "Eleitor" | "Liderança")}>
+                    <select
+                      className="wt-select"
+                      value={selectedKind}
+                      onChange={(event) => handleKindChange(event.target.value as "Todos" | "Eleitor" | "Liderança")}
+                    >
                       <option value="Todos">Todos</option>
                       <option value="Eleitor">Eleitores</option>
                       <option value="Liderança">Lideranças</option>
@@ -428,7 +531,11 @@ export default function WhaticketBroadcastDrawer() {
                   </div>
                   <div className="wt-form-group">
                     <label>Limite</label>
-                    <select className="wt-select" value={recipientLimit} onChange={(event) => setRecipientLimit(Number(event.target.value))}>
+                    <select
+                      className="wt-select"
+                      value={recipientLimit}
+                      onChange={(event) => handleLimitChange(Number(event.target.value))}
+                    >
                       <option value={20}>20 contatos</option>
                       <option value={50}>50 contatos</option>
                       <option value={100}>100 contatos</option>
@@ -439,7 +546,11 @@ export default function WhaticketBroadcastDrawer() {
                     </select>
                   </div>
                 </div>
-                <small>{loadingContacts ? "Carregando contatos..." : `✓ ${recipients.length} contato(s) elegível(is)`}</small>
+                <small style={{ color: loadingContacts ? "#38bdf8" : recipients.length > 0 ? "#4ade80" : "#f87171" }}>
+                  {loadingContacts
+                    ? `⏳ Carregando contatos de ${selectedDistrict}...`
+                    : `✓ ${recipients.length} contato(s) elegível(is) carregado(s)`}
+                </small>
               </section>
 
               <section className="wt-card">
@@ -469,7 +580,9 @@ export default function WhaticketBroadcastDrawer() {
                       <div style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
                         {selectedTemplate.body || "Modelo sem corpo de texto exibido."}
                       </div>
-                      <small>{selectedTemplate.category} · APROVADO</small>
+                      <small style={{ color: "#4ade80", fontWeight: 700 }}>
+                        {selectedTemplate.category} · APROVADO PELA META ✅
+                      </small>
                     </div>
                     {parameterMappings.map((mapping, index) => (
                       <div className="wt-form-group" key={index}>
@@ -527,7 +640,7 @@ export default function WhaticketBroadcastDrawer() {
                   disabled={isExecuting || !recipients.length || !selectedTemplate}
                   onClick={startBroadcast}
                 >
-                  Enviar para {recipients.length} contato(s)
+                  {isExecuting ? "Enviando campanha..." : `Enviar para ${recipients.length} contato(s)`}
                 </button>
               </section>
             </>
