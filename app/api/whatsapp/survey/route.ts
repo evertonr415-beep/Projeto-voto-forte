@@ -154,11 +154,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const account = await getAccount();
-  if (!account) {
-    return Response.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
   try {
     const body = await request.json();
     const phone = String(body.phone || "").trim();
