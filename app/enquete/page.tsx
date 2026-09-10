@@ -1,5 +1,5 @@
-import EnqueteArapongasPage from "./arapongas/page";
+import { redirect } from "next/navigation";
 
 export default function EnqueteDefaultPage() {
-  return <EnqueteArapongasPage />;
+  redirect("/enquete/arapongas");
 }
