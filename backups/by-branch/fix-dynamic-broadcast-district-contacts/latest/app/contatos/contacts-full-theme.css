@@ -1,0 +1,266 @@
+/* Painel de contatos: tema completo sincronizado com o alternador global */
+html[data-vf-theme="dark"] .optimized-shell,
+html:not([data-vf-theme="light"]) .optimized-shell {
+  background: #060d19 !important;
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-section-heading h2,
+html[data-vf-theme="dark"] .optimized-panel h2,
+html[data-vf-theme="dark"] .optimized-panel h3,
+html[data-vf-theme="dark"] .optimized-empty b,
+html[data-vf-theme="dark"] .optimized-pagination b,
+html[data-vf-theme="dark"] .district-panel li,
+html[data-vf-theme="dark"] .district-name > span:first-child,
+html:not([data-vf-theme="light"]) .optimized-section-heading h2,
+html:not([data-vf-theme="light"]) .optimized-panel h2,
+html:not([data-vf-theme="light"]) .optimized-panel h3,
+html:not([data-vf-theme="light"]) .optimized-empty b,
+html:not([data-vf-theme="light"]) .optimized-pagination b,
+html:not([data-vf-theme="light"]) .district-panel li,
+html:not([data-vf-theme="light"]) .district-name > span:first-child {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-section-heading > span,
+html[data-vf-theme="dark"] .optimized-panel p,
+html[data-vf-theme="dark"] .optimized-kpis small,
+html[data-vf-theme="dark"] .optimized-insight-card p,
+html[data-vf-theme="dark"] .optimized-empty,
+html[data-vf-theme="dark"] .optimized-pagination,
+html:not([data-vf-theme="light"]) .optimized-section-heading > span,
+html:not([data-vf-theme="light"]) .optimized-panel p,
+html:not([data-vf-theme="light"]) .optimized-kpis small,
+html:not([data-vf-theme="light"]) .optimized-insight-card p,
+html:not([data-vf-theme="light"]) .optimized-empty,
+html:not([data-vf-theme="light"]) .optimized-pagination {
+  color: #94a3b8 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-quick-actions a,
+html[data-vf-theme="dark"] .optimized-quick-actions button,
+html[data-vf-theme="dark"] .optimized-kpis article,
+html[data-vf-theme="dark"] .optimized-insight-card,
+html[data-vf-theme="dark"] .optimized-panel,
+html[data-vf-theme="dark"] .optimized-modal,
+html:not([data-vf-theme="light"]) .optimized-quick-actions a,
+html:not([data-vf-theme="light"]) .optimized-quick-actions button,
+html:not([data-vf-theme="light"]) .optimized-kpis article,
+html:not([data-vf-theme="light"]) .optimized-insight-card,
+html:not([data-vf-theme="light"]) .optimized-panel,
+html:not([data-vf-theme="light"]) .optimized-modal {
+  background: linear-gradient(145deg, #0f1e3a 0%, #091426 100%) !important;
+  border-color: rgba(56, 189, 248, 0.16) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,.24) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-quick-actions .primary,
+html:not([data-vf-theme="light"]) .optimized-quick-actions .primary,
+html[data-vf-theme="dark"] .optimized-kpis article.is-primary,
+html:not([data-vf-theme="light"]) .optimized-kpis article.is-primary {
+  background: linear-gradient(135deg,#153b65,#1f4d7a) !important;
+  border-color: rgba(56,189,248,.28) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-quick-actions a[href="/pendencias-localizacao"],
+html:not([data-vf-theme="light"]) .optimized-quick-actions a[href="/pendencias-localizacao"] {
+  background: linear-gradient(145deg,#0d1d36,#0a1629) !important;
+  border-color: rgba(56,189,248,.18) !important;
+  color: #e7eef8 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-quick-actions small,
+html:not([data-vf-theme="light"]) .optimized-quick-actions small {
+  color: #9fb0c5 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-action-icon,
+html:not([data-vf-theme="light"]) .optimized-action-icon {
+  background: rgba(56,189,248,.10) !important;
+  color: #38bdf8 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-kpi-label,
+html:not([data-vf-theme="light"]) .optimized-kpi-label {
+  color: #9fb0c5 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-kpis b,
+html:not([data-vf-theme="light"]) .optimized-kpis b {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-insight-card.is-recommendation,
+html:not([data-vf-theme="light"]) .optimized-insight-card.is-recommendation {
+  background: linear-gradient(145deg,#162238,#0d1728) !important;
+  border-color: rgba(201,153,67,.42) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-insight-card h3,
+html:not([data-vf-theme="light"]) .optimized-insight-card h3 {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-filters,
+html:not([data-vf-theme="light"]) .optimized-filters {
+  background: #0b1730 !important;
+  border-color: rgba(56,189,248,.15) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-filters label > span,
+html:not([data-vf-theme="light"]) .optimized-filters label > span {
+  color: #a8b7c9 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-filters input,
+html[data-vf-theme="dark"] .optimized-filters select,
+html[data-vf-theme="dark"] .optimized-filters > button,
+html[data-vf-theme="dark"] .optimized-contact-load-actions button,
+html[data-vf-theme="dark"] .optimized-active-filters button,
+html[data-vf-theme="dark"] .district-show-more,
+html[data-vf-theme="dark"] .optimized-modal input,
+html[data-vf-theme="dark"] .optimized-modal select,
+html[data-vf-theme="dark"] .optimized-modal button,
+html:not([data-vf-theme="light"]) .optimized-filters input,
+html:not([data-vf-theme="light"]) .optimized-filters select,
+html:not([data-vf-theme="light"]) .optimized-filters > button,
+html:not([data-vf-theme="light"]) .optimized-contact-load-actions button,
+html:not([data-vf-theme="light"]) .optimized-active-filters button,
+html:not([data-vf-theme="light"]) .district-show-more,
+html:not([data-vf-theme="light"]) .optimized-modal input,
+html:not([data-vf-theme="light"]) .optimized-modal select,
+html:not([data-vf-theme="light"]) .optimized-modal button {
+  background: #09162b !important;
+  border-color: rgba(56,189,248,.20) !important;
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-contact-idle,
+html:not([data-vf-theme="light"]) .optimized-contact-idle {
+  background: #0b1730 !important;
+  border-color: rgba(56,189,248,.22) !important;
+  color: #a8b7c9 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-contact-idle b,
+html:not([data-vf-theme="light"]) .optimized-contact-idle b {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-table-wrap,
+html:not([data-vf-theme="light"]) .optimized-table-wrap {
+  border-color: rgba(56,189,248,.14) !important;
+  background: #091426 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-table-wrap th,
+html:not([data-vf-theme="light"]) .optimized-table-wrap th {
+  background: #102746 !important;
+  color: #dbe7f4 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-table-wrap td,
+html:not([data-vf-theme="light"]) .optimized-table-wrap td {
+  border-bottom-color: rgba(255,255,255,.06) !important;
+  color: #dce6f2 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-table-wrap tbody tr:hover,
+html:not([data-vf-theme="light"]) .optimized-table-wrap tbody tr:hover {
+  background: rgba(56,189,248,.045) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-profile-badge,
+html:not([data-vf-theme="light"]) .optimized-profile-badge {
+  background: rgba(56,189,248,.12) !important;
+  color: #7dd3fc !important;
+}
+
+html[data-vf-theme="dark"] .optimized-profile-badge.is-leader,
+html:not([data-vf-theme="light"]) .optimized-profile-badge.is-leader {
+  background: rgba(201,153,67,.14) !important;
+  color: #e7bd69 !important;
+}
+
+html[data-vf-theme="dark"] .optimized-row-actions a,
+html[data-vf-theme="dark"] .optimized-row-actions button,
+html:not([data-vf-theme="light"]) .optimized-row-actions a,
+html:not([data-vf-theme="light"]) .optimized-row-actions button {
+  background: #0e203d !important;
+  border-color: rgba(56,189,248,.17) !important;
+  color: #7dd3fc !important;
+}
+
+html[data-vf-theme="dark"] .district-tabs,
+html:not([data-vf-theme="light"]) .district-tabs {
+  background: #09162b !important;
+}
+
+html[data-vf-theme="dark"] .district-tabs button,
+html:not([data-vf-theme="light"]) .district-tabs button {
+  color: #94a3b8 !important;
+}
+
+html[data-vf-theme="dark"] .district-tabs button.is-active,
+html:not([data-vf-theme="light"]) .district-tabs button.is-active {
+  background: #132746 !important;
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .district-panel li,
+html:not([data-vf-theme="light"]) .district-panel li {
+  border-bottom-color: rgba(255,255,255,.06) !important;
+}
+
+html[data-vf-theme="dark"] .optimized-hero-controls .vf-municipality-header-menu > summary,
+html[data-vf-theme="dark"] .optimized-hero-controls .vf-municipality-header-badge,
+html:not([data-vf-theme="light"]) .optimized-hero-controls .vf-municipality-header-menu > summary,
+html:not([data-vf-theme="light"]) .optimized-hero-controls .vf-municipality-header-badge,
+html[data-vf-theme="dark"] .optimized-scope-control select,
+html:not([data-vf-theme="light"]) .optimized-scope-control select {
+  background: #0f1e3a !important;
+  color: #f8fafc !important;
+  border-color: rgba(56,189,248,.28) !important;
+}
+
+html[data-vf-theme="light"] .optimized-shell {
+  background: #f4f7fb !important;
+  color: #17345c !important;
+}
+
+html[data-vf-theme="light"] .optimized-quick-actions a,
+html[data-vf-theme="light"] .optimized-quick-actions button,
+html[data-vf-theme="light"] .optimized-kpis article,
+html[data-vf-theme="light"] .optimized-insight-card,
+html[data-vf-theme="light"] .optimized-panel,
+html[data-vf-theme="light"] .optimized-modal {
+  background: #ffffff !important;
+  border-color: #dfe6ef !important;
+  color: #17345c !important;
+}
+
+html[data-vf-theme="light"] .optimized-quick-actions a[href="/pendencias-localizacao"] {
+  background: #f7fafc !important;
+  border-color: #c9d8e8 !important;
+  color: #173f70 !important;
+}
+
+html[data-vf-theme="light"] .optimized-filters {
+  background: #f6f8fb !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-vf-theme="light"] .optimized-filters input,
+html[data-vf-theme="light"] .optimized-filters select,
+html[data-vf-theme="light"] .optimized-filters > button,
+html[data-vf-theme="light"] .optimized-contact-load-actions button,
+html[data-vf-theme="light"] .optimized-active-filters button,
+html[data-vf-theme="light"] .district-show-more,
+html[data-vf-theme="light"] .optimized-modal input,
+html[data-vf-theme="light"] .optimized-modal select,
+html[data-vf-theme="light"] .optimized-modal button {
+  background: #fff !important;
+  color: #173f70 !important;
+  border-color: #c8d3df !important;
+}
