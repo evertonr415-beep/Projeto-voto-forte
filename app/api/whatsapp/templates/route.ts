@@ -1,5 +1,5 @@
 import { getAccount } from "../../../server-identity";
-import { getMetaConfig, metaErrorMessage, readMetaResponse } from "../meta";
+import { getMetaConfig, metaErrorMessage, metaRequest } from "../meta";
 
 type TemplateComponent = {
   type?: string;
@@ -26,6 +26,7 @@ export async function POST() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
+  try {
     const { wabaId } = getMetaConfig();
 
     const { ok, status, data } = await metaRequest(
