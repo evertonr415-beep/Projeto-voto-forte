@@ -1,0 +1,182 @@
+/* Ajuste final do topo da Visão Geral no mobile. */
+@media (max-width: 760px) {
+  body:has(.welcome-pro) .app-shell .topbar {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 68px !important;
+    height: auto !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .mobile-menu {
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+    gap: 7px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id h1 {
+    flex: 0 0 96px !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    min-width: 96px !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
+    display: inline-flex !important;
+    flex: 0 0 128px !important;
+    width: 128px !important;
+    max-width: 128px !important;
+    min-width: 128px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    box-sizing: border-box !important;
+    width: 128px !important;
+    max-width: 128px !important;
+    min-width: 128px !important;
+    height: 36px !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.78) !important;
+    border-radius: 11px !important;
+    overflow: hidden !important;
+    background: linear-gradient(180deg, #132746 0%, #0f1e3a 100%) !important;
+    box-shadow: 0 0 0 1px rgba(56,189,248,.10), 0 5px 14px rgba(0,0,0,.20) !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 33px !important;
+    padding: 0 27px 0 11px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #f8fafc !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap::after {
+    right: 9px !important;
+    color: #7dd3fc !important;
+    font-size: 10px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(56,189,248,.34) !important;
+    border-radius: 11px !important;
+    background: #0f1e3a !important;
+    color: #fff !important;
+    box-shadow: 0 5px 14px rgba(0,0,0,.16) !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile {
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile > span {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile > div,
+  body:has(.welcome-pro) .app-shell .topbar .profile > i {
+    display: none !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    border-color: #2f6fb2 !important;
+    background: linear-gradient(180deg,#fff 0%,#f3f8fd 100%) !important;
+    box-shadow: 0 0 0 1px rgba(47,111,178,.08), 0 4px 12px rgba(19,49,84,.10) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select {
+    color: #173f75 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap::after {
+    color: #1f4e85 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
+    border-color: #cbd9e7 !important;
+    background: #fff !important;
+    color: #153b65 !important;
+    box-shadow: 0 5px 14px rgba(15,42,70,.10) !important;
+  }
+}
+
+@media (max-width: 410px) {
+  body:has(.welcome-pro) .app-shell .topbar {
+    padding-inline: 10px !important;
+    gap: 6px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .mobile-menu {
+    flex-basis: 42px !important; width: 42px !important; height: 42px !important; min-width: 42px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .page-id { gap: 6px !important; }
+  body:has(.welcome-pro) .app-shell .topbar .page-id h1 {
+    flex-basis: 86px !important; width: 86px !important; max-width: 86px !important; min-width: 86px !important; font-size: 13.5px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
+    flex-basis: 120px !important; width: 120px !important; max-width: 120px !important; min-width: 120px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    width: 120px !important; max-width: 120px !important; min-width: 120px !important; height: 34px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select {
+    height: 31px !important; padding-left: 9px !important; padding-right: 24px !important; font-size: 10px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex-basis: 34px !important; width: 34px !important; height: 34px !important; min-width: 34px !important; border-radius: 10px !important; font-size: 16px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .profile {
+    flex-basis: 38px !important; width: 38px !important; min-width: 38px !important;
+  }
+  body:has(.welcome-pro) .app-shell .topbar .profile > span {
+    width: 38px !important; height: 38px !important; min-width: 38px !important;
+  }
+}
