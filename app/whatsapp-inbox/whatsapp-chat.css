@@ -553,33 +553,36 @@
 
 .wa-input-wrapper {
   flex: 1;
-  background-color: #ffffff;
+  background-color: #ffffff !important;
   border-radius: 8px;
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  border: 1px solid #ffffff;
+  padding: 8px 14px;
+  border: 1px solid #d1d7db !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: border 0.15s ease;
 }
 
 .wa-input-wrapper:focus-within {
-  border-color: #008069;
+  border-color: #008069 !important;
 }
 
 .wa-input-field {
   width: 100%;
-  border: none;
-  background: transparent;
+  border: none !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   font-size: 14px;
-  color: #111b21;
-  outline: none;
+  color: #111b21 !important;
+  outline: none !important;
   resize: none;
   max-height: 100px;
   font-family: inherit;
+  box-shadow: none !important;
 }
 
 .wa-input-field::placeholder {
-  color: #8696a0;
+  color: #8696a0 !important;
 }
 
 .wa-send-btn {
