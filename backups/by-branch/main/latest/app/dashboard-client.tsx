@@ -6,6 +6,7 @@ import { apiFetch, supabase } from "./supabase-client";
 
 import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
 import VotingChartsClient from "./apuracao-graficos/voting-charts-client";
+import WhatsAppChatClient from "./whatsapp-inbox/whatsapp-chat-client";
 import { Icons } from "./ui-icons";
 
 type View =
@@ -2641,6 +2642,7 @@ function Whatsapp({
   drafts: (Draft & { id: number; ownerEmail: string })[];
   save: (draft: Draft) => Promise<boolean>;
 }) {
+  const [subTab, setSubTab] = useState<"chat" | "monitor" | "broadcast">("chat");
   const [title, setTitle] = useState("");
   const [msg, setMsg] = useState(
     "Olá! O VOTO FORTE PARANÁ convida você para nosso próximo encontro em Arapongas. Contamos com sua presença!",
@@ -2747,11 +2749,91 @@ function Whatsapp({
   return (
     <>
       <PageHead
-        eyebrow="COMUNICAÇÃO OFICIAL & DISPAROS"
+        eyebrow="COMUNICAÇÃO OFICIAL & WHATSAPP"
         title="Central de WhatsApp"
-        text="Monitore mensagens disparadas, acompanhe erros e analise o percentual de respostas em tempo real."
+        text="Converse ao vivo com os eleitores, acompanhe os disparos da Meta e monitore respostas em tempo real."
       />
-      <div className="wa-layout">
+
+      {/* Sub-Tabs de Navegação da Central de WhatsApp */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setSubTab("chat")}
+          style={{
+            padding: "10px 18px",
+            borderRadius: "10px",
+            border: "1px solid",
+            borderColor: subTab === "chat" ? "#25d366" : "rgba(255, 255, 255, 0.12)",
+            background: subTab === "chat" ? "rgba(37, 211, 102, 0.16)" : "rgba(15, 23, 42, 0.7)",
+            color: subTab === "chat" ? "#25d366" : "#94a3b8",
+            fontWeight: 700,
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.15s ease",
+          }}
+        >
+          💬 WhatsApp Web (Chat ao Vivo)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab("monitor")}
+          style={{
+            padding: "10px 18px",
+            borderRadius: "10px",
+            border: "1px solid",
+            borderColor: subTab === "monitor" ? "#38bdf8" : "rgba(255, 255, 255, 0.12)",
+            background: subTab === "monitor" ? "rgba(56, 189, 248, 0.16)" : "rgba(15, 23, 42, 0.7)",
+            color: subTab === "monitor" ? "#38bdf8" : "#94a3b8",
+            fontWeight: 700,
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.15s ease",
+          }}
+        >
+          📊 Monitor de Envios & Métricas
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab("broadcast")}
+          style={{
+            padding: "10px 18px",
+            borderRadius: "10px",
+            border: "1px solid",
+            borderColor: subTab === "broadcast" ? "#a855f7" : "rgba(255, 255, 255, 0.12)",
+            background: subTab === "broadcast" ? "rgba(168, 85, 247, 0.16)" : "rgba(15, 23, 42, 0.7)",
+            color: subTab === "broadcast" ? "#a855f7" : "#94a3b8",
+            fontWeight: 700,
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.15s ease",
+          }}
+        >
+          🚀 Rascunhos & Disparos
+        </button>
+      </div>
+
+      {subTab === "chat" ? (
+        <WhatsAppChatClient />
+      ) : (
+        <div className="wa-layout">
         {/* Banner de Acesso à Central de Disparos */}
         <div style={{ gridColumn: "1 / -1", marginBottom: "4px" }}>
           <button
@@ -3103,6 +3185,7 @@ function Whatsapp({
           )}
         </article>
       </div>
+      )}
     </>
   );
 }
