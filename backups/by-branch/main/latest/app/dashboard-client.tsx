@@ -2771,10 +2771,10 @@ function Whatsapp({
               <span style={{ fontSize: "26px", color: "#2ddd7f", filter: "drop-shadow(0 0 8px rgba(45, 221, 127, 0.6))" }}>🛡️</span>
               <div>
                 <strong style={{ fontSize: "15px", display: "block", color: "#2ddd7f" }}>
-                  Central Oficial de Disparos WhatsApp (Meta Cloud API & ZapAPI)
+                  Central Oficial de Disparos WhatsApp (Meta Cloud API Oficial)
                 </strong>
                 <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                  Disparo em massa oficial com templates aprovados da Meta ou mensagens personalizadas
+                  Disparo em massa 100% oficial com modelos e templates aprovados pela Meta Cloud API
                 </span>
               </div>
             </div>
