@@ -1,0 +1,215 @@
+/*
+ * Painel "Contatos no mapa" — acabamento mobile compatível com os temas
+ * claro e escuro. Este arquivo altera apenas apresentação visual.
+ */
+
+@media (max-width: 760px) {
+  body:has(.full-map) .vf-mobile-contacts-host {
+    width: 100% !important;
+    margin: 0 0 14px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-control {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 14px 14px 13px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-control > strong {
+    display: block !important;
+    margin: 0 0 11px !important;
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-tabs button {
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 0 8px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-status {
+    display: block !important;
+    margin: 11px 0 0 !important;
+    padding: 0 0 10px !important;
+    font-size: 10.5px !important;
+    line-height: 1.42 !important;
+    font-weight: 700 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-legend {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px 12px !important;
+    margin: 0 !important;
+    padding-top: 10px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 750 !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-legend span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-legend i {
+    width: 9px !important;
+    height: 9px !important;
+    flex: 0 0 9px !important;
+    border-radius: 50% !important;
+  }
+
+  body:has(.full-map) .vf-mobile-contacts-host .vf-map-contact-tabs button:focus-visible {
+    outline: 2px solid var(--vf-map-focus, #f2c968) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* ---------- MODO ESCURO ---------- */
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-control {
+    border: 1px solid rgba(91, 165, 224, 0.28) !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(48, 126, 191, 0.16), transparent 42%),
+      linear-gradient(145deg, #08203d, #0e365b) !important;
+    box-shadow: 0 10px 24px rgba(2, 12, 25, 0.2) !important;
+    color: #f7fbff !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-control > strong {
+    color: #f7fbff !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-tabs button {
+    border: 1px solid rgba(135, 181, 220, 0.22) !important;
+    background: rgba(255, 255, 255, 0.055) !important;
+    color: #d9e6f2 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-tabs button.active {
+    border-color: rgba(244, 202, 108, 0.72) !important;
+    background: linear-gradient(135deg, #e0b34e, #b98024) !important;
+    color: #102b49 !important;
+    box-shadow: 0 6px 15px rgba(159, 104, 25, 0.22) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-status {
+    border-bottom: 1px solid rgba(171, 202, 228, 0.18) !important;
+    color: #c7d6e6 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-legend {
+    color: #d7e3ef !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-legend .approx {
+    background: #7f9fc4 !important;
+    border: 1px dashed #dce9f5 !important;
+  }
+
+  /* ---------- MODO CLARO ---------- */
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-control {
+    border: 1px solid #cbddeb !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(64, 135, 194, 0.08), transparent 42%),
+      linear-gradient(145deg, #ffffff, #edf5fb) !important;
+    box-shadow: 0 10px 24px rgba(26, 64, 103, 0.09) !important;
+    color: #173b67 !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-control > strong {
+    color: #173b67 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-tabs button {
+    border: 1px solid #cad9e7 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #234a73 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-tabs button.active {
+    border-color: #173b67 !important;
+    background: linear-gradient(145deg, #173b67, #245b8f) !important;
+    color: #ffffff !important;
+    box-shadow: 0 5px 14px rgba(23, 59, 103, 0.16) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-status {
+    border-bottom: 1px solid #dce7f0 !important;
+    color: #526b84 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-legend {
+    color: #395570 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-contacts-host
+    .vf-map-contact-legend .approx {
+    background: #6f8fb5 !important;
+    border: 1px dashed #ffffff !important;
+  }
+}
