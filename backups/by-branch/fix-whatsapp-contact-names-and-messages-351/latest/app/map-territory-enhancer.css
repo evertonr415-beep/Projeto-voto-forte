@@ -1,0 +1,212 @@
+.vf-territory-label {
+  background: transparent;
+  border: 0;
+}
+
+.vf-territory-label > div,
+.vf-territory-label span {
+  pointer-events: none;
+}
+
+.vf-territory-label > div {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(201, 102, 28, 0.38);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(55, 32, 13, 0.14);
+  color: #66350f;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 96px;
+  padding: 6px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.vf-territory-label b {
+  align-items: center;
+  background: #ef8429;
+  border-radius: 999px;
+  color: white;
+  display: inline-flex;
+  font-size: 10px;
+  height: 20px;
+  justify-content: center;
+  min-width: 20px;
+  padding: 0 5px;
+}
+
+.vf-territory-popup {
+  display: grid;
+  gap: 7px;
+  min-width: 210px;
+}
+
+.vf-territory-popup strong {
+  color: #5c2f0d;
+  font-size: 15px;
+}
+
+.vf-territory-popup span {
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.vf-territory-popup small {
+  color: #6b7280;
+  display: block;
+  font-size: 12px;
+}
+
+.vf-territory-popup button {
+  background: #ef8429;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 11px;
+}
+
+.vf-territory-popup button:hover {
+  filter: brightness(0.96);
+}
+
+/* BALÃO DE REUNIÃO / EVENTO DE AGENDA NO MAPA */
+.vf-map-meeting-balloon {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.vf-meeting-balloon-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  white-space: nowrap;
+  animation: vf-balloon-pulse 2s infinite ease-in-out;
+  transform-origin: center bottom;
+}
+
+@keyframes vf-balloon-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(217, 119, 6, 0.65), 0 0 0 3px rgba(255, 255, 255, 0.95);
+  }
+}
+
+.vf-meeting-balloon-icon {
+  font-size: 13px;
+}
+
+.vf-meeting-popup-content {
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 250px;
+  max-width: 320px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.vf-meeting-popup-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.vf-meeting-popup-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.vf-meeting-popup-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: #334155;
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.vf-meeting-popup-meta div {
+  line-height: 1.3;
+}
+
+.vf-meeting-popup-meta strong {
+  color: #0f172a;
+}
+
+.vf-meeting-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.vf-meeting-popup-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  border: 0;
+  cursor: pointer;
+  text-align: center;
+  transition: filter 0.15s ease;
+}
+
+.vf-meeting-popup-btn:hover {
+  filter: brightness(0.92);
+}
+
+.vf-territory-polygon {
+  cursor: pointer;
+  transition: fill-opacity 160ms ease, stroke-width 160ms ease;
+}
+
+@media (max-width: 760px) {
+  .vf-territory-label > div {
+    font-size: 9px;
+    min-width: 76px;
+    padding: 5px 8px;
+  }
+
+  .vf-territory-label b {
+    font-size: 9px;
+    height: 18px;
+    min-width: 18px;
+  }
+}
