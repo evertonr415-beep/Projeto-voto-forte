@@ -85,29 +85,34 @@ export default function VotingChartsClient({
       const surveyData = await surveyRes.json();
       const previewData = previewRes ? await previewRes.json() : null;
 
-      if (surveyData.success) {
+      if (surveyData && surveyData.success) {
         setResponses(surveyData.responses || []);
         setStateRanking(surveyData.stateRanking || []);
         setFederalRanking(surveyData.federalRanking || []);
+        if (surveyData.governorRanking?.length) {
+          setGovernorRanking(surveyData.governorRanking);
+        }
+        if (surveyData.presidentRanking?.length) {
+          setPresidentRanking(surveyData.presidentRanking);
+        }
         setDistrictRanking(surveyData.districtRanking || []);
+        const total = Number(surveyData.totalResponses || surveyData.kpis?.totalResponses || (surveyData.responses ? surveyData.responses.length : 0));
+        setTotalVotes(total);
       }
 
       if (previewData && previewData.success) {
-        if (previewData.governorRanking?.length) {
+        if (!surveyData?.governorRanking?.length && previewData.governorRanking?.length) {
           setGovernorRanking(previewData.governorRanking);
         }
-        if (previewData.presidentRanking?.length) {
+        if (!surveyData?.presidentRanking?.length && previewData.presidentRanking?.length) {
           setPresidentRanking(previewData.presidentRanking);
         }
-        if (!surveyData.stateRanking?.length && previewData.stateRanking?.length) {
+        if (!surveyData?.stateRanking?.length && previewData.stateRanking?.length) {
           setStateRanking(previewData.stateRanking);
         }
-        if (!surveyData.federalRanking?.length && previewData.federalRanking?.length) {
+        if (!surveyData?.federalRanking?.length && previewData.federalRanking?.length) {
           setFederalRanking(previewData.federalRanking);
         }
-        setTotalVotes(Math.max(Number(surveyData.kpis?.totalResponses || 0), Number(previewData.totalResponses || 0)));
-      } else {
-        setTotalVotes(Number(surveyData.kpis?.totalResponses || 0));
       }
 
       setLastUpdated(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
