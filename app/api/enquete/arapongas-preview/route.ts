@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { getAutonomousSupabase } from "../../../supabase-server";
+import { getWhatsappAdminClient } from "../../whatsapp/admin";
 
 const EVENT_TYPE = "web_poll_arapongas_preview_v1";
 const POLL_ID = "arapongas-preview-v1";
@@ -21,6 +21,14 @@ type VotePayload = {
   q2?: string;
   q3?: string;
 };
+
+function getSurveyDb() {
+  const supabase = getWhatsappAdminClient();
+  if (!supabase) {
+    throw new Error("Armazenamento da enquete não configurado no ambiente de preview.");
+  }
+  return supabase;
+}
 
 function normalizePhone(value: unknown) {
   const digits = String(value || "").replace(/\D/g, "");
@@ -55,7 +63,7 @@ function parseVote(messageText: unknown): VotePayload | null {
 }
 
 async function getResults() {
-  const supabase = getAutonomousSupabase();
+  const supabase = getSurveyDb();
   const { data, error } = await supabase
     .from("vf_whatsapp_events")
     .select("message_text")
@@ -109,6 +117,7 @@ export async function GET() {
   try {
     return Response.json({ success: true, ...(await getResults()) });
   } catch (error) {
+    console.error("[arapongas-preview-poll] results failed", error);
     return Response.json(
       { error: error instanceof Error ? error.message : "Falha ao carregar resultados" },
       { status: 500 },
@@ -129,7 +138,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = getAutonomousSupabase();
+    const supabase = getSurveyDb();
     const { data: existing, error: existingError } = await supabase
       .from("vf_whatsapp_events")
       .select("id")
@@ -178,6 +187,7 @@ export async function POST(request: Request) {
       message_type: "survey",
       message_text: messageText,
       occurred_at: new Date().toISOString(),
+      payload: { source: "web_poll_preview", poll: POLL_ID },
     });
 
     if (insertError) throw insertError;
@@ -188,6 +198,7 @@ export async function POST(request: Request) {
       ...(await getResults()),
     });
   } catch (error) {
+    console.error("[arapongas-preview-poll] submit failed", error);
     return Response.json(
       { error: error instanceof Error ? error.message : "Falha ao registrar resposta" },
       { status: 500 },
