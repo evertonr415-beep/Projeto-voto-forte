@@ -1,0 +1,123 @@
+/* Sincroniza o cabecalho superior do Dashboard com o tema global. */
+html[data-vf-theme="dark"] .app-shell .topbar,
+html:not([data-vf-theme="light"]) .app-shell .topbar {
+  background: #081222 !important;
+  color: #f8fafc !important;
+  border-bottom-color: rgba(56, 189, 248, 0.18) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar .page-id h1,
+html[data-vf-theme="dark"] .app-shell .topbar .profile b,
+html:not([data-vf-theme="light"]) .app-shell .topbar .page-id h1,
+html:not([data-vf-theme="light"]) .app-shell .topbar .profile b {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar .page-id small,
+html[data-vf-theme="dark"] .app-shell .topbar .profile small,
+html[data-vf-theme="dark"] .app-shell .topbar .profile > i,
+html:not([data-vf-theme="light"]) .app-shell .topbar .page-id small,
+html:not([data-vf-theme="light"]) .app-shell .topbar .profile small,
+html:not([data-vf-theme="light"]) .app-shell .topbar .profile > i {
+  color: #94a3b8 !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar .page-id small,
+html:not([data-vf-theme="light"]) .app-shell .topbar .page-id small {
+  color: #d7ae60 !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar select,
+html:not([data-vf-theme="light"]) .app-shell .topbar select {
+  background: #0f1e3a !important;
+  color: #f8fafc !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar .notification,
+html:not([data-vf-theme="light"]) .app-shell .topbar .notification {
+  background: #0f1e3a !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+html[data-vf-theme="dark"] .app-shell .topbar .profile,
+html:not([data-vf-theme="light"]) .app-shell .topbar .profile {
+  background: transparent !important;
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar {
+  background: #ffffff !important;
+  color: #132238 !important;
+  border-bottom-color: #d8e2ec !important;
+  box-shadow: 0 8px 28px rgba(15, 42, 70, 0.08) !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar .page-id h1,
+html[data-vf-theme="light"] .app-shell .topbar .profile b {
+  color: #132238 !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar .page-id small {
+  color: #b1843c !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar .profile small,
+html[data-vf-theme="light"] .app-shell .topbar .profile > i {
+  color: #6d7b8d !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar select,
+html[data-vf-theme="light"] .app-shell .topbar .notification {
+  background: #f3f7fb !important;
+  color: #153b65 !important;
+  border-color: #d4e2ee !important;
+}
+
+html[data-vf-theme="light"] .app-shell .topbar .profile {
+  background: transparent !important;
+  color: #132238 !important;
+}
+
+@media (max-width: 900px) {
+  html[data-vf-theme="dark"] .app-shell .topbar,
+  html:not([data-vf-theme="light"]) .app-shell .topbar {
+    background: #071120 !important;
+  }
+
+  html[data-vf-theme="light"] .app-shell .topbar {
+    background: #ffffff !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell .topbar .page-id {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .app-shell .topbar .page-id > .vf-header-scope {
+    margin-left: 0 !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .app-shell .topbar .page-id > .vf-theme-toggle {
+    order: 3;
+    width: 38px !important;
+    height: 38px !important;
+    flex: 0 0 38px !important;
+    border-radius: 11px !important;
+    margin: 0 !important;
+    font-size: 18px !important;
+    align-self: center !important;
+  }
+
+  .app-shell .topbar .page-id > .vf-header-scope + .vf-theme-toggle {
+    margin-left: 2px !important;
+  }
+}
