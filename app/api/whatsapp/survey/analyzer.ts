@@ -12,83 +12,77 @@ export interface SurveyAnalysisResult {
   timestamp: string;
 }
 
-/**
- * Normaliza número de telefone para busca
- */
 function cleanPhoneDigits(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
+  const digits = String(phone || "").replace(/\D/g, "");
   if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
     return digits.slice(2);
   }
   return digits;
 }
 
-const STOP_WORDS_SET = new Set([
-  "eu", "meu", "minha", "nosso", "nossa", "aqui", "em", "casa", "familia", "gente",
-  "voto", "votar", "votamos", "apoio", "apoiamos", "vou", "vamos", "fechado",
-  "com", "no", "na", "nos", "nas", "o", "a", "os", "as", "um", "uma", "uns", "umas",
-  "para", "pra", "p/", "de", "do", "da", "dos", "das", "e", "ou", "mas",
-  "que", "se", "por", "pelo", "pela", "pelos", "pelas", "bom", "boa", "dia",
-  "tarde", "noite", "ola", "olá", "opa", "oi", "amigo", "amiga", "lider", "liderança",
-  "deputado", "deputada", "candidato", "candidata", "estadual", "federal",
-  "ainda", "acho", "talvez", "duvida", "dúvida", "pensando", "decidindo",
-  "nao", "não", "sei", "nenhum", "nenhuma", "nulo", "branco", "ninguem", "ninguém",
-  "certeza", "com certeza", "mesmo", "mesma", "todos", "todas"
-]);
+// Candidatos Conhecidos do Paraná / Arapongas para Reconhecimento de Menção
+const KNOWN_STATE_CANDIDATES = [
+  { name: "Pedro Paulo Bazana", keywords: ["bazana", "pedro paulo", "pedro paulo bazana"] },
+  { name: "Sérgio Onofre", keywords: ["sergio onofre", "sérgio onofre", "onofre"] },
+  { name: "Aline Franzon", keywords: ["aline", "franzon", "aline franzon"] },
+  { name: "Delegado Jacovos", keywords: ["jacovos", "delegado jacovos", "delegado"] },
+  { name: "Cobra Repórter", keywords: ["cobra", "cobra reporter", "cobra repórter"] },
+  { name: "Neto Santos", keywords: ["neto santos", "neto"] },
+  { name: "Beto Preto", keywords: ["beto preto", "beto"] },
+  { name: "Requião Filho", keywords: ["requiao filho", "requião filho", "requiao"] },
+  { name: "Santin Roveda", keywords: ["santin", "roveda", "santin roveda"] },
+  { name: "Bonin", keywords: ["bonin"] },
+  { name: "Luiz França", keywords: ["luiz frança", "luiz franca", "frança"] },
+];
 
-function sanitizeCandidateRaw(raw: string): string {
-  if (!raw) return "";
-  let clean = raw
-    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+const KNOWN_FEDERAL_CANDIDATES = [
+  { name: "Pedro Lupion", keywords: ["lupion", "pedro lupion"] },
+  { name: "Ricardo Barros", keywords: ["ricardo barros", "barros"] },
+  { name: "Sergio Moro", keywords: ["moro", "sergio moro", "sérgio moro"] },
+  { name: "Luciano Ducci", keywords: ["ducci", "luciano ducci"] },
+  { name: "Marco Brasil", keywords: ["marco brasil", "brasil"] },
+  { name: "Sandro Alex", keywords: ["sandro alex", "sandro"] },
+  { name: "Felipe Francischini", keywords: ["francischini", "felipe francischini"] },
+  { name: "Beto Richa", keywords: ["beto richa", "richa"] },
+  { name: "Giacobo", keywords: ["giacobo", "fernando giacobo"] },
+  { name: "Luisa Canziani", keywords: ["canziani", "luisa canziani"] },
+  { name: "Diego Garcia", keywords: ["diego garcia", "garcia"] },
+];
 
-  // Remove preposições ou conectivos iniciais e finais
-  clean = clean.replace(/^(no|na|o|a|do|da|de|em|com|para|pra|p\/|e)\s+/i, "");
-  clean = clean.replace(/\s+(no|na|o|a|do|da|de|em|com|para|pra|p\/|e)$/i, "");
-  clean = clean.replace(/^(deputado|deputada|dep|candidato|candidata)\s+/i, "");
-  clean = clean.trim();
-
-  const words = clean.split(/\s+/).filter(w => w.length > 0);
-  if (words.length === 0) return "";
-
-  // Se todas as palavras forem stop words, descarta
-  const allStop = words.every(w => STOP_WORDS_SET.has(w.toLowerCase()));
-  if (allStop) return "";
-
-  // Limite razoável de nome de candidato (até 4 palavras)
-  return words.slice(0, 4).join(" ");
-}
-
-/**
- * Analisa e extrai menções a candidatos a deputado estadual e federal do texto
- */
 export async function analyzeSurveyResponse(
   fromPhone: string,
   messageText: string,
 ): Promise<SurveyAnalysisResult> {
   const cleanPhone = cleanPhoneDigits(fromPhone);
   let contactName = "Eleitor";
-  let district = "Não informado";
+  let district = "Arapongas";
   let city = "Arapongas";
 
-  // Busca dados cadastrais do eleitor no Supabase
+  // Busca dados cadastrais do eleitor no Supabase vf_owned_records
   try {
     const supabase = getAutonomousSupabase();
-    const { data } = await supabase
-      .from("vf_contacts")
-      .select("name, district, city, phone")
-      .or(`phone.ilike.%${cleanPhone}%,phone.ilike.%${cleanPhone.slice(-8)}%`)
-      .limit(1);
+    if (supabase) {
+      const { data } = await supabase
+        .from("vf_owned_records")
+        .select("payload")
+        .eq("kind", "contact")
+        .limit(2000);
 
-    if (data && data.length > 0) {
-      const c = data[0];
-      if (c.name) contactName = c.name;
-      if (c.district) district = c.district;
-      if (c.city) city = c.city;
+      if (Array.isArray(data)) {
+        for (const row of data) {
+          const p = (row.payload || {}) as Record<string, unknown>;
+          const rawP = String(p.phone || p.phoneNormalized || "").replace(/\D/g, "");
+          if (rawP.includes(cleanPhone) || cleanPhone.includes(rawP.slice(-8))) {
+            if (p.name) contactName = String(p.name).trim();
+            if (p.district || p.bairro) district = String(p.district || p.bairro).trim();
+            if (p.city) city = String(p.city).trim();
+            break;
+          }
+        }
+      }
     }
   } catch {
-    // Silencia erro se offline
+    // Silencia
   }
 
   const rawText = messageText.trim();
@@ -98,7 +92,26 @@ export async function analyzeSurveyResponse(
   let federalCandidate = "";
   let sentiment: SurveyAnalysisResult["sentiment"] = "neutro";
 
-  // 1. Detecção de Sentimento / Intenção
+  // 1. Trata JSON estruturado de enquete
+  if (rawText.startsWith("{") && rawText.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(rawText);
+      if (parsed.q1 || parsed.stateCandidate || parsed.deputado_estadual) {
+        stateCandidate = String(parsed.q1 || parsed.stateCandidate || parsed.deputado_estadual);
+      }
+      if (parsed.q2 || parsed.federalCandidate || parsed.deputado_federal) {
+        federalCandidate = String(parsed.q2 || parsed.federalCandidate || parsed.deputado_federal);
+      }
+      if (parsed.bairro || parsed.district) {
+        district = String(parsed.bairro || parsed.district);
+      }
+      sentiment = "declarado";
+    } catch {
+      // Ignora erro de parse
+    }
+  }
+
+  // 2. Sentimento / Intenção
   if (
     lower.includes("não sei") ||
     lower.includes("indeciso") ||
@@ -114,95 +127,57 @@ export async function analyzeSurveyResponse(
     lower.includes("voto") ||
     lower.includes("apoio") ||
     lower.includes("vou de") ||
-    lower.includes("fechado com") ||
-    lower.includes("com certeza") ||
+    lower.includes("fechado") ||
     lower.includes("meu candidato") ||
-    lower.includes("com certeza") ||
-    lower.includes("vamos de")
+    lower.includes("já tenho") ||
+    lower.includes("ja tenho")
   ) {
     sentiment = "declarado";
-  } else if (lower.includes("gosto") || lower.includes("simpatizo") || lower.includes("bom") || lower.includes("ajuda")) {
+  } else if (lower.includes("gosto") || lower.includes("simpatizo") || lower.includes("bom")) {
     sentiment = "apoio";
-  } else if (lower.includes("ruim") || lower.includes("contra") || lower.includes("não gosto") || lower.includes("pessimo") || lower.includes("péssimo")) {
-    sentiment = "critica";
   }
 
-  // 1.1 Suporte a Resposta Estruturada da Enquete Web
-  const webMatch = rawText.match(/Estadual:\s*([^|]+)\s*\|\s*Federal:\s*(.+)$/i);
-  if (webMatch && webMatch[1] && webMatch[2]) {
-    const est = sanitizeCandidateRaw(webMatch[1]);
-    const fed = sanitizeCandidateRaw(webMatch[2]);
-    if (est) stateCandidate = est;
-    if (fed) federalCandidate = fed;
-    sentiment = "declarado";
-  }
-
-  // 2. Extração de Deputado Estadual
-  // Padrão A: Menção com palavra estadual / deputado estadual
-  const statePatterns = [
-    /(?:estadual|deputado estadual|deputada estadual|dep[\s.]*estadual|p\/[\s]*estadual|pra[\s]*estadual|para[\s]*estadual)[\s:=–-]*([^\n,;e|]+?)(?=(?:\s+e\s+|\s*,\s*|\s*;\s*|\s*\|\s*|\n|federal|deputado federal|deputada federal|$))/i,
-    /(?:voto|apoio|fechado com|vou de)[\s]+([^\n,;e|]+?)[\s]+(?:para|pra|p\/|como)?[\s]*(?:estadual|deputado estadual|deputada estadual)/i
-  ];
-
-  for (const pattern of statePatterns) {
-    const match = rawText.match(pattern);
-    if (match && match[1]) {
-      const sanitized = sanitizeCandidateRaw(match[1]);
-      if (sanitized && sanitized.length >= 2 && !sanitized.toLowerCase().includes("indeciso") && !sanitized.toLowerCase().includes("não sei")) {
-        stateCandidate = sanitized;
+  // 3. Reconhecimento de Candidatos por Dicionário de Palavras-Chave
+  if (!stateCandidate) {
+    for (const cand of KNOWN_STATE_CANDIDATES) {
+      if (cand.keywords.some((kw) => lower.includes(kw))) {
+        stateCandidate = cand.name;
+        if (sentiment === "neutro") sentiment = "declarado";
         break;
       }
     }
   }
 
-  // 3. Extração de Deputado Federal
-  // Padrão A: Menção com palavra federal / deputado federal
-  const federalPatterns = [
-    /(?:federal|deputado federal|deputada federal|dep[\s.]*federal|p\/[\s]*federal|pra[\s]*federal|para[\s]*federal)[\s:=–-]*([^\n,;e]+?)(?=(?:\s+e\s+|\s*,\s*|\s*;\s*|\n|estadual|deputado estadual|deputada estadual|$))/i,
-    /(?:voto|apoio|fechado com|vou de)[\s]+([^\n,;e]+?)[\s]+(?:para|pra|p\/|como)?[\s]*(?:federal|deputado federal|deputada federal)/i
-  ];
-
-  for (const pattern of federalPatterns) {
-    const match = rawText.match(pattern);
-    if (match && match[1]) {
-      const sanitized = sanitizeCandidateRaw(match[1]);
-      if (sanitized && sanitized.length >= 2 && !sanitized.toLowerCase().includes("indeciso") && !sanitized.toLowerCase().includes("não sei")) {
-        federalCandidate = sanitized;
+  if (!federalCandidate) {
+    for (const cand of KNOWN_FEDERAL_CANDIDATES) {
+      if (cand.keywords.some((kw) => lower.includes(kw))) {
+        federalCandidate = cand.name;
+        if (sentiment === "neutro") sentiment = "declarado";
         break;
       }
     }
   }
 
-  // 4. Padrão "Voto no [Nome1] e no [Nome2]" ou "[Nome1] e [Nome2]"
-  if (!stateCandidate && !federalCandidate && sentiment !== "indeciso") {
-    const doubleMatch = rawText.match(/(?:voto no|voto na|apoio o|apoio a|vou de|fechado com)\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]{2,25})\s+(?:e|e no|e na)\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]{2,25})/i);
-    if (doubleMatch && doubleMatch[1] && doubleMatch[2]) {
-      const c1 = sanitizeCandidateRaw(doubleMatch[1]);
-      const c2 = sanitizeCandidateRaw(doubleMatch[2]);
-      if (c1) stateCandidate = c1;
-      if (c2) federalCandidate = c2;
+  // 4. Extração via Regex Genérico se não achou no catálogo
+  if (!stateCandidate && sentiment !== "indeciso") {
+    const stateMatch = rawText.match(/(?:estadual|deputado estadual|p\/ estadual)[\s:=–-]*([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,25})/i);
+    if (stateMatch && stateMatch[1]) {
+      stateCandidate = formatCandidateName(stateMatch[1]);
     }
   }
 
-  // 5. Se ainda não achou e for resposta direta com 1 nome
-  if (!stateCandidate && !federalCandidate && sentiment !== "indeciso") {
-    const directCleaned = rawText
-      .replace(/^(olá|ola|bom dia|boa tarde|boa noite|tudo bem|opa|opa amigo|salve|fala)[,\s!]*/gi, "")
-      .replace(/^(eu voto no|eu voto na|meu voto é|vou votar no|vou com o|fechado com|aqui é|com certeza no|vamos de)[,\s]*/gi, "")
-      .replace(/[.!?,]/g, "")
-      .trim();
-
-    const sanitizedDirect = sanitizeCandidateRaw(directCleaned);
-    if (sanitizedDirect && sanitizedDirect.length >= 2 && sanitizedDirect.length <= 35 && !sanitizedDirect.includes("?")) {
-      stateCandidate = sanitizedDirect;
+  if (!federalCandidate && sentiment !== "indeciso") {
+    const fedMatch = rawText.match(/(?:federal|deputado federal|p\/ federal)[\s:=–-]*([A-Za-zÀ-ÖØ-öø-ÿ\s]{3,25})/i);
+    if (fedMatch && fedMatch[1]) {
+      federalCandidate = formatCandidateName(fedMatch[1]);
     }
   }
 
   return {
     phone: fromPhone,
     contactName,
-    district,
-    city,
+    district: district || "Arapongas",
+    city: city || "Arapongas",
     messageText: rawText,
     stateCandidate: stateCandidate ? formatCandidateName(stateCandidate) : "Não especificado / Em aberto",
     federalCandidate: federalCandidate ? formatCandidateName(federalCandidate) : "Não especificado / Em aberto",
