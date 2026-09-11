@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type RankingItem = { candidate: string; votes: number; percentage: number };
@@ -11,61 +11,53 @@ type PollResults = {
   federalRanking: RankingItem[];
   stateRanking: RankingItem[];
 };
-type Option = [string, string];
+type Candidate = { id: string; name: string; party?: string };
+type Option = { value: string; label: string; party?: string; candidate?: boolean };
 
-const presidentCandidateNames: Record<string, string> = {
-  lula_pt: "Lula (PT)",
-  flavio_bolsonaro_pl: "Flávio Bolsonaro (PL)",
-  augusto_cury_avante: "Augusto Cury (Avante)",
-  renan_santos_missao: "Renan Santos (Missão)",
-  ronaldo_caiado_psd: "Ronaldo Caiado (PSD)",
-  romeu_zema_novo: "Romeu Zema (Novo)",
-  outro: "Outro",
-  branco_nulo: "Branco/Nulo",
-  ainda_nao_sei: "Ainda não sei",
-};
+const presidentCandidates: Candidate[] = [
+  { id: "lula_pt", name: "Lula", party: "PT" },
+  { id: "flavio_bolsonaro_pl", name: "Flávio Bolsonaro", party: "PL" },
+  { id: "augusto_cury_avante", name: "Augusto Cury", party: "Avante" },
+  { id: "renan_santos_missao", name: "Renan Santos", party: "Missão" },
+  { id: "ronaldo_caiado_psd", name: "Ronaldo Caiado", party: "PSD" },
+  { id: "romeu_zema_novo", name: "Romeu Zema", party: "Novo" },
+];
 
-const governorCandidateNames: Record<string, string> = {
-  sergio_moro_pl: "Sergio Moro (PL)",
-  requiao_filho_pdt: "Requião Filho (PDT)",
-  sandro_alex_psd: "Sandro Alex (PSD)",
-  luiz_franca_missao: "Luiz França (Missão)",
-  outro: "Outro",
-  branco_nulo: "Branco/Nulo",
-  ainda_nao_sei: "Ainda não sei",
-};
+const governorCandidates: Candidate[] = [
+  { id: "sergio_moro_pl", name: "Sergio Moro", party: "PL" },
+  { id: "requiao_filho_pdt", name: "Requião Filho", party: "PDT" },
+  { id: "sandro_alex_psd", name: "Sandro Alex", party: "PSD" },
+  { id: "luiz_franca_missao", name: "Luiz França", party: "Missão" },
+];
 
-const federalCandidateNames: Record<string, string> = {
-  neto_santos: "Neto Santos",
-  ricardo_barros: "Ricardo Barros",
-  pedro_lupion: "Pedro Lupion",
-  beto_preto: "Beto Preto",
-  luciano_ducci: "Luciano Ducci",
-  bonin: "Bonin",
-  marco_brasil: "Marco Brasil",
-  santin_roveda: "Santin Roveda",
-  outro: "Outro",
-  branco_nulo: "Branco/Nulo",
-  ainda_nao_sei: "Ainda não sei",
-};
+const federalCandidates: Candidate[] = [
+  { id: "neto_santos", name: "Neto Santos", party: "NOVO" },
+  { id: "ricardo_barros", name: "Ricardo Barros", party: "PP" },
+  { id: "pedro_lupion", name: "Pedro Lupion", party: "REPUBLICANOS" },
+  { id: "beto_preto", name: "Beto Preto", party: "PSD" },
+  { id: "luciano_ducci", name: "Luciano Ducci", party: "PSB" },
+  { id: "bonin", name: "Bonin", party: "REPUBLICANOS" },
+  { id: "marco_brasil", name: "Marco Brasil", party: "PP" },
+  { id: "santin_roveda", name: "Santin Roveda", party: "UNIÃO" },
+];
 
-const stateCandidateNames: Record<string, string> = {
-  pedro_paulo_bazana: "Pedro Paulo Bazana",
-  sergio_onofre: "Sérgio Onofre",
-  aline_franzon: "Aline Franzon",
-  delegado_jacovos: "Delegado Jacovos",
-  cobra_reporter: "Cobra Repórter",
-  outro: "Outro",
-  branco_nulo: "Branco/Nulo",
-  ainda_nao_sei: "Ainda não sei",
-};
+const stateCandidates: Candidate[] = [
+  { id: "pedro_paulo_bazana", name: "Pedro Paulo Bazana", party: "PSD" },
+  { id: "sergio_onofre", name: "Sérgio Onofre", party: "PSD" },
+  { id: "aline_franzon", name: "Aline Franzon", party: "MISSÃO" },
+  { id: "delegado_jacovos", name: "Delegado Jacovós", party: "PL" },
+  { id: "cobra_reporter", name: "Cobra Repórter", party: "PSD" },
+];
 
-const allCandidateNames: Record<string, string> = {
-  ...presidentCandidateNames,
-  ...governorCandidateNames,
-  ...federalCandidateNames,
-  ...stateCandidateNames,
-};
+const specialCandidates: Candidate[] = [
+  { id: "outro", name: "Outro" },
+  { id: "branco_nulo", name: "Branco/Nulo" },
+  { id: "ainda_nao_sei", name: "Ainda não sei" },
+];
+
+const allCandidateInfo: Record<string, Candidate> = Object.fromEntries(
+  [...presidentCandidates, ...governorCandidates, ...federalCandidates, ...stateCandidates, ...specialCandidates].map((c) => [c.id, c]),
+);
 
 const candidatePhotos: Record<string, string> = {
   lula_pt: "https://www.gov.br/planejamento/pt-br/assuntos/noticias/2026/imagens/55156120202_eb131de887_o.jpg",
@@ -76,7 +68,7 @@ const candidatePhotos: Record<string, string> = {
   romeu_zema_novo: "https://eleicoes.patria.agr.br/assets/romeu-zema-60E3nFzS.png",
   sergio_moro_pl: "https://www.adjoriparana.com.br/uploads/images/2025/07/sergio-moro-lidera-corrida-para-o-governo-do-parana-em-2026-aponta-pesquisa-3887.webp",
   requiao_filho_pdt: "https://media.extraguarapuava.com.br/2026/03/c116e75b-requiao-filho--scaled.jpg",
-  sandro_alex_psd: "https://gazetadobairro.com.br/uploads/medias/1080x1080/2026/04/69dd973e34d644.68716279.webp",
+  sandro_alex_psd: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/160621.jpg",
   luiz_franca_missao: "https://busaocuritiba.com/wp-content/uploads/2025/09/Luiz-Franca-pre-candidato-ao-governo-do-Parana-pelo-MBL-1600x900.jpg",
   neto_santos: "https://cdn.tnonline.com.br/eleicoes/2026/pr/fotos/FPR160002542284_div.jpg",
   ricardo_barros: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73788.jpg",
@@ -118,13 +110,15 @@ function initialsFor(candidate: string) {
   if (candidate === "outro") return "+";
   if (candidate === "branco_nulo") return "—";
   if (candidate === "ainda_nao_sei") return "?";
-  const label = allCandidateNames[candidate] || candidate;
-  return label.replace(/\([^)]*\)/g, "").trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
+  const label = allCandidateInfo[candidate]?.name || candidate;
+  return label.split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
 }
 
 function CandidateAvatar({ candidate, size = 54 }: { candidate: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   const photo = candidatePhotos[candidate];
+  const info = allCandidateInfo[candidate];
+
   if (!photo || failed) {
     return (
       <div aria-hidden="true" style={{ width: size, height: size, minWidth: size, borderRadius: "50%", display: "grid", placeItems: "center", background: "linear-gradient(145deg,#eff6ff,#dbeafe)", border: "2px solid #fff", boxShadow: "0 0 0 1px #bfdbfe", color: "#1d4ed8", fontSize: Math.max(13, Math.round(size * 0.3)), fontWeight: 900 }}>
@@ -132,14 +126,10 @@ function CandidateAvatar({ candidate, size = 54 }: { candidate: string; size?: n
       </div>
     );
   }
-  return (
-    <img src={photo} alt={allCandidateNames[candidate] || "Candidato"} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} style={{ width: size, height: size, minWidth: size, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: "2px solid #fff", boxShadow: "0 0 0 1px #cbd5e1,0 3px 10px rgba(15,23,42,.12)", background: "#e2e8f0" }} />
-  );
-}
 
-function splitCandidateLabel(label: string) {
-  const match = label.match(/^(.*?)\s*\(([^)]+)\)$/);
-  return match ? { name: match[1].trim(), party: match[2].trim() } : { name: label, party: "" };
+  return (
+    <img src={photo} alt={info?.name || "Candidato"} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} style={{ width: size, height: size, minWidth: size, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: "2px solid #fff", boxShadow: "0 0 0 1px #cbd5e1,0 3px 10px rgba(15,23,42,.12)", background: "#e2e8f0" }} />
+  );
 }
 
 function cleanQuestionTitle(title: string) {
@@ -147,7 +137,7 @@ function cleanQuestionTitle(title: string) {
   return match ? { number: match[1], text: match[2] } : { number: "", text: title };
 }
 
-function Question({ title, name, value, setValue, options, candidateQuestion = false }: { title: string; name: string; value: string; setValue: (value: string) => void; options: Option[]; candidateQuestion?: boolean }) {
+function Question({ title, name, value, setValue, options }: { title: string; name: string; value: string; setValue: (value: string) => void; options: Option[] }) {
   const heading = cleanQuestionTitle(title);
   return (
     <section style={{ padding: "20px 0 4px", borderTop: "1px solid #eef2f7" }}>
@@ -156,16 +146,15 @@ function Question({ title, name, value, setValue, options, candidateQuestion = f
       </div>
       <div style={{ color: "#172033", fontWeight: 900, fontSize: 15, marginBottom: 13, lineHeight: 1.48 }}>{heading.text}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {options.map(([optionValue, label]) => {
-          const selected = value === optionValue;
-          const candidateLabel = splitCandidateLabel(label);
+        {options.map((option) => {
+          const selected = value === option.value;
           return (
-            <label key={`${name}-${optionValue}`} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, minHeight: candidateQuestion ? 68 : 54, padding: candidateQuestion ? "9px 12px" : "11px 13px", paddingRight: 48, borderRadius: 15, border: selected ? "2px solid #2563eb" : "1px solid #dde4ee", background: selected ? "linear-gradient(135deg,#f5f9ff,#eef5ff)" : "#fff", boxShadow: selected ? "0 5px 16px rgba(37,99,235,.11)" : "0 1px 2px rgba(15,23,42,.03)", cursor: "pointer", transition: "border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease" }}>
-              <input type="radio" name={name} value={optionValue} checked={selected} onChange={() => setValue(optionValue)} required style={{ position: "absolute", opacity: 0, width: 1, height: 1, pointerEvents: "none" }} />
-              {candidateQuestion && <CandidateAvatar candidate={optionValue} size={52} />}
+            <label key={`${name}-${option.value}`} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, minHeight: option.candidate ? 68 : 54, padding: option.candidate ? "9px 12px" : "11px 13px", paddingRight: 48, borderRadius: 15, border: selected ? "2px solid #2563eb" : "1px solid #dde4ee", background: selected ? "linear-gradient(135deg,#f5f9ff,#eef5ff)" : "#fff", boxShadow: selected ? "0 5px 16px rgba(37,99,235,.11)" : "0 1px 2px rgba(15,23,42,.03)", cursor: "pointer", transition: "border-color .15s ease, background .15s ease, box-shadow .15s ease" }}>
+              <input type="radio" name={name} value={option.value} checked={selected} onChange={() => setValue(option.value)} required style={{ position: "absolute", opacity: 0, width: 1, height: 1, pointerEvents: "none" }} />
+              {option.candidate && <CandidateAvatar candidate={option.value} size={52} />}
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ color: selected ? "#153b80" : "#334155", fontSize: candidateQuestion ? 14.5 : 14, lineHeight: 1.35, fontWeight: selected ? 900 : 750 }}>{candidateQuestion ? candidateLabel.name : label}</div>
-                {candidateQuestion && candidateLabel.party && <span style={{ display: "inline-block", marginTop: 4, borderRadius: 999, background: selected ? "#dbeafe" : "#f1f5f9", color: selected ? "#1d4ed8" : "#64748b", padding: "3px 7px", fontSize: 10, lineHeight: 1, fontWeight: 850 }}>{candidateLabel.party}</span>}
+                <div style={{ color: selected ? "#153b80" : "#334155", fontSize: option.candidate ? 14.5 : 14, lineHeight: 1.35, fontWeight: selected ? 900 : 700 }}>{option.label}</div>
+                {option.candidate && option.party && <span style={{ display: "inline-block", marginTop: 4, borderRadius: 999, background: selected ? "#dbeafe" : "#f1f5f9", color: selected ? "#1d4ed8" : "#64748b", padding: "3px 7px", fontSize: 10, lineHeight: 1, fontWeight: 850 }}>{option.party}</span>}
               </div>
               <span aria-hidden="true" style={{ position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)", width: 25, height: 25, borderRadius: "50%", display: "grid", placeItems: "center", border: selected ? "2px solid #2563eb" : "1.5px solid #cbd5e1", background: selected ? "#2563eb" : "#fff", color: "#fff", fontSize: 14, fontWeight: 900, boxShadow: selected ? "0 3px 8px rgba(37,99,235,.2)" : "none" }}>{selected ? "✓" : ""}</span>
             </label>
@@ -176,22 +165,22 @@ function Question({ title, name, value, setValue, options, candidateQuestion = f
   );
 }
 
-function RankingCard({ title, icon, ranking, names }: { title: string; icon: string; ranking: RankingItem[]; names: Record<string, string> }) {
+function RankingCard({ title, icon, ranking }: { title: string; icon: string; ranking: RankingItem[] }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, padding: 15, marginTop: 14, textAlign: "left", boxShadow: "0 3px 12px rgba(15,23,42,.045)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 900, color: "#1e293b", marginBottom: 14 }}><span>{icon}</span><span>{title}</span></div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {ranking.map((item, index) => {
           const isLeader = index === 0 && item.votes > 0;
-          const label = splitCandidateLabel(names[item.candidate] || item.candidate);
+          const info = allCandidateInfo[item.candidate] || { id: item.candidate, name: item.candidate };
           return (
             <div key={item.candidate} style={{ display: "flex", gap: 11, alignItems: "center", padding: isLeader ? 9 : "7px 2px", borderRadius: 14, background: isLeader ? "#f5f9ff" : "transparent", border: isLeader ? "1px solid #dbeafe" : "1px solid transparent" }}>
               <CandidateAvatar candidate={item.candidate} size={48} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 6 }}>
                   <div style={{ minWidth: 0 }}>
-                    <span style={{ color: "#334155", fontSize: 13, fontWeight: isLeader ? 900 : 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label.name}</span>
-                    {label.party && <span style={{ marginLeft: 6, color: "#94a3b8", fontSize: 10, fontWeight: 800 }}>{label.party}</span>}
+                    <span style={{ color: "#334155", fontSize: 13, fontWeight: isLeader ? 900 : 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.name}</span>
+                    {info.party && <span style={{ marginLeft: 6, color: "#64748b", background: "#f1f5f9", borderRadius: 999, padding: "2px 6px", fontSize: 9.5, fontWeight: 850 }}>{info.party}</span>}
                   </div>
                   <strong style={{ color: "#1d4ed8", fontSize: 14, whiteSpace: "nowrap" }}>{item.percentage.toFixed(1)}%</strong>
                 </div>
@@ -206,6 +195,13 @@ function RankingCard({ title, icon, ranking, names }: { title: string; icon: str
   );
 }
 
+function candidateOptions(candidates: Candidate[]): Option[] {
+  return [
+    ...candidates.map((c) => ({ value: c.id, label: c.name, party: c.party, candidate: true })),
+    ...specialCandidates.map((c) => ({ value: c.id, label: c.name, candidate: true })),
+  ];
+}
+
 function EnqueteForm() {
   const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
@@ -218,6 +214,11 @@ function EnqueteForm() {
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [results, setResults] = useState<PollResults | null>(null);
+
+  const presidentOptions = useMemo(() => candidateOptions(presidentCandidates), []);
+  const governorOptions = useMemo(() => candidateOptions(governorCandidates), []);
+  const federalOptions = useMemo(() => candidateOptions(federalCandidates), []);
+  const stateOptions = useMemo(() => candidateOptions(stateCandidates), []);
 
   const setAnswer = (key: string, value: string) => setAnswers((current) => ({ ...current, [key]: value }));
   const normalizeResults = (data: Partial<PollResults>): PollResults => ({
@@ -243,6 +244,7 @@ function EnqueteForm() {
     setName(n);
     const id = getOrCreateParticipantId();
     setParticipantId(id);
+
     const check = async () => {
       try {
         const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status", participantId: id, phone: p }) });
@@ -252,6 +254,7 @@ function EnqueteForm() {
         }
       } finally { setChecking(false); }
     };
+
     void check();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -261,14 +264,18 @@ function EnqueteForm() {
     const keys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"];
     if (!keys.every((key) => Boolean(answers[key]))) { setErrorMsg("Por favor, responda a todas as 9 perguntas."); return; }
     setLoading(true); setErrorMsg("");
+
     try {
       const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", participantId, phone, ...answers }) });
       const data = await response.json().catch(() => ({}));
       if (response.status === 409 || data.alreadyAnswered) { setAlreadyAnswered(true); setSubmitted(true); setResults(normalizeResults(data)); return; }
       if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível registrar sua resposta.");
       setSubmitted(true); setAlreadyAnswered(false); setResults(normalizeResults(data));
-    } catch (error) { setErrorMsg(error instanceof Error ? error.message : "Falha ao registrar sua resposta."); }
-    finally { setLoading(false); }
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Falha ao registrar sua resposta.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (checking) return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f8fafc", color: "#475569", fontFamily: "Inter, sans-serif" }}>Verificando sua participação...</div>;
@@ -283,7 +290,7 @@ function EnqueteForm() {
             <h2 style={{ margin: "0 0 9px", color: "#172033", fontSize: 22, fontWeight: 900 }}>{alreadyAnswered ? "Você já participou desta enquete" : "Obrigado pela participação!"}</h2>
             <p style={{ margin: 0, color: "#64748b", fontSize: 14, lineHeight: 1.6 }}>{alreadyAnswered ? "Sua participação anterior foi reconhecida. Para manter a enquete justa, é permitida apenas uma resposta por participante." : `Sua resposta foi registrada com sucesso${name ? `, ${name}` : ""}. Obrigado por contribuir com a enquete de Arapongas.`}</p>
             <div style={{ marginTop: 20, padding: 14, borderRadius: 14, background: "#f5f9ff", border: "1px solid #dbeafe" }}><div style={{ color: "#1e40af", fontWeight: 900, fontSize: 16 }}>Resultado parcial</div><div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>{results?.totalResponses ?? 0} participação{(results?.totalResponses ?? 0) === 1 ? "" : "ões"} válida{(results?.totalResponses ?? 0) === 1 ? "" : "s"} nesta preview</div></div>
-            {results && <><RankingCard title="Presidente da República" icon="🇧🇷" ranking={results.presidentRanking} names={presidentCandidateNames} /><RankingCard title="Governador do Paraná" icon="🗳️" ranking={results.governorRanking} names={governorCandidateNames} /><RankingCard title="Deputado Federal" icon="🏛️" ranking={results.federalRanking} names={federalCandidateNames} /><RankingCard title="Deputado Estadual" icon="📊" ranking={results.stateRanking} names={stateCandidateNames} /></>}
+            {results && <><RankingCard title="Presidente da República" icon="🇧🇷" ranking={results.presidentRanking} /><RankingCard title="Governador do Paraná" icon="🗳️" ranking={results.governorRanking} /><RankingCard title="Deputado Federal" icon="🏛️" ranking={results.federalRanking} /><RankingCard title="Deputado Estadual" icon="📊" ranking={results.stateRanking} /></>}
             <p style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, margin: "18px 4px 0" }}>Resultado parcial de uma enquete online. As porcentagens são calculadas somente sobre as participações válidas desta versão de teste.</p>
           </div>
         </main>
@@ -300,15 +307,15 @@ function EnqueteForm() {
           <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f5f9ff", color: "#1e40af", border: "1px solid #dbeafe", padding: "11px 12px", borderRadius: 12, fontSize: 12, fontWeight: 800, marginBottom: 5 }}>🔒 <span>1 resposta por participante</span><span style={{ color: "#93a4bd" }}>•</span><span>resultado após o envio</span></div>
           {errorMsg && <div style={{ background: "#fff1f2", color: "#be123c", border: "1px solid #fecdd3", padding: "11px 13px", borderRadius: 11, fontSize: 13, marginTop: 16 }}>{errorMsg}</div>}
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            <Question title="1. COMO VOCÊ AVALIA A ATUAL GESTÃO DO GOVERNO ESTADUAL PARA SUA CIDADE?" name="q1" value={answers.q1 || ""} setValue={(v) => setAnswer("q1", v)} options={[["boa", "Boa"], ["media", "Média"], ["ruim", "Ruim"]]} />
-            <Question title="2. COMO VOCÊ AVALIA A ATUAL ADMINISTRAÇÃO DA PREFEITURA DO SEU MUNICÍPIO?" name="q2" value={answers.q2 || ""} setValue={(v) => setAnswer("q2", v)} options={[["boa", "Boa"], ["media", "Média"], ["ruim", "Ruim"]]} />
-            <Question title="3. VOCÊ CONHECE ALGUM CANDIDATO A DEPUTADO ESTADUAL OU FEDERAL QUE ESTÁ DISPUTANDO AS ELEIÇÕES DE 2026?" name="q3" value={answers.q3 || ""} setValue={(v) => setAnswer("q3", v)} options={[["sim", "Sim"], ["nao", "Não"], ["alguns_nao_lembro", "Conheço alguns, mas não lembro os nomes"]]} />
-            <Question title="4. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA PRESIDENTE DA REPÚBLICA?" name="q4" value={answers.q4 || ""} setValue={(v) => setAnswer("q4", v)} options={[["sim", "Sim"], ["nao", "Não"], ["indeciso", "Ainda estou indeciso(a)"]]} />
-            <Question title="5. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA GOVERNADOR DO PARANÁ?" name="q5" value={answers.q5 || ""} setValue={(v) => setAnswer("q5", v)} options={[["sim", "Sim"], ["nao", "Não"], ["indeciso", "Ainda estou indeciso(a)"]]} />
-            <Question candidateQuestion title="6. EM QUEM VOCÊ VOTARIA PARA PRESIDENTE DA REPÚBLICA?" name="q6" value={answers.q6 || ""} setValue={(v) => setAnswer("q6", v)} options={[["lula_pt", "Lula (PT)"], ["flavio_bolsonaro_pl", "Flávio Bolsonaro (PL)"], ["augusto_cury_avante", "Augusto Cury (Avante)"], ["renan_santos_missao", "Renan Santos (Missão)"], ["ronaldo_caiado_psd", "Ronaldo Caiado (PSD)"], ["romeu_zema_novo", "Romeu Zema (Novo)"], ["outro", "Outro"], ["branco_nulo", "Branco/Nulo"], ["ainda_nao_sei", "Ainda não sei"]]} />
-            <Question candidateQuestion title="7. EM QUEM VOCÊ VOTARIA PARA GOVERNADOR DO PARANÁ?" name="q7" value={answers.q7 || ""} setValue={(v) => setAnswer("q7", v)} options={[["sergio_moro_pl", "Sergio Moro (PL)"], ["requiao_filho_pdt", "Requião Filho (PDT)"], ["sandro_alex_psd", "Sandro Alex (PSD)"], ["luiz_franca_missao", "Luiz França (Missão)"], ["outro", "Outro"], ["branco_nulo", "Branco/Nulo"], ["ainda_nao_sei", "Ainda não sei"]]} />
-            <Question candidateQuestion title="8. EM QUEM VOCÊ VOTARIA PARA DEPUTADO FEDERAL?" name="q8" value={answers.q8 || ""} setValue={(v) => setAnswer("q8", v)} options={[["neto_santos", "Neto Santos"], ["ricardo_barros", "Ricardo Barros"], ["pedro_lupion", "Pedro Lupion"], ["beto_preto", "Beto Preto"], ["luciano_ducci", "Luciano Ducci"], ["bonin", "Bonin"], ["marco_brasil", "Marco Brasil"], ["santin_roveda", "Santin Roveda"], ["outro", "Outro"], ["branco_nulo", "Branco/Nulo"], ["ainda_nao_sei", "Ainda não sei"]]} />
-            <Question candidateQuestion title="9. EM QUEM VOCÊ VOTARIA PARA DEPUTADO ESTADUAL?" name="q9" value={answers.q9 || ""} setValue={(v) => setAnswer("q9", v)} options={[["pedro_paulo_bazana", "Pedro Paulo Bazana"], ["sergio_onofre", "Sérgio Onofre"], ["aline_franzon", "Aline Franzon"], ["delegado_jacovos", "Delegado Jacovos"], ["cobra_reporter", "Cobra Repórter"], ["outro", "Outro"], ["branco_nulo", "Branco/Nulo"], ["ainda_nao_sei", "Ainda não sei"]]} />
+            <Question title="1. COMO VOCÊ AVALIA A ATUAL GESTÃO DO GOVERNO ESTADUAL PARA SUA CIDADE?" name="q1" value={answers.q1 || ""} setValue={(v) => setAnswer("q1", v)} options={[{ value: "boa", label: "Boa" }, { value: "media", label: "Média" }, { value: "ruim", label: "Ruim" }]} />
+            <Question title="2. COMO VOCÊ AVALIA A ATUAL ADMINISTRAÇÃO DA PREFEITURA DO SEU MUNICÍPIO?" name="q2" value={answers.q2 || ""} setValue={(v) => setAnswer("q2", v)} options={[{ value: "boa", label: "Boa" }, { value: "media", label: "Média" }, { value: "ruim", label: "Ruim" }]} />
+            <Question title="3. VOCÊ CONHECE ALGUM CANDIDATO A DEPUTADO ESTADUAL OU FEDERAL QUE ESTÁ DISPUTANDO AS ELEIÇÕES DE 2026?" name="q3" value={answers.q3 || ""} setValue={(v) => setAnswer("q3", v)} options={[{ value: "sim", label: "Sim" }, { value: "nao", label: "Não" }, { value: "alguns_nao_lembro", label: "Conheço alguns, mas não lembro os nomes" }]} />
+            <Question title="4. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA PRESIDENTE DA REPÚBLICA?" name="q4" value={answers.q4 || ""} setValue={(v) => setAnswer("q4", v)} options={[{ value: "sim", label: "Sim" }, { value: "nao", label: "Não" }, { value: "indeciso", label: "Ainda estou indeciso(a)" }]} />
+            <Question title="5. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA GOVERNADOR DO PARANÁ?" name="q5" value={answers.q5 || ""} setValue={(v) => setAnswer("q5", v)} options={[{ value: "sim", label: "Sim" }, { value: "nao", label: "Não" }, { value: "indeciso", label: "Ainda estou indeciso(a)" }]} />
+            <Question title="6. EM QUEM VOCÊ VOTARIA PARA PRESIDENTE DA REPÚBLICA?" name="q6" value={answers.q6 || ""} setValue={(v) => setAnswer("q6", v)} options={presidentOptions} />
+            <Question title="7. EM QUEM VOCÊ VOTARIA PARA GOVERNADOR DO PARANÁ?" name="q7" value={answers.q7 || ""} setValue={(v) => setAnswer("q7", v)} options={governorOptions} />
+            <Question title="8. EM QUEM VOCÊ VOTARIA PARA DEPUTADO FEDERAL?" name="q8" value={answers.q8 || ""} setValue={(v) => setAnswer("q8", v)} options={federalOptions} />
+            <Question title="9. EM QUEM VOCÊ VOTARIA PARA DEPUTADO ESTADUAL?" name="q9" value={answers.q9 || ""} setValue={(v) => setAnswer("q9", v)} options={stateOptions} />
             <button type="submit" disabled={loading} style={{ width: "100%", border: 0, borderRadius: 14, padding: 16, marginTop: 17, fontSize: 16, fontWeight: 900, color: "#fff", background: loading ? "#93c5fd" : "linear-gradient(135deg,#2f7df6,#1d4ed8)", cursor: loading ? "wait" : "pointer", boxShadow: "0 7px 18px rgba(37,99,235,.24)" }}>{loading ? "Validando e registrando..." : "Enviar respostas"}</button>
             <p style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", margin: "5px 5px 0", lineHeight: 1.5 }}>A identificação técnica usada para impedir resposta duplicada não aparece nos resultados. Os resultados são exibidos somente de forma agregada.</p>
           </form>
