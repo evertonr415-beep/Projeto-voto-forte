@@ -7,6 +7,7 @@ import { apiFetch, supabase } from "./supabase-client";
 import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
 import VotingChartsClient from "./apuracao-graficos/voting-charts-client";
 import WhatsAppChatClient from "./whatsapp-inbox/whatsapp-chat-client";
+import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
 import { Icons } from "./ui-icons";
 
 type View =
@@ -2677,20 +2678,7 @@ function Whatsapp({
   const [failedNumbers, setFailedNumbers] = useState<Array<{ phone: string; name: string; error: string }>>([]);
 
   const formatPhone = (raw: string) => {
-    const digits = String(raw || "").replace(/\D/g, "");
-    if (digits.startsWith("55") && digits.length === 13) {
-      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
-    }
-    if (digits.startsWith("55") && digits.length === 12) {
-      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
-    }
-    if (digits.length === 11) {
-      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-    }
-    if (digits.length === 10) {
-      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-    }
-    return raw;
+    return formatDisplayPhone(raw);
   };
 
   const loadLiveFeed = useCallback(async (silent = false) => {
@@ -3076,8 +3064,8 @@ function Whatsapp({
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: "13px", color: "#f8fafc", fontStyle: "italic", whiteSpace: "pre-wrap", lineHeight: 1.4 }}>
-                          "{item.replyText}"
+                        <div style={{ fontSize: "13px", color: "#f8fafc", whiteSpace: "pre-wrap", lineHeight: 1.5, background: "rgba(0, 0, 0, 0.25)", padding: "8px 10px", borderRadius: "6px", marginTop: "4px" }}>
+                          {formatReadableSurveyText(item.replyText)}
                         </div>
                       </div>
                     )}

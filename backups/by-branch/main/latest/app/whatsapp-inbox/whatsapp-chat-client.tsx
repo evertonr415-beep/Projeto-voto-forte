@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { apiFetch } from "../supabase-client";
 import { Icons } from "../ui-icons";
+import { formatDisplayPhone, formatReadableSurveyText } from "../api/whatsapp/survey-formatter";
 import "./whatsapp-chat.css";
 
 export type ChatConversation = {
@@ -69,20 +70,7 @@ export default function WhatsAppChatClient({
 
   // Formata telefone
   const formatPhone = (raw: string) => {
-    const digits = String(raw || "").replace(/\D/g, "");
-    if (digits.startsWith("55") && digits.length === 13) {
-      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
-    }
-    if (digits.startsWith("55") && digits.length === 12) {
-      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
-    }
-    if (digits.length === 11) {
-      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-    }
-    if (digits.length === 10) {
-      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-    }
-    return raw;
+    return formatDisplayPhone(raw);
   };
 
   // Formata horário
@@ -379,7 +367,7 @@ export default function WhatsAppChatClient({
                             )}
                           </span>
                         )}
-                        <span>{conv.lastMessageText}</span>
+                        <span>{formatReadableSurveyText(conv.lastMessageText)}</span>
                       </div>
                       {conv.unreadCount > 0 && (
                         <div className="wa-conv-badge">{conv.unreadCount}</div>
@@ -461,7 +449,9 @@ export default function WhatsAppChatClient({
                       {isInbound && msg.senderName && (
                         <div className="wa-bubble-sender">{msg.senderName}</div>
                       )}
-                      <div className="wa-bubble-text">{msg.text}</div>
+                      <div className="wa-bubble-text" style={{ whiteSpace: "pre-wrap" }}>
+                        {formatReadableSurveyText(msg.text)}
+                      </div>
                       <div className="wa-bubble-meta">
                         <span className="wa-bubble-time">{formatTime(msg.timestamp)}</span>
                         {!isInbound && (
