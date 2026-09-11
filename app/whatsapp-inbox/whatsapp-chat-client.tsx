@@ -32,6 +32,14 @@ export type ChatMessage = {
   senderName?: string;
 };
 
+const QUICK_RESPONSES = [
+  "Olá! Como posso ajudar você hoje?",
+  "Obrigado por responder nossa pesquisa eleitoral em Arapongas! 🤝",
+  "Gostaríamos de saber: quem você prefere para Deputado Estadual e Federal?",
+  "Muito obrigado pelo seu apoio e carinho com nossa equipe! 🗳️",
+  "Ficamos à disposição para qualquer dúvida ou sugestão para nossa cidade.",
+];
+
 export default function WhatsAppChatClient({
   onBackToDashboard,
   initialPhone,
@@ -54,10 +62,12 @@ export default function WhatsAppChatClient({
   const [sending, setSending] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendSuccessNotice, setSendSuccessNotice] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Formata telefone para exibição elegante
+  // Formata telefone
   const formatPhone = (raw: string) => {
     const digits = String(raw || "").replace(/\D/g, "");
     if (digits.startsWith("55") && digits.length === 13) {
@@ -75,7 +85,7 @@ export default function WhatsAppChatClient({
     return raw;
   };
 
-  // Formata hora amigável estilo WhatsApp
+  // Formata horário
   const formatTime = (isoString?: string) => {
     if (!isoString) return "";
     try {
@@ -105,7 +115,7 @@ export default function WhatsAppChatClient({
     }
   };
 
-  // Carrega lista de conversas
+  // Carrega conversas
   const loadConversations = useCallback(async (silent = false) => {
     if (!silent) setLoadingList(true);
     try {
@@ -115,8 +125,7 @@ export default function WhatsAppChatClient({
       const data = await res.json();
       if (res.ok && data.success) {
         setConversations(data.conversations || []);
-        // Se nenhuma conversa selecionada e temos lista, seleciona a primeira (no desktop)
-        if (!selectedPhone && data.conversations?.length > 0 && window.innerWidth > 768) {
+        if (!selectedPhone && data.conversations?.length > 0 && typeof window !== "undefined" && window.innerWidth > 768) {
           setSelectedPhone(data.conversations[0].phone);
         }
       }
@@ -127,7 +136,7 @@ export default function WhatsAppChatClient({
     }
   }, [searchQuery, selectedPhone]);
 
-  // Carrega histórico da conversa selecionada
+  // Carrega mensagens do telefone selecionado
   const loadMessages = useCallback(async (phone: string, silent = false) => {
     if (!phone) return;
     if (!silent) setLoadingMessages(true);
@@ -149,7 +158,7 @@ export default function WhatsAppChatClient({
     }
   }, []);
 
-  // Polling automático da lista e da conversa ativa
+  // Polling automático
   useEffect(() => {
     void loadConversations();
     const interval = setInterval(() => {
@@ -168,12 +177,11 @@ export default function WhatsAppChatClient({
     }
   }, [selectedPhone, loadMessages]);
 
-  // Scroll automático para a última mensagem
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Envio de mensagem
+  // Enviar Mensagem
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim() || !selectedPhone || sending) return;
@@ -182,7 +190,6 @@ export default function WhatsAppChatClient({
     setInputText("");
     setSending(true);
 
-    // Otimismo na UI
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg: ChatMessage = {
       id: tempId,
@@ -196,6 +203,8 @@ export default function WhatsAppChatClient({
     };
 
     setMessages((prev) => [...prev, optimisticMsg]);
+    setSendSuccessNotice(true);
+    setTimeout(() => setSendSuccessNotice(false), 3000);
 
     try {
       const res = await apiFetch("/api/whatsapp/chat", {
@@ -223,6 +232,7 @@ export default function WhatsAppChatClient({
       );
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
   };
 
@@ -233,7 +243,6 @@ export default function WhatsAppChatClient({
     }
   };
 
-  // Filtragem da lista
   const filteredConversations = useMemo(() => {
     return conversations.filter((c) => {
       if (activeFilter === "unread") return c.unreadCount > 0;
@@ -426,26 +435,10 @@ export default function WhatsAppChatClient({
             </div>
           </div>
 
-          {/* Quick Action Bar / Enquete */}
-          <div className="wa-survey-action-bar">
-            <span>💡 <strong>Ação Rápida:</strong> Enviar pergunta de intenção de voto</span>
-            <button
-              type="button"
-              className="wa-survey-btn-pill"
-              onClick={() => {
-                setInputText(
-                  `Olá! Gostaríamos de saber sua opinião para Arapongas. Quem você prefere para Deputado Estadual e Federal nas próximas eleições?`,
-                );
-              }}
-            >
-              📋 Inserir Pergunta da Enquete
-            </button>
-          </div>
-
           {/* Área de Mensagens (Thread) */}
           <div className="wa-messages-body">
             <div className="wa-date-divider">
-              🔒 As mensagens são protegidas pela criptografia de ponta a ponta da Meta
+              🔒 As mensagens são protegidas pela criptografia oficial da Meta
             </div>
 
             {loadingMessages && messages.length === 0 ? (
@@ -454,7 +447,7 @@ export default function WhatsAppChatClient({
               </div>
             ) : messages.length === 0 ? (
               <div style={{ textAlign: "center", color: "#8696a0", padding: 40 }}>
-                Nenhuma mensagem nesta conversa ainda. Envie uma mensagem abaixo para iniciar!
+                Nenhuma mensagem nesta conversa ainda. Digite uma mensagem abaixo e envie agora mesmo!
               </div>
             ) : (
               messages.map((msg) => {
@@ -493,24 +486,47 @@ export default function WhatsAppChatClient({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Footer de Envio */}
+          {/* Barra de Respostas Rápidas / Sugestões */}
+          <div className="wa-quick-replies-bar">
+            <span style={{ fontSize: 11, color: "#667781", fontWeight: 700 }}>⚡ Respostas Rápidas:</span>
+            {QUICK_RESPONSES.map((qr, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="wa-quick-reply-chip"
+                onClick={() => {
+                  setInputText(qr);
+                  inputRef.current?.focus();
+                }}
+              >
+                {qr}
+              </button>
+            ))}
+          </div>
+
+          {/* Footer de Envio Oficial */}
           <div className="wa-chat-input-bar">
             <button
               type="button"
               className="wa-icon-btn"
-              title="Emoji"
-              onClick={() => setInputText((prev) => prev + " 🤝")}
+              title="Inserir Emoji"
+              onClick={() => {
+                setInputText((prev) => prev + " 🤝");
+                inputRef.current?.focus();
+              }}
             >
               😊
             </button>
             <div className="wa-input-wrapper">
               <textarea
+                ref={inputRef}
                 className="wa-input-field"
                 rows={1}
-                placeholder="Digite uma mensagem"
+                placeholder="Digite uma mensagem para este contato (Pressione Enter para enviar)"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
+                autoFocus
               />
             </div>
             <button
@@ -518,21 +534,21 @@ export default function WhatsAppChatClient({
               className="wa-send-btn"
               onClick={() => void handleSendMessage()}
               disabled={!inputText.trim() || sending}
-              title="Enviar Mensagem"
+              title={inputText.trim() ? "Enviar Mensagem (Enter)" : "Digite uma mensagem para enviar"}
             >
               {sending ? "⏳" : "➤"}
             </button>
           </div>
         </div>
       ) : (
-        /* Estado Vazio (quando nenhuma conversa está selecionada no Desktop) */
+        /* Estado Vazio (Desktop) */
         <div className="wa-empty-chat">
           <div className="wa-empty-icon">
             <Icons.WhatsApp size={64} />
           </div>
           <div className="wa-empty-title">Voto Forte WhatsApp Web</div>
           <div className="wa-empty-subtitle">
-            Acompanhe em tempo real todas as mensagens enviadas pela API da Meta, receba as respostas dos eleitores e interaja diretamente como no WhatsApp.
+            Selecione uma conversa à esquerda para ler, acompanhar as mensagens e responder os eleitores diretamente pelo WhatsApp.
           </div>
           <div className="wa-encryption-badge">
             🔒 Integrado com a Meta Cloud API Oficial
