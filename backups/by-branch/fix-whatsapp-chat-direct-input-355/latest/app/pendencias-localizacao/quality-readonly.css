@@ -1,0 +1,26 @@
+/* Central de Qualidade em modo somente leitura para Gestor. */
+.vf-quality-readonly .issues-bulkbar,
+.vf-quality-readonly .issues-select-cell,
+.vf-quality-readonly .issues-table-wrap thead th:first-child {
+  display: none !important;
+}
+
+.vf-quality-readonly .issues-required-grid input {
+  pointer-events: none !important;
+  user-select: text !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  cursor: default !important;
+}
+
+.vf-quality-readonly .issues-modal footer .primary {
+  display: none !important;
+}
+
+.vf-quality-readonly .issues-modal footer {
+  justify-content: flex-end !important;
+}
+
+.vf-quality-readonly .issues-toolbar-heading p::after {
+  content: " Modo somente leitura para Gestor.";
+  font-weight: 700;
+}
