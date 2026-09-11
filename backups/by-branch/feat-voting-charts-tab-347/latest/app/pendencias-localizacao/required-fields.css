@@ -1,0 +1,31 @@
+.issues-required-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.issues-required-grid label{
+  display:grid;
+  gap:7px;
+  color:#17345c;
+  font-size:13px;
+  font-weight:850;
+}
+
+.issues-required-grid input{
+  width:100%;
+  min-height:44px;
+  border:1px solid #cbd6e2;
+  border-radius:11px;
+  padding:10px 12px;
+  background:#fff;
+  color:#17345c;
+}
+
+.issues-required-grid input:hover{border-color:#9fb4cb}
+.issues-required-grid input:focus{border-color:#2f6fb2;box-shadow:0 0 0 3px rgba(47,111,178,.12);outline:0}
+.issues-required-grid small{color:#667386;font-weight:600;line-height:1.35}
+
+@media(max-width:800px){
+  .issues-required-grid{grid-template-columns:1fr}
+}
