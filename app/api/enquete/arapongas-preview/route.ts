@@ -1,8 +1,8 @@
 import { createHash } from "crypto";
 import { getWhatsappAdminClient } from "../../whatsapp/admin";
 
-const EVENT_TYPE = "web_poll_arapongas_preview_v1";
-const POLL_ID = "arapongas-preview-v1";
+const EVENT_TYPE = "web_poll_arapongas_preview_v2";
+const POLL_ID = "arapongas-preview-v2";
 
 const STATE_CANDIDATES = ["sergio_onofre", "bazana", "nenhum_indeciso"] as const;
 const FEDERAL_CANDIDATES = [
