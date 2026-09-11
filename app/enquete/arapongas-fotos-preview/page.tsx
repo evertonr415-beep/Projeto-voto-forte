@@ -1,0 +1,471 @@
+"use client";
+
+import React, { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+type RankingItem = {
+  candidate: string;
+  votes: number;
+  percentage: number;
+};
+
+type PollResults = {
+  totalResponses: number;
+  presidentRanking: RankingItem[];
+  governorRanking: RankingItem[];
+  federalRanking: RankingItem[];
+  stateRanking: RankingItem[];
+};
+
+type Option = [string, string];
+
+const presidentCandidateNames: Record<string, string> = {
+  lula_pt: "Lula (PT)",
+  flavio_bolsonaro_pl: "Flávio Bolsonaro (PL)",
+  augusto_cury_avante: "Augusto Cury (Avante)",
+  renan_santos_missao: "Renan Santos (Missão)",
+  ronaldo_caiado_psd: "Ronaldo Caiado (PSD)",
+  romeu_zema_novo: "Romeu Zema (Novo)",
+  outro: "Outro",
+  branco_nulo: "Branco/Nulo",
+  ainda_nao_sei: "Ainda não sei",
+};
+
+const governorCandidateNames: Record<string, string> = {
+  sergio_moro_pl: "Sergio Moro (PL)",
+  requiao_filho_pdt: "Requião Filho (PDT)",
+  sandro_alex_psd: "Sandro Alex (PSD)",
+  luiz_franca_missao: "Luiz França (Missão)",
+  outro: "Outro",
+  branco_nulo: "Branco/Nulo",
+  ainda_nao_sei: "Ainda não sei",
+};
+
+const federalCandidateNames: Record<string, string> = {
+  neto_santos: "Neto Santos",
+  ricardo_barros: "Ricardo Barros",
+  pedro_lupion: "Pedro Lupion",
+  beto_preto: "Beto Preto",
+  luciano_ducci: "Luciano Ducci",
+  bonin: "Bonin",
+  marco_brasil: "Marco Brasil",
+  santin_roveda: "Santin Roveda",
+  outro: "Outro",
+  branco_nulo: "Branco/Nulo",
+  ainda_nao_sei: "Ainda não sei",
+};
+
+const stateCandidateNames: Record<string, string> = {
+  pedro_paulo_bazana: "Pedro Paulo Bazana",
+  sergio_onofre: "Sérgio Onofre",
+  aline_franzon: "Aline Franzon",
+  delegado_jacovos: "Delegado Jacovos",
+  cobra_reporter: "Cobra Repórter",
+  outro: "Outro",
+  branco_nulo: "Branco/Nulo",
+  ainda_nao_sei: "Ainda não sei",
+};
+
+const allCandidateNames: Record<string, string> = {
+  ...presidentCandidateNames,
+  ...governorCandidateNames,
+  ...federalCandidateNames,
+  ...stateCandidateNames,
+};
+
+const candidatePhotos: Record<string, string> = {
+  lula_pt:
+    "https://www.gov.br/planejamento/pt-br/assuntos/noticias/2026/imagens/55156120202_eb131de887_o.jpg",
+  flavio_bolsonaro_pl: "https://legis.senado.leg.br/senadores/fotos-oficiais/5894",
+  augusto_cury_avante: "https://media.gcmais.com.br/site-assets/articles/politica/augusto-cury--rimg.webp",
+  renan_santos_missao:
+    "https://static.poder360.com.br/2025/11/Renan-Santos-se-colocou-como-pre-candidato-para-presidencia-para-eleicoes-de-2026-2048x1152.jpg",
+  ronaldo_caiado_psd: "https://www.portalolavodutra.com.br/uploads/69ca9a1f5783a.webp",
+  romeu_zema_novo: "https://eleicoes.patria.agr.br/assets/romeu-zema-60E3nFzS.png",
+
+  sergio_moro_pl:
+    "https://www.adjoriparana.com.br/uploads/images/2025/07/sergio-moro-lidera-corrida-para-o-governo-do-parana-em-2026-aponta-pesquisa-3887.webp",
+  requiao_filho_pdt: "https://media.extraguarapuava.com.br/2026/03/c116e75b-requiao-filho--scaled.jpg",
+  sandro_alex_psd: "https://gazetadobairro.com.br/uploads/medias/1080x1080/2026/04/69dd973e34d644.68716279.webp",
+  luiz_franca_missao:
+    "https://busaocuritiba.com/wp-content/uploads/2025/09/Luiz-Franca-pre-candidato-ao-governo-do-Parana-pelo-MBL-1600x900.jpg",
+
+  neto_santos: "https://cdn.tnonline.com.br/eleicoes/2026/pr/fotos/FPR160002542284_div.jpg",
+  ricardo_barros: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73788.jpg",
+  pedro_lupion: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204395.jpg",
+  beto_preto: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/220698.jpg",
+  luciano_ducci: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/178931.jpg",
+  bonin: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/229939.jpg",
+  marco_brasil: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/219585.jpg",
+  santin_roveda: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/236518.jpg",
+
+  pedro_paulo_bazana:
+    "https://storage2.assembleia.pr.leg.br/img/dc2F-ZmpbyA27qC0TL7kKnAd088%3D/full-fit-in/800x600/noticias/imagens/6qu4Wqgbgk7dzTzMo4n0yWaj2zYuW9aoOcflw063.jpg",
+  sergio_onofre:
+    "https://cdn.tribunadonorte.com/img/Artigo-Destaque/850000/prefeito-de-Arapongas-Sergio-Onofre-00852193-0-202404052122.jpg?xid=1217861",
+  aline_franzon:
+    "https://operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/3d/3d52390db67b93f272fe787733302a2aa3c14fffa9028456a5cc4388f595cffc.jpg",
+  delegado_jacovos:
+    "https://media.agoraparana.com.br/2024/08/c20d1cc3-5fe9sht8pfcain3esshpjrton9xxjqxvrzteehzh.jpg",
+  cobra_reporter:
+    "https://storage2.assembleia.pr.leg.br/img/a4si2EuU-5kB4x4DvCPGqXQ2LlU%3D/full-fit-in/800x600/noticias/imagens/wlqX5SAmnwgrjnuxgGGvY2a6fUbg4qoMOcpKcSAd.jpg",
+};
+
+const PARTICIPANT_KEY = "vf_poll_arapongas_photos_preview_pid_v1";
+const API_URL = "/api/enquete/arapongas-fotos-preview";
+
+function newParticipantId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getOrCreateParticipantId() {
+  try {
+    const saved = window.localStorage.getItem(PARTICIPANT_KEY);
+    if (saved) return saved;
+    const created = newParticipantId();
+    window.localStorage.setItem(PARTICIPANT_KEY, created);
+    document.cookie = `${PARTICIPANT_KEY}=${created}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`;
+    return created;
+  } catch {
+    return newParticipantId();
+  }
+}
+
+function initialsFor(candidate: string) {
+  if (candidate === "outro") return "+";
+  if (candidate === "branco_nulo") return "—";
+  if (candidate === "ainda_nao_sei") return "?";
+  const label = allCandidateNames[candidate] || candidate;
+  return label
+    .replace(/\([^)]*\)/g, "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
+function CandidateAvatar({ candidate, size = 54 }: { candidate: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const photo = candidatePhotos[candidate];
+
+  if (!photo || failed) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          minWidth: size,
+          borderRadius: "50%",
+          display: "grid",
+          placeItems: "center",
+          background: "linear-gradient(145deg,#eff6ff,#dbeafe)",
+          border: "2px solid #fff",
+          boxShadow: "0 0 0 1px #bfdbfe",
+          color: "#1d4ed8",
+          fontSize: Math.max(13, Math.round(size * 0.3)),
+          fontWeight: 900,
+        }}
+      >
+        {initialsFor(candidate)}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={photo}
+      alt={allCandidateNames[candidate] || "Candidato"}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        borderRadius: "50%",
+        objectFit: "cover",
+        objectPosition: "center",
+        border: "2px solid #fff",
+        boxShadow: "0 0 0 1px #cbd5e1,0 3px 10px rgba(15,23,42,.12)",
+        background: "#e2e8f0",
+      }}
+    />
+  );
+}
+
+function Question({
+  title,
+  name,
+  value,
+  setValue,
+  options,
+  candidateQuestion = false,
+}: {
+  title: string;
+  name: string;
+  value: string;
+  setValue: (value: string) => void;
+  options: Option[];
+  candidateQuestion?: boolean;
+}) {
+  return (
+    <section>
+      <div style={{ color: "#1e293b", fontWeight: 900, fontSize: 15, marginBottom: 12, lineHeight: 1.45 }}>{title}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {options.map(([optionValue, label]) => {
+          const selected = value === optionValue;
+          return (
+            <label
+              key={`${name}-${optionValue}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: candidateQuestion ? "10px 12px" : "13px 14px",
+                borderRadius: 14,
+                border: selected ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                background: selected ? "#eff6ff" : "#fff",
+                boxShadow: selected ? "0 4px 14px rgba(37,99,235,.10)" : "none",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={optionValue}
+                checked={selected}
+                onChange={() => setValue(optionValue)}
+                required
+                style={{ accentColor: "#2563eb", width: 19, height: 19, flexShrink: 0 }}
+              />
+              {candidateQuestion && <CandidateAvatar candidate={optionValue} size={52} />}
+              <span style={{ color: "#334155", fontSize: 14, lineHeight: 1.35, fontWeight: selected ? 800 : 700 }}>{label}</span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function RankingCard({
+  title,
+  icon,
+  ranking,
+  names,
+}: {
+  title: string;
+  icon: string;
+  ranking: RankingItem[];
+  names: Record<string, string>;
+}) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 15, marginTop: 14, textAlign: "left" }}>
+      <div style={{ fontSize: 14, fontWeight: 900, color: "#1e293b", marginBottom: 14 }}>{icon} {title}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {ranking.map((item, index) => (
+          <div key={item.candidate} style={{ display: "flex", gap: 11, alignItems: "center" }}>
+            <CandidateAvatar candidate={item.candidate} size={48} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline", marginBottom: 6 }}>
+                <span style={{ color: "#334155", fontSize: 13, fontWeight: index === 0 && item.votes > 0 ? 900 : 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {index === 0 && item.votes > 0 ? "🏆 " : ""}{names[item.candidate] || item.candidate}
+                </span>
+                <strong style={{ color: "#1d4ed8", fontSize: 14, whiteSpace: "nowrap" }}>{item.percentage.toFixed(1)}%</strong>
+              </div>
+              <div style={{ height: 8, background: "#e2e8f0", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.max(0, Math.min(100, item.percentage))}%`, background: "linear-gradient(90deg,#2563eb,#1d4ed8)", borderRadius: 999 }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EnqueteForm() {
+  const searchParams = useSearchParams();
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [participantId, setParticipantId] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [checking, setChecking] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [alreadyAnswered, setAlreadyAnswered] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [results, setResults] = useState<PollResults | null>(null);
+
+  const setAnswer = (key: string, value: string) => setAnswers((current) => ({ ...current, [key]: value }));
+
+  const normalizeResults = (data: Partial<PollResults>): PollResults => ({
+    totalResponses: Number(data.totalResponses || 0),
+    presidentRanking: Array.isArray(data.presidentRanking) ? data.presidentRanking : [],
+    governorRanking: Array.isArray(data.governorRanking) ? data.governorRanking : [],
+    federalRanking: Array.isArray(data.federalRanking) ? data.federalRanking : [],
+    stateRanking: Array.isArray(data.stateRanking) ? data.stateRanking : [],
+  });
+
+  const loadResults = async () => {
+    try {
+      const response = await fetch(API_URL, { cache: "no-store" });
+      if (!response.ok) return;
+      setResults(normalizeResults(await response.json()));
+    } catch {
+      // resultado pode ser carregado novamente depois
+    }
+  };
+
+  useEffect(() => {
+    const p = searchParams?.get("tel") || searchParams?.get("phone") || searchParams?.get("p") || "";
+    const n = searchParams?.get("nome") || searchParams?.get("name") || searchParams?.get("n") || "";
+    setPhone(p);
+    setName(n);
+    const id = getOrCreateParticipantId();
+    setParticipantId(id);
+
+    const check = async () => {
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "status", participantId: id, phone: p }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.alreadyAnswered) {
+            setAlreadyAnswered(true);
+            setSubmitted(true);
+            await loadResults();
+          }
+        }
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    void check();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const keys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"];
+    if (!keys.every((key) => Boolean(answers[key]))) {
+      setErrorMsg("Por favor, responda a todas as 9 perguntas.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submit", participantId, phone, ...answers }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 409 || data.alreadyAnswered) {
+        setAlreadyAnswered(true);
+        setSubmitted(true);
+        setResults(normalizeResults(data));
+        return;
+      }
+
+      if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível registrar sua resposta.");
+      setSubmitted(true);
+      setAlreadyAnswered(false);
+      setResults(normalizeResults(data));
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Falha ao registrar sua resposta.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (checking) {
+    return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f8fafc", color: "#475569", fontFamily: "Inter, sans-serif" }}>Verificando sua participação...</div>;
+  }
+
+  if (submitted) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
+        <header style={{ background: "#0d2342", textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,.15)" }}>
+          <img src="/enquete-capa-voto-forte.png" alt="Enquete Voto Forte Paraná" style={{ width: "100%", maxWidth: 480, display: "block", margin: "0 auto" }} />
+        </header>
+        <main style={{ maxWidth: 500, margin: "26px auto 40px", padding: "0 14px" }}>
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 20, padding: "24px 18px", textAlign: "center", boxShadow: "0 6px 24px rgba(15,23,42,.08)" }}>
+            <div style={{ width: 64, height: 64, margin: "0 auto 14px", borderRadius: "50%", display: "grid", placeItems: "center", background: alreadyAnswered ? "#eff6ff" : "#dcfce7", color: alreadyAnswered ? "#2563eb" : "#16a34a", fontSize: 30 }}>{alreadyAnswered ? "🔒" : "✓"}</div>
+            <h2 style={{ margin: "0 0 9px", color: "#1e293b", fontSize: 22, fontWeight: 900 }}>{alreadyAnswered ? "Você já participou desta enquete" : "🙏 Obrigado pela participação!"}</h2>
+            <p style={{ margin: 0, color: "#64748b", fontSize: 14, lineHeight: 1.6 }}>{alreadyAnswered ? "Sua participação anterior foi reconhecida. Para manter a enquete justa, é permitida apenas uma resposta por participante." : `Sua resposta foi registrada com sucesso${name ? `, ${name}` : ""}. Obrigado por contribuir com a enquete de Arapongas.`}</p>
+
+            <div style={{ marginTop: 20, padding: 14, borderRadius: 13, background: "#eff6ff", border: "1px solid #bfdbfe" }}>
+              <div style={{ color: "#1e40af", fontWeight: 900, fontSize: 16 }}>Resultado parcial</div>
+              <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>{results?.totalResponses ?? 0} participação{(results?.totalResponses ?? 0) === 1 ? "" : "ões"} válida{(results?.totalResponses ?? 0) === 1 ? "" : "s"} nesta preview</div>
+            </div>
+
+            {results && (
+              <>
+                <RankingCard title="Presidente da República" icon="🇧🇷" ranking={results.presidentRanking} names={presidentCandidateNames} />
+                <RankingCard title="Governador do Paraná" icon="🗳️" ranking={results.governorRanking} names={governorCandidateNames} />
+                <RankingCard title="Deputado Federal" icon="🏛️" ranking={results.federalRanking} names={federalCandidateNames} />
+                <RankingCard title="Deputado Estadual" icon="📊" ranking={results.stateRanking} names={stateCandidateNames} />
+              </>
+            )}
+
+            <p style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, margin: "18px 4px 0" }}>Resultado parcial de uma enquete online. As porcentagens são calculadas somente sobre as participações válidas desta versão de teste.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
+      <header style={{ background: "#0d2342", textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,.15)", position: "sticky", top: 0, zIndex: 10 }}>
+        <img src="/enquete-capa-voto-forte.png" alt="Enquete Voto Forte Paraná" style={{ width: "100%", maxWidth: 480, display: "block", margin: "0 auto" }} />
+      </header>
+
+      <main style={{ maxWidth: 500, margin: "20px auto 42px", padding: "0 14px" }}>
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, padding: 18, boxShadow: "0 4px 18px rgba(15,23,42,.05)" }}>
+          <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.5, margin: "0 0 12px" }}>Sua opinião é muito importante! Responda à enquete eleitoral de Arapongas.</p>
+          <div style={{ background: "#eff6ff", color: "#1e40af", border: "1px solid #bfdbfe", padding: "11px 12px", borderRadius: 11, fontSize: 12, fontWeight: 800, marginBottom: 20 }}>🔒 1 resposta por participante • fotos dos candidatos • resultado percentual após o envio</div>
+
+          {errorMsg && <div style={{ background: "#fee2e2", color: "#dc2626", padding: "11px 13px", borderRadius: 10, fontSize: 13, marginBottom: 16 }}>{errorMsg}</div>}
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 27 }}>
+            <Question title="1. COMO VOCÊ AVALIA A ATUAL GESTÃO DO GOVERNO ESTADUAL PARA SUA CIDADE?" name="q1" value={answers.q1 || ""} setValue={(v) => setAnswer("q1", v)} options={[["boa", "1 — Boa"], ["media", "2 — Média"], ["ruim", "3 — Ruim"]]} />
+            <Question title="2. COMO VOCÊ AVALIA A ATUAL ADMINISTRAÇÃO DA PREFEITURA DO SEU MUNICÍPIO?" name="q2" value={answers.q2 || ""} setValue={(v) => setAnswer("q2", v)} options={[["boa", "1 — Boa"], ["media", "2 — Média"], ["ruim", "3 — Ruim"]]} />
+            <Question title="3. VOCÊ CONHECE ALGUM CANDIDATO A DEPUTADO ESTADUAL OU FEDERAL QUE ESTÁ DISPUTANDO AS ELEIÇÕES DE 2026?" name="q3" value={answers.q3 || ""} setValue={(v) => setAnswer("q3", v)} options={[["sim", "1 — Sim"], ["nao", "2 — Não"], ["alguns_nao_lembro", "3 — Conheço alguns, mas não lembro os nomes"]]} />
+            <Question title="4. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA PRESIDENTE DA REPÚBLICA?" name="q4" value={answers.q4 || ""} setValue={(v) => setAnswer("q4", v)} options={[["sim", "1 — Sim"], ["nao", "2 — Não"], ["indeciso", "3 — Ainda estou indeciso(a)"]]} />
+            <Question title="5. HOJE, VOCÊ JÁ TEM UM CANDIDATO PARA GOVERNADOR DO PARANÁ?" name="q5" value={answers.q5 || ""} setValue={(v) => setAnswer("q5", v)} options={[["sim", "1 — Sim"], ["nao", "2 — Não"], ["indeciso", "3 — Ainda estou indeciso(a)"]]} />
+
+            <Question candidateQuestion title="6. EM QUEM VOCÊ VOTARIA PARA PRESIDENTE DA REPÚBLICA?" name="q6" value={answers.q6 || ""} setValue={(v) => setAnswer("q6", v)} options={[["lula_pt", "1 — Lula (PT)"], ["flavio_bolsonaro_pl", "2 — Flávio Bolsonaro (PL)"], ["augusto_cury_avante", "3 — Augusto Cury (Avante)"], ["renan_santos_missao", "4 — Renan Santos (Missão)"], ["ronaldo_caiado_psd", "5 — Ronaldo Caiado (PSD)"], ["romeu_zema_novo", "6 — Romeu Zema (Novo)"], ["outro", "7 — Outro"], ["branco_nulo", "8 — Branco/Nulo"], ["ainda_nao_sei", "9 — Ainda não sei"]]} />
+
+            <Question candidateQuestion title="7. EM QUEM VOCÊ VOTARIA PARA GOVERNADOR DO PARANÁ?" name="q7" value={answers.q7 || ""} setValue={(v) => setAnswer("q7", v)} options={[["sergio_moro_pl", "1 — Sergio Moro (PL)"], ["requiao_filho_pdt", "2 — Requião Filho (PDT)"], ["sandro_alex_psd", "3 — Sandro Alex (PSD)"], ["luiz_franca_missao", "4 — Luiz França (Missão)"], ["outro", "5 — Outro"], ["branco_nulo", "6 — Branco/Nulo"], ["ainda_nao_sei", "7 — Ainda não sei"]]} />
+
+            <Question candidateQuestion title="8. EM QUEM VOCÊ VOTARIA PARA DEPUTADO FEDERAL?" name="q8" value={answers.q8 || ""} setValue={(v) => setAnswer("q8", v)} options={[["neto_santos", "1 — Neto Santos"], ["ricardo_barros", "2 — Ricardo Barros"], ["pedro_lupion", "3 — Pedro Lupion"], ["beto_preto", "4 — Beto Preto"], ["luciano_ducci", "5 — Luciano Ducci"], ["bonin", "6 — Bonin"], ["marco_brasil", "7 — Marco Brasil"], ["santin_roveda", "8 — Santin Roveda"], ["outro", "9 — Outro"], ["branco_nulo", "10 — Branco/Nulo"], ["ainda_nao_sei", "11 — Ainda não sei"]]} />
+
+            <Question candidateQuestion title="9. EM QUEM VOCÊ VOTARIA PARA DEPUTADO ESTADUAL?" name="q9" value={answers.q9 || ""} setValue={(v) => setAnswer("q9", v)} options={[["pedro_paulo_bazana", "1 — Pedro Paulo Bazana"], ["sergio_onofre", "2 — Sérgio Onofre"], ["aline_franzon", "3 — Aline Franzon"], ["delegado_jacovos", "4 — Delegado Jacovos"], ["cobra_reporter", "5 — Cobra Repórter"], ["outro", "6 — Outro"], ["branco_nulo", "7 — Branco/Nulo"], ["ainda_nao_sei", "8 — Ainda não sei"]]} />
+
+            <button type="submit" disabled={loading} style={{ width: "100%", border: 0, borderRadius: 13, padding: 16, fontSize: 16, fontWeight: 900, color: "#fff", background: loading ? "#93c5fd" : "#2563eb", cursor: loading ? "wait" : "pointer", boxShadow: "0 4px 14px rgba(37,99,235,.3)" }}>{loading ? "Validando e registrando..." : "Enviar Respostas 🚀"}</button>
+            <p style={{ textAlign: "center", fontSize: 12, color: "#64748b", margin: "-10px 0 0", lineHeight: 1.5 }}>A identificação técnica usada para impedir resposta duplicada não aparece nos resultados. Os resultados são exibidos somente de forma agregada.</p>
+          </form>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function EnqueteArapongasFotosPreviewPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: "center" }}>Carregando enquete...</div>}>
+      <EnqueteForm />
+    </Suspense>
+  );
+}
