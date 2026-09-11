@@ -615,11 +615,31 @@ button.whaticket-broadcast-sidebar-btn:hover {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.wt-kpi-card:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.wt-kpi-card:active {
+  transform: translateY(0);
+}
+
+.wt-kpi-card.is-active-kpi {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+  box-shadow: 0 0 16px rgba(45, 221, 127, 0.25);
+  transform: translateY(-1px);
 }
 
 .wt-kpi-card strong {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: #f8fafc;
   line-height: 1.2;
@@ -639,30 +659,50 @@ button.whaticket-broadcast-sidebar-btn:hover {
   background: rgba(56, 189, 248, 0.06);
 }
 .wt-kpi-card.is-primary strong { color: #38bdf8; }
+.wt-kpi-card.is-primary.is-active-kpi {
+  outline-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.16);
+}
 
 .wt-kpi-card.is-success {
   border-color: rgba(45, 221, 127, 0.3);
   background: rgba(45, 221, 127, 0.06);
 }
 .wt-kpi-card.is-success strong { color: #2ddd7f; }
+.wt-kpi-card.is-success.is-active-kpi {
+  outline-color: #2ddd7f;
+  background: rgba(45, 221, 127, 0.16);
+}
 
 .wt-kpi-card.is-error {
   border-color: rgba(248, 113, 113, 0.3);
   background: rgba(248, 113, 113, 0.08);
 }
 .wt-kpi-card.is-error strong { color: #f87171; }
+.wt-kpi-card.is-error.is-active-kpi {
+  outline-color: #f87171;
+  background: rgba(248, 113, 113, 0.18);
+}
 
 .wt-kpi-card.is-reply {
   border-color: rgba(168, 85, 247, 0.35);
   background: rgba(168, 85, 247, 0.08);
 }
 .wt-kpi-card.is-reply strong { color: #c084fc; }
+.wt-kpi-card.is-reply.is-active-kpi {
+  outline-color: #c084fc;
+  background: rgba(168, 85, 247, 0.2);
+}
 
 .wt-kpi-card.is-rate {
   border-color: rgba(251, 191, 36, 0.4);
   background: rgba(251, 191, 36, 0.08);
 }
 .wt-kpi-card.is-rate strong { color: #fbbf24; }
+.wt-kpi-card.is-rate.is-active-kpi {
+  outline-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.2);
+}
 
 /* Filter Pills */
 .wt-filter-bar {
