@@ -12,6 +12,7 @@ const PRIMARY_VIEWS = [
   ["Contatos", "👥"],
   ["Mapa Eleitoral", "⌖"],
   ["Painel Eleitoral", "▦"],
+  ["Gráficos de Votação", "📊"],
   ["WhatsApp", "◉"],
 ] as const;
 
