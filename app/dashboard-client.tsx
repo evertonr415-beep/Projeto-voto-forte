@@ -2830,25 +2830,46 @@ function Whatsapp({
             </div>
           </div>
 
-          {/* 5 Cards de KPIs em Tempo Real */}
+          {/* 5 Cards de KPIs em Tempo Real (CLICÁVEIS) */}
           <div className="wt-kpi-grid-5" style={{ margin: "0 0 16px 0" }}>
-            <div className="wt-kpi-card is-primary">
+            <div
+              className={`wt-kpi-card is-primary ${liveFilter === "all" ? "is-active-kpi" : ""}`}
+              onClick={() => setLiveFilter("all")}
+              title="Clique para ver todos os disparos"
+            >
               <strong style={{ fontSize: "20px" }}>{liveKpis.totalOutbound}</strong>
               <span>Total Disparos</span>
             </div>
-            <div className="wt-kpi-card is-success">
+            <div
+              className={`wt-kpi-card is-success ${liveFilter === "sent" ? "is-active-kpi" : ""}`}
+              onClick={() => setLiveFilter("sent")}
+              title="Clique para filtrar apenas mensagens entregues com sucesso"
+            >
               <strong style={{ fontSize: "20px" }}>{liveKpis.deliveredCount}</strong>
               <span>Entregues ({liveKpis.deliveryRate}%)</span>
             </div>
-            <div className="wt-kpi-card is-error">
+            <div
+              className={`wt-kpi-card is-error ${liveFilter === "errors" ? "is-active-kpi" : ""}`}
+              onClick={() => setLiveFilter("errors")}
+              title="Clique para ver apenas os números que deram erro/falha"
+            >
               <strong style={{ fontSize: "20px" }}>{liveKpis.failedCount}</strong>
               <span>Falhas / Erros</span>
             </div>
-            <div className="wt-kpi-card is-reply">
+            <div
+              className={`wt-kpi-card is-reply ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+              onClick={() => setLiveFilter("replies")}
+              title="Clique para ver quem respondeu e o que responderam"
+            >
               <strong style={{ fontSize: "20px" }}>{liveKpis.repliedCount}</strong>
               <span>Respostas</span>
             </div>
-            <div className="wt-kpi-card is-rate" style={{ background: "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}>
+            <div
+              className={`wt-kpi-card is-rate ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+              onClick={() => setLiveFilter("replies")}
+              title="Clique para analisar as respostas recebidas"
+              style={{ background: liveFilter === "replies" ? "rgba(251, 191, 36, 0.25)" : "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}
+            >
               <strong style={{ fontSize: "20px", color: "#fbbf24" }}>{liveKpis.responseRate}%</strong>
               <span style={{ color: "#fef08a" }}>Taxa de Resposta</span>
             </div>
@@ -2875,6 +2896,13 @@ function Whatsapp({
               </button>
               <button
                 type="button"
+                className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
+                onClick={() => setLiveFilter("sent")}
+              >
+                ✓ Entregues ({liveKpis.deliveredCount})
+              </button>
+              <button
+                type="button"
                 className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
                 onClick={() => setLiveFilter("errors")}
               >
@@ -2898,10 +2926,10 @@ function Whatsapp({
           </div>
 
           {/* Feed de Mensagens em Tempo Real */}
-          <div className="wt-live-feed-list" style={{ maxHeight: "380px" }}>
+          <div className="wt-live-feed-list" style={{ maxHeight: "420px" }}>
             {liveItems.length === 0 ? (
               <div style={{ textAlign: "center", padding: "30px 0", color: "#94a3b8", fontSize: "14px" }}>
-                {liveLoading ? "Carregando monitor em tempo real..." : "Nenhuma mensagem encontrada para o filtro selecionado."}
+                {liveLoading ? "Carregando mensagens..." : "Nenhuma mensagem encontrada para o filtro selecionado."}
               </div>
             ) : (
               liveItems.map((item) => {
@@ -2915,8 +2943,8 @@ function Whatsapp({
                   >
                     <div className="wt-live-item-header">
                       <div className="wt-live-contact-info">
-                        <strong>{item.contactName}</strong>
-                        <span>{formatPhone(item.phone)}</span>
+                        <strong style={{ fontSize: "14px" }}>{item.contactName}</strong>
+                        <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 600 }}>{formatPhone(item.phone)}</span>
                       </div>
 
                       <div>
@@ -2948,17 +2976,28 @@ function Whatsapp({
                       </div>
                     )}
 
-                    {/* Exibe a resposta se respondeu */}
+                    {/* Exibe a resposta com destaque e clareza se respondeu */}
                     {isReplied && item.replyText && (
-                      <div className="wt-reply-detail">
-                        <strong>Resposta do Eleitor ({item.repliedAt ? new Date(item.repliedAt).toLocaleTimeString("pt-BR") : "Agora"}):</strong>
-                        <span>"{item.replyText}"</span>
+                      <div className="wt-reply-detail" style={{ borderLeft: "3px solid #c084fc", background: "rgba(168, 85, 247, 0.15)", padding: "8px 12px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                          <strong style={{ color: "#d8b4fe", fontSize: "11px" }}>
+                            💬 Resposta de {item.contactName}:
+                          </strong>
+                          {item.repliedAt && (
+                            <span style={{ fontSize: "10px", color: "#c084fc" }}>
+                              {new Date(item.repliedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: "13px", color: "#f8fafc", fontStyle: "italic", whiteSpace: "pre-wrap", lineHeight: 1.4 }}>
+                          "{item.replyText}"
+                        </div>
                       </div>
                     )}
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
                       <span>{item.sentAt ? `Disparado em: ${new Date(item.sentAt).toLocaleString("pt-BR")}` : ""}</span>
-                      {item.repliedAt && <span>Respondido em: {new Date(item.repliedAt).toLocaleString("pt-BR")}</span>}
+                      {item.repliedAt && <span style={{ color: "#a855f7", fontWeight: 600 }}>Respondido em: {new Date(item.repliedAt).toLocaleString("pt-BR")}</span>}
                     </div>
                   </div>
                 );
