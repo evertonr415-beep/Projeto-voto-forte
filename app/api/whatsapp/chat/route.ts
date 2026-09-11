@@ -3,6 +3,7 @@ import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient, recordWhatsappEvent } from "../admin";
 import { getMetaConfig, normalizeWhatsappPhone } from "../meta";
 import { sendMetaText } from "../meta-client";
+import { formatDisplayPhone, formatReadableSurveyText } from "../survey-formatter";
 
 export type ChatConversation = {
   id: string;
@@ -133,32 +134,10 @@ function formatReadableMessageText(
       .replace(/\{\{3\}\}/g, districtName);
   }
 
-  // 2. Trata JSON de enquete
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      const parts: string[] = [];
-      if (parsed.q1 || parsed.deputado_estadual || parsed.stateCandidate) {
-        parts.push(`Estadual: ${parsed.q1 || parsed.deputado_estadual || parsed.stateCandidate}`);
-      }
-      if (parsed.q2 || parsed.deputado_federal || parsed.federalCandidate) {
-        parts.push(`Federal: ${parsed.q2 || parsed.deputado_federal || parsed.federalCandidate}`);
-      }
-      if (parsed.q3 || parsed.governador || parsed.governorCandidate) {
-        parts.push(`Gov: ${parsed.q3 || parsed.governador || parsed.governorCandidate}`);
-      }
-      if (parsed.bairro || parsed.district) {
-        parts.push(`Bairro: ${parsed.bairro || parsed.district}`);
-      }
-      if (parts.length > 0) {
-        return `📊 Resposta da Enquete (${parts.join(" | ")})`;
-      }
-      if (parsed.resposta || parsed.option || parsed.vote) {
-        return `📊 Voto: ${parsed.resposta || parsed.option || parsed.vote}`;
-      }
-    } catch {
-      // Ignora erro de parse
-    }
+  // 2. Trata JSON de enquete e respostas da pesquisa
+  const surveyFormatted = formatReadableSurveyText(trimmed);
+  if (surveyFormatted && surveyFormatted !== trimmed) {
+    return surveyFormatted;
   }
 
   // 3. Substitui placeholders genéricos

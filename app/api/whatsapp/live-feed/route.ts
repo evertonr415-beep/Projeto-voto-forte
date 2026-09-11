@@ -2,6 +2,7 @@ import { getAccount } from "../../../server-identity";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient, isWhatsappEventStorageConfigured } from "../admin";
 import { normalizeWhatsappPhone } from "../meta";
+import { formatDisplayPhone, formatReadableSurveyText } from "../survey-formatter";
 
 export type LiveMessageItem = {
   id: string;
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 
   // 1. Carrega eventos de vf_whatsapp_events
   try {
-    const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
+    const supabase = account.supabase || getWhatsappAdminClient() || getAutonomousSupabase();
     if (supabase) {
       const { data: events, error } = await supabase
         .from("vf_whatsapp_events")
@@ -58,21 +59,22 @@ export async function GET(request: Request) {
 
           const occurredAt = ev.occurred_at || ev.created_at || new Date().toISOString();
           const isError = ev.status === "failed" || ev.status === "error" || Boolean(ev.error_code) || Boolean(ev.error_message);
-          const isInbound = ev.direction === "inbound";
+          const isInbound = ev.direction === "inbound" || ev.event_type?.includes("poll");
           const isOutbound = ev.direction === "outbound";
+          const formattedReply = formatReadableSurveyText(ev.message_text);
 
           let existing = phoneMap.get(phone);
           if (!existing) {
             existing = {
               id: String(ev.id || `${phone}-${Date.now()}`),
-              phone,
-              contactName: ev.contact_name || "Eleitor",
+              phone: formatDisplayPhone(phone),
+              contactName: ev.contact_name || (isInbound ? "Participante da Enquete" : "Eleitor"),
               status: isError ? "error" : isInbound ? "replied" : "sent",
               errorMessage: isError ? (ev.error_message || `Erro código ${ev.error_code || "desconhecido"}`) : undefined,
-              lastMessageText: ev.message_text || undefined,
+              lastMessageText: formattedReply || ev.message_text || undefined,
               sentAt: isOutbound ? occurredAt : undefined,
               repliedAt: isInbound ? occurredAt : undefined,
-              replyText: isInbound ? ev.message_text || undefined : undefined,
+              replyText: isInbound ? formattedReply || ev.message_text || undefined : undefined,
               direction: isInbound ? "inbound" : "outbound",
             };
             phoneMap.set(phone, existing);
@@ -84,7 +86,7 @@ export async function GET(request: Request) {
 
             if (isInbound) {
               existing.status = "replied";
-              existing.replyText = ev.message_text || existing.replyText;
+              existing.replyText = formattedReply || ev.message_text || existing.replyText;
               existing.repliedAt = occurredAt;
             } else if (isError && existing.status !== "replied") {
               existing.status = "error";
@@ -97,7 +99,7 @@ export async function GET(request: Request) {
             }
 
             if (ev.message_text && !existing.lastMessageText) {
-              existing.lastMessageText = ev.message_text;
+              existing.lastMessageText = formattedReply || ev.message_text;
             }
           }
         }
