@@ -1,0 +1,38 @@
+.vf-theme-toggle.vf-theme-toggle-floating {
+  position: fixed !important;
+  top: max(18px, env(safe-area-inset-top)) !important;
+  right: 18px !important;
+  z-index: 1200 !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  background: #0f1e3a !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24) !important;
+  backdrop-filter: blur(12px);
+}
+
+html[data-vf-theme="light"] .vf-theme-toggle.vf-theme-toggle-floating {
+  background: #ffffff !important;
+  color: #153b65 !important;
+  border-color: #cbd9e7 !important;
+  box-shadow: 0 8px 24px rgba(15, 42, 70, 0.12) !important;
+}
+
+.vf-theme-toggle.vf-theme-toggle-floating:hover {
+  transform: translateY(-1px) !important;
+}
+
+@media (max-width: 760px) {
+  .vf-theme-toggle.vf-theme-toggle-floating {
+    top: max(14px, env(safe-area-inset-top)) !important;
+    right: 14px !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 11px !important;
+    font-size: 18px !important;
+  }
+}
