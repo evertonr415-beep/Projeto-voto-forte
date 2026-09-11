@@ -5,6 +5,7 @@ import { apiFetch, supabase } from "./supabase-client";
   
 
 import ElectoralPanelClient from "./electoral-panel/electoral-panel-client";
+import VotingChartsClient from "./apuracao-graficos/voting-charts-client";
 import { Icons } from "./ui-icons";
 
 type View =
@@ -13,6 +14,7 @@ type View =
   | "Agenda Inteligente"
   | "Mapa Eleitoral"
   | "Painel Eleitoral"
+  | "Gráficos de Votação"
   | "WhatsApp"
   | "Administração";
 type Modal =
@@ -28,6 +30,7 @@ const menu: { label: View; iconRender: (props: { size?: number }) => React.React
   { label: "Contatos", iconRender: (p) => <Icons.Contacts {...p} /> },
   { label: "Mapa Eleitoral", iconRender: (p) => <Icons.ElectoralMap {...p} /> },
   { label: "Painel Eleitoral", iconRender: (p) => <Icons.ElectoralPanel {...p} /> },
+  { label: "Gráficos de Votação", iconRender: (p) => <Icons.BarChart {...p} /> },
   { label: "WhatsApp", iconRender: (p) => <Icons.WhatsApp {...p} /> },
 ];
 
@@ -643,6 +646,8 @@ export default function DashboardClient({
     )
   ) : view === "Painel Eleitoral" ? (
     <ElectoralPanelClient onBackToDashboard={() => setView("Visão Geral")} />
+  ) : view === "Gráficos de Votação" ? (
+    <VotingChartsClient onBackToDashboard={() => setView("Visão Geral")} />
   ) : view === "WhatsApp" ? (
     loadingDrafts ? (
       <div className="loading-state">Carregando rascunhos…</div>
