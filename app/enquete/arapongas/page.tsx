@@ -30,6 +30,18 @@ const federalCandidateNames: Record<string, string> = {
   outro_nome: "Outro nome / Indeciso",
 };
 
+const candidatePhotos: Record<string, string> = {
+  sergio_onofre:
+    "https://cdn.tribunadonorte.com/img/Artigo-Destaque/850000/prefeito-de-Arapongas-Sergio-Onofre-00852193-0-202404052122.jpg?xid=1217861",
+  bazana:
+    "https://storage2.assembleia.pr.leg.br/img/dc2F-ZmpbyA27qC0TL7kKnAd088%3D/full-fit-in/800x600/noticias/imagens/6qu4Wqgbgk7dzTzMo4n0yWaj2zYuW9aoOcflw063.jpg",
+  pedro_lupion: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204395.jpg",
+  luciano_ducci: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/178931.jpg",
+  ricardo_barros: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73788.jpg",
+  bonin: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/229939.jpg",
+  beto_preto: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/220698.jpg",
+};
+
 const PARTICIPANT_KEY = "vf_poll_arapongas_pid_v1";
 
 function newParticipantId() {
@@ -60,6 +72,56 @@ function getOrCreateParticipantId() {
   }
 }
 
+function CandidateAvatar({ candidate, size = 52 }: { candidate: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const photo = candidatePhotos[candidate];
+
+  if (!photo || failed) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          minWidth: `${size}px`,
+          borderRadius: "50%",
+          background: "linear-gradient(145deg, #e2e8f0, #cbd5e1)",
+          border: "2px solid #fff",
+          boxShadow: "0 0 0 1px #cbd5e1",
+          display: "grid",
+          placeItems: "center",
+          color: "#64748b",
+          fontSize: `${Math.max(16, Math.round(size * 0.38))}px`,
+          fontWeight: 800,
+        }}
+      >
+        ?
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={photo}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        minWidth: `${size}px`,
+        borderRadius: "50%",
+        objectFit: "cover",
+        objectPosition: "center",
+        border: "2px solid #fff",
+        boxShadow: "0 0 0 1px #cbd5e1, 0 3px 10px rgba(15,23,42,0.12)",
+        background: "#e2e8f0",
+      }}
+    />
+  );
+}
+
 function RankingCard({
   title,
   icon,
@@ -76,25 +138,28 @@ function RankingCard({
       <div style={{ fontSize: "14px", fontWeight: 800, color: "#1e293b", marginBottom: "14px" }}>
         {icon} {title}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {ranking.map((item, index) => (
-          <div key={item.candidate}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px", marginBottom: "5px" }}>
-              <span style={{ color: "#334155", fontSize: "13px", fontWeight: index === 0 && item.votes > 0 ? 800 : 600 }}>
-                {index === 0 && item.votes > 0 ? "🏆 " : ""}{names[item.candidate] || item.candidate}
-              </span>
-              <strong style={{ color: "#1d4ed8", fontSize: "14px", whiteSpace: "nowrap" }}>{item.percentage.toFixed(1)}%</strong>
-            </div>
-            <div style={{ height: "8px", background: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
-              <div
-                style={{
-                  height: "100%",
-                  width: `${Math.max(0, Math.min(100, item.percentage))}%`,
-                  background: "linear-gradient(90deg, #2563eb, #1d4ed8)",
-                  borderRadius: "999px",
-                  transition: "width .35s ease",
-                }}
-              />
+          <div key={item.candidate} style={{ display: "flex", gap: "11px", alignItems: "center" }}>
+            <CandidateAvatar candidate={item.candidate} size={44} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px", marginBottom: "6px" }}>
+                <span style={{ color: "#334155", fontSize: "13px", fontWeight: index === 0 && item.votes > 0 ? 800 : 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {index === 0 && item.votes > 0 ? "🏆 " : ""}{names[item.candidate] || item.candidate}
+                </span>
+                <strong style={{ color: "#1d4ed8", fontSize: "14px", whiteSpace: "nowrap" }}>{item.percentage.toFixed(1)}%</strong>
+              </div>
+              <div style={{ height: "8px", background: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.max(0, Math.min(100, item.percentage))}%`,
+                    background: "linear-gradient(90deg, #2563eb, #1d4ed8)",
+                    borderRadius: "999px",
+                    transition: "width .35s ease",
+                  }}
+                />
+              </div>
             </div>
           </div>
         ))}
@@ -317,6 +382,7 @@ function EnqueteArapongasForm() {
               name="q2"
               value={q2}
               setValue={setQ2}
+              showPhotos
               options={[
                 ["sergio_onofre", "Sergio Onofre"],
                 ["bazana", "Bazana"],
@@ -328,6 +394,7 @@ function EnqueteArapongasForm() {
               name="q3"
               value={q3}
               setValue={setQ3}
+              showPhotos
               options={[
                 ["pedro_lupion", "Pedro Lupion"],
                 ["luciano_ducci", "Luciano Ducci"],
@@ -362,12 +429,14 @@ function Question({
   value,
   setValue,
   options,
+  showPhotos = false,
 }: {
   title: string;
   name: string;
   value: string;
   setValue: (value: string) => void;
   options: [string, string][];
+  showPhotos?: boolean;
 }) {
   return (
     <div>
@@ -378,10 +447,11 @@ function Question({
         {options.map(([optionValue, label]) => (
           <label
             key={optionValue}
-            style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", borderRadius: "10px", border: value === optionValue ? "2px solid #2563eb" : "1px solid #e2e8f0", background: value === optionValue ? "#eff6ff" : "#fff", cursor: "pointer", transition: "all .15s ease" }}
+            style={{ display: "flex", alignItems: "center", gap: "12px", padding: showPhotos ? "10px 12px" : "12px 14px", borderRadius: "12px", border: value === optionValue ? "2px solid #2563eb" : "1px solid #e2e8f0", background: value === optionValue ? "#eff6ff" : "#fff", cursor: "pointer", transition: "all .15s ease" }}
           >
-            <input type="radio" name={name} value={optionValue} checked={value === optionValue} onChange={() => setValue(optionValue)} style={{ accentColor: "#2563eb", width: "18px", height: "18px" }} required />
-            <span style={{ color: "#334155", fontSize: "14px", fontWeight: 600 }}>{label}</span>
+            <input type="radio" name={name} value={optionValue} checked={value === optionValue} onChange={() => setValue(optionValue)} style={{ accentColor: "#2563eb", width: "18px", height: "18px", flexShrink: 0 }} required />
+            {showPhotos && <CandidateAvatar candidate={optionValue} size={54} />}
+            <span style={{ color: "#334155", fontSize: showPhotos ? "14px" : "14px", fontWeight: 700, lineHeight: 1.35 }}>{label}</span>
           </label>
         ))}
       </div>
