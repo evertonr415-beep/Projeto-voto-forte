@@ -1,0 +1,262 @@
+import { createHash } from "crypto";
+import { getWhatsappAdminClient } from "../../whatsapp/admin";
+
+const EVENT_TYPE = "web_poll_arapongas_preview_v3";
+const POLL_ID = "arapongas-preview-v3";
+
+const MANAGEMENT_OPTIONS = ["boa", "media", "ruim"] as const;
+const KNOWLEDGE_OPTIONS = ["sim", "nao", "alguns_nao_lembro"] as const;
+const DECISION_OPTIONS = ["sim", "nao", "indeciso"] as const;
+const PRESIDENT_CANDIDATES = [
+  "lula_pt",
+  "flavio_bolsonaro_pl",
+  "augusto_cury_avante",
+  "renan_santos_missao",
+  "ronaldo_caiado_psd",
+  "romeu_zema_novo",
+  "outro",
+  "branco_nulo",
+  "ainda_nao_sei",
+] as const;
+const GOVERNOR_CANDIDATES = [
+  "sergio_moro_pl",
+  "requiao_filho_pdt",
+  "sandro_alex_psd",
+  "luiz_franca_missao",
+  "outro",
+  "branco_nulo",
+  "ainda_nao_sei",
+] as const;
+const FEDERAL_CANDIDATES = [
+  "neto_santos",
+  "ricardo_barros",
+  "pedro_lupion",
+  "beto_preto",
+  "luciano_ducci",
+  "bonin",
+  "marco_brasil",
+  "santin_roveda",
+  "outro",
+  "branco_nulo",
+  "ainda_nao_sei",
+] as const;
+const STATE_CANDIDATES = [
+  "pedro_paulo_bazana",
+  "sergio_onofre",
+  "aline_franzon",
+  "delegado_jacovos",
+  "cobra_reporter",
+  "outro",
+  "branco_nulo",
+  "ainda_nao_sei",
+] as const;
+
+type VotePayload = {
+  poll?: string;
+  q1?: string;
+  q2?: string;
+  q3?: string;
+  q4?: string;
+  q5?: string;
+  q6?: string;
+  q7?: string;
+  q8?: string;
+  q9?: string;
+};
+
+function getSurveyDb() {
+  const supabase = getWhatsappAdminClient();
+  if (!supabase) {
+    throw new Error("Armazenamento da enquete não configurado no ambiente de preview.");
+  }
+  return supabase;
+}
+
+function normalizePhone(value: unknown) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15 ? digits : "";
+}
+
+function participantKey(participantId: unknown, phone: unknown) {
+  const normalizedPhone = normalizePhone(phone);
+  const deviceId = String(participantId || "").trim().slice(0, 160);
+  const source = normalizedPhone ? `phone:${normalizedPhone}` : `device:${deviceId}`;
+
+  if (!normalizedPhone && deviceId.length < 12) return "";
+
+  return createHash("sha256")
+    .update(`${POLL_ID}:${source}`)
+    .digest("hex");
+}
+
+function isAllowed<T extends readonly string[]>(value: string, allowed: T): value is T[number] {
+  return (allowed as readonly string[]).includes(value);
+}
+
+function parseVote(messageText: unknown): VotePayload | null {
+  if (typeof messageText !== "string" || !messageText) return null;
+  try {
+    const parsed = JSON.parse(messageText) as VotePayload;
+    if (parsed.poll !== POLL_ID) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function emptyCounts(candidates: readonly string[]) {
+  return Object.fromEntries(candidates.map((candidate) => [candidate, 0])) as Record<string, number>;
+}
+
+function toRanking(counts: Record<string, number>) {
+  const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  return Object.entries(counts)
+    .map(([candidate, votes]) => ({
+      candidate,
+      votes,
+      percentage: total > 0 ? Math.round((votes / total) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.votes - a.votes || a.candidate.localeCompare(b.candidate));
+}
+
+async function getResults() {
+  const supabase = getSurveyDb();
+  const { data, error } = await supabase
+    .from("vf_whatsapp_events")
+    .select("message_text")
+    .eq("event_type", EVENT_TYPE)
+    .order("occurred_at", { ascending: false })
+    .limit(5000);
+
+  if (error) throw error;
+
+  const presidentCounts = emptyCounts(PRESIDENT_CANDIDATES);
+  const governorCounts = emptyCounts(GOVERNOR_CANDIDATES);
+  const federalCounts = emptyCounts(FEDERAL_CANDIDATES);
+  const stateCounts = emptyCounts(STATE_CANDIDATES);
+  let totalResponses = 0;
+
+  for (const row of data || []) {
+    const vote = parseVote(row.message_text);
+    if (!vote) continue;
+
+    totalResponses += 1;
+    if (vote.q6 && isAllowed(vote.q6, PRESIDENT_CANDIDATES)) presidentCounts[vote.q6] += 1;
+    if (vote.q7 && isAllowed(vote.q7, GOVERNOR_CANDIDATES)) governorCounts[vote.q7] += 1;
+    if (vote.q8 && isAllowed(vote.q8, FEDERAL_CANDIDATES)) federalCounts[vote.q8] += 1;
+    if (vote.q9 && isAllowed(vote.q9, STATE_CANDIDATES)) stateCounts[vote.q9] += 1;
+  }
+
+  return {
+    totalResponses,
+    presidentRanking: toRanking(presidentCounts),
+    governorRanking: toRanking(governorCounts),
+    federalRanking: toRanking(federalCounts),
+    stateRanking: toRanking(stateCounts),
+  };
+}
+
+export async function GET() {
+  try {
+    return Response.json({ success: true, ...(await getResults()) });
+  } catch (error) {
+    console.error("[arapongas-preview-poll] results failed", error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Falha ao carregar resultados" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const action = String(body.action || "submit");
+    const key = participantKey(body.participantId, body.phone);
+
+    if (!key) {
+      return Response.json(
+        { error: "Não foi possível identificar este navegador para validar a participação." },
+        { status: 400 },
+      );
+    }
+
+    const supabase = getSurveyDb();
+    const { data: existing, error: existingError } = await supabase
+      .from("vf_whatsapp_events")
+      .select("id")
+      .eq("event_type", EVENT_TYPE)
+      .eq("phone", key)
+      .limit(1);
+
+    if (existingError) throw existingError;
+
+    const alreadyAnswered = Boolean(existing && existing.length > 0);
+
+    if (action === "status") {
+      return Response.json({ success: true, alreadyAnswered });
+    }
+
+    if (action !== "submit") {
+      return Response.json({ error: "Ação inválida" }, { status: 400 });
+    }
+
+    const q1 = String(body.q1 || "");
+    const q2 = String(body.q2 || "");
+    const q3 = String(body.q3 || "");
+    const q4 = String(body.q4 || "");
+    const q5 = String(body.q5 || "");
+    const q6 = String(body.q6 || "");
+    const q7 = String(body.q7 || "");
+    const q8 = String(body.q8 || "");
+    const q9 = String(body.q9 || "");
+
+    if (
+      !isAllowed(q1, MANAGEMENT_OPTIONS) ||
+      !isAllowed(q2, MANAGEMENT_OPTIONS) ||
+      !isAllowed(q3, KNOWLEDGE_OPTIONS) ||
+      !isAllowed(q4, DECISION_OPTIONS) ||
+      !isAllowed(q5, DECISION_OPTIONS) ||
+      !isAllowed(q6, PRESIDENT_CANDIDATES) ||
+      !isAllowed(q7, GOVERNOR_CANDIDATES) ||
+      !isAllowed(q8, FEDERAL_CANDIDATES) ||
+      !isAllowed(q9, STATE_CANDIDATES)
+    ) {
+      return Response.json({ error: "Responda corretamente às nove perguntas." }, { status: 400 });
+    }
+
+    if (alreadyAnswered) {
+      return Response.json(
+        { success: false, alreadyAnswered: true, ...(await getResults()) },
+        { status: 409 },
+      );
+    }
+
+    const messageText = JSON.stringify({ poll: POLL_ID, q1, q2, q3, q4, q5, q6, q7, q8, q9 });
+    const { error: insertError } = await supabase.from("vf_whatsapp_events").insert({
+      direction: "inbound",
+      event_type: EVENT_TYPE,
+      status: "received",
+      phone: key,
+      contact_name: "Participante da enquete",
+      message_type: "survey",
+      message_text: messageText,
+      occurred_at: new Date().toISOString(),
+      payload: { source: "web_poll_preview", poll: POLL_ID },
+    });
+
+    if (insertError) throw insertError;
+
+    return Response.json({
+      success: true,
+      alreadyAnswered: false,
+      ...(await getResults()),
+    });
+  } catch (error) {
+    console.error("[arapongas-preview-poll] submit failed", error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Falha ao registrar resposta" },
+      { status: 500 },
+    );
+  }
+}
