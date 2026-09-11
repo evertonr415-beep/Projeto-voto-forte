@@ -31,15 +31,109 @@ export type ChatMessage = {
   senderName?: string;
 };
 
-// Formata texto de mensagens recebidas com JSON da enquete em texto legível
-function formatReadableMessageText(rawText?: string | null, direction?: string): string {
+// Catálogo completo de templates aprovados da Meta Cloud API
+const META_TEMPLATES_CATALOG: Record<string, string> = {
+  uniao_demandas_regionais: `Olá, {{name}}! Como estão as coisas no {{district}}?
+
+Estamos estruturando as principais demandas de melhorias para nossa cidade e buscando o apoio de deputados estaduais e federais que realmente tragam recursos para cá.
+
+Na sua visão, quem é o deputado estadual e o federal em quem você mais confia para representar as famílias de {{district}}?
+
+Me conte por aqui quem tem a sua preferência!`,
+
+  consulta_lideranca_bairro: `Olá, {{name}}! Tudo bem?
+
+Estamos conversando com moradores e lideranças aqui de {{district}} para entender quais prioridades nossa região precisa defender com mais força.
+
+Para sabermos como direcionar nossos pedidos a deputados estaduais e federais com compromisso real por {{district}}:
+
+👉 Quais nomes para deputado estadual e federal você mais confia ou tem simpatia hoje para nos representar?
+
+Se puder me responder com os nomes, sua opinião vai fazer toda a diferença no nosso planejamento!`,
+
+  arapongas_decide_personalizado: `Olá, {{name}}!
+
+Arapongas decide: quem são seus favoritos para Deputado Estadual e Federal?
+
+Participe da enquete oficial, clique abaixo e veja a prévia agora:
+👉 https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  enquete_arapongas_util: `Arapongas decide: quem são seus favoritos para Deputado Estadual e Federal?
+
+Participe da enquete oficial clicando no link abaixo e veja a prévia agora:
+👉 https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  arapongas_decide_2026: `Arapongas decide: quem são seus favoritos para Deputado Estadual e Federal?
+
+Participe da enquete, clique no link abaixo e veja a prévia agora:
+👉 https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  enquete_arapongas_2026: `Olá, {{name}}! Tudo bem?
+
+Estamos realizando uma rápida enquete cidadã para ouvir a população sobre o futuro e as prioridades de {{district}}.
+
+Sua opinião é fundamental e leva menos de 1 minuto para responder. Acesse pelo link:
+👉 https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  cidade_pensando_arapongas: `👀 Você sabe como sua cidade está pensando?
+
+Responda nossa enquete — leva menos de 1 minuto.
+
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Acesse pelo link:
+https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  enquete_opiniao_arapongas_btn: `👀 Você sabe como sua cidade está pensando?
+
+Responda nossa enquete — leva menos de 1 minuto.
+
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Acesse pelo link:
+https://sistemavotoforte.com.br/enquete/arapongas`,
+
+  pesquisa_cidade_arapongas: `👀 Você sabe como sua cidade está pensando?
+
+Responda nossa enquete — leva menos de 1 minuto.
+
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Clique no link e descubra se a maioria pensa como você:
+https://sistemavotoforte.com.br/enquete/arapongas`,
+};
+
+// Formata texto de mensagens (substituindo nomes de templates pelo texto real e JSON por texto legível)
+function formatReadableMessageText(
+  rawText?: string | null,
+  direction?: string,
+  contactName?: string,
+  district?: string,
+): string {
   if (!rawText || !rawText.trim()) {
     return direction === "inbound" ? "Resposta recebida" : "Mensagem da campanha Voto Forte";
   }
 
   const trimmed = rawText.trim();
+  const normalizedKey = trimmed.toLowerCase().replace(/^template:\s*/i, "").trim();
 
-  // Trata JSON de enquete
+  // 1. Verifica se o texto é exatamente o nome de um template da Meta
+  if (META_TEMPLATES_CATALOG[normalizedKey]) {
+    const rawTemplate = META_TEMPLATES_CATALOG[normalizedKey];
+    const firstName = contactName && !contactName.startsWith("Contato") && !contactName.startsWith("Eleitor")
+      ? contactName.split(" ")[0]
+      : "amigo(a)";
+    const districtName = district && district.trim() ? district.trim() : "nosso município";
+
+    return rawTemplate
+      .replace(/\{\{name\}\}/g, firstName)
+      .replace(/\{\{district\}\}/g, districtName)
+      .replace(/\{\{1\}\}/g, firstName)
+      .replace(/\{\{2\}\}/g, districtName)
+      .replace(/\{\{3\}\}/g, districtName);
+  }
+
+  // 2. Trata JSON de enquete
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     try {
       const parsed = JSON.parse(trimmed);
@@ -67,9 +161,12 @@ function formatReadableMessageText(rawText?: string | null, direction?: string):
     }
   }
 
-  // Substitui mensagens genéricas de envio por texto de convite da pesquisa
+  // 3. Substitui placeholders genéricos
   if (trimmed === "Mensagem enviada" || trimmed === "template" || trimmed === "enquete_voto_arapongas") {
-    return "Olá! O VOTO FORTE convida você para a pesquisa oficial de intenção de voto em Arapongas. Quem você apoia para Deputado Estadual e Federal?";
+    const firstName = contactName && !contactName.startsWith("Contato") && !contactName.startsWith("Eleitor")
+      ? contactName.split(" ")[0]
+      : "amigo(a)";
+    return `Olá, ${firstName}! O VOTO FORTE convida você para a pesquisa oficial de intenção de voto em Arapongas. Quem você apoia para Deputado Estadual e Federal nas próximas eleições?`;
   }
 
   return trimmed;
@@ -90,7 +187,7 @@ function getPhoneKeys(rawPhone: string): string[] {
     keys.add(`55${digits}`);
   }
 
-  // Últimos 8 e 9 dígitos (ex: 99170680 e 999170680)
+  // Últimos 8 e 9 dígitos
   if (digits.length >= 8) {
     keys.add(digits.slice(-8));
     keys.add(digits.slice(-9));
@@ -199,7 +296,12 @@ export async function GET(request: Request) {
         }
       }
 
-      const formattedText = formatReadableMessageText(ev.message_text, ev.direction);
+      const formattedText = formatReadableMessageText(
+        ev.message_text,
+        ev.direction,
+        knownContact?.name || ev.contact_name,
+        knownContact?.district,
+      );
 
       messages.push({
         id: String(ev.id || msgId),
@@ -216,14 +318,21 @@ export async function GET(request: Request) {
       });
     }
 
-    // Se nenhuma mensagem foi registrada no log mas o contato existe com disparo de campanha, inclui o convite inicial
+    // Se nenhuma mensagem foi registrada no log mas o contato foi selecionado, exibe o template padrão enviado
     if (messages.length === 0) {
       const fallbackTime = new Date().toISOString();
+      const defaultText = formatReadableMessageText(
+        "uniao_demandas_regionais",
+        "outbound",
+        knownContact?.name,
+        knownContact?.district,
+      );
+
       messages.push({
         id: `initial-broadcast-${targetPhone}`,
         phone: targetPhone,
         direction: "outbound",
-        text: "Olá! O VOTO FORTE convida você para a pesquisa oficial de intenção de voto em Arapongas. Quem você apoia para Deputado Estadual e Federal nas próximas eleições?",
+        text: defaultText,
         type: "text",
         status: "delivered",
         timestamp: fallbackTime,
@@ -287,7 +396,12 @@ export async function GET(request: Request) {
       }
     }
 
-    const cleanMessageText = formatReadableMessageText(ev.message_text, ev.direction);
+    const cleanMessageText = formatReadableMessageText(
+      ev.message_text,
+      ev.direction,
+      contactName,
+      known?.district,
+    );
 
     // Agrupa por chave principal normalizada
     const groupKey = phoneKeys[0] || phone;
@@ -317,7 +431,6 @@ export async function GET(request: Request) {
       if (known?.name && (!existing.contactName || existing.contactName.startsWith("Contato ("))) {
         existing.contactName = known.name;
       }
-      // Se a mensagem anterior era genérica e agora temos uma mais detalhada
       if (isInbound && existing.lastDirection !== "inbound") {
         existing.lastMessageText = cleanMessageText;
         existing.lastDirection = "inbound";
