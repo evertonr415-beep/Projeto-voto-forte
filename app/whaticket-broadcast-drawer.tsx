@@ -37,6 +37,30 @@ type LogItem = {
   time: string;
 };
 
+type LiveMessageItem = {
+  id: string;
+  phone: string;
+  contactName: string;
+  district?: string;
+  status: "sent" | "delivered" | "read" | "error" | "replied";
+  errorMessage?: string;
+  lastMessageText?: string;
+  sentAt?: string;
+  repliedAt?: string;
+  replyText?: string;
+  direction: "outbound" | "inbound";
+};
+
+type LiveFeedKpis = {
+  totalOutbound: number;
+  deliveredCount: number;
+  failedCount: number;
+  deliveryRate: number;
+  repliedCount: number;
+  responseRate: number;
+  activeContacts: number;
+};
+
 const STORAGE_DELAY_KEY = "voto-forte:meta:delaySeconds";
 const STORAGE_TEMPLATE_KEY = "voto-forte:meta:templateName";
 const STORAGE_LANGUAGE_KEY = "voto-forte:meta:templateLanguage";
@@ -53,6 +77,23 @@ function normalizeWhatsappPhone(raw: string): string {
   return digits.length >= 10 ? digits : "";
 }
 
+function formatPhoneDisplay(raw: string): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.startsWith("55") && digits.length === 13) {
+    return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
+  }
+  if (digits.startsWith("55") && digits.length === 12) {
+    return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
+  }
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return raw;
+}
+
 function resolveTag(value: string, contact: ContactItem) {
   const firstName = (contact.name || "").trim().split(/\s+/)[0] || "Amigo(a)";
   return String(value || "")
@@ -65,7 +106,7 @@ function resolveTag(value: string, contact: ContactItem) {
 
 export default function WhaticketBroadcastDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"disparo" | "logs">("disparo");
+  const [activeTab, setActiveTab] = useState<"disparo" | "tempo-real" | "logs">("disparo");
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [districtList, setDistrictList] = useState<DistrictSummary[]>([]);
   const [totalMunicipalityContacts, setTotalMunicipalityContacts] = useState(0);
@@ -88,6 +129,53 @@ export default function WhaticketBroadcastDrawer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const abortRef = useRef(false);
   const pausedRef = useRef(false);
+
+  // Live Feed State
+  const [liveItems, setLiveItems] = useState<LiveMessageItem[]>([]);
+  const [liveKpis, setLiveKpis] = useState<LiveFeedKpis>({
+    totalOutbound: 0,
+    deliveredCount: 0,
+    failedCount: 0,
+    deliveryRate: 0,
+    repliedCount: 0,
+    responseRate: 0,
+    activeContacts: 0,
+  });
+  const [liveFilter, setLiveFilter] = useState<"all" | "errors" | "replies" | "no_reply">("all");
+  const [liveSearch, setLiveSearch] = useState("");
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [failedNumbers, setFailedNumbers] = useState<{ phone: string; name: string; error: string }[]>([]);
+
+  // Carrega feed de mensagens em tempo real
+  const loadLiveFeed = useCallback(async (silent = false) => {
+    if (!silent) setLiveLoading(true);
+    try {
+      const url = `/api/whatsapp/live-feed?filter=${liveFilter}&search=${encodeURIComponent(liveSearch)}`;
+      const res = await apiFetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveItems(data.items || []);
+        if (data.kpis) setLiveKpis(data.kpis);
+        if (Array.isArray(data.failedNumbers)) setFailedNumbers(data.failedNumbers);
+      }
+    } catch {
+      // Silencia
+    } finally {
+      if (!silent) setLiveLoading(false);
+    }
+  }, [liveFilter, liveSearch]);
+
+  // Polling em tempo real quando o drawer e a aba estiverem abertos
+  useEffect(() => {
+    if (!isOpen) return;
+    void loadLiveFeed();
+
+    const interval = setInterval(() => {
+      void loadLiveFeed(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, loadLiveFeed]);
 
   useEffect(() => {
     try {
@@ -344,6 +432,46 @@ export default function WhaticketBroadcastDrawer() {
   const resolveParameters = (contact: ContactItem) =>
     parameterMappings.map((mapping) => resolveTag(mapping, contact));
 
+  // Reenviar para quem deu erro
+  const handleRetryFailed = () => {
+    if (!failedNumbers.length) return;
+    const failedPhones = new Set(failedNumbers.map((f) => normalizeWhatsappPhone(f.phone)));
+    const retryContacts = contacts.filter((c) => failedPhones.has(normalizeWhatsappPhone(c.phone)));
+    if (retryContacts.length > 0) {
+      setContacts(retryContacts);
+      setActiveTab("disparo");
+    }
+  };
+
+  // Exportar relatório em CSV
+  const handleExportCsv = () => {
+    if (!liveItems.length) {
+      alert("Nenhum dado para exportar no momento.");
+      return;
+    }
+
+    const headers = ["Nome", "Telefone", "Status", "Motivo do Erro", "Texto da Resposta", "Data de Envio", "Data da Resposta"];
+    const rows = liveItems.map((item) => [
+      `"${item.contactName.replace(/"/g, '""')}"`,
+      `"${item.phone}"`,
+      `"${item.status === "error" ? "Falha no Envio" : item.status === "replied" ? "Respondeu" : item.status === "delivered" ? "Entregue" : "Enviado"}"`,
+      `"${(item.errorMessage || "").replace(/"/g, '""')}"`,
+      `"${(item.replyText || "").replace(/"/g, '""')}"`,
+      `"${item.sentAt ? new Date(item.sentAt).toLocaleString("pt-BR") : ""}"`,
+      `"${item.repliedAt ? new Date(item.repliedAt).toLocaleString("pt-BR") : ""}"`,
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio-whatsapp-voto-forte-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const startBroadcast = async () => {
     if (!selectedTemplate) {
       alert("Aguarde a aprovação de um modelo da Meta e selecione-o antes de iniciar o disparo.");
@@ -435,6 +563,8 @@ export default function WhaticketBroadcastDrawer() {
       }
     }
     setIsExecuting(false);
+    // Atualiza o feed em tempo real ao finalizar
+    void loadLiveFeed();
   };
 
   const sentCount = logs.filter((item) => item.status === "sent").length;
@@ -476,10 +606,25 @@ export default function WhaticketBroadcastDrawer() {
           </button>
           <button
             type="button"
+            className={`wt-tab-btn ${activeTab === "tempo-real" ? "is-active" : ""}`}
+            onClick={() => {
+              setActiveTab("tempo-real");
+              void loadLiveFeed();
+            }}
+          >
+            ⚡ Monitor Ao Vivo
+            {liveKpis.responseRate > 0 && (
+              <span style={{ marginLeft: 4, fontSize: 10, color: "#fbbf24", fontWeight: 800 }}>
+                {liveKpis.responseRate}%
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             className={`wt-tab-btn ${activeTab === "logs" ? "is-active" : ""}`}
             onClick={() => setActiveTab("logs")}
           >
-            Progresso {isExecuting ? "●" : ""}
+            Fila {isExecuting ? "●" : ""}
           </button>
           <button
             type="button"
@@ -490,7 +635,7 @@ export default function WhaticketBroadcastDrawer() {
               window.dispatchEvent(new CustomEvent("voto-forte:open-survey-intelligence"));
             }}
           >
-            📊 Apuração e Enquete Digital
+            📊 Apuração
           </button>
         </nav>
 
@@ -646,10 +791,195 @@ export default function WhaticketBroadcastDrawer() {
             </>
           )}
 
+          {activeTab === "tempo-real" && (
+            <>
+              {/* Header com Indicador Ao Vivo */}
+              <section className="wt-card">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="wt-live-indicator">
+                    <span className="wt-live-pulse-dot" />
+                    <span>Transmissão Ao Vivo</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="wt-secondary-btn"
+                    style={{ padding: "4px 10px", fontSize: 11 }}
+                    onClick={() => void loadLiveFeed()}
+                    disabled={liveLoading}
+                  >
+                    {liveLoading ? "Atualizando..." : "🔄 Atualizar"}
+                  </button>
+                </div>
+
+                {/* 5 Cards de KPIs em Tempo Real */}
+                <div className="wt-kpi-grid-5">
+                  <div className="wt-kpi-card is-primary">
+                    <strong>{liveKpis.totalOutbound}</strong>
+                    <span>Disparos</span>
+                  </div>
+                  <div className="wt-kpi-card is-success">
+                    <strong>{liveKpis.deliveredCount}</strong>
+                    <span>Entregues</span>
+                  </div>
+                  <div className="wt-kpi-card is-error">
+                    <strong>{liveKpis.failedCount}</strong>
+                    <span>Falhas</span>
+                  </div>
+                  <div className="wt-kpi-card is-reply">
+                    <strong>{liveKpis.repliedCount}</strong>
+                    <span>Respostas</span>
+                  </div>
+                  <div className="wt-kpi-card is-rate">
+                    <strong>{liveKpis.responseRate}%</strong>
+                    <span>% Resposta</span>
+                  </div>
+                </div>
+
+                {/* Busca rápida */}
+                <div className="wt-search-input-wrap">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nome, telefone ou mensagem..."
+                    value={liveSearch}
+                    onChange={(e) => setLiveSearch(e.target.value)}
+                  />
+                </div>
+
+                {/* Filtros rápidos */}
+                <div className="wt-filter-bar">
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                  >
+                    Todos ({liveKpis.totalOutbound || liveItems.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                  >
+                    ❌ Falhas / Erros ({liveKpis.failedCount})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                  >
+                    💬 Respostas ({liveKpis.repliedCount})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "no_reply" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("no_reply")}
+                  >
+                    ⏳ Sem Resposta
+                  </button>
+                </div>
+              </section>
+
+              {/* Feed de Mensagens */}
+              <section className="wt-card">
+                <div className="wt-card-title">
+                  <span>📱</span> Mensagens ({liveItems.length})
+                </div>
+
+                <div className="wt-live-feed-list">
+                  {liveItems.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 13 }}>
+                      {liveLoading ? "Carregando monitor ao vivo..." : "Nenhuma mensagem encontrada neste filtro."}
+                    </div>
+                  ) : (
+                    liveItems.map((item) => {
+                      const isError = item.status === "error";
+                      const isReplied = item.status === "replied";
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`wt-live-item ${isError ? "is-error" : isReplied ? "is-replied" : "is-delivered"}`}
+                        >
+                          <div className="wt-live-item-header">
+                            <div className="wt-live-contact-info">
+                              <strong>{item.contactName}</strong>
+                              <span>{formatPhoneDisplay(item.phone)}</span>
+                            </div>
+
+                            <div>
+                              {isError && (
+                                <span className="wt-status-badge badge-error">
+                                  ✕ Falha no Envio
+                                </span>
+                              )}
+                              {isReplied && (
+                                <span className="wt-status-badge badge-replied">
+                                  💬 Respondeu
+                                </span>
+                              )}
+                              {!isError && !isReplied && (
+                                <span className="wt-status-badge badge-delivered">
+                                  ✓ Entregue
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Se for erro, mostra o motivo exato */}
+                          {isError && (
+                            <div className="wt-error-detail">
+                              <span>⚠️</span>
+                              <div>
+                                <strong>Motivo da falha:</strong> {item.errorMessage || "Número não recebeu a mensagem (inválido ou sem WhatsApp)."}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Se respondeu, mostra a mensagem de resposta */}
+                          {isReplied && item.replyText && (
+                            <div className="wt-reply-detail">
+                              <strong>Resposta recebida ({item.repliedAt ? new Date(item.repliedAt).toLocaleTimeString("pt-BR") : "Agora"}):</strong>
+                              <span>\"{item.replyText}\"</span>
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#64748b", marginTop: 2 }}>
+                            <span>{item.sentAt ? `Disparo: ${new Date(item.sentAt).toLocaleTimeString("pt-BR")}` : ""}</span>
+                            {item.repliedAt && <span>Respondido: {new Date(item.repliedAt).toLocaleTimeString("pt-BR")}</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Ações Rápidas de Reenvio e Exportação */}
+                <div className="wt-live-actions-bar">
+                  {failedNumbers.length > 0 && (
+                    <button
+                      type="button"
+                      className="wt-action-btn-small btn-retry"
+                      onClick={handleRetryFailed}
+                    >
+                      🔁 Reenviar {failedNumbers.length} Falhas
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="wt-action-btn-small"
+                    onClick={handleExportCsv}
+                  >
+                    📥 Exportar CSV
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
+
           {activeTab === "logs" && (
             <>
               <section className="wt-card">
-                <div className="wt-card-title"><span>📊</span> Progresso</div>
+                <div className="wt-card-title"><span>📊</span> Progresso da Sessão</div>
                 <div className="wt-stats-grid">
                   <div className="wt-stat-card"><strong>{logs.length}</strong><span>Total</span></div>
                   <div className="wt-stat-card is-success"><strong>{sentCount}</strong><span>Enviados</span></div>
@@ -690,7 +1020,7 @@ export default function WhaticketBroadcastDrawer() {
                 <div className="wt-card-title"><span>📜</span> Registro</div>
                 <div className="wt-logs-list">
                   {logs.length === 0 ? (
-                    <div style={{ fontSize: 13 }}>Nenhum disparo iniciado.</div>
+                    <div style={{ fontSize: 13 }}>Nenhum disparo iniciado nesta sessão.</div>
                   ) : (
                     logs.map((log, index) => (
                       <div

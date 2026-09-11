@@ -2640,15 +2640,115 @@ function Whatsapp({
   const [msg, setMsg] = useState(
     "Olá! O VOTO FORTE PARANÁ convida você para nosso próximo encontro em Arapongas. Contamos com sua presença!",
   );
+
+  // Monitor em Tempo Real State
+  const [liveItems, setLiveItems] = useState<Array<{
+    id: string;
+    phone: string;
+    contactName: string;
+    district?: string;
+    status: "sent" | "delivered" | "read" | "error" | "replied";
+    errorMessage?: string;
+    lastMessageText?: string;
+    sentAt?: string;
+    repliedAt?: string;
+    replyText?: string;
+    direction: "outbound" | "inbound";
+  }>>([]);
+  const [liveKpis, setLiveKpis] = useState({
+    totalOutbound: 0,
+    deliveredCount: 0,
+    failedCount: 0,
+    deliveryRate: 0,
+    repliedCount: 0,
+    responseRate: 0,
+    activeContacts: 0,
+  });
+  const [liveFilter, setLiveFilter] = useState<"all" | "errors" | "replies" | "no_reply">("all");
+  const [liveSearch, setLiveSearch] = useState("");
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [failedNumbers, setFailedNumbers] = useState<Array<{ phone: string; name: string; error: string }>>([]);
+
+  const formatPhone = (raw: string) => {
+    const digits = String(raw || "").replace(/\D/g, "");
+    if (digits.startsWith("55") && digits.length === 13) {
+      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
+    }
+    if (digits.startsWith("55") && digits.length === 12) {
+      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`;
+    }
+    if (digits.length === 11) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return raw;
+  };
+
+  const loadLiveFeed = useCallback(async (silent = false) => {
+    if (!silent) setLiveLoading(true);
+    try {
+      const url = `/api/whatsapp/live-feed?filter=${liveFilter}&search=${encodeURIComponent(liveSearch)}`;
+      const res = await apiFetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveItems(data.items || []);
+        if (data.kpis) setLiveKpis(data.kpis);
+        if (Array.isArray(data.failedNumbers)) setFailedNumbers(data.failedNumbers);
+      }
+    } catch {
+      // Silencia falha de conexão
+    } finally {
+      if (!silent) setLiveLoading(false);
+    }
+  }, [liveFilter, liveSearch]);
+
+  useEffect(() => {
+    void loadLiveFeed();
+    const interval = setInterval(() => {
+      void loadLiveFeed(true);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [loadLiveFeed]);
+
+  const handleExportCsv = () => {
+    if (!liveItems.length) {
+      tell("Nenhum dado para exportar no momento.");
+      return;
+    }
+    const headers = ["Nome", "Telefone", "Status", "Motivo do Erro", "Texto da Resposta", "Data de Envio", "Data da Resposta"];
+    const rows = liveItems.map((item) => [
+      `"${item.contactName.replace(/"/g, '""')}"`,
+      `"${item.phone}"`,
+      `"${item.status === "error" ? "Falha no Envio" : item.status === "replied" ? "Respondeu" : item.status === "delivered" ? "Entregue" : "Enviado"}"`,
+      `"${(item.errorMessage || "").replace(/"/g, '""')}"`,
+      `"${(item.replyText || "").replace(/"/g, '""')}"`,
+      `"${item.sentAt ? new Date(item.sentAt).toLocaleString("pt-BR") : ""}"`,
+      `"${item.repliedAt ? new Date(item.repliedAt).toLocaleString("pt-BR") : ""}"`,
+    ]);
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio-whatsapp-voto-forte-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    tell("Relatório exportado com sucesso!");
+  };
+
   return (
     <>
       <PageHead
-        eyebrow="COMUNICAÇÃO PRIVATIVA"
+        eyebrow="COMUNICAÇÃO OFICIAL & DISPAROS"
         title="Central de WhatsApp"
-        text="Cada usuário mantém os próprios rascunhos; administradores podem analisar a visão consolidada."
+        text="Monitore mensagens disparadas, acompanhe erros e analise o percentual de respostas em tempo real."
       />
       <div className="wa-layout">
-        <div style={{ gridColumn: "1 / -1", marginBottom: "16px" }}>
+        {/* Banner de Acesso à Central de Disparos */}
+        <div style={{ gridColumn: "1 / -1", marginBottom: "4px" }}>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"))}
@@ -2678,26 +2778,218 @@ function Whatsapp({
                 </span>
               </div>
             </div>
-            <span
-              style={{
-                background: "#2ddd7f",
-                color: "#0f172a",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                fontWeight: "700",
-                fontSize: "13px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Abrir Disparador →
-            </span>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <span
+                style={{
+                  background: "#2ddd7f",
+                  color: "#0f172a",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Abrir Disparador →
+              </span>
+            </div>
           </button>
         </div>
+
+        {/* MONITOR EM TEMPO REAL COMPLETO E 100% ATIVO */}
+        <article className="panel" style={{ gridColumn: "1 / -1", background: "rgba(15, 23, 42, 0.95)", border: "1px solid rgba(45, 221, 127, 0.3)", borderRadius: "14px", padding: "20px" }}>
+          {/* Header do Monitor */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="wt-live-indicator">
+                <span className="wt-live-pulse-dot" />
+                <span>Transmissão Ao Vivo</span>
+              </div>
+              <h3 style={{ margin: 0, fontSize: "17px", color: "#f8fafc", fontWeight: 700 }}>
+                Monitor de Envios & Taxa de Resposta (%)
+              </h3>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                type="button"
+                className="wt-secondary-btn"
+                style={{ padding: "6px 12px", fontSize: "12px" }}
+                onClick={() => void loadLiveFeed()}
+                disabled={liveLoading}
+              >
+                {liveLoading ? "Atualizando..." : "🔄 Atualizar"}
+              </button>
+              <button
+                type="button"
+                className="wt-secondary-btn"
+                style={{ padding: "6px 12px", fontSize: "12px", background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", borderColor: "rgba(56, 189, 248, 0.3)" }}
+                onClick={handleExportCsv}
+              >
+                📥 Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          {/* 5 Cards de KPIs em Tempo Real */}
+          <div className="wt-kpi-grid-5" style={{ margin: "0 0 16px 0" }}>
+            <div className="wt-kpi-card is-primary">
+              <strong style={{ fontSize: "20px" }}>{liveKpis.totalOutbound}</strong>
+              <span>Total Disparos</span>
+            </div>
+            <div className="wt-kpi-card is-success">
+              <strong style={{ fontSize: "20px" }}>{liveKpis.deliveredCount}</strong>
+              <span>Entregues ({liveKpis.deliveryRate}%)</span>
+            </div>
+            <div className="wt-kpi-card is-error">
+              <strong style={{ fontSize: "20px" }}>{liveKpis.failedCount}</strong>
+              <span>Falhas / Erros</span>
+            </div>
+            <div className="wt-kpi-card is-reply">
+              <strong style={{ fontSize: "20px" }}>{liveKpis.repliedCount}</strong>
+              <span>Respostas</span>
+            </div>
+            <div className="wt-kpi-card is-rate" style={{ background: "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}>
+              <strong style={{ fontSize: "20px", color: "#fbbf24" }}>{liveKpis.responseRate}%</strong>
+              <span style={{ color: "#fef08a" }}>Taxa de Resposta</span>
+            </div>
+          </div>
+
+          {/* Filtros e Busca */}
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", alignItems: "center", justifyContent: "space-between" }}>
+            <div className="wt-search-input-wrap" style={{ margin: 0, flex: "1 1 250px", maxWidth: "400px" }}>
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Buscar por telefone, nome ou mensagem..."
+                value={liveSearch}
+                onChange={(e) => setLiveSearch(e.target.value)}
+              />
+            </div>
+            <div className="wt-filter-bar" style={{ margin: 0 }}>
+              <button
+                type="button"
+                className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
+                onClick={() => setLiveFilter("all")}
+              >
+                Todos ({liveKpis.totalOutbound || liveItems.length})
+              </button>
+              <button
+                type="button"
+                className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
+                onClick={() => setLiveFilter("errors")}
+              >
+                ❌ Falhas / Erros ({liveKpis.failedCount})
+              </button>
+              <button
+                type="button"
+                className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
+                onClick={() => setLiveFilter("replies")}
+              >
+                💬 Respostas ({liveKpis.repliedCount})
+              </button>
+              <button
+                type="button"
+                className={`wt-filter-pill ${liveFilter === "no_reply" ? "is-active" : ""}`}
+                onClick={() => setLiveFilter("no_reply")}
+              >
+                ⏳ Sem Resposta
+              </button>
+            </div>
+          </div>
+
+          {/* Feed de Mensagens em Tempo Real */}
+          <div className="wt-live-feed-list" style={{ maxHeight: "380px" }}>
+            {liveItems.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "30px 0", color: "#94a3b8", fontSize: "14px" }}>
+                {liveLoading ? "Carregando monitor em tempo real..." : "Nenhuma mensagem encontrada para o filtro selecionado."}
+              </div>
+            ) : (
+              liveItems.map((item) => {
+                const isError = item.status === "error";
+                const isReplied = item.status === "replied";
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`wt-live-item ${isError ? "is-error" : isReplied ? "is-replied" : "is-delivered"}`}
+                  >
+                    <div className="wt-live-item-header">
+                      <div className="wt-live-contact-info">
+                        <strong>{item.contactName}</strong>
+                        <span>{formatPhone(item.phone)}</span>
+                      </div>
+
+                      <div>
+                        {isError && (
+                          <span className="wt-status-badge badge-error">
+                            ✕ Falha no Envio
+                          </span>
+                        )}
+                        {isReplied && (
+                          <span className="wt-status-badge badge-replied">
+                            💬 Respondeu
+                          </span>
+                        )}
+                        {!isError && !isReplied && (
+                          <span className="wt-status-badge badge-delivered">
+                            ✓ Entregue
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Exibe o motivo exato se deu erro */}
+                    {isError && (
+                      <div className="wt-error-detail">
+                        <span>⚠️</span>
+                        <div>
+                          <strong>Motivo da falha de envio:</strong> {item.errorMessage || "Número não recebeu a mensagem (inválido ou sem WhatsApp ativo)."}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Exibe a resposta se respondeu */}
+                    {isReplied && item.replyText && (
+                      <div className="wt-reply-detail">
+                        <strong>Resposta do Eleitor ({item.repliedAt ? new Date(item.repliedAt).toLocaleTimeString("pt-BR") : "Agora"}):</strong>
+                        <span>"{item.replyText}"</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                      <span>{item.sentAt ? `Disparado em: ${new Date(item.sentAt).toLocaleString("pt-BR")}` : ""}</span>
+                      {item.repliedAt && <span>Respondido em: {new Date(item.repliedAt).toLocaleString("pt-BR")}</span>}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Ação de Reenvio se houver falhas */}
+          {failedNumbers.length > 0 && (
+            <div style={{ marginTop: "14px", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="wt-action-btn-small btn-retry"
+                style={{ maxWidth: "280px" }}
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("voto-forte:open-whaticket-drawer"));
+                  tell(`Abrindo disparador para tratar ${failedNumbers.length} números com falha.`);
+                }}
+              >
+                🔁 Tratar / Reenviar {failedNumbers.length} Falhas no Disparador
+              </button>
+            </div>
+          )}
+        </article>
+
+        {/* Compositor de Rascunho */}
         <article className="panel composer">
           <div className="composer-head">
             <span>◉</span>
             <div>
-              <h3>Nova mensagem</h3>
+              <h3>Nova mensagem rápida</h3>
               <p>Prepare o conteúdo antes de escolher o destinatário.</p>
             </div>
           </div>
@@ -2736,6 +3028,8 @@ function Whatsapp({
             </a>
           </div>
         </article>
+
+        {/* Rascunhos Recentes */}
         <article className="panel drafts">
           <PanelTitle
             title="Rascunhos recentes"
