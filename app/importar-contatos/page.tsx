@@ -32,7 +32,7 @@ type ParsedCsv = {
   duplicates: number;
 };
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 250;
 const MAX_CONTACTS = 150_000;
 const BATCH_REQUEST_TIMEOUT_MS = 60_000;
 
