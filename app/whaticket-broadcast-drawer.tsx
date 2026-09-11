@@ -811,27 +811,48 @@ export default function WhaticketBroadcastDrawer() {
                   </button>
                 </div>
 
-                {/* 5 Cards de KPIs em Tempo Real */}
+                {/* 5 Cards de KPIs em Tempo Real (CLICÁVEIS) */}
                 <div className="wt-kpi-grid-5">
-                  <div className="wt-kpi-card is-primary">
+                  <div
+                    className={`wt-kpi-card is-primary ${liveFilter === "all" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                    title="Clique para ver todos os disparos"
+                  >
                     <strong>{liveKpis.totalOutbound}</strong>
                     <span>Disparos</span>
                   </div>
-                  <div className="wt-kpi-card is-success">
+                  <div
+                    className={`wt-kpi-card is-success ${liveFilter === "sent" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                    title="Clique para ver apenas mensagens entregues"
+                  >
                     <strong>{liveKpis.deliveredCount}</strong>
-                    <span>Entregues</span>
+                    <span>Entregues ({liveKpis.deliveryRate}%)</span>
                   </div>
-                  <div className="wt-kpi-card is-error">
+                  <div
+                    className={`wt-kpi-card is-error ${liveFilter === "errors" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                    title="Clique para ver apenas erros/falhas"
+                  >
                     <strong>{liveKpis.failedCount}</strong>
                     <span>Falhas</span>
                   </div>
-                  <div className="wt-kpi-card is-reply">
+                  <div
+                    className={`wt-kpi-card is-reply ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas recebidas"
+                  >
                     <strong>{liveKpis.repliedCount}</strong>
                     <span>Respostas</span>
                   </div>
-                  <div className="wt-kpi-card is-rate">
-                    <strong>{liveKpis.responseRate}%</strong>
-                    <span>% Resposta</span>
+                  <div
+                    className={`wt-kpi-card is-rate ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas"
+                    style={{ background: liveFilter === "replies" ? "rgba(251, 191, 36, 0.25)" : "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}
+                  >
+                    <strong style={{ color: "#fbbf24" }}>{liveKpis.responseRate}%</strong>
+                    <span style={{ color: "#fef08a" }}>Taxa de Resposta</span>
                   </div>
                 </div>
 
@@ -854,6 +875,13 @@ export default function WhaticketBroadcastDrawer() {
                     onClick={() => setLiveFilter("all")}
                   >
                     Todos ({liveKpis.totalOutbound || liveItems.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                  >
+                    ✓ Entregues ({liveKpis.deliveredCount})
                   </button>
                   <button
                     type="button"
@@ -902,8 +930,8 @@ export default function WhaticketBroadcastDrawer() {
                         >
                           <div className="wt-live-item-header">
                             <div className="wt-live-contact-info">
-                              <strong>{item.contactName}</strong>
-                              <span>{formatPhoneDisplay(item.phone)}</span>
+                              <strong style={{ fontSize: "14px" }}>{item.contactName}</strong>
+                              <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 600 }}>{formatPhoneDisplay(item.phone)}</span>
                             </div>
 
                             <div>
@@ -937,15 +965,26 @@ export default function WhaticketBroadcastDrawer() {
 
                           {/* Se respondeu, mostra a mensagem de resposta */}
                           {isReplied && item.replyText && (
-                            <div className="wt-reply-detail">
-                              <strong>Resposta recebida ({item.repliedAt ? new Date(item.repliedAt).toLocaleTimeString("pt-BR") : "Agora"}):</strong>
-                              <span>\"{item.replyText}\"</span>
+                            <div className="wt-reply-detail" style={{ borderLeft: "3px solid #c084fc", background: "rgba(168, 85, 247, 0.15)", padding: "8px 12px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                <strong style={{ color: "#d8b4fe", fontSize: "11px" }}>
+                                  💬 Resposta de {item.contactName}:
+                                </strong>
+                                {item.repliedAt && (
+                                  <span style={{ fontSize: "10px", color: "#c084fc" }}>
+                                    {new Date(item.repliedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: "13px", color: "#f8fafc", fontStyle: "italic", whiteSpace: "pre-wrap", lineHeight: 1.4 }}>
+                                "{item.replyText}"
+                              </div>
                             </div>
                           )}
 
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#64748b", marginTop: 2 }}>
                             <span>{item.sentAt ? `Disparo: ${new Date(item.sentAt).toLocaleTimeString("pt-BR")}` : ""}</span>
-                            {item.repliedAt && <span>Respondido: {new Date(item.repliedAt).toLocaleTimeString("pt-BR")}</span>}
+                            {item.repliedAt && <span style={{ color: "#a855f7", fontWeight: 600 }}>Respondido: {new Date(item.repliedAt).toLocaleTimeString("pt-BR")}</span>}
                           </div>
                         </div>
                       );
