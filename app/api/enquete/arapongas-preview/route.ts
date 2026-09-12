@@ -5,6 +5,11 @@ const EVENT_TYPE = "web_poll_arapongas_preview_v3";
 const POLL_ID = "arapongas-preview-v3";
 
 const MANAGEMENT_OPTIONS = ["boa", "media", "ruim"] as const;
+const MANAGEMENT_LABELS: Record<(typeof MANAGEMENT_OPTIONS)[number], string> = {
+  boa: "Boa",
+  media: "Média",
+  ruim: "Ruim",
+};
 const KNOWLEDGE_OPTIONS = ["sim", "nao", "alguns_nao_lembro"] as const;
 const DECISION_OPTIONS = ["sim", "nao", "indeciso"] as const;
 const PRESIDENT_CANDIDATES = [
@@ -119,6 +124,17 @@ function toRanking(counts: Record<string, number>) {
     .sort((a, b) => b.votes - a.votes || a.candidate.localeCompare(b.candidate));
 }
 
+function toManagementRanking(counts: Record<string, number>) {
+  const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  return MANAGEMENT_OPTIONS
+    .map((option) => ({
+      candidate: MANAGEMENT_LABELS[option],
+      votes: counts[option] || 0,
+      percentage: total > 0 ? Math.round((((counts[option] || 0) / total) * 1000)) / 10 : 0,
+    }))
+    .sort((a, b) => b.votes - a.votes || a.candidate.localeCompare(b.candidate, "pt-BR"));
+}
+
 async function getResults() {
   const supabase = getSurveyDb();
   const { data, error } = await supabase
@@ -134,6 +150,7 @@ async function getResults() {
   const governorCounts = emptyCounts(GOVERNOR_CANDIDATES);
   const federalCounts = emptyCounts(FEDERAL_CANDIDATES);
   const stateCounts = emptyCounts(STATE_CANDIDATES);
+  const managementCounts = emptyCounts(MANAGEMENT_OPTIONS);
   let totalResponses = 0;
 
   for (const row of data || []) {
@@ -141,6 +158,7 @@ async function getResults() {
     if (!vote) continue;
 
     totalResponses += 1;
+    if (vote.q2 && isAllowed(vote.q2, MANAGEMENT_OPTIONS)) managementCounts[vote.q2] += 1;
     if (vote.q6 && isAllowed(vote.q6, PRESIDENT_CANDIDATES)) presidentCounts[vote.q6] += 1;
     if (vote.q7 && isAllowed(vote.q7, GOVERNOR_CANDIDATES)) governorCounts[vote.q7] += 1;
     if (vote.q8 && isAllowed(vote.q8, FEDERAL_CANDIDATES)) federalCounts[vote.q8] += 1;
@@ -149,6 +167,7 @@ async function getResults() {
 
   return {
     totalResponses,
+    managementRanking: toManagementRanking(managementCounts),
     presidentRanking: toRanking(presidentCounts),
     governorRanking: toRanking(governorCounts),
     federalRanking: toRanking(federalCounts),
