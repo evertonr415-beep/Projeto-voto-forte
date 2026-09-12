@@ -25,6 +25,7 @@ import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import AdministrationAuditWorkspace from "./administration-audit-workspace";
 import GestorAdministrationIdentityNormalizer from "./gestor-administration-identity-normalizer";
 import AdministrationKpiRoleSync from "./administration-kpi-role-sync";
+import MunicipalityDirectoryPaginationEnhancer from "./municipality-directory-pagination-enhancer";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
@@ -89,6 +90,7 @@ export default function DashboardRuntimeEnhancers() {
           <MapNeighborhoodInfoEnhancer />
           <NeighborhoodInfoDrawer />
           <GestorAccessGate />
+          <MunicipalityDirectoryPaginationEnhancer />
           <CompactOverviewScopeEnhancer />
           <VotingChartsEntryPolish />
           <VotingRecentMobilePolish />

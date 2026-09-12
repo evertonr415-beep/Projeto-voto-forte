@@ -78,6 +78,7 @@ import "./desktop-four-point-fixes.css";
 import "./desktop-agenda-export-fixes.css";
 import "./administration-access-workspace.css";
 import "./municipality-management-v2.css";
+import "./municipality-directory-pagination.css";
 import "./administration-audit-workspace.css";
 import "./administration-backup-v2.css";
 import "./administration-layout-reset.css";
