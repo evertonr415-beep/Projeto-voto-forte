@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../supabase-client";
 import { Icons } from "../ui-icons";
 import "./voting-charts.css";
+import "./voting-charts-management.css";
 
 export type CandidateItem = {
   candidate: string;
@@ -24,11 +25,18 @@ export type SurveyFeedItem = {
   timestamp: string;
 };
 
+const mayorProfile = {
+  name: "Rafael Cita",
+  role: "Prefeito de Arapongas",
+  photo: "https://www.diaadiaarapongas.com.br/userfiles/noticias/969_UMG_4664.jpeg",
+};
+
 const candidatePartyMap: Record<string, string> = {
   "Pedro Paulo Bazana": "PSD",
   "Sérgio Onofre": "PSD",
-  "Aline Franzon": "PL",
+  "Aline Franzon": "Missão",
   "Delegado Jacovos": "PL",
+  "Delegado Jacovós": "PL",
   "Cobra Repórter": "PSD",
   "Neto Santos": "PL",
   "Ricardo Barros": "PP",
@@ -67,6 +75,7 @@ const candidatePhotos: Record<string, string> = {
   "sergio moro": "https://legis.senado.leg.br/senadores/fotos-oficiais/6331",
   "sandro alex": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/160621.jpg",
   "requiao filho": "https://storage2.assembleia.pr.leg.br/img/jo-YJGXcfLRtRuh41Yn2yghhbOs%3D/full-fit-in/300x300/deputados/7d0fa4289d10706dee8d9f1d98956d4f17b6255a.png",
+  "luiz franca": "https://busaocuritiba.com/wp-content/uploads/2025/09/Luiz-Franca-pre-candidato-ao-governo-do-Parana-pelo-MBL-1600x900.jpg",
   "lula": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/73/7355fb81cb690d57fe915539390218a85cc5710e5ccf98de01df167e7ccfefc4.jpg",
   "flavio bolsonaro": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/ac/ace3990fdc7ec22b49acc1a60880ddb1c8bb1bc0cf0a593a3bb9cc9406eac78d.jpg",
   "augusto cury": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/0e/0e7261482f24db5eeb08307f2cd69a674cae28f0883af694c50f8c962e8c44f0.jpg",
@@ -140,6 +149,36 @@ function CandidateAvatar({ name, compact = false }: { name: string; compact?: bo
         />
       ) : (
         <span>{candidateInitials(name)}</span>
+      )}
+    </span>
+  );
+}
+
+function ManagementStatusIcon({ name, compact = false }: { name: string; compact?: boolean }) {
+  const key = normalizeCandidate(name);
+  const status = key.includes("boa") ? "good" : key.includes("media") ? "neutral" : "bad";
+  const symbol = status === "good" ? "✓" : status === "neutral" ? "—" : "↓";
+  return (
+    <span className={`voting-management-status voting-management-${status} ${compact ? "compact" : ""}`} aria-hidden="true">
+      {symbol}
+    </span>
+  );
+}
+
+function MayorAvatar({ compact = false }: { compact?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className={`voting-mayor-avatar ${compact ? "compact" : ""}`}>
+      {!failed ? (
+        <img
+          src={mayorProfile.photo}
+          alt={mayorProfile.name}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span>RC</span>
       )}
     </span>
   );
@@ -308,7 +347,7 @@ export default function VotingChartsClient({
         { candidate: "Pedro Paulo Bazana", votes: 0, percentage: 0 },
         { candidate: "Sérgio Onofre", votes: 0, percentage: 0 },
         { candidate: "Aline Franzon", votes: 0, percentage: 0 },
-        { candidate: "Delegado Jacovos", votes: 0, percentage: 0 },
+        { candidate: "Delegado Jacovós", votes: 0, percentage: 0 },
         { candidate: "Cobra Repórter", votes: 0, percentage: 0 },
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
@@ -320,14 +359,18 @@ export default function VotingChartsClient({
         { candidate: "Ricardo Barros", votes: 0, percentage: 0 },
         { candidate: "Beto Preto", votes: 0, percentage: 0 },
         { candidate: "Luciano Ducci", votes: 0, percentage: 0 },
+        { candidate: "Bonin", votes: 0, percentage: 0 },
+        { candidate: "Marco Brasil", votes: 0, percentage: 0 },
+        { candidate: "Santin Roveda", votes: 0, percentage: 0 },
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
     }
     if (activeCategory === "governor") {
       return [
         { candidate: "Sergio Moro", votes: 0, percentage: 0 },
-        { candidate: "Sandro Alex", votes: 0, percentage: 0 },
         { candidate: "Requião Filho", votes: 0, percentage: 0 },
+        { candidate: "Sandro Alex", votes: 0, percentage: 0 },
+        { candidate: "Luiz França", votes: 0, percentage: 0 },
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
     }
@@ -337,6 +380,8 @@ export default function VotingChartsClient({
         { candidate: "Lula", votes: 0, percentage: 0 },
         { candidate: "Ronaldo Caiado", votes: 0, percentage: 0 },
         { candidate: "Augusto Cury", votes: 0, percentage: 0 },
+        { candidate: "Renan Santos", votes: 0, percentage: 0 },
+        { candidate: "Romeu Zema", votes: 0, percentage: 0 },
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
     }
@@ -370,7 +415,8 @@ export default function VotingChartsClient({
   const leader = rankedCandidatesWithVotes[0];
   const runnerUp = rankedCandidatesWithVotes[1];
   const indecisos = orderedList.find((item) => isIndecisiveCandidate(item.candidate));
-  const displayedTotalVotes = activeCategory === "management" ? managementTotalVotes : totalVotes;
+  const isManagement = activeCategory === "management";
+  const displayedTotalVotes = isManagement ? managementTotalVotes : totalVotes;
 
   const categoryTitle =
     activeCategory === "state"
@@ -454,11 +500,11 @@ export default function VotingChartsClient({
 
       <section className="voting-kpi-grid" aria-label="Resumo da apuração">
         <article className="voting-kpi-card voting-kpi-total">
-          <div className="voting-kpi-label">Total de votos <span>🗳️</span></div>
+          <div className="voting-kpi-label">{isManagement ? "Respostas válidas" : "Total de votos"} <span>🗳️</span></div>
           <div className="voting-kpi-value">{displayedTotalVotes.toLocaleString("pt-BR")}</div>
           <div className="voting-kpi-sub">
-            {activeCategory === "management"
-              ? "Respostas da avaliação municipal"
+            {isManagement
+              ? "Avaliação da administração municipal"
               : selectedDistrict === "all"
                 ? "Todos os bairros"
                 : selectedDistrict}
@@ -466,32 +512,45 @@ export default function VotingChartsClient({
         </article>
 
         <article className="voting-kpi-card voting-kpi-person voting-kpi-leader">
-          <div className="voting-kpi-label">1º colocado <span>🥇</span></div>
+          <div className="voting-kpi-label">{isManagement ? "Avaliação predominante" : "1º colocado"} <span>{isManagement ? "📈" : "🥇"}</span></div>
           <div className="voting-kpi-person-row">
-            {leader && <CandidateAvatar name={leader.candidate} compact />}
+            {leader && (isManagement ? <ManagementStatusIcon name={leader.candidate} compact /> : <CandidateAvatar name={leader.candidate} compact />)}
             <div className="voting-kpi-person-copy">
               <div className="voting-kpi-value voting-kpi-green">{leader ? `${leader.percentage.toFixed(1)}%` : "0%"}</div>
-              <div className="voting-kpi-sub">{leader?.candidate || "Aguardando votos"}</div>
+              <div className="voting-kpi-sub">{leader?.candidate || "Aguardando respostas"}</div>
             </div>
           </div>
         </article>
 
         <article className="voting-kpi-card voting-kpi-person voting-kpi-runner">
-          <div className="voting-kpi-label">2º colocado <span>🥈</span></div>
+          <div className="voting-kpi-label">{isManagement ? "2ª avaliação" : "2º colocado"} <span>{isManagement ? "📊" : "🥈"}</span></div>
           <div className="voting-kpi-person-row">
-            {runnerUp && <CandidateAvatar name={runnerUp.candidate} compact />}
+            {runnerUp && (isManagement ? <ManagementStatusIcon name={runnerUp.candidate} compact /> : <CandidateAvatar name={runnerUp.candidate} compact />)}
             <div className="voting-kpi-person-copy">
               <div className="voting-kpi-value voting-kpi-blue">{runnerUp ? `${runnerUp.percentage.toFixed(1)}%` : "0%"}</div>
-              <div className="voting-kpi-sub">{runnerUp?.candidate || "Aguardando votos"}</div>
+              <div className="voting-kpi-sub">{runnerUp?.candidate || "Aguardando respostas"}</div>
             </div>
           </div>
         </article>
 
-        <article className="voting-kpi-card voting-kpi-undecided">
-          <div className="voting-kpi-label">Indecisos / não sabe <span>❓</span></div>
-          <div className="voting-kpi-value voting-kpi-amber">{indecisos ? `${indecisos.percentage.toFixed(1)}%` : "0%"}</div>
-          <div className="voting-kpi-sub">Potencial de convencimento</div>
-        </article>
+        {isManagement ? (
+          <article className="voting-kpi-card voting-kpi-person voting-kpi-mayor">
+            <div className="voting-kpi-label">Gestão avaliada <span>🏛️</span></div>
+            <div className="voting-kpi-person-row">
+              <MayorAvatar compact />
+              <div className="voting-kpi-person-copy">
+                <div className="voting-kpi-name">{mayorProfile.name}</div>
+                <div className="voting-kpi-sub">{mayorProfile.role}</div>
+              </div>
+            </div>
+          </article>
+        ) : (
+          <article className="voting-kpi-card voting-kpi-undecided">
+            <div className="voting-kpi-label">Indecisos / não sabe <span>❓</span></div>
+            <div className="voting-kpi-value voting-kpi-amber">{indecisos ? `${indecisos.percentage.toFixed(1)}%` : "0%"}</div>
+            <div className="voting-kpi-sub">Potencial de convencimento</div>
+          </article>
+        )}
       </section>
 
       <nav className="voting-nav-tabs" aria-label="Cargo da apuração">
@@ -520,9 +579,21 @@ export default function VotingChartsClient({
               <span>Ranking — {categoryTitle}</span>
             </h2>
             <span className="voting-total-badge">
-              Base: {orderedList.reduce((sum, item) => sum + item.votes, 0).toLocaleString("pt-BR")} votos
+              Base: {orderedList.reduce((sum, item) => sum + item.votes, 0).toLocaleString("pt-BR")} {isManagement ? "respostas" : "votos"}
             </span>
           </div>
+
+          {isManagement && (
+            <div className="voting-management-profile">
+              <MayorAvatar />
+              <div className="voting-management-profile-copy">
+                <span>Avaliação da gestão municipal</span>
+                <strong>{mayorProfile.name}</strong>
+                <small>{mayorProfile.role}</small>
+              </div>
+              <div className="voting-management-profile-note">Resultado real da pergunta sobre a administração da Prefeitura</div>
+            </div>
+          )}
 
           <div className="candidate-bars-list">
             {orderedList.map((item) => {
@@ -538,21 +609,21 @@ export default function VotingChartsClient({
               return (
                 <article
                   key={item.candidate}
-                  className={`candidate-bar-item ${special ? "candidate-special" : ""} ${realRank === 1 ? "candidate-leader" : ""}`}
+                  className={`candidate-bar-item ${special ? "candidate-special" : ""} ${realRank === 1 ? "candidate-leader" : ""} ${isManagement ? "candidate-management" : ""}`}
                 >
                   <div className="candidate-bar-top">
-                    <CandidateAvatar name={item.candidate} />
+                    {isManagement ? <ManagementStatusIcon name={item.candidate} /> : <CandidateAvatar name={item.candidate} />}
                     <div className="candidate-info">
                       <div className="candidate-name-line">
                         <span className="candidate-rank-badge">{rankLabel}</span>
                         <strong>{item.candidate}</strong>
-                        {party && <span className="candidate-party">{party}</span>}
+                        {!isManagement && party && <span className="candidate-party">{party}</span>}
                       </div>
-                      <span className="candidate-votes candidate-votes-mobile">{item.votes.toLocaleString("pt-BR")} votos</span>
+                      <span className="candidate-votes candidate-votes-mobile">{item.votes.toLocaleString("pt-BR")} {isManagement ? "respostas" : "votos"}</span>
                     </div>
                     <div className="candidate-metrics">
                       <span className="candidate-pct">{item.percentage.toFixed(1)}%</span>
-                      <span className="candidate-votes candidate-votes-desktop">{item.votes.toLocaleString("pt-BR")} votos</span>
+                      <span className="candidate-votes candidate-votes-desktop">{item.votes.toLocaleString("pt-BR")} {isManagement ? "respostas" : "votos"}</span>
                     </div>
                   </div>
                   <div className="progress-track" aria-label={`${item.percentage.toFixed(1)}%`}>
