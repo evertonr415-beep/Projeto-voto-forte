@@ -1,6 +1,22 @@
-/* WhatsApp mobile: remove somente o cabeçalho introdutório que antecede a área funcional. */
+/* Ajustes exclusivamente visuais da Central de WhatsApp no mobile.
+   Não altera chat, filtros, métricas, disparos nem comportamento do desktop. */
 @media (max-width: 760px) {
-  .page-head:has(+ .wa-layout) {
+  /* O PageHead não é mais adjacente ao conteúdo funcional: existem as sub-abas
+     entre eles. Esconde o card introdutório em qualquer sub-aba do WhatsApp. */
+  body:has(.wa-container) .workspace > .page-head,
+  body:has(.wa-layout) .workspace > .page-head {
     display: none !important;
+  }
+
+  /* A workspace mobile possui 80px de padding inferior. Somado às margens do
+     inbox, isso deixava a faixa escura visível depois da lista de conversas. */
+  body:has(.wa-container) .workspace {
+    padding-bottom: 0 !important;
+  }
+
+  /* Mantém o encaixe lateral/topo atual do WhatsApp, mas elimina a margem
+     negativa inferior para a área branca terminar exatamente com o conteúdo. */
+  body:has(.wa-container) .wa-container {
+    margin: -16px -16px 0 !important;
   }
 }
