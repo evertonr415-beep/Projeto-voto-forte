@@ -165,7 +165,7 @@ export default function VotingChartsEntryPolish() {
 
         body:has(.voting-charts-container) .app-shell .main > .topbar[data-vf-mobile-compact-tab-header="true"] .page-id {
           min-width: 0 !important;
-          grid-template-columns: 36px minmax(0, 1fr) 116px !important;
+          grid-template-columns: 36px minmax(0, 1fr) 138px !important;
           column-gap: 6px !important;
         }
 
@@ -198,15 +198,15 @@ export default function VotingChartsEntryPolish() {
           grid-column: 3 !important;
           grid-row: 1 !important;
           position: relative !important;
-          width: 116px !important;
-          min-width: 116px !important;
-          max-width: 116px !important;
+          width: 138px !important;
+          min-width: 138px !important;
+          max-width: 138px !important;
           height: 34px !important;
           margin: 0 !important;
           display: flex !important;
           align-items: center !important;
-          gap: 4px !important;
-          padding: 0 22px 0 7px !important;
+          gap: 3px !important;
+          padding: 0 19px 0 6px !important;
           box-sizing: border-box !important;
           border: 1px solid rgba(56, 189, 248, 0.26) !important;
           border-radius: 10px !important;
@@ -218,18 +218,18 @@ export default function VotingChartsEntryPolish() {
         body:has(.voting-charts-container) .${DISTRICT_HEADER_CLASS}::after {
           content: "⌄";
           position: absolute;
-          right: 7px;
+          right: 6px;
           top: 50%;
           transform: translateY(-55%);
           color: #7dd3fc;
-          font-size: 13px;
+          font-size: 12px;
           line-height: 1;
           pointer-events: none;
         }
 
         body:has(.voting-charts-container) .vf-voting-district-header-pin {
           flex: 0 0 auto;
-          font-size: 10px;
+          font-size: 9px;
           line-height: 1;
         }
 
@@ -245,11 +245,11 @@ export default function VotingChartsEntryPolish() {
           color: #e8f4ff !important;
           background: transparent !important;
           font: inherit !important;
-          font-size: 9.2px !important;
+          font-size: 8.9px !important;
           line-height: 1 !important;
           font-weight: 760 !important;
           white-space: nowrap !important;
-          text-overflow: ellipsis !important;
+          text-overflow: clip !important;
           cursor: pointer !important;
         }
 
@@ -258,17 +258,14 @@ export default function VotingChartsEntryPolish() {
           background: #0f172a !important;
         }
 
-        /* O filtro de bairro passa para o cabeçalho no mobile. */
         .voting-charts-container .district-selector-wrap {
           display: none !important;
         }
 
-        /* O menu hambúrguer já cumpre a função de voltar/navegar. */
         .voting-charts-container .voting-actions-row > .voting-btn-primary {
           display: none !important;
         }
 
-        /* Card inicial mais baixo e focado só em status + ações. */
         .voting-charts-container .voting-charts-header {
           padding: 12px 13px !important;
           border-radius: 14px !important;
@@ -294,17 +291,17 @@ export default function VotingChartsEntryPolish() {
 
       @media (max-width: 430px) {
         body:has(.voting-charts-container) .app-shell .main > .topbar[data-vf-mobile-compact-tab-header="true"] .page-id {
-          grid-template-columns: 34px minmax(0, 1fr) 108px !important;
+          grid-template-columns: 34px minmax(0, 1fr) 132px !important;
           column-gap: 5px !important;
         }
 
         body:has(.voting-charts-container) .${DISTRICT_HEADER_CLASS} {
-          width: 108px !important;
-          min-width: 108px !important;
-          max-width: 108px !important;
+          width: 132px !important;
+          min-width: 132px !important;
+          max-width: 132px !important;
           height: 32px !important;
-          padding-left: 6px !important;
-          padding-right: 20px !important;
+          padding-left: 5px !important;
+          padding-right: 18px !important;
           border-radius: 9px !important;
         }
 
@@ -313,23 +310,27 @@ export default function VotingChartsEntryPolish() {
         }
 
         body:has(.voting-charts-container) .vf-mobile-header-title {
-          font-size: 10px !important;
+          font-size: 9.8px !important;
         }
       }
 
       @media (max-width: 360px) {
         body:has(.voting-charts-container) .app-shell .main > .topbar[data-vf-mobile-compact-tab-header="true"] .page-id {
-          grid-template-columns: 32px minmax(0, 1fr) 98px !important;
+          grid-template-columns: 32px minmax(0, 1fr) 120px !important;
         }
 
         body:has(.voting-charts-container) .${DISTRICT_HEADER_CLASS} {
-          width: 98px !important;
-          min-width: 98px !important;
-          max-width: 98px !important;
+          width: 120px !important;
+          min-width: 120px !important;
+          max-width: 120px !important;
         }
 
         body:has(.voting-charts-container) .vf-voting-district-header-select {
-          font-size: 8.1px !important;
+          font-size: 8px !important;
+        }
+
+        body:has(.voting-charts-container) .vf-mobile-header-title {
+          font-size: 9.2px !important;
         }
       }
 
