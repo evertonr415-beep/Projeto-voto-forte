@@ -64,6 +64,17 @@ const candidatePhotos: Record<string, string> = {
   "aline franzon": "https://operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/3d/3d52390db67b93f272fe787733302a2aa3c14fffa9028456a5cc4388f595cffc.jpg",
   "delegado jacovos": "https://media.agoraparana.com.br/2024/08/c20d1cc3-5fe9sht8pfcain3esshpjrton9xxjqxvrzteehzh.jpg",
   "cobra reporter": "https://storage2.assembleia.pr.leg.br/img/a4si2EuU-5kB4x4DvCPGqXQ2LlU%3D/full-fit-in/800x600/noticias/imagens/wlqX5SAmnwgrjnuxgGGvY2a6fUbg4qoMOcpKcSAd.jpg",
+  "sergio moro": "https://legis.senado.leg.br/senadores/fotos-oficiais/6331",
+  "sandro alex": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/160621.jpg",
+  "requiao filho": "https://storage2.assembleia.pr.leg.br/img/jo-YJGXcfLRtRuh41Yn2yghhbOs%3D/full-fit-in/300x300/deputados/7d0fa4289d10706dee8d9f1d98956d4f17b6255a.png",
+  "lula": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/73/7355fb81cb690d57fe915539390218a85cc5710e5ccf98de01df167e7ccfefc4.jpg",
+  "flavio bolsonaro": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/ac/ace3990fdc7ec22b49acc1a60880ddb1c8bb1bc0cf0a593a3bb9cc9406eac78d.jpg",
+  "augusto cury": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/0e/0e7261482f24db5eeb08307f2cd69a674cae28f0883af694c50f8c962e8c44f0.jpg",
+  "escritor augusto cury": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/0e/0e7261482f24db5eeb08307f2cd69a674cae28f0883af694c50f8c962e8c44f0.jpg",
+  "renan santos": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/17/1765b870a27728d48cee02be6e5c83959fe8c6a69d2c638e5ff3bfc86057b71f.jpg",
+  "ronaldo caiado": "https://legis.senado.leg.br/senadores/fotos-oficiais/456",
+  "romeu zema": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/c5/c54dfb71633b010e0366cf07d337c3e2a16eafa8882f26dc3ef02015ef0d7378.jpg",
+  "zema": "https://revistaopera.operamundi.uol.com.br/wp-content/uploads/serverdoin-eleicoes/candidate-photos/v1/2026/sha256/c5/c54dfb71633b010e0366cf07d337c3e2a16eafa8882f26dc3ef02015ef0d7378.jpg",
 };
 
 function normalizeCandidate(value: string) {
