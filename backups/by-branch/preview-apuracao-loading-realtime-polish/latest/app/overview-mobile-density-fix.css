@@ -1,0 +1,269 @@
+/*
+ * Visao Geral — ajuste de densidade para celulares.
+ * Corrige a sensacao de zoom sem usar transform/zoom no navegador.
+ * Mantem areas de toque utilizaveis e prioriza a largura real do aparelho.
+ */
+
+@media (max-width: 760px) {
+  body:has(.welcome-pro) { overflow-x: hidden !important; }
+
+  body:has(.welcome-pro) .app-shell,
+  body:has(.welcome-pro) .app-shell .workspace {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .mobile-menu {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id h1,
+  body:has(.welcome-pro) .app-shell .topbar .page-id small {
+    display: none !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
+    flex: 0 0 128px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    box-sizing: border-box !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 32px !important;
+    padding: 0 24px 0 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    margin: 0 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile > span {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .workspace {
+    box-sizing: border-box !important;
+    padding: 12px 10px 66px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .welcome-pro {
+    min-height: 0 !important;
+    padding: 15px 16px !important;
+    border-radius: 14px !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro span {
+    margin-bottom: 4px !important;
+    font-size: 6.5px !important;
+    letter-spacing: 1.2px !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro h2 {
+    margin: 0 0 6px !important;
+    font-size: 20px !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.4px !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro p {
+    font-size: 9.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  body:has(.welcome-pro) .kpis {
+    gap: 7px !important;
+    margin: 10px 0 11px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi {
+    box-sizing: border-box !important;
+    min-height: 70px !important;
+    padding: 9px 34px 9px 10px !important;
+    gap: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi-icon {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi strong {
+    font-size: 19px !important;
+    line-height: 1 !important;
+    letter-spacing: -0.4px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi b {
+    margin: 2px 0 3px !important;
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi small {
+    font-size: 8.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi-arrow {
+    right: 11px !important;
+    font-size: 20px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .panel {
+    box-sizing: border-box !important;
+    border-radius: 14px !important;
+    padding: 13px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .panel h2,
+  body:has(.welcome-pro) .app-shell .panel h3 {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .panel p,
+  body:has(.welcome-pro) .app-shell .panel small {
+    line-height: 1.3 !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .workspace > *,
+  body:has(.welcome-pro) .app-shell .panel,
+  body:has(.welcome-pro) .app-shell .kpi,
+  body:has(.welcome-pro) .app-shell .welcome-pro {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body:has(.welcome-pro) .app-shell .topbar {
+    padding-inline: 8px !important;
+    gap: 5px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .mobile-menu {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id {
+    gap: 5px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope {
+    flex: 0 0 120px !important;
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .vf-header-scope-select-wrap {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .page-id > .vf-theme-toggle {
+    flex-basis: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar .profile,
+  body:has(.welcome-pro) .app-shell .topbar .profile > span {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .workspace {
+    padding-inline: 8px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .welcome-pro {
+    padding: 13px 14px !important;
+  }
+
+  body:has(.welcome-pro) .welcome-pro h2 {
+    font-size: 19px !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .kpi {
+    min-height: 66px !important;
+    padding-block: 8px !important;
+  }
+}
