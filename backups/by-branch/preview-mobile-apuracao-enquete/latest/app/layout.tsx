@@ -5,6 +5,7 @@ import SignupMunicipalityEnhancer from "./signup-municipality-enhancer";
 import DashboardRuntimeEnhancers from "./dashboard-runtime-enhancers";
 import DashboardRouteViewEnhancer from "./dashboard-route-view-enhancer";
 import WhatsappDisparosTabEnhancer from "./whatsapp-disparos-tab-enhancer";
+import SurveyRankingPhotoEnhancer from "./survey-ranking-photo-enhancer";
 import PwaInstaller from "./pwa-installer";
 import "./globals.css";
 import "./optimized-dashboard.css";
@@ -92,4 +93,4 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const THEME_BOOTSTRAP_SCRIPT = `(function(){document.documentElement.dataset.vfTheme='dark';document.documentElement.style.colorScheme='dark';})();`;
 export const viewport: Viewport = { width:"device-width", initialScale:1, maximumScale:1, userScalable:false, viewportFit:"cover", themeColor:"#051929" };
 export const metadata: Metadata = { title:"VOTO FORTE PARANÁ", description:"Gestão inteligente de campanha em todo o Paraná.", manifest:"/manifest.json", appleWebApp:{capable:true,statusBarStyle:"black",title:"VOTO FORTE",startupImage:["/voto-forte-bandeira-icon.jpg"]}, other:{"codex-preview":"development","mobile-web-app-capable":"yes","apple-mobile-web-app-capable":"yes","apple-mobile-web-app-status-bar-style":"black"}, icons:{icon:"/voto-forte-bandeira-icon.jpg",shortcut:"/voto-forte-bandeira-icon.jpg",apple:"/voto-forte-bandeira-icon.jpg"} };
-export default function RootLayout({children}:{children:React.ReactNode;}) { return <html lang="pt-BR" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:THEME_BOOTSTRAP_SCRIPT}} /></head><body className={`${geistSans.variable} ${geistMono.variable} antialiased`}><PwaInstaller /><AdaptivePerformance /><SignupMunicipalityEnhancer /><DashboardRuntimeEnhancers /><DashboardRouteViewEnhancer /><WhatsappDisparosTabEnhancer />{children}</body></html>; }
+export default function RootLayout({children}:{children:React.ReactNode;}) { return <html lang="pt-BR" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:THEME_BOOTSTRAP_SCRIPT}} /></head><body className={`${geistSans.variable} ${geistMono.variable} antialiased`}><PwaInstaller /><AdaptivePerformance /><SignupMunicipalityEnhancer /><DashboardRuntimeEnhancers /><DashboardRouteViewEnhancer /><WhatsappDisparosTabEnhancer /><SurveyRankingPhotoEnhancer />{children}</body></html>; }
