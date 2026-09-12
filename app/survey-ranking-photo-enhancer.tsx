@@ -33,6 +33,11 @@ function candidateNameFrom(item: Element) {
   return label.replace(/^\s*\d+\s*º\s*/i, "").trim();
 }
 
+function leaderNameFrom(card: Element) {
+  const label = card.querySelector<HTMLElement>("strong")?.textContent || "";
+  return label.replace(/\s*\([^)]*%\)\s*$/i, "").trim();
+}
+
 function isSpecialCandidate(name: string) {
   const key = normalize(name);
   return (
@@ -64,6 +69,28 @@ function makeFallback(name: string) {
   fallback.textContent = initials(name);
   fallback.setAttribute("aria-hidden", "true");
   return fallback;
+}
+
+function appendPhotoOrFallback(container: HTMLElement, name: string) {
+  const photo = candidatePhotos[normalize(name)];
+  if (!photo) {
+    container.appendChild(makeFallback(name));
+    return;
+  }
+
+  const image = document.createElement("img");
+  image.src = photo;
+  image.alt = `Foto de ${name}`;
+  image.loading = "lazy";
+  image.referrerPolicy = "no-referrer";
+  image.addEventListener(
+    "error",
+    () => {
+      image.replaceWith(makeFallback(name));
+    },
+    { once: true },
+  );
+  container.appendChild(image);
 }
 
 function reorderRankingList(list: HTMLElement) {
@@ -110,28 +137,31 @@ function enhanceRankingItem(item: HTMLElement) {
   const avatar = document.createElement("span");
   avatar.className = "vf-survey-candidate-avatar";
   avatar.setAttribute("aria-label", name);
-
-  const photo = candidatePhotos[normalizedName];
-  if (photo) {
-    const image = document.createElement("img");
-    image.src = photo;
-    image.alt = `Foto de ${name}`;
-    image.loading = "lazy";
-    image.referrerPolicy = "no-referrer";
-    image.addEventListener(
-      "error",
-      () => {
-        image.replaceWith(makeFallback(name));
-      },
-      { once: true },
-    );
-    avatar.appendChild(image);
-  } else {
-    avatar.appendChild(makeFallback(name));
-  }
+  appendPhotoOrFallback(avatar, name);
 
   line.insertBefore(avatar, candidate);
   item.dataset.vfCandidatePhoto = normalizedName;
+}
+
+function enhanceLeaderCard(card: HTMLElement) {
+  const name = leaderNameFrom(card);
+  if (!name || name === "-") return;
+
+  const normalizedName = normalize(name);
+  if (card.dataset.vfLeaderPhoto === normalizedName) return;
+
+  card.querySelector(".vf-survey-leader-avatar")?.remove();
+
+  const strong = card.querySelector<HTMLElement>("strong");
+  if (!strong) return;
+
+  const avatar = document.createElement("span");
+  avatar.className = "vf-survey-leader-avatar";
+  avatar.setAttribute("aria-label", `Líder: ${name}`);
+  appendPhotoOrFallback(avatar, name);
+
+  card.insertBefore(avatar, strong);
+  card.dataset.vfLeaderPhoto = normalizedName;
 }
 
 function enhanceAll() {
@@ -142,6 +172,10 @@ function enhanceAll() {
   document
     .querySelectorAll<HTMLElement>(".survey-drawer .survey-ranking-item")
     .forEach(enhanceRankingItem);
+
+  document
+    .querySelectorAll<HTMLElement>(".survey-drawer .survey-kpi-leader")
+    .forEach(enhanceLeaderCard);
 }
 
 export default function SurveyRankingPhotoEnhancer() {
@@ -195,10 +229,8 @@ export default function SurveyRankingPhotoEnhancer() {
         margin-bottom: 8px !important;
       }
 
-      .survey-drawer .vf-survey-candidate-avatar {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
+      .survey-drawer .vf-survey-candidate-avatar,
+      .survey-drawer .vf-survey-leader-avatar {
         border-radius: 50%;
         overflow: hidden;
         display: grid;
@@ -208,12 +240,28 @@ export default function SurveyRankingPhotoEnhancer() {
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
       }
 
+      .survey-drawer .vf-survey-candidate-avatar {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+      }
+
+      .survey-drawer .vf-survey-leader-avatar {
+        display: none;
+        width: 54px;
+        height: 54px;
+        min-width: 54px;
+        border-color: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12), 0 5px 14px rgba(0, 0, 0, 0.22);
+      }
+
       .survey-drawer .survey-ranking-item:first-child .vf-survey-candidate-avatar {
         border-color: #22c55e;
         box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12), 0 3px 10px rgba(0, 0, 0, 0.2);
       }
 
-      .survey-drawer .vf-survey-candidate-avatar > img {
+      .survey-drawer .vf-survey-candidate-avatar > img,
+      .survey-drawer .vf-survey-leader-avatar > img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -307,6 +355,33 @@ export default function SurveyRankingPhotoEnhancer() {
           width: 44px;
           height: 44px;
           min-width: 44px;
+        }
+
+        .survey-drawer .survey-kpi-leader {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 5px !important;
+          padding-top: 12px !important;
+          padding-bottom: 12px !important;
+        }
+
+        .survey-drawer .vf-survey-leader-avatar {
+          display: grid;
+          width: 52px;
+          height: 52px;
+          min-width: 52px;
+          margin-bottom: 2px;
+        }
+
+        .survey-drawer .survey-kpi-leader strong {
+          text-align: center !important;
+          line-height: 1.22 !important;
+        }
+
+        .survey-drawer .survey-kpi-leader > span:not(.vf-survey-leader-avatar) {
+          text-align: center !important;
         }
 
         .survey-drawer .survey-candidate-name {
