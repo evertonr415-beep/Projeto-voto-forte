@@ -19,4 +19,118 @@
   body:has(.wa-container) .wa-container {
     margin: -16px -16px 0 !important;
   }
+
+  /* Barra de navegação da Central: mantém os mesmos 3 botões e os mesmos
+     eventos, porém em formato compacto e horizontal no celular. */
+  body:has(.wa-container) .workspace > .page-head + div,
+  body:has(.wa-layout) .workspace > .page-head + div {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    margin: 0 -2px 8px !important;
+    padding: 0 2px 4px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div::-webkit-scrollbar,
+  body:has(.wa-layout) .workspace > .page-head + div::-webkit-scrollbar {
+    display: none;
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div > button,
+  body:has(.wa-layout) .workspace > .page-head + div > button {
+    flex: 1 0 auto !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 7px 10px !important;
+    border-radius: 9px !important;
+    font-size: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div > button::after,
+  body:has(.wa-layout) .workspace > .page-head + div > button::after {
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.1px;
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div > button:nth-child(1)::after,
+  body:has(.wa-layout) .workspace > .page-head + div > button:nth-child(1)::after {
+    content: "💬 Chat";
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div > button:nth-child(2)::after,
+  body:has(.wa-layout) .workspace > .page-head + div > button:nth-child(2)::after {
+    content: "📊 Monitor";
+  }
+
+  body:has(.wa-container) .workspace > .page-head + div > button:nth-child(3)::after,
+  body:has(.wa-layout) .workspace > .page-head + div > button:nth-child(3)::after {
+    content: "🚀 Disparos";
+  }
+
+  /* Cabeçalho interno do WhatsApp Oficial: mesma informação, menor altura. */
+  body:has(.wa-container) .wa-sidebar-header {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 6px 10px !important;
+  }
+
+  body:has(.wa-container) .wa-profile-row {
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  body:has(.wa-container) .wa-profile-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 14px !important;
+  }
+
+  body:has(.wa-container) .wa-profile-title {
+    font-size: 13px !important;
+    gap: 5px !important;
+    white-space: nowrap;
+  }
+
+  body:has(.wa-container) .wa-profile-badge {
+    font-size: 8px !important;
+    padding: 2px 5px !important;
+  }
+
+  /* Busca e filtros mais próximos da lista, sem retirar nenhuma opção. */
+  body:has(.wa-container) .wa-search-container {
+    padding: 6px 8px !important;
+  }
+
+  body:has(.wa-container) .wa-search-box {
+    min-height: 36px !important;
+    padding: 5px 9px !important;
+    gap: 7px !important;
+  }
+
+  body:has(.wa-container) .wa-search-input {
+    font-size: 13px !important;
+  }
+
+  body:has(.wa-container) .wa-filter-chips {
+    gap: 5px !important;
+    padding: 5px 8px !important;
+    scrollbar-width: none;
+  }
+
+  body:has(.wa-container) .wa-filter-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  body:has(.wa-container) .wa-filter-chip {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+  }
 }
