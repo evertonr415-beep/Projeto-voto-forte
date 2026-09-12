@@ -1,27 +1,19 @@
 /* Ajustes exclusivamente visuais da Central de WhatsApp no mobile.
    Não altera chat, filtros, métricas, disparos nem comportamento do desktop. */
 @media (max-width: 760px) {
-  /* O PageHead não é mais adjacente ao conteúdo funcional: existem as sub-abas
-     entre eles. Esconde o card introdutório em qualquer sub-aba do WhatsApp. */
   body:has(.wa-container) .workspace > .page-head,
   body:has(.wa-layout) .workspace > .page-head {
     display: none !important;
   }
 
-  /* A workspace mobile possui 80px de padding inferior. Somado às margens do
-     inbox, isso deixava a faixa escura visível depois da lista de conversas. */
   body:has(.wa-container) .workspace {
     padding-bottom: 0 !important;
   }
 
-  /* Mantém o encaixe lateral/topo atual do WhatsApp, mas elimina a margem
-     negativa inferior para a área branca terminar exatamente com o conteúdo. */
   body:has(.wa-container) .wa-container {
     margin: -16px -16px 0 !important;
   }
 
-  /* Barra de navegação da Central: mantém os mesmos 3 botões e os mesmos
-     eventos, porém em formato compacto e horizontal no celular. */
   body:has(.wa-container) .workspace > .page-head + div,
   body:has(.wa-layout) .workspace > .page-head + div {
     display: flex !important;
@@ -75,7 +67,6 @@
     content: "🚀 Disparos";
   }
 
-  /* Cabeçalho interno do WhatsApp Oficial: mesma informação, menor altura. */
   body:has(.wa-container) .wa-sidebar-header {
     height: 48px !important;
     min-height: 48px !important;
@@ -104,7 +95,6 @@
     padding: 2px 5px !important;
   }
 
-  /* Busca e filtros mais próximos da lista, sem retirar nenhuma opção. */
   body:has(.wa-container) .wa-search-container {
     padding: 6px 8px !important;
   }
@@ -132,5 +122,196 @@
   body:has(.wa-container) .wa-filter-chip {
     font-size: 11px !important;
     padding: 5px 10px !important;
+  }
+
+  /* Monitor: banner do disparador compacto no mobile. */
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child {
+    margin-bottom: 8px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button {
+    min-height: 64px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    gap: 8px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:first-child > span {
+    font-size: 20px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:first-child > div > strong {
+    font-size: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:first-child > div > strong::after {
+    content: "Central de Disparos";
+    font-size: 13px !important;
+    color: #2ddd7f;
+    font-weight: 800;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:first-child > div > span {
+    display: none !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:last-child {
+    flex: 0 0 auto !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > div:first-child > button > div:last-child > span {
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Card principal do Monitor mais enxuto. */
+  body:has(.wt-live-feed-list) .wa-layout > article.panel:has(.wt-live-feed-list) {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > article.panel:has(.wt-live-feed-list) > div:first-child {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > article.panel:has(.wt-live-feed-list) > div:first-child > div:first-child {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-live-indicator {
+    padding: 5px 8px !important;
+    border-radius: 999px !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > article.panel:has(.wt-live-feed-list) > div:first-child h3 {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+  }
+
+  body:has(.wt-live-feed-list) .wa-layout > article.panel:has(.wt-live-feed-list) > div:first-child > div:last-child {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-secondary-btn {
+    width: 100% !important;
+    min-height: 36px !important;
+    padding: 7px 8px !important;
+    font-size: 10px !important;
+    justify-content: center !important;
+  }
+
+  /* KPIs em 2 colunas; taxa ocupa a linha inteira. */
+  body:has(.wt-live-feed-list) .wt-kpi-grid-5 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin: 0 0 10px 0 !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-kpi-card {
+    min-width: 0 !important;
+    min-height: 78px !important;
+    padding: 10px 8px !important;
+    border-radius: 11px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-kpi-card strong {
+    font-size: 18px !important;
+    line-height: 1.05 !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-kpi-card span {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-kpi-card.is-rate {
+    grid-column: 1 / -1 !important;
+    min-height: 64px !important;
+  }
+
+  /* Busca em largura total + filtros roláveis sem cortes. */
+  body:has(.wt-live-feed-list) .wt-search-input-wrap {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-search-input-wrap input {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-filter-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding: 1px 0 3px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body:has(.wt-live-feed-list) .wt-filter-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-filter-pill {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    padding: 7px 10px !important;
+    font-size: 10px !important;
+  }
+
+  /* Feed mais legível e compacto, mantendo todo o conteúdo. */
+  body:has(.wt-live-feed-list) .wt-live-item {
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-live-item-header {
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-live-contact-info strong {
+    font-size: 13px !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-status-badge {
+    font-size: 9px !important;
+    padding: 4px 7px !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.wt-live-feed-list) .wt-reply-detail,
+  body:has(.wt-live-feed-list) .wt-error-detail {
+    padding: 8px 9px !important;
+    border-radius: 8px !important;
   }
 }
