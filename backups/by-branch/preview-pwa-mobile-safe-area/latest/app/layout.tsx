@@ -84,10 +84,11 @@ import "./desktop-agenda-export-fixes.css";
 import "./administration-initial-loading-guard.css";
 import "./administration-activity-enhancer.css";
 import "./administration-directory-actions.css";
+import "./pwa-installed-safe-area.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const THEME_BOOTSTRAP_SCRIPT = `(function(){document.documentElement.dataset.vfTheme='dark';document.documentElement.style.colorScheme='dark';})();`;
 export const viewport: Viewport = { width:"device-width", initialScale:1, maximumScale:1, userScalable:false, viewportFit:"cover", themeColor:"#051929" };
-export const metadata: Metadata = { title:"VOTO FORTE PARANÁ", description:"Gestão inteligente de campanha em todo o Paraná.", manifest:"/manifest.json", appleWebApp:{capable:true,statusBarStyle:"black-translucent",title:"VOTO FORTE",startupImage:["/voto-forte-bandeira-icon.jpg"]}, other:{"codex-preview":"development","mobile-web-app-capable":"yes","apple-mobile-web-app-capable":"yes","apple-mobile-web-app-status-bar-style":"black-translucent"}, icons:{icon:"/voto-forte-bandeira-icon.jpg",shortcut:"/voto-forte-bandeira-icon.jpg",apple:"/voto-forte-bandeira-icon.jpg"} };
+export const metadata: Metadata = { title:"VOTO FORTE PARANÁ", description:"Gestão inteligente de campanha em todo o Paraná.", manifest:"/manifest.json", appleWebApp:{capable:true,statusBarStyle:"black",title:"VOTO FORTE",startupImage:["/voto-forte-bandeira-icon.jpg"]}, other:{"codex-preview":"development","mobile-web-app-capable":"yes","apple-mobile-web-app-capable":"yes","apple-mobile-web-app-status-bar-style":"black"}, icons:{icon:"/voto-forte-bandeira-icon.jpg",shortcut:"/voto-forte-bandeira-icon.jpg",apple:"/voto-forte-bandeira-icon.jpg"} };
 export default function RootLayout({children}:{children:React.ReactNode;}) { return <html lang="pt-BR" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:THEME_BOOTSTRAP_SCRIPT}} /></head><body className={`${geistSans.variable} ${geistMono.variable} antialiased`}><PwaInstaller /><AdaptivePerformance /><SignupMunicipalityEnhancer /><DashboardRuntimeEnhancers /><DashboardRouteViewEnhancer />{children}</body></html>; }
