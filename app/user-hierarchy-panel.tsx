@@ -27,18 +27,6 @@ type Municipality = {
   status: string;
 };
 
-type LeadershipContact = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  district: string;
-  city: string;
-  ownerEmail: string;
-  createdAt: string;
-  payload: Record<string, unknown>;
-};
-
 type RoleOption = {
   value: AccessRole;
   label: string;
@@ -72,11 +60,6 @@ type Invitation = {
   expiresAt: string;
   createdAt: string;
 };
-
-type EditTarget =
-  | { type: "user"; user: User }
-  | { type: "contact"; contact: LeadershipContact }
-  | null;
 
 const labels: Record<AccessRole, string> = {
   adm: "ADM",
@@ -116,7 +99,6 @@ function normalize(value: string) {
 export default function UserHierarchyPanel() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [leadershipContacts, setLeadershipContacts] = useState<LeadershipContact[]>([]);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [options, setOptions] = useState<AdministrationOptions | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -129,14 +111,12 @@ export default function UserHierarchyPanel() {
   const [selectedGestorId, setSelectedGestorId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showInvitations, setShowInvitations] = useState(false);
-  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
+  const [openActionsId, setOpenActionsId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [editTarget, setEditTarget] = useState<EditTarget>(null);
+  const [editUser, setEditUser] = useState<User | null>(null);
   const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editDistrict, setEditDistrict] = useState("");
   const [form, setForm] = useState<{
     name: string;
     email: string;
@@ -146,30 +126,21 @@ export default function UserHierarchyPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setMessage("");
     try {
-      const [usersResponse, leadershipResponse] = await Promise.all([
-        apiFetch("/api/users", { cache: "no-store" }),
-        apiFetch("/api/administration/role-directory?role=lideranca&limit=250", { cache: "no-store" }),
-      ]);
-      const usersData = await usersResponse.json();
-      if (!usersResponse.ok) throw new Error(usersData.error || "Falha ao carregar Administração");
+      const response = await apiFetch("/api/users", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Falha ao carregar a Administração.");
 
-      const nextUsers = Array.isArray(usersData.users) ? usersData.users as User[] : [];
+      const nextUsers = Array.isArray(data.users) ? data.users as User[] : [];
       setUsers(nextUsers);
-      setOptions(usersData.administrationOptions || null);
-      setInvitations(Array.isArray(usersData.invitations) ? usersData.invitations : []);
-      setMunicipalities(Array.isArray(usersData.municipalities) ? usersData.municipalities : []);
+      setOptions(data.administrationOptions || null);
+      setInvitations(Array.isArray(data.invitations) ? data.invitations : []);
+      setMunicipalities(Array.isArray(data.municipalities) ? data.municipalities : []);
       setPermissionDrafts(Object.fromEntries(nextUsers.map((user) => [
         user.id,
         Array.from(new Set((user.municipalityIds || []).map(Number))).filter(Boolean),
       ])));
-
-      if (leadershipResponse.ok) {
-        const leadershipData = await leadershipResponse.json();
-        setLeadershipContacts(Array.isArray(leadershipData.items) ? leadershipData.items : []);
-      } else {
-        setLeadershipContacts([]);
-      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar a Administração.");
     } finally {
@@ -205,6 +176,13 @@ export default function UserHierarchyPanel() {
     }));
   }, [options, form.accessRole]);
 
+  useEffect(() => {
+    if (openActionsId == null) return;
+    const close = () => setOpenActionsId(null);
+    window.addEventListener("pointerdown", close);
+    return () => window.removeEventListener("pointerdown", close);
+  }, [openActionsId]);
+
   const currentRole = options?.currentUser.accessRole;
   const canEditPermissions = currentRole === "adm";
   const visibleRoles = useMemo(
@@ -216,41 +194,34 @@ export default function UserHierarchyPanel() {
     if (!canEditPermissions && viewMode === "permissions") setViewMode("users");
   }, [canEditPermissions, viewMode]);
 
+  const accessUsers = useMemo(
+    () => users.filter((user) => user.accessRole !== "eleitor"),
+    [users],
+  );
+
   const roleTotals = useMemo(() => {
     const totals: Record<DirectoryRole, number> = { adm: 0, gestor: 0, master: 0, lideranca: 0, liderado: 0 };
-    for (const user of users) {
-      if (user.accessRole !== "eleitor") totals[user.accessRole] += 1;
-    }
-    totals.lideranca += leadershipContacts.length;
+    for (const user of accessUsers) totals[user.accessRole as DirectoryRole] += 1;
     return totals;
-  }, [leadershipContacts.length, users]);
+  }, [accessUsers]);
 
   const pendingInvitations = useMemo(
     () => invitations.filter((item) => item.status === "pending"),
     [invitations],
   );
 
-  const activeUsers = useMemo(
-    () => users.filter((user) => user.status === "active"),
-    [users],
+  const activeAccessUsers = useMemo(
+    () => accessUsers.filter((user) => user.status === "active"),
+    [accessUsers],
   );
 
   const filteredUsers = useMemo(() => {
     const q = normalize(query);
-    return users
-      .filter((user) => user.accessRole !== "eleitor")
+    return accessUsers
       .filter((user) => roleFilter === "all" || user.accessRole === roleFilter)
       .filter((user) => !q || normalize(`${user.name} ${user.email} ${labels[user.accessRole]}`).includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [query, roleFilter, users]);
-
-  const filteredLeadershipContacts = useMemo(() => {
-    if (roleFilter !== "all" && roleFilter !== "lideranca") return [];
-    const q = normalize(query);
-    return leadershipContacts
-      .filter((contact) => !q || normalize(`${contact.name} ${contact.phone} ${contact.email} ${contact.district}`).includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [leadershipContacts, query, roleFilter]);
+  }, [accessUsers, query, roleFilter]);
 
   const gestorUsers = useMemo(() => {
     const q = normalize(permissionQuery);
@@ -288,13 +259,11 @@ export default function UserHierarchyPanel() {
     }));
   }
 
-  function canManageDirectoryUser(user: User) {
+  function canManageUser(user: User) {
     if (!options?.canOpenAdministration) return false;
     const actor = options.currentUser;
     if (actor.accessRole === "adm") return actor.id !== user.id;
-    if (actor.accessRole === "gestor") {
-      return !["adm", "gestor"].includes(user.accessRole) && actor.id !== user.id;
-    }
+    if (actor.accessRole === "gestor") return !["adm", "gestor"].includes(user.accessRole) && actor.id !== user.id;
     return false;
   }
 
@@ -352,56 +321,27 @@ export default function UserHierarchyPanel() {
     }
   }
 
-  function startUserEdit(user: User) {
-    setEditTarget({ type: "user", user });
+  function startEdit(user: User) {
+    setEditUser(user);
     setEditName(user.name);
-    setEditPhone("");
-    setEditDistrict("");
-    setOpenActionsId(null);
-  }
-
-  function startContactEdit(contact: LeadershipContact) {
-    setEditTarget({ type: "contact", contact });
-    setEditName(contact.name);
-    setEditPhone(contact.phone);
-    setEditDistrict(contact.district);
     setOpenActionsId(null);
   }
 
   async function saveEdit(event: React.FormEvent) {
     event.preventDefault();
-    if (!editTarget || !editName.trim()) return;
+    if (!editUser || !editName.trim()) return;
     setSaving(true);
     setMessage("");
     try {
-      if (editTarget.type === "user") {
-        const response = await apiFetch("/api/users", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: editTarget.user.id, action: "edit", name: editName.trim() }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Não foi possível editar o usuário.");
-        setMessage("Usuário atualizado com sucesso.");
-      } else {
-        const contact = editTarget.contact;
-        const payload = {
-          ...contact.payload,
-          name: editName.trim(),
-          phone: editPhone.trim(),
-          district: editDistrict.trim(),
-          kind: "Liderança",
-        };
-        const response = await apiFetch("/api/records", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: contact.id, payload }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Não foi possível editar a liderança.");
-        setMessage("Liderança atualizada com sucesso.");
-      }
-      setEditTarget(null);
+      const response = await apiFetch("/api/users", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: editUser.id, action: "edit", name: editName.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível editar o usuário.");
+      setMessage("Usuário atualizado com sucesso.");
+      setEditUser(null);
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível salvar a alteração.");
@@ -413,6 +353,7 @@ export default function UserHierarchyPanel() {
   async function removeUser(user: User) {
     if (!window.confirm(`Excluir o acesso de ${user.name}? O histórico será preservado.`)) return;
     setSaving(true);
+    setMessage("");
     try {
       const response = await apiFetch("/api/users", {
         method: "PATCH",
@@ -426,23 +367,6 @@ export default function UserHierarchyPanel() {
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível excluir o acesso.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function removeLeadershipContact(contact: LeadershipContact) {
-    if (!window.confirm(`Excluir a liderança ${contact.name} da base de contatos?`)) return;
-    setSaving(true);
-    try {
-      const response = await apiFetch(`/api/records?id=${contact.id}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível excluir a liderança.");
-      setMessage("Liderança excluída da base de contatos.");
-      setOpenActionsId(null);
-      await load();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível excluir a liderança.");
     } finally {
       setSaving(false);
     }
@@ -491,8 +415,6 @@ export default function UserHierarchyPanel() {
 
   if (!target) return null;
 
-  const userEntriesTotal = filteredUsers.length + filteredLeadershipContacts.length;
-
   return createPortal(
     <>
       <section className="vf-access-workspace" aria-label="Gestão de usuários e permissões">
@@ -515,7 +437,7 @@ export default function UserHierarchyPanel() {
         </header>
 
         <div className="vf-access-kpi-strip" aria-label="Resumo de acessos">
-          <span><b>{activeUsers.length}</b> ativos</span>
+          <span><b>{activeAccessUsers.length}</b> ativos</span>
           <button type="button" onClick={() => setShowInvitations(true)}><b>{pendingInvitations.length}</b> convites</button>
           <span><b>{roleTotals.gestor}</b> gestores</span>
         </div>
@@ -534,7 +456,7 @@ export default function UserHierarchyPanel() {
             <div className="vf-access-toolbar">
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nome ou e-mail" aria-label="Buscar usuários" />
               <div className="vf-access-role-filters" role="tablist" aria-label="Filtrar por nível">
-                <button type="button" className={roleFilter === "all" ? "active" : ""} onClick={() => setRoleFilter("all")}>Todos <b>{users.filter((user) => user.accessRole !== "eleitor").length + leadershipContacts.length}</b></button>
+                <button type="button" className={roleFilter === "all" ? "active" : ""} onClick={() => setRoleFilter("all")}>Todos <b>{accessUsers.length}</b></button>
                 {visibleRoles.map((role) => (
                   <button type="button" key={role} className={roleFilter === role ? "active" : ""} onClick={() => setRoleFilter(role)}>{labels[role]} <b>{roleTotals[role]}</b></button>
                 ))}
@@ -550,10 +472,9 @@ export default function UserHierarchyPanel() {
 
             <div className="vf-access-directory-list">
               {filteredUsers.map((user) => {
-                const key = `user-${user.id}`;
-                const manageable = canManageDirectoryUser(user);
+                const manageable = canManageUser(user);
                 return (
-                  <article className={`vf-access-person role-${user.accessRole}`} key={key}>
+                  <article className={`vf-access-person role-${user.accessRole}`} key={user.id}>
                     <div className="vf-access-avatar">{initials(user.name)}</div>
                     <div className="vf-access-person-main">
                       <strong>{user.name}</strong>
@@ -565,11 +486,11 @@ export default function UserHierarchyPanel() {
                       </div>
                     </div>
                     {manageable ? (
-                      <div className="vf-access-person-menu">
-                        <button type="button" aria-label={`Gerenciar ${user.name}`} onClick={() => setOpenActionsId((current) => current === key ? null : key)}>•••</button>
-                        {openActionsId === key ? (
+                      <div className="vf-access-person-menu" onPointerDown={(event) => event.stopPropagation()}>
+                        <button type="button" aria-label={`Gerenciar ${user.name}`} onClick={() => setOpenActionsId((current) => current === user.id ? null : user.id)}>•••</button>
+                        {openActionsId === user.id ? (
                           <div className="vf-access-action-popover">
-                            <button type="button" onClick={() => startUserEdit(user)}>Editar nome</button>
+                            <button type="button" onClick={() => startEdit(user)}>Editar nome</button>
                             <button type="button" onClick={() => void setStatus(user)}>{user.status === "active" ? "Bloquear acesso" : "Reativar acesso"}</button>
                             <button type="button" className="danger" onClick={() => void removeUser(user)}>Excluir acesso</button>
                           </div>
@@ -579,31 +500,8 @@ export default function UserHierarchyPanel() {
                   </article>
                 );
               })}
-
-              {filteredLeadershipContacts.map((contact) => {
-                const key = `contact-${contact.id}`;
-                return (
-                  <article className="vf-access-person role-lideranca" key={key}>
-                    <div className="vf-access-avatar">{initials(contact.name)}</div>
-                    <div className="vf-access-person-main">
-                      <strong>{contact.name}</strong>
-                      <small>{contact.phone || contact.email || "Sem telefone"}{contact.district ? ` · ${contact.district}` : ""}</small>
-                      <div className="vf-access-person-meta"><span>Liderança</span><i className="registered">Cadastro</i>{contact.ownerEmail ? <em>Responsável: {contact.ownerEmail}</em> : null}</div>
-                    </div>
-                    <div className="vf-access-person-menu">
-                      <button type="button" aria-label={`Gerenciar ${contact.name}`} onClick={() => setOpenActionsId((current) => current === key ? null : key)}>•••</button>
-                      {openActionsId === key ? (
-                        <div className="vf-access-action-popover">
-                          <button type="button" onClick={() => startContactEdit(contact)}>Editar cadastro</button>
-                          <button type="button" className="danger" onClick={() => void removeLeadershipContact(contact)}>Excluir cadastro</button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-
-              {!userEntriesTotal && !loading ? <p className="vf-access-empty">Nenhuma pessoa encontrada com estes filtros.</p> : null}
+              {!filteredUsers.length && !loading ? <p className="vf-access-empty">Nenhum usuário encontrado com estes filtros.</p> : null}
+              {loading && !accessUsers.length ? <p className="vf-access-empty">Carregando acessos…</p> : null}
             </div>
           </section>
         ) : (
@@ -632,7 +530,7 @@ export default function UserHierarchyPanel() {
                   </article>
                 );
               })}
-              {!gestorUsers.length ? <p className="vf-access-empty">Nenhum Gestor ativo encontrado.</p> : null}
+              {!gestorUsers.length && !loading ? <p className="vf-access-empty">Nenhum Gestor ativo encontrado.</p> : null}
             </div>
           </section>
         )}
@@ -681,6 +579,7 @@ export default function UserHierarchyPanel() {
               {filteredMunicipalities.map((municipality) => (
                 <label key={municipality.id}><input type="checkbox" checked={(permissionDrafts[selectedGestor.id] || []).includes(municipality.id)} onChange={() => toggleMunicipality(selectedGestor.id, municipality.id)} /><span><b>{municipality.name}</b><small>{municipality.state}</small></span></label>
               ))}
+              {!filteredMunicipalities.length ? <p className="vf-access-empty">Nenhum município encontrado.</p> : null}
             </div>
             <footer><button type="button" onClick={() => setSelectedGestorId(null)} disabled={saving}>Cancelar</button><button type="button" className="primary" onClick={() => void saveMunicipalities(selectedGestor)} disabled={saving}>{saving ? "Salvando…" : "Salvar permissões"}</button></footer>
           </section>
@@ -688,13 +587,13 @@ export default function UserHierarchyPanel() {
         document.body,
       )}
 
-      {editTarget && createPortal(
-        <div className="vf-access-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditTarget(null); }}>
+      {editUser && createPortal(
+        <div className="vf-access-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditUser(null); }}>
           <form className="vf-access-modal vf-access-edit-modal" onSubmit={saveEdit}>
-            <header><div><small>EDITAR</small><h3>{editTarget.type === "user" ? "Usuário" : "Liderança"}</h3></div><button type="button" onClick={() => setEditTarget(null)} disabled={saving}>×</button></header>
+            <header><div><small>EDITAR</small><h3>Usuário</h3><p>{editUser.email}</p></div><button type="button" onClick={() => setEditUser(null)} disabled={saving}>×</button></header>
             <label>Nome<input required value={editName} onChange={(event) => setEditName(event.target.value)} autoFocus /></label>
-            {editTarget.type === "contact" ? <><label>Telefone / WhatsApp<input value={editPhone} onChange={(event) => setEditPhone(event.target.value)} /></label><label>Bairro<input value={editDistrict} onChange={(event) => setEditDistrict(event.target.value)} /></label></> : <p className="vf-access-edit-note">O e-mail e o nível de acesso permanecem protegidos nesta edição.</p>}
-            <footer><button type="button" onClick={() => setEditTarget(null)} disabled={saving}>Cancelar</button><button type="submit" className="primary" disabled={saving}>{saving ? "Salvando…" : "Salvar"}</button></footer>
+            <p className="vf-access-edit-note">O e-mail e o nível de acesso permanecem protegidos nesta edição.</p>
+            <footer><button type="button" onClick={() => setEditUser(null)} disabled={saving}>Cancelar</button><button type="submit" className="primary" disabled={saving}>{saving ? "Salvando…" : "Salvar"}</button></footer>
           </form>
         </div>,
         document.body,
