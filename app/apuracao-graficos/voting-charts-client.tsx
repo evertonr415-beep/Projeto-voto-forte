@@ -202,6 +202,8 @@ export default function VotingChartsClient({
   const [federalRanking, setFederalRanking] = useState<CandidateItem[]>([]);
   const [governorRanking, setGovernorRanking] = useState<CandidateItem[]>([]);
   const [presidentRanking, setPresidentRanking] = useState<CandidateItem[]>([]);
+  const [managementRanking, setManagementRanking] = useState<CandidateItem[]>([]);
+  const [managementTotalVotes, setManagementTotalVotes] = useState<number>(0);
   const [districtRanking, setDistrictRanking] = useState<{ district: string; total: number }[]>([]);
   const [responses, setResponses] = useState<SurveyFeedItem[]>([]);
   const [totalVotes, setTotalVotes] = useState<number>(0);
@@ -245,6 +247,13 @@ export default function VotingChartsClient({
         }
         if (!surveyData?.federalRanking?.length && previewData.federalRanking?.length) {
           setFederalRanking(previewData.federalRanking);
+        }
+        if (previewData.managementRanking?.length) {
+          setManagementRanking(previewData.managementRanking);
+          setManagementTotalVotes(Number(previewData.totalResponses || 0));
+        } else {
+          setManagementRanking([]);
+          setManagementTotalVotes(0);
         }
       }
 
@@ -290,13 +299,7 @@ export default function VotingChartsClient({
     else if (activeCategory === "federal") list = federalRanking;
     else if (activeCategory === "governor") list = governorRanking;
     else if (activeCategory === "president") list = presidentRanking;
-    else {
-      list = [
-        { candidate: "Ótima / Boa Gestão", votes: Math.round(totalVotes * 0.48), percentage: 48.0 },
-        { candidate: "Regular / Média", votes: Math.round(totalVotes * 0.34), percentage: 34.0 },
-        { candidate: "Ruim / Péssima", votes: Math.round(totalVotes * 0.18), percentage: 18.0 },
-      ];
-    }
+    else list = managementRanking;
 
     if (list.length > 0) return list;
 
@@ -337,8 +340,12 @@ export default function VotingChartsClient({
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
     }
-    return list;
-  }, [activeCategory, stateRanking, federalRanking, governorRanking, presidentRanking, totalVotes]);
+    return [
+      { candidate: "Boa", votes: 0, percentage: 0 },
+      { candidate: "Média", votes: 0, percentage: 0 },
+      { candidate: "Ruim", votes: 0, percentage: 0 },
+    ];
+  }, [activeCategory, stateRanking, federalRanking, governorRanking, presidentRanking, managementRanking]);
 
   const orderedList = useMemo(() => {
     const byVotes = (a: CandidateItem, b: CandidateItem) =>
@@ -356,9 +363,14 @@ export default function VotingChartsClient({
     () => orderedList.filter((item) => !isSpecialCandidate(item.candidate)),
     [orderedList],
   );
-  const leader = rankedCandidates[0];
-  const runnerUp = rankedCandidates[1];
+  const rankedCandidatesWithVotes = useMemo(
+    () => rankedCandidates.filter((item) => item.votes > 0),
+    [rankedCandidates],
+  );
+  const leader = rankedCandidatesWithVotes[0];
+  const runnerUp = rankedCandidatesWithVotes[1];
   const indecisos = orderedList.find((item) => isIndecisiveCandidate(item.candidate));
+  const displayedTotalVotes = activeCategory === "management" ? managementTotalVotes : totalVotes;
 
   const categoryTitle =
     activeCategory === "state"
@@ -369,7 +381,7 @@ export default function VotingChartsClient({
           ? "Governador do Paraná"
           : activeCategory === "president"
             ? "Presidente da República"
-            : "Avaliação da Gestão";
+            : "Avaliação da Gestão Municipal";
 
   const exportCsv = () => {
     const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
@@ -443,16 +455,20 @@ export default function VotingChartsClient({
       <section className="voting-kpi-grid" aria-label="Resumo da apuração">
         <article className="voting-kpi-card voting-kpi-total">
           <div className="voting-kpi-label">Total de votos <span>🗳️</span></div>
-          <div className="voting-kpi-value">{totalVotes.toLocaleString("pt-BR")}</div>
+          <div className="voting-kpi-value">{displayedTotalVotes.toLocaleString("pt-BR")}</div>
           <div className="voting-kpi-sub">
-            {selectedDistrict === "all" ? "Todos os bairros" : selectedDistrict}
+            {activeCategory === "management"
+              ? "Respostas da avaliação municipal"
+              : selectedDistrict === "all"
+                ? "Todos os bairros"
+                : selectedDistrict}
           </div>
         </article>
 
         <article className="voting-kpi-card voting-kpi-person voting-kpi-leader">
           <div className="voting-kpi-label">1º colocado <span>🥇</span></div>
           <div className="voting-kpi-person-row">
-            {leader ? <CandidateAvatar name={leader.candidate} compact /> : <CandidateAvatar name="?" compact />}
+            {leader && <CandidateAvatar name={leader.candidate} compact />}
             <div className="voting-kpi-person-copy">
               <div className="voting-kpi-value voting-kpi-green">{leader ? `${leader.percentage.toFixed(1)}%` : "0%"}</div>
               <div className="voting-kpi-sub">{leader?.candidate || "Aguardando votos"}</div>
@@ -463,10 +479,10 @@ export default function VotingChartsClient({
         <article className="voting-kpi-card voting-kpi-person voting-kpi-runner">
           <div className="voting-kpi-label">2º colocado <span>🥈</span></div>
           <div className="voting-kpi-person-row">
-            {runnerUp ? <CandidateAvatar name={runnerUp.candidate} compact /> : <CandidateAvatar name="?" compact />}
+            {runnerUp && <CandidateAvatar name={runnerUp.candidate} compact />}
             <div className="voting-kpi-person-copy">
               <div className="voting-kpi-value voting-kpi-blue">{runnerUp ? `${runnerUp.percentage.toFixed(1)}%` : "0%"}</div>
-              <div className="voting-kpi-sub">{runnerUp?.candidate || "-"}</div>
+              <div className="voting-kpi-sub">{runnerUp?.candidate || "Aguardando votos"}</div>
             </div>
           </div>
         </article>
