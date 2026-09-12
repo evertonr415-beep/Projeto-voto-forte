@@ -87,6 +87,7 @@ import "./administration-initial-loading-guard.css";
 import "./administration-activity-enhancer.css";
 import "./administration-directory-actions.css";
 import "./administration-ux-redesign.css";
+import "./administration-access-workspace.css";
 import "./pwa-installed-safe-area.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
