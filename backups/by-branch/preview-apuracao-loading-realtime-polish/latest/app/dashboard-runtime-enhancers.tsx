@@ -47,6 +47,7 @@ import WhatsappChatMobilePolish from "./whatsapp-chat-mobile-polish";
 import WhatsappSearchLightFix from "./whatsapp-search-light-fix";
 import WhatsappMonitorMobilePolish from "./whatsapp-monitor-mobile-polish";
 import WhaticketBroadcastMobilePolish from "./whaticket-broadcast-mobile-polish";
+import SurveyInitialLoadingPolish from "./survey-initial-loading-polish";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -95,6 +96,7 @@ export default function DashboardRuntimeEnhancers() {
           <WhatsappSearchLightFix />
           <WhatsappMonitorMobilePolish />
           <WhaticketBroadcastMobilePolish />
+          <SurveyInitialLoadingPolish />
           <OverviewAgendaOfficialBridge />
           <OverviewRegistrationModalEnhancer />
           <ContactsOfficialShellBridge />
