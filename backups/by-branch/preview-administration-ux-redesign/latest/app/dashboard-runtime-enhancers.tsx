@@ -22,6 +22,7 @@ import CompactOverviewScopeEnhancer from "./compact-overview-scope-enhancer";
 import NetworkScopeLabelNormalizer from "./network-scope-label-normalizer";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
+import AdministrationAuditWorkspace from "./administration-audit-workspace";
 import GestorAdministrationIdentityNormalizer from "./gestor-administration-identity-normalizer";
 import AdministrationKpiRoleSync from "./administration-kpi-role-sync";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
@@ -108,6 +109,7 @@ export default function DashboardRuntimeEnhancers() {
           <ContactExportEnhancer />
           <IntelligenceNavigation />
           <AuthReconciliationEnhancer />
+          <AdministrationAuditWorkspace />
           <GestorAdministrationIdentityNormalizer />
           <AdministrationKpiRoleSync />
           <RuntimeVersionGuard />
