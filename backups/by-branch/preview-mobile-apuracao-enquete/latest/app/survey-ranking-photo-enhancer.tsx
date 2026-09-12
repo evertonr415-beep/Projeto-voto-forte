@@ -33,6 +33,19 @@ function candidateNameFrom(item: Element) {
   return label.replace(/^\s*\d+\s*º\s*/i, "").trim();
 }
 
+function isSpecialCandidate(name: string) {
+  const key = normalize(name);
+  return (
+    key === "outro" ||
+    key.includes("outro candidato") ||
+    key.includes("indeciso") ||
+    key.includes("ainda nao sabe") ||
+    key.includes("branco nulo") ||
+    key.includes("branco") ||
+    key.includes("nulo")
+  );
+}
+
 function initials(name: string) {
   const key = normalize(name);
   if (key.includes("indeciso") || key.includes("ainda nao sabe")) return "?";
@@ -51,6 +64,34 @@ function makeFallback(name: string) {
   fallback.textContent = initials(name);
   fallback.setAttribute("aria-hidden", "true");
   return fallback;
+}
+
+function reorderRankingList(list: HTMLElement) {
+  const current = Array.from(list.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains("survey-ranking-item"),
+  );
+  if (!current.length) return;
+
+  const candidates = current.filter((item) => !isSpecialCandidate(candidateNameFrom(item)));
+  const special = current.filter((item) => isSpecialCandidate(candidateNameFrom(item)));
+  const ordered = [...candidates, ...special];
+
+  const orderChanged = ordered.some((item, index) => current[index] !== item);
+  if (orderChanged) {
+    ordered.forEach((item) => list.appendChild(item));
+  }
+
+  ordered.forEach((item, index) => {
+    const name = candidateNameFrom(item);
+    const specialItem = isSpecialCandidate(name);
+    item.classList.toggle("vf-survey-special-candidate", specialItem);
+
+    const position = item.querySelector<HTMLElement>(".survey-candidate-name > b");
+    const expectedPosition = `${index + 1}º`;
+    if (position && position.textContent !== expectedPosition) {
+      position.textContent = expectedPosition;
+    }
+  });
 }
 
 function enhanceRankingItem(item: HTMLElement) {
@@ -77,9 +118,13 @@ function enhanceRankingItem(item: HTMLElement) {
     image.alt = `Foto de ${name}`;
     image.loading = "lazy";
     image.referrerPolicy = "no-referrer";
-    image.addEventListener("error", () => {
-      image.replaceWith(makeFallback(name));
-    }, { once: true });
+    image.addEventListener(
+      "error",
+      () => {
+        image.replaceWith(makeFallback(name));
+      },
+      { once: true },
+    );
     avatar.appendChild(image);
   } else {
     avatar.appendChild(makeFallback(name));
@@ -90,6 +135,10 @@ function enhanceRankingItem(item: HTMLElement) {
 }
 
 function enhanceAll() {
+  document
+    .querySelectorAll<HTMLElement>(".survey-drawer .survey-ranking-list")
+    .forEach(reorderRankingList);
+
   document
     .querySelectorAll<HTMLElement>(".survey-drawer .survey-ranking-item")
     .forEach(enhanceRankingItem);
@@ -131,6 +180,11 @@ export default function SurveyRankingPhotoEnhancer() {
       .survey-drawer .survey-ranking-item:first-child {
         border-color: rgba(34, 197, 94, 0.34) !important;
         background: rgba(34, 197, 94, 0.065) !important;
+      }
+
+      .survey-drawer .survey-ranking-item.vf-survey-special-candidate {
+        border-color: rgba(148, 163, 184, 0.13) !important;
+        background: rgba(148, 163, 184, 0.035) !important;
       }
 
       .survey-drawer .survey-ranking-line {
@@ -215,12 +269,24 @@ export default function SurveyRankingPhotoEnhancer() {
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18) !important;
       }
 
-      .survey-drawer .survey-progress-fill {
+      .survey-drawer .survey-progress-fill,
+      .survey-drawer .survey-progress-fill.state,
+      .survey-drawer .survey-progress-fill.federal,
+      .survey-drawer .survey-progress-fill.state.leader,
+      .survey-drawer .survey-progress-fill.federal.leader {
         display: block !important;
-        min-width: 5px !important;
+        min-width: 0 !important;
         height: 100% !important;
         border-radius: 999px !important;
         opacity: 1 !important;
+        background: linear-gradient(90deg, #16a34a 0%, #22c55e 58%, #4ade80 100%) !important;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.28) !important;
+        transition: width 0.35s ease !important;
+      }
+
+      .survey-drawer .survey-ranking-item:first-child .survey-progress-fill {
+        background: linear-gradient(90deg, #15803d 0%, #22c55e 52%, #86efac 100%) !important;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.4) !important;
       }
 
       @media (max-width: 760px) {
