@@ -102,7 +102,7 @@ export default function IndividualWhatsappMenuEnhancer() {
         label.textContent = "Envio Individual";
 
         const badge = document.createElement("em");
-        badge.textContent = "1 A 1";
+        badge.textContent = "MANUAL";
 
         button.append(icon, label, badge);
         button.addEventListener("click", activateIndividualMessaging);
@@ -223,8 +223,7 @@ export default function IndividualWhatsappMenuEnhancer() {
       }
 
       body.${MODE_CLASS} .wa-layout::before {
-        content: "✉️  Envio Individual\\AEnvie uma mensagem manual por vez e mantenha seus rascunhos organizados.";
-        white-space: pre-line;
+        content: "✉️ Envio Individual — Escreva sua mensagem e clique em Continuar no WhatsApp. Selecione até 5 contatos por vez para enviar.";
         grid-column: 1 / -1;
         display: block;
         padding: 18px 20px;
@@ -232,9 +231,10 @@ export default function IndividualWhatsappMenuEnhancer() {
         border: 1px solid rgba(56, 189, 248, .28);
         background: linear-gradient(135deg, rgba(12, 38, 68, .96), rgba(14, 31, 57, .96));
         color: #f8fafc;
-        font-size: 19px;
-        line-height: 1.5;
-        font-weight: 800;
+        font-size: 17px;
+        line-height: 1.45;
+        font-weight: 720;
+        text-align: left;
         box-shadow: 0 14px 34px rgba(0,0,0,.18);
       }
 
@@ -282,8 +282,9 @@ export default function IndividualWhatsappMenuEnhancer() {
           margin: 0 0 2px !important;
           padding: 14px 15px !important;
           border-radius: 12px !important;
-          font-size: 16px !important;
-          line-height: 1.45 !important;
+          font-size: 15.5px !important;
+          line-height: 1.42 !important;
+          font-weight: 700 !important;
         }
 
         body.${MODE_CLASS} .wa-layout > .composer,
