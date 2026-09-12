@@ -1,0 +1,73 @@
+/* Safe areas para o VOTO FORTE quando instalado na tela inicial.
+   Mantem o conteudo fora de notch/Dynamic Island/status bar e barra de gestos. */
+
+@media (max-width: 760px) and (display-mode: standalone),
+       (max-width: 760px) and (display-mode: fullscreen),
+       (max-width: 760px) and (display-mode: minimal-ui) {
+  .app-shell {
+    min-height: 100dvh !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  body:has(.welcome-pro) .app-shell .topbar {
+    box-sizing: border-box !important;
+    min-height: calc(68px + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: 8px !important;
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  body:has(.app-shell .topbar[data-vf-mobile-compact-tab-header="true"])
+    .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] {
+    box-sizing: border-box !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    padding-top: calc(7px + env(safe-area-inset-top, 0px)) !important;
+    padding-right: max(10px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: 7px !important;
+    padding-left: max(10px, env(safe-area-inset-left, 0px)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html[data-vf-standalone="true"] .app-shell {
+    min-height: 100dvh !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  html[data-vf-standalone="true"] body:has(.welcome-pro) .app-shell .topbar {
+    box-sizing: border-box !important;
+    min-height: calc(68px + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: 8px !important;
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  html[data-vf-standalone="true"] body:has(.app-shell .topbar[data-vf-mobile-compact-tab-header="true"])
+    .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] {
+    box-sizing: border-box !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    padding-top: calc(7px + env(safe-area-inset-top, 0px)) !important;
+    padding-right: max(10px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: 7px !important;
+    padding-left: max(10px, env(safe-area-inset-left, 0px)) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  html[data-vf-standalone="true"] body:has(.welcome-pro) .app-shell .topbar {
+    padding-right: max(10px, env(safe-area-inset-right, 0px)) !important;
+    padding-left: max(10px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  html[data-vf-standalone="true"] body:has(.app-shell .topbar[data-vf-mobile-compact-tab-header="true"])
+    .app-shell .topbar[data-vf-mobile-compact-tab-header="true"] {
+    padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+    padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
+  }
+}
