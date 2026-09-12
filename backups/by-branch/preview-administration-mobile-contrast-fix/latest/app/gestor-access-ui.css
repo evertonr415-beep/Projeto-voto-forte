@@ -115,6 +115,67 @@
   opacity: .72;
 }
 
+/* O painel multimunicipal pertence apenas a "Gerenciar acessos". */
+.vf-hierarchy-panel > [data-vf-gestor-municipalities-host] {
+  display: none !important;
+}
+
+.vf-hierarchy-panel:has(.vf-access-tabs > button:first-child.active) > [data-vf-gestor-municipalities-host] {
+  display: block !important;
+}
+
+/* Administração usa superfície escura. Mantém o tema claro original intacto. */
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin {
+  border-color: rgba(56, 189, 248, .18);
+  background: rgba(8, 31, 55, .52);
+  color: #f8fafc;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header small {
+  color: #efbd43;
+  opacity: 1;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header h4,
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-identity b {
+  color: #f8fafc;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header p,
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-identity small,
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-empty {
+  color: #a9bbd0;
+  opacity: 1;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header > span {
+  background: rgba(56, 189, 248, .1);
+  color: #f8fafc;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-message {
+  border: 1px solid rgba(56, 189, 248, .2);
+  background: #0d2747;
+  color: #dcecff;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-list article {
+  border-color: rgba(56, 189, 248, .18);
+  background: #0a203a;
+  color: #f8fafc;
+  box-shadow: none;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-checks label {
+  border-color: rgba(56, 189, 248, .2);
+  background: #0d2747;
+  color: #d8e7f5;
+}
+
+html[data-vf-theme="dark"] body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-checks input[type="checkbox"] {
+  accent-color: #168ee0;
+}
+
 @media (min-width: 1000px) {
   .vf-municipality-header-menu.gestor .vf-municipality-header-list button {
     grid-template-columns: 1fr;
@@ -124,5 +185,34 @@
 @media (max-width: 900px) {
   .vf-gestor-municipality-list article {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .vf-gestor-municipality-admin {
+    margin: 12px 0 0;
+    padding: 14px;
+  }
+
+  .vf-gestor-municipality-admin > header {
+    gap: 10px;
+  }
+
+  .vf-gestor-municipality-admin > header h4 {
+    font-size: 18px;
+  }
+
+  .vf-gestor-municipality-admin > header p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .vf-gestor-municipality-list article {
+    padding: 13px;
+  }
+
+  .vf-gestor-municipality-checks label {
+    min-height: 34px;
+    font-size: 11px;
   }
 }
