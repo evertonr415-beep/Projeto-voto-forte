@@ -1,4 +1,4 @@
-/* Administração v3: camada final de geometria. Evita colisões com estilos antigos. */
+/* Administração v4: toda regra fica condicionada à própria tela administrativa. */
 html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .page-head:has(+ .management-filter[role="tablist"][aria-label="Seções administrativas"]) {
   display: none !important;
 }
@@ -10,8 +10,6 @@ html body:has(.management-filter[role="tablist"][aria-label="Seções administra
 
 html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] {
   position: static !important;
-  top: auto !important;
-  z-index: auto !important;
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
   gap: 7px !important;
@@ -128,6 +126,13 @@ html body .users-admin-grid[data-vf-hierarchy-replaced="true"] > .vf-access-work
 .vf-access-modal input,
 .vf-access-modal select {
   max-width: 100% !important;
+}
+
+.vf-municipality-request-more {
+  margin: 8px 2px 0;
+  color: #8ea8c0;
+  font-size: 10px;
+  text-align: center;
 }
 
 @media (max-width: 760px) {
