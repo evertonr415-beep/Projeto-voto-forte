@@ -1,0 +1,182 @@
+/* Administração v3: camada final de geometria. Evita colisões com estilos antigos. */
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .page-head:has(+ .management-filter[role="tablist"][aria-label="Seções administrativas"]) {
+  display: none !important;
+}
+
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .workspace {
+  overflow-x: hidden !important;
+  background: linear-gradient(180deg, #061525 0%, #07192c 52%, #061421 100%) !important;
+}
+
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  gap: 7px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 4px 0 12px !important;
+  padding: 5px !important;
+  overflow: visible !important;
+  border: 1px solid rgba(56, 189, 248, .17) !important;
+  border-radius: 14px !important;
+  background: rgba(5, 24, 43, .9) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .12) !important;
+  box-sizing: border-box !important;
+}
+
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #9fb4ca !important;
+  font-size: 0 !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(1)::after { content: "Acessos"; font-size: 12px; }
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(2)::after { content: "Auditoria"; font-size: 12px; }
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(3)::after { content: "Backup"; font-size: 12px; }
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button[data-vf-municipalities-tab] { font-size: 12px !important; }
+
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button.active,
+html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button[aria-selected="true"] {
+  border-color: rgba(56, 189, 248, .52) !important;
+  background: linear-gradient(135deg, #118cd1, #256fe8) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(24, 130, 211, .2) !important;
+}
+
+html body .users-admin-grid[data-vf-hierarchy-replaced="true"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+html body .users-admin-grid[data-vf-hierarchy-replaced="true"]::before {
+  display: none !important;
+  content: none !important;
+}
+
+html body .users-admin-grid[data-vf-hierarchy-replaced="true"] > * {
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+html body .users-admin-grid[data-vf-hierarchy-replaced="true"] > :not(.vf-access-workspace) {
+  display: none !important;
+}
+
+html body .users-admin-grid[data-vf-hierarchy-replaced="true"] > .vf-access-workspace {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.vf-access-workspace,
+.vf-access-workspace *,
+.vf-municipality-workspace,
+.vf-municipality-workspace *,
+.vf-audit-workspace,
+.vf-audit-workspace *,
+.vf-access-modal,
+.vf-access-modal * {
+  box-sizing: border-box;
+}
+
+.vf-access-workspace,
+.vf-municipality-workspace,
+.vf-audit-workspace {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.vf-access-workspace-head > div:first-child,
+.vf-municipality-workspace-head > div:first-child,
+.vf-audit-workspace > header > div:first-child,
+.vf-access-person-main,
+.vf-access-permission-main,
+.vf-municipality-directory-main,
+.vf-audit-main {
+  min-width: 0 !important;
+}
+
+.vf-access-workspace input,
+.vf-access-workspace select,
+.vf-municipality-workspace input,
+.vf-municipality-workspace select,
+.vf-audit-workspace input,
+.vf-audit-workspace select,
+.vf-access-modal input,
+.vf-access-modal select {
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .workspace {
+    padding-inline: 10px !important;
+  }
+
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button {
+    min-height: 40px !important;
+    padding: 0 8px !important;
+  }
+
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(1)::after,
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(2)::after,
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(3)::after,
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] > button[data-vf-municipalities-tab] {
+    font-size: 11px !important;
+  }
+
+  .vf-access-workspace-head,
+  .vf-municipality-workspace-head,
+  .vf-audit-workspace > header {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vf-access-person,
+  .vf-access-permission-list > article,
+  .vf-municipality-directory > article,
+  .vf-audit-list-v2 > article {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  html body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    padding: 4px !important;
+  }
+
+  .vf-access-workspace,
+  .vf-municipality-workspace,
+  .vf-audit-workspace {
+    border-radius: 14px !important;
+  }
+}
