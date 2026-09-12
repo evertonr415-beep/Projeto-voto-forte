@@ -8,8 +8,13 @@ export default function VotingRecentMobilePolish() {
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
     let expanded = false;
+    let disposed = false;
+    let scheduled = false;
 
     const sync = () => {
+      scheduled = false;
+      if (disposed) return;
+
       document.querySelectorAll<HTMLElement>(".voting-recent-feed").forEach((section) => {
         const feed = section.querySelector<HTMLElement>(".voting-feed-mobile");
         if (!feed) return;
@@ -19,21 +24,27 @@ export default function VotingRecentMobilePolish() {
         if (!media.matches) {
           section.classList.remove("vf-recent-mobile-polished", "vf-recent-expanded");
           feed.querySelectorAll<HTMLElement>(".voting-feed-mobile-card").forEach((card) => {
-            card.hidden = false;
+            if (card.hidden) card.hidden = false;
             delete card.dataset.vfRecentExtra;
           });
           existingToggle?.remove();
           return;
         }
 
-        section.classList.add("vf-recent-mobile-polished");
+        if (!section.classList.contains("vf-recent-mobile-polished")) {
+          section.classList.add("vf-recent-mobile-polished");
+        }
         section.classList.toggle("vf-recent-expanded", expanded);
 
         const cards = Array.from(feed.querySelectorAll<HTMLElement>(".voting-feed-mobile-card"));
         cards.forEach((card, index) => {
           const isExtra = index >= INITIAL_VISIBLE;
-          card.dataset.vfRecentExtra = isExtra ? "true" : "false";
-          card.hidden = isExtra && !expanded;
+          const nextExtra = isExtra ? "true" : "false";
+          if (card.dataset.vfRecentExtra !== nextExtra) {
+            card.dataset.vfRecentExtra = nextExtra;
+          }
+          const shouldHide = isExtra && !expanded;
+          if (card.hidden !== shouldHide) card.hidden = shouldHide;
         });
 
         if (cards.length <= INITIAL_VISIBLE) {
@@ -47,29 +58,53 @@ export default function VotingRecentMobilePolish() {
           toggle.type = "button";
           toggle.className = "vf-recent-toggle";
           toggle.setAttribute("aria-expanded", "false");
+
+          const label = document.createElement("span");
+          label.className = "vf-recent-toggle-label";
+          const icon = document.createElement("span");
+          icon.className = "vf-recent-toggle-icon";
+          toggle.append(label, icon);
+
           toggle.addEventListener("click", () => {
             expanded = !expanded;
-            sync();
+            scheduleSync();
           });
           feed.insertAdjacentElement("afterend", toggle);
         }
 
         const hiddenCount = Math.max(0, cards.length - INITIAL_VISIBLE);
-        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-        toggle.innerHTML = expanded
-          ? '<span>Mostrar menos</span><span class="vf-recent-toggle-icon">⌃</span>'
-          : `<span>Ver mais ${hiddenCount} participaç${hiddenCount === 1 ? "ão" : "ões"}</span><span class="vf-recent-toggle-icon">⌄</span>`;
+        const nextExpanded = expanded ? "true" : "false";
+        if (toggle.getAttribute("aria-expanded") !== nextExpanded) {
+          toggle.setAttribute("aria-expanded", nextExpanded);
+        }
+
+        const label = toggle.querySelector<HTMLElement>(".vf-recent-toggle-label");
+        const icon = toggle.querySelector<HTMLElement>(".vf-recent-toggle-icon");
+        const nextLabel = expanded
+          ? "Mostrar menos"
+          : `Ver mais ${hiddenCount} participaç${hiddenCount === 1 ? "ão" : "ões"}`;
+        const nextIcon = expanded ? "⌃" : "⌄";
+
+        if (label && label.textContent !== nextLabel) label.textContent = nextLabel;
+        if (icon && icon.textContent !== nextIcon) icon.textContent = nextIcon;
       });
     };
 
-    sync();
-    const observer = new MutationObserver(sync);
+    function scheduleSync() {
+      if (disposed || scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(sync);
+    }
+
+    scheduleSync();
+    const observer = new MutationObserver(scheduleSync);
     observer.observe(document.body, { childList: true, subtree: true });
-    media.addEventListener("change", sync);
+    media.addEventListener("change", scheduleSync);
 
     return () => {
+      disposed = true;
       observer.disconnect();
-      media.removeEventListener("change", sync);
+      media.removeEventListener("change", scheduleSync);
       document.querySelectorAll<HTMLElement>(".voting-recent-feed").forEach((section) => {
         section.classList.remove("vf-recent-mobile-polished", "vf-recent-expanded");
         section.querySelector(".vf-recent-toggle")?.remove();
@@ -169,8 +204,6 @@ export default function VotingRecentMobilePolish() {
           letter-spacing: 0.06em !important;
         }
 
-        /* O identificador técnico (telefone/origem/hash) continua nos dados,
-           mas não ocupa espaço na leitura resumida do mobile. */
         .voting-recent-feed.vf-recent-mobile-polished .voting-feed-mobile-foot > span:first-child {
           display: none !important;
         }
