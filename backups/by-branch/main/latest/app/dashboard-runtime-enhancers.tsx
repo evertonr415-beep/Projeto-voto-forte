@@ -41,6 +41,7 @@ import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity"
 import WhatsappSurveyIntelligence from "./whatsapp-survey-intelligence";
 import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enhancer";
 import IndividualWhatsappMenuEnhancer from "./individual-whatsapp-menu-enhancer";
+import VotingChartsEntryPolish from "./voting-charts-entry-polish";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -83,6 +84,7 @@ export default function DashboardRuntimeEnhancers() {
           <NeighborhoodInfoDrawer />
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
+          <VotingChartsEntryPolish />
           <OverviewAgendaOfficialBridge />
           <OverviewRegistrationModalEnhancer />
           <ContactsOfficialShellBridge />
