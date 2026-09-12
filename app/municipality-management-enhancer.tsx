@@ -39,6 +39,9 @@ type RequestItem = {
 type InviteDraft = { name: string; email: string };
 type RequestDraft = { accessRole: "master" | "lideranca" | "liderado" | "eleitor"; parentUserId: number | "" };
 
+const INITIAL_LIMIT = 5;
+const STEP = 5;
+
 const statusLabel: Record<Municipality["status"], string> = {
   active: "Ativo",
   configuring: "Em configuração",
@@ -72,7 +75,9 @@ export default function MunicipalityManagementEnhancer() {
   const [busyId, setBusyId] = useState<string | number | null>(null);
   const [message, setMessage] = useState("");
   const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
   const [selectedMunicipalityId, setSelectedMunicipalityId] = useState<number | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
@@ -88,30 +93,35 @@ export default function MunicipalityManagementEnhancer() {
   }, []);
 
   const load = useCallback(async () => {
-    const [municipalitiesResponse, requestsResponse] = await Promise.all([
-      apiFetch("/api/admin-municipalities", { cache: "no-store" }),
-      apiFetch("/api/municipality-applications", { cache: "no-store" }),
-    ]);
-    if (municipalitiesResponse.status === 401 || municipalitiesResponse.status === 403) return false;
-    const municipalityData = await municipalitiesResponse.json();
-    if (!municipalitiesResponse.ok) throw new Error(municipalityData.error || "Não foi possível carregar os municípios.");
-    applyMunicipalities(Array.isArray(municipalityData.municipalities) ? municipalityData.municipalities : []);
+    setLoading(true);
+    try {
+      const [municipalitiesResponse, requestsResponse] = await Promise.all([
+        apiFetch("/api/admin-municipalities", { cache: "no-store" }),
+        apiFetch("/api/municipality-applications", { cache: "no-store" }),
+      ]);
+      if (municipalitiesResponse.status === 401 || municipalitiesResponse.status === 403) return false;
+      const municipalityData = await municipalitiesResponse.json();
+      if (!municipalitiesResponse.ok) throw new Error(municipalityData.error || "Não foi possível carregar os municípios.");
+      applyMunicipalities(Array.isArray(municipalityData.municipalities) ? municipalityData.municipalities : []);
 
-    if (requestsResponse.ok) {
-      const requestData = await requestsResponse.json();
-      const nextRequests = Array.isArray(requestData.requests) ? requestData.requests as RequestItem[] : [];
-      setRequests(nextRequests);
-      setRequestDrafts((current) => {
-        const next = { ...current };
-        for (const item of nextRequests) {
-          if (!next[item.id]) next[item.id] = { accessRole: "master", parentUserId: "" };
-        }
-        return next;
-      });
-    } else {
-      setRequests([]);
+      if (requestsResponse.ok) {
+        const requestData = await requestsResponse.json();
+        const nextRequests = Array.isArray(requestData.requests) ? requestData.requests as RequestItem[] : [];
+        setRequests(nextRequests);
+        setRequestDrafts((current) => {
+          const next = { ...current };
+          for (const item of nextRequests) {
+            if (!next[item.id]) next[item.id] = { accessRole: "master", parentUserId: "" };
+          }
+          return next;
+        });
+      } else {
+        setRequests([]);
+      }
+      return true;
+    } finally {
+      setLoading(false);
     }
-    return true;
   }, [applyMunicipalities]);
 
   useEffect(() => {
@@ -119,11 +129,10 @@ export default function MunicipalityManagementEnhancer() {
     let cancelled = false;
 
     const detect = () => {
-      const filter = document.querySelector<HTMLElement>(".management-filter");
-      if (!filter || !filter.textContent?.includes("Usuários e acessos")) return;
+      const filter = document.querySelector<HTMLElement>('.management-filter[aria-label="Seções administrativas"]');
+      if (!filter) return;
       const parent = filter.parentElement;
       if (!parent) return;
-      if (parent.dataset.vfMunicipalitiesActive !== "true") setActive(false);
 
       let tab = filter.querySelector<HTMLButtonElement>("[data-vf-municipalities-tab]");
       if (!tab) {
@@ -152,6 +161,8 @@ export default function MunicipalityManagementEnhancer() {
         setActive(true);
         setHost(node);
         setMessage("");
+        setQuery("");
+        setVisibleLimit(INITIAL_LIMIT);
         void load().catch((error) => setMessage(error instanceof Error ? error.message : "Não foi possível carregar os municípios."));
       };
 
@@ -176,6 +187,10 @@ export default function MunicipalityManagementEnhancer() {
     return () => { cancelled = true; observer?.disconnect(); };
   }, [load]);
 
+  useEffect(() => {
+    setVisibleLimit(INITIAL_LIMIT);
+  }, [query]);
+
   const totals = useMemo(
     () => municipalities.reduce(
       (acc, item) => ({ users: acc.users + Number(item.users || 0), contacts: acc.contacts + Number(item.contacts || 0) }),
@@ -190,6 +205,11 @@ export default function MunicipalityManagementEnhancer() {
       .filter((item) => !q || normalize(`${item.name} ${item.state} ${statusLabel[item.status]} ${item.master?.name || ""}`).includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   }, [municipalities, query]);
+
+  const visibleMunicipalities = useMemo(
+    () => query.trim() ? filteredMunicipalities : filteredMunicipalities.slice(0, visibleLimit),
+    [filteredMunicipalities, query, visibleLimit],
+  );
 
   const selectedMunicipality = useMemo(
     () => municipalities.find((item) => item.id === selectedMunicipalityId) || null,
@@ -268,13 +288,15 @@ export default function MunicipalityManagementEnhancer() {
   const selectedRequestParents = selectedRequest && selectedRequestParentRole
     ? (selectedRequest.parentOptions || []).filter((parent) => parent.accessRole === selectedRequestParentRole)
     : [];
+  const canShowMore = !query.trim() && visibleLimit < filteredMunicipalities.length;
+  const canShowLess = !query.trim() && visibleLimit > INITIAL_LIMIT;
 
   return createPortal(
     <>
       <section className="vf-municipality-workspace" aria-label="Administração de municípios">
         <header className="vf-municipality-workspace-head">
           <div><small>REDE TERRITORIAL</small><h2>Municípios</h2><p>Administre a operação municipal, o Master responsável e as novas solicitações de acesso.</p></div>
-          <button type="button" onClick={() => void load()}>Atualizar</button>
+          <button type="button" onClick={() => void load()} disabled={loading}>{loading ? "Atualizando…" : "Atualizar"}</button>
         </header>
 
         <div className="vf-municipality-summary">
@@ -298,16 +320,17 @@ export default function MunicipalityManagementEnhancer() {
                 </button>
               ))}
             </div>
+            {requests.length > 4 ? <p className="vf-municipality-request-more">+ {requests.length - 4} solicitação{requests.length - 4 === 1 ? "" : "ões"} pendente{requests.length - 4 === 1 ? "" : "s"}</p> : null}
           </section>
         ) : null}
 
         <div className="vf-municipality-toolbar">
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar município, status ou responsável" aria-label="Buscar município" />
-          <span>{filteredMunicipalities.length} resultado{filteredMunicipalities.length === 1 ? "" : "s"}</span>
+          <span>{query.trim() ? `${filteredMunicipalities.length} resultado${filteredMunicipalities.length === 1 ? "" : "s"}` : `Exibindo ${visibleMunicipalities.length} de ${filteredMunicipalities.length}`}</span>
         </div>
 
         <div className="vf-municipality-directory">
-          {filteredMunicipalities.map((municipality) => (
+          {visibleMunicipalities.map((municipality) => (
             <article key={municipality.id}>
               <div className="vf-municipality-icon">{municipality.state}</div>
               <div className="vf-municipality-directory-main">
@@ -318,8 +341,19 @@ export default function MunicipalityManagementEnhancer() {
               <button type="button" className="vf-municipality-manage" onClick={() => setSelectedMunicipalityId(municipality.id)}>Gerenciar</button>
             </article>
           ))}
-          {!filteredMunicipalities.length ? <p className="vf-municipality-empty-v2">Nenhum município encontrado.</p> : null}
+          {!visibleMunicipalities.length && !loading ? <p className="vf-municipality-empty-v2">Nenhum município encontrado.</p> : null}
+          {loading && !municipalities.length ? <p className="vf-municipality-empty-v2">Carregando municípios…</p> : null}
         </div>
+
+        {!query.trim() && filteredMunicipalities.length > INITIAL_LIMIT ? (
+          <div className="vf-municipality-pagination">
+            <span>Exibindo {visibleMunicipalities.length} de {filteredMunicipalities.length} municípios</span>
+            <div>
+              {canShowMore ? <button type="button" className="vf-municipality-more" onClick={() => setVisibleLimit((current) => Math.min(current + STEP, filteredMunicipalities.length))}>Ver mais {Math.min(STEP, filteredMunicipalities.length - visibleLimit)}</button> : null}
+              {canShowLess ? <button type="button" className="vf-municipality-less" onClick={() => setVisibleLimit(INITIAL_LIMIT)}>Mostrar menos</button> : null}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {selectedMunicipality && selectedDraft && createPortal(
@@ -341,7 +375,7 @@ export default function MunicipalityManagementEnhancer() {
               <form className="vf-municipality-master-form" onSubmit={(event) => { event.preventDefault(); void municipalityAction(selectedMunicipality, "invite_master"); }}>
                 <label>Nome do Master<input value={selectedDraft.name} onChange={(event) => setDrafts((current) => ({ ...current, [selectedMunicipality.id]: { ...selectedDraft, name: event.target.value } }))} required /></label>
                 <label>E-mail<input type="email" value={selectedDraft.email} onChange={(event) => setDrafts((current) => ({ ...current, [selectedMunicipality.id]: { ...selectedDraft, email: event.target.value } }))} required /></label>
-                <button type="submit" disabled={busyId === selectedMunicipality.id}>Convidar Master</button>
+                <button type="submit" disabled={busyId === selectedMunicipality.id}>{busyId === selectedMunicipality.id ? "Enviando…" : "Convidar Master"}</button>
               </form>
             ) : null}
             <footer><button type="button" onClick={() => setSelectedMunicipalityId(null)}>Fechar</button>{selectedMunicipality.status === "configuring" ? <button type="button" className="primary" disabled={busyId === selectedMunicipality.id} onClick={() => void municipalityAction(selectedMunicipality, "activate")}>{busyId === selectedMunicipality.id ? "Ativando…" : "Ativar município"}</button> : null}</footer>
