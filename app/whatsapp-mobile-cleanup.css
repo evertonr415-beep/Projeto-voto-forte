@@ -315,3 +315,188 @@
     border-radius: 8px !important;
   }
 }
+
+/* Preview: a Central de Disparos fica focada em Campanha, Fila e Apuração.
+   O Monitor Ao Vivo continua preservado no código, mas fica fora da Central
+   porque o monitor geral já existe na própria área WhatsApp. */
+.wt-drawer .wt-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.wt-drawer .wt-tabs > .wt-tab-btn:nth-child(2) {
+  display: none !important;
+}
+
+.wt-drawer .wt-tabs > .wt-tab-btn {
+  min-width: 0 !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.wt-drawer .wt-tabs > .wt-tab-btn:nth-child(4) {
+  background: transparent !important;
+  color: #38bdf8 !important;
+}
+
+/* Preview mobile: drawer em tela cheia, sem a faixa lateral de desktop e sem corte horizontal. */
+@media (max-width: 760px) {
+  .wt-drawer {
+    inset: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    overscroll-behavior: contain;
+  }
+
+  .wt-drawer-header {
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 12px !important;
+    gap: 10px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .wt-drawer-title-group {
+    min-width: 0 !important;
+    gap: 10px !important;
+  }
+
+  .wt-header-logo {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+  }
+
+  .wt-drawer-title-group > div:last-child {
+    min-width: 0 !important;
+  }
+
+  .wt-drawer-title-group h2 {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  .wt-drawer-title-group p {
+    max-width: calc(100vw - 112px) !important;
+    margin-top: 3px !important;
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .wt-close-btn {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+  }
+
+  .wt-drawer .wt-tabs {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 8px !important;
+    gap: 2px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .wt-drawer .wt-tabs > .wt-tab-btn {
+    padding: 12px 4px !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+  }
+
+  .wt-drawer-body {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    padding: 12px 12px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 12px !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wt-drawer-body .wt-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 14px !important;
+    border-radius: 13px !important;
+  }
+
+  .wt-drawer-body .wt-form-group,
+  .wt-drawer-body .wt-preview-box,
+  .wt-drawer-body .wt-log-row,
+  .wt-drawer-body .wt-stat-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .wt-drawer-body .wt-input,
+  .wt-drawer-body .wt-select,
+  .wt-drawer-body .wt-textarea,
+  .wt-drawer-body .wt-search-input-wrap input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .wt-drawer-body .wt-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .wt-drawer-body .wt-stat-card {
+    padding: 9px 5px !important;
+  }
+
+  .wt-drawer-body .wt-stat-card strong {
+    font-size: 17px !important;
+  }
+
+  .wt-drawer-body .wt-stat-card span {
+    font-size: 10px !important;
+  }
+
+  .wt-drawer-body .wt-logs-list {
+    max-height: none !important;
+    overflow-x: hidden !important;
+  }
+
+  .wt-drawer-body .wt-log-row {
+    gap: 8px !important;
+    padding: 9px 10px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .wt-drawer-title-group h2 {
+    font-size: 15px !important;
+  }
+
+  .wt-drawer .wt-tabs > .wt-tab-btn {
+    font-size: 11.5px !important;
+  }
+
+  .wt-drawer-body .wt-card {
+    padding: 12px !important;
+  }
+}
