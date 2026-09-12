@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import AdministrationAuditWorkspace from "./administration-audit-workspace";
-import MunicipalityDirectoryPaginationEnhancer from "./municipality-directory-pagination-enhancer";
 import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
 import UserHierarchyPanel from "./user-hierarchy-panel";
 import "./administration-access-workspace.css";
@@ -24,7 +23,6 @@ export default function GestorAccessGate() {
     <>
       <UserHierarchyPanel />
       <MunicipalityManagementEnhancer />
-      <MunicipalityDirectoryPaginationEnhancer />
       <AdministrationAuditWorkspace />
     </>
   );
