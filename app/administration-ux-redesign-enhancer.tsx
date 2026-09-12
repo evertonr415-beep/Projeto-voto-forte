@@ -30,15 +30,15 @@ export default function AdministrationUxRedesignEnhancer(){
         if(button.dataset.vfPermissionsTab==="true")return;
         const text=normalized(button.textContent);
         if(text.includes("gerenciar")||text==="usuários"||text==="usuarios"){
-          nextUsers=button;button.dataset.vfUsersTab="true";button.hidden=false;
+          nextUsers=button;button.dataset.vfUsersTab="true";if(button.hidden)button.hidden=false;
         }else if(text.includes("cadastrar")){
-          nextCreate=button;button.dataset.vfCreateTab="true";button.hidden=true;
+          nextCreate=button;button.dataset.vfCreateTab="true";if(!button.hidden)button.hidden=true;
         }else if(text.includes("convite")){
-          button.dataset.vfInvitationsTab="true";button.hidden=false;
+          button.dataset.vfInvitationsTab="true";if(button.hidden)button.hidden=false;
         }else if(text.includes("auditoria")){
-          button.dataset.vfAuditTab="true";button.hidden=false;
+          button.dataset.vfAuditTab="true";if(button.hidden)button.hidden=false;
         }else if(text.includes("desempenho da equipe")){
-          button.dataset.vfLegacyPerformanceTab="true";button.hidden=true;
+          button.dataset.vfLegacyPerformanceTab="true";if(!button.hidden)button.hidden=true;
         }
       });
       setCreateButton(current=>current===nextCreate?current:nextCreate);
@@ -47,19 +47,23 @@ export default function AdministrationUxRedesignEnhancer(){
       const permissionHost=nextPanel.querySelector<HTMLElement>(":scope > [data-vf-gestor-municipalities-host]");
       setHasPermissions(Boolean(permissionHost));
 
-      const application=nextPanel.querySelector<HTMLElement>(":scope > [data-vf-municipality-applications-host] .vf-municipality-applications, :scope > .vf-municipality-applications");
-      if(application){application.classList.toggle("vf-applications-empty",normalized(application.textContent).includes("nenhuma solicitação pendente"))}
+      const application=nextPanel.querySelector<HTMLElement>(":scope > [data-vf-municipality-applications] .vf-municipality-applications");
+      if(application){
+        const shouldCompact=normalized(application.textContent).includes("nenhuma solicitação pendente");
+        if(application.classList.contains("vf-applications-empty")!==shouldCompact)application.classList.toggle("vf-applications-empty",shouldCompact);
+      }
     };
     decorate();
-    const observer=new MutationObserver(decorate);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","hidden"]});
+    const observer=new MutationObserver(decorate);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
     document.addEventListener("click",decorate,true);
     return()=>{stopped=true;observer.disconnect();document.removeEventListener("click",decorate,true)};
   },[]);
 
   useEffect(()=>{
     if(!panel)return;
-    panel.classList.toggle("vf-permissions-active",permissionsActive&&hasPermissions);
-    panel.classList.toggle("vf-create-action-active",createActive);
+    const shouldShowPermissions=permissionsActive&&hasPermissions;
+    if(panel.classList.contains("vf-permissions-active")!==shouldShowPermissions)panel.classList.toggle("vf-permissions-active",shouldShowPermissions);
+    if(panel.classList.contains("vf-create-action-active")!==createActive)panel.classList.toggle("vf-create-action-active",createActive);
     return()=>{panel.classList.remove("vf-permissions-active","vf-create-action-active")};
   },[panel,permissionsActive,hasPermissions,createActive]);
 
