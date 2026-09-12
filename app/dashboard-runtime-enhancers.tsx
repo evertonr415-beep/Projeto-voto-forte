@@ -42,6 +42,7 @@ import WhatsappSurveyIntelligence from "./whatsapp-survey-intelligence";
 import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enhancer";
 import IndividualWhatsappMenuEnhancer from "./individual-whatsapp-menu-enhancer";
 import VotingChartsEntryPolish from "./voting-charts-entry-polish";
+import VotingRecentMobilePolish from "./voting-recent-mobile-polish";
 import WhatsappChatMobilePolish from "./whatsapp-chat-mobile-polish";
 import WhatsappSearchLightFix from "./whatsapp-search-light-fix";
 
@@ -87,6 +88,7 @@ export default function DashboardRuntimeEnhancers() {
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
           <VotingChartsEntryPolish />
+          <VotingRecentMobilePolish />
           <WhatsappChatMobilePolish />
           <WhatsappSearchLightFix />
           <OverviewAgendaOfficialBridge />
