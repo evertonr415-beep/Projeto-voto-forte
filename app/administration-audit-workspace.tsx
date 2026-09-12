@@ -30,6 +30,8 @@ const filters: Array<{ key: Category; label: string }> = [
   { key: "export", label: "Exportações" },
   { key: "delete", label: "Exclusões" },
   { key: "whatsapp", label: "WhatsApp" },
+  { key: "access", label: "Acessos" },
+  { key: "other", label: "Outros" },
 ];
 
 const roleLabels: Record<Role, string> = {
@@ -46,7 +48,9 @@ function initials(value: string) {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não informada";
+  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
 function normalize(value: string) {
@@ -59,6 +63,7 @@ function actionLabel(activity: Activity) {
   if (activity.category === "export") return `Exportou ${Number(activity.itemCount || 0).toLocaleString("pt-BR")} contatos`;
   if (activity.category === "edit") return activity.subjectName ? `Editou ${activity.subjectName}` : "Cadastro editado";
   if (activity.category === "delete") return activity.subjectName ? `Excluiu ${activity.subjectName}` : "Cadastro excluído";
+  if (activity.category === "access") return activity.action || "Alteração de acesso";
   return activity.action || "Atividade registrada";
 }
 
@@ -108,13 +113,18 @@ export default function AdministrationAuditWorkspace() {
 
   const activities = useMemo(() => {
     const map = new Map<string, Activity>();
-    [...(feed.logs || []), ...(feed.imports || []), ...(feed.exports || [])].forEach((item) => map.set(String(item.id), item));
+    [...(feed.logs || []), ...(feed.imports || []), ...(feed.exports || [])].forEach((item) => {
+      const key = `${item.category || "other"}:${String(item.id)}:${item.createdAt || ""}`;
+      map.set(key, item);
+    });
     return [...map.values()].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   }, [feed]);
 
   const actors = useMemo(() => {
     const map = new Map<string, string>();
-    activities.forEach((item) => map.set(item.actorEmail, item.actorName || item.actorEmail));
+    activities.forEach((item) => {
+      if (item.actorEmail) map.set(item.actorEmail, item.actorName || item.actorEmail);
+    });
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
   }, [activities]);
 
@@ -122,7 +132,7 @@ export default function AdministrationAuditWorkspace() {
     const maxAge = period === "24h" ? 86_400_000 : period === "7d" ? 604_800_000 : period === "30d" ? 2_592_000_000 : Infinity;
     const q = normalize(query);
     return activities.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
+      if (category !== "all" && (item.category || "other") !== category) return false;
       if (actor !== "all" && item.actorEmail !== actor) return false;
       if (Number.isFinite(maxAge) && Date.now() - +new Date(item.createdAt) > maxAge) return false;
       if (q && !normalize([item.actorName, item.actorEmail, item.action, item.detail, item.subjectName, item.subjectKind, item.district].filter(Boolean).join(" ")).includes(q)) return false;
@@ -171,15 +181,16 @@ export default function AdministrationAuditWorkspace() {
 
       <div className="vf-audit-list-v2">
         {filtered.map((activity) => (
-          <article key={String(activity.id)}>
-            <div className="vf-audit-avatar">{initials(activity.actorName || activity.actorEmail)}</div>
+          <article key={`${activity.category || "other"}-${String(activity.id)}-${activity.createdAt}`}>
+            <div className="vf-audit-avatar">{initials(activity.actorName || activity.actorEmail || "VF")}</div>
             <div className="vf-audit-main">
-              <header><div><strong>{actionLabel(activity)}</strong><small>{activity.actorName || activity.actorEmail} · {roleLabels[activity.actorRole || "gestor"]}</small></div><time>{formatDate(activity.createdAt)}</time></header>
+              <header><div><strong>{actionLabel(activity)}</strong><small>{activity.actorName || activity.actorEmail || "Usuário"}{activity.actorRole ? ` · ${roleLabels[activity.actorRole]}` : ""}</small></div><time>{formatDate(activity.createdAt)}</time></header>
               {activity.subjectName || activity.district ? <p className="vf-audit-subject">{activity.subjectName ? <b>{activity.subjectName}</b> : null}{activity.subjectKind ? <span>{activity.subjectKind}</span> : null}{activity.district ? <span>{activity.district}</span> : null}</p> : null}
               {activity.detail ? <p>{activity.detail}</p> : null}
             </div>
           </article>
         ))}
+        {loading && !activities.length ? <p className="vf-audit-empty">Carregando atividades…</p> : null}
         {!filtered.length && !loading ? <p className="vf-audit-empty">Nenhuma atividade encontrada com estes filtros.</p> : null}
       </div>
     </section>,
