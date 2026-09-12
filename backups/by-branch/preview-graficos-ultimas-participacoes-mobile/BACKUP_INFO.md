@@ -2,9 +2,9 @@
 
 - Repository: evertonr415-beep/Projeto-voto-forte
 - Source branch: preview/graficos-ultimas-participacoes-mobile
-- Source commit: 879cc1060443dcf94177795a32ab8e2575b49f88
+- Source commit: 2cc1c3fa7b25408e1e5d9eee40897c38e63e4956
 - Triggered by: evertonr415-beep
-- Generated at (UTC): 2026-09-12T18:14:57Z
+- Generated at (UTC): 2026-09-12T18:15:18Z
 
 The  directory contains the complete repository snapshot for this branch at the commit above.
 Previous snapshots remain recoverable through the Git history of the  branch.
