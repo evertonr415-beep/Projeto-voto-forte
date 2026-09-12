@@ -58,7 +58,7 @@ export default function VotingChartsEntryPolish() {
       }
 
       .voting-charts-container:not(:has(.voting-last-update))::before {
-        content: "Carregando apuração…\\AAtualizando votos e percentuais em tempo real";
+        content: "Carregando apuração…\\A Atualizando votos e percentuais em tempo real";
         white-space: pre-line;
         position: absolute;
         z-index: 5;
@@ -70,7 +70,7 @@ export default function VotingChartsEntryPolish() {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 58px 24px 24px;
+        padding: 64px 24px 24px;
         border: 1px solid rgba(56, 189, 248, 0.22);
         border-radius: 18px;
         color: #e7f4ff;
@@ -114,15 +114,15 @@ export default function VotingChartsEntryPolish() {
           top: 12px;
           left: 10px;
           right: 10px;
-          min-height: 136px;
-          padding: 54px 18px 20px;
+          min-height: 144px;
+          padding: 64px 18px 22px;
           border-radius: 15px;
           font-size: 0.76rem;
-          line-height: 1.45;
+          line-height: 1.5;
         }
 
         .voting-charts-container:not(:has(.voting-last-update))::after {
-          top: 37px;
+          top: 35px;
           width: 22px;
           height: 22px;
           margin-left: -11px;
