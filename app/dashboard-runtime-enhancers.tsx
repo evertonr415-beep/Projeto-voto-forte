@@ -43,6 +43,7 @@ import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enh
 import IndividualWhatsappMenuEnhancer from "./individual-whatsapp-menu-enhancer";
 import VotingChartsEntryPolish from "./voting-charts-entry-polish";
 import WhatsappChatMobilePolish from "./whatsapp-chat-mobile-polish";
+import WhatsappSearchLightFix from "./whatsapp-search-light-fix";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -87,6 +88,7 @@ export default function DashboardRuntimeEnhancers() {
           <CompactOverviewScopeEnhancer />
           <VotingChartsEntryPolish />
           <WhatsappChatMobilePolish />
+          <WhatsappSearchLightFix />
           <OverviewAgendaOfficialBridge />
           <OverviewRegistrationModalEnhancer />
           <ContactsOfficialShellBridge />
