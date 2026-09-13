@@ -7,11 +7,11 @@
   "crons": [
     {
       "path": "/api/cron/daily-backup",
-      "schedule": "30 5 * * *"
+      "schedule": "0 5 * * *"
     },
     {
       "path": "/api/cron/daily-backup",
-      "schedule": "0 16 * * *"
+      "schedule": "0 17 * * *"
     }
   ]
 }
