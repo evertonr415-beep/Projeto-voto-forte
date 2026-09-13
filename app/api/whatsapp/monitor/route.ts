@@ -42,8 +42,8 @@ export async function GET(request: Request) {
     surveyData?.totalResponses ?? surveyData?.kpis?.totalResponses ?? liveData?.kpis?.repliedCount ?? 0,
   );
   const repliedCount = Number.isFinite(surveyTotal) ? surveyTotal : Number(liveData?.kpis?.repliedCount || 0);
-  const deliveredCount = Number(liveData?.kpis?.deliveredCount || 0);
-  const responseRate = deliveredCount > 0 ? Math.round((repliedCount / deliveredCount) * 1000) / 10 : 0;
+  const totalOutbound = Number(liveData?.kpis?.totalOutbound || 0);
+  const responseRate = totalOutbound > 0 ? Math.round((repliedCount / totalOutbound) * 1000) / 10 : 0;
 
   return Response.json(
     {
