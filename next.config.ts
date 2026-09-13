@@ -5,12 +5,21 @@ const buildVersion =
   process.env.VERCEL_DEPLOYMENT_ID ||
   "development";
 
+const publicSupabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://dtcvudwmosxhbgpwphsx.supabase.co";
+const publicSupabasePublishableKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_tXsklaQ9alfe6IfcYd-RhA_NBxIWA15";
+
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_VF_BUILD_VERSION: buildVersion,
+    NEXT_PUBLIC_SUPABASE_URL: publicSupabaseUrl,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publicSupabasePublishableKey,
   },
   typescript: {
     ignoreBuildErrors: true,
