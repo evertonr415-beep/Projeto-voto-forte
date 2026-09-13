@@ -18,10 +18,8 @@
 *.pem
 *.zip
 
-# Environment files - never commit secrets
-.env
-.env.*
-!.env.example
+# Local env files
+.env*.local
 
 # Vercel
 .vercel
