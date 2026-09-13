@@ -32,8 +32,8 @@ export type LiveFeedKpis = {
 const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   {
     id: "base-0",
-    phone: "4399000000",
-    contactName: "Carlos Silva 0",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -50,8 +50,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-1",
-    phone: "4399000001",
-    contactName: "Ana Silva 1",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -68,8 +68,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-2",
-    phone: "4399000002",
-    contactName: "João Silva 2",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -86,8 +86,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-3",
-    phone: "4399000003",
-    contactName: "Maria Silva 3",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -104,8 +104,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-4",
-    phone: "4399000004",
-    contactName: "Fernanda Silva 4",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -122,8 +122,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-5",
-    phone: "4399000005",
-    contactName: "Rafael Silva 5",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -140,8 +140,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-6",
-    phone: "4399000006",
-    contactName: "Pedro Silva 6",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -158,8 +158,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-7",
-    phone: "4399000007",
-    contactName: "Juliana Silva 7",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -176,8 +176,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-8",
-    phone: "4399000008",
-    contactName: "Lucas Silva 8",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -194,8 +194,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-9",
-    phone: "4399000009",
-    contactName: "Mariana Silva 9",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -212,8 +212,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-10",
-    phone: "4399000010",
-    contactName: "Marcos Silva 10",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -230,8 +230,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-11",
-    phone: "4399000011",
-    contactName: "Patrícia Silva 11",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -248,8 +248,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-12",
-    phone: "4399000012",
-    contactName: "Carlos Silva 12",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -266,8 +266,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-13",
-    phone: "4399000013",
-    contactName: "Ana Silva 13",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -284,8 +284,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-14",
-    phone: "4399000014",
-    contactName: "João Silva 14",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -302,8 +302,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-15",
-    phone: "4399000015",
-    contactName: "Maria Silva 15",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -320,8 +320,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-16",
-    phone: "4399000016",
-    contactName: "Fernanda Silva 16",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -338,8 +338,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-17",
-    phone: "4399000017",
-    contactName: "Rafael Silva 17",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -356,8 +356,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-18",
-    phone: "4399000018",
-    contactName: "Pedro Silva 18",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -374,8 +374,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-19",
-    phone: "4399000019",
-    contactName: "Juliana Silva 19",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -392,8 +392,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-20",
-    phone: "4399000020",
-    contactName: "Lucas Silva 20",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -410,8 +410,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-21",
-    phone: "4399000021",
-    contactName: "Mariana Silva 21",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -428,8 +428,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-22",
-    phone: "4399000022",
-    contactName: "Marcos Silva 22",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -446,8 +446,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-23",
-    phone: "4399000023",
-    contactName: "Patrícia Silva 23",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -464,8 +464,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-24",
-    phone: "4399000024",
-    contactName: "Carlos Silva 24",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -482,8 +482,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-25",
-    phone: "4399000025",
-    contactName: "Ana Silva 25",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -500,8 +500,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-26",
-    phone: "4399000026",
-    contactName: "João Silva 26",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -518,8 +518,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-27",
-    phone: "4399000027",
-    contactName: "Maria Silva 27",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -536,8 +536,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-28",
-    phone: "4399000028",
-    contactName: "Fernanda Silva 28",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -554,8 +554,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-29",
-    phone: "4399000029",
-    contactName: "Rafael Silva 29",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -572,8 +572,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-30",
-    phone: "4399000030",
-    contactName: "Pedro Silva 30",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -590,8 +590,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-31",
-    phone: "4399000031",
-    contactName: "Juliana Silva 31",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -608,8 +608,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-32",
-    phone: "4399000032",
-    contactName: "Lucas Silva 32",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -626,8 +626,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-33",
-    phone: "4399000033",
-    contactName: "Mariana Silva 33",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -644,8 +644,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-34",
-    phone: "4399000034",
-    contactName: "Marcos Silva 34",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -662,8 +662,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-35",
-    phone: "4399000035",
-    contactName: "Patrícia Silva 35",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -680,8 +680,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-36",
-    phone: "4399000036",
-    contactName: "Carlos Silva 36",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -698,8 +698,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-37",
-    phone: "4399000037",
-    contactName: "Ana Silva 37",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -716,8 +716,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-38",
-    phone: "4399000038",
-    contactName: "João Silva 38",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -734,8 +734,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-39",
-    phone: "4399000039",
-    contactName: "Maria Silva 39",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -752,8 +752,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-40",
-    phone: "4399000040",
-    contactName: "Fernanda Silva 40",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -770,8 +770,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-41",
-    phone: "4399000041",
-    contactName: "Rafael Silva 41",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -788,8 +788,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-42",
-    phone: "4399000042",
-    contactName: "Pedro Silva 42",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -806,8 +806,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-43",
-    phone: "4399000043",
-    contactName: "Juliana Silva 43",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -824,8 +824,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-44",
-    phone: "4399000044",
-    contactName: "Lucas Silva 44",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -842,8 +842,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-45",
-    phone: "4399000045",
-    contactName: "Mariana Silva 45",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -860,8 +860,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-46",
-    phone: "4399000046",
-    contactName: "Marcos Silva 46",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -878,8 +878,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-47",
-    phone: "4399000047",
-    contactName: "Patrícia Silva 47",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -896,8 +896,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-48",
-    phone: "4399000048",
-    contactName: "Carlos Silva 48",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -914,8 +914,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-49",
-    phone: "4399000049",
-    contactName: "Ana Silva 49",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -932,8 +932,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-50",
-    phone: "4399000050",
-    contactName: "João Silva 50",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -950,8 +950,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-51",
-    phone: "4399000051",
-    contactName: "Maria Silva 51",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Outro
@@ -968,8 +968,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-52",
-    phone: "4399000052",
-    contactName: "Fernanda Silva 52",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -986,8 +986,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-53",
-    phone: "4399000053",
-    contactName: "Rafael Silva 53",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1004,8 +1004,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-54",
-    phone: "4399000054",
-    contactName: "Pedro Silva 54",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1022,8 +1022,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-55",
-    phone: "4399000055",
-    contactName: "Juliana Silva 55",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1040,8 +1040,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-56",
-    phone: "4399000056",
-    contactName: "Lucas Silva 56",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1058,8 +1058,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-57",
-    phone: "4399000057",
-    contactName: "Mariana Silva 57",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1076,8 +1076,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-58",
-    phone: "4399000058",
-    contactName: "Marcos Silva 58",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1094,8 +1094,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-59",
-    phone: "4399000059",
-    contactName: "Patrícia Silva 59",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1112,8 +1112,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-60",
-    phone: "4399000060",
-    contactName: "Carlos Silva 60",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1130,8 +1130,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-61",
-    phone: "4399000061",
-    contactName: "Ana Silva 61",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1148,8 +1148,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-62",
-    phone: "4399000062",
-    contactName: "João Silva 62",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -1166,8 +1166,8 @@ const BASELINE_FEED_ITEMS: LiveMessageItem[] = [
   },
   {
     id: "base-63",
-    phone: "4399000063",
-    contactName: "Maria Silva 63",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     status: "replied",
     lastMessageText: `🏛️ Deputado Estadual: Não especificado / Em aberto

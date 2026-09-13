@@ -6,8 +6,8 @@ import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 // Base consolidada e calibrada com as 21 respostas completas de Arapongas
 const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
   {
-    phone: "4399000000",
-    contactName: "Carlos Silva 0",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -20,8 +20,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
   },
   {
-    phone: "4399000001",
-    contactName: "Ana Silva 1",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -34,8 +34,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
   },
   {
-    phone: "4399000002",
-    contactName: "João Silva 2",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -48,8 +48,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
   },
   {
-    phone: "4399000003",
-    contactName: "Maria Silva 3",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -62,8 +62,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
   },
   {
-    phone: "4399000004",
-    contactName: "Fernanda Silva 4",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -76,8 +76,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
   {
-    phone: "4399000005",
-    contactName: "Rafael Silva 5",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -90,8 +90,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
   },
   {
-    phone: "4399000006",
-    contactName: "Pedro Silva 6",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -104,8 +104,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 7).toISOString(),
   },
   {
-    phone: "4399000007",
-    contactName: "Juliana Silva 7",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -118,8 +118,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
   },
   {
-    phone: "4399000008",
-    contactName: "Lucas Silva 8",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -132,8 +132,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 9).toISOString(),
   },
   {
-    phone: "4399000009",
-    contactName: "Mariana Silva 9",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -146,8 +146,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 10).toISOString(),
   },
   {
-    phone: "4399000010",
-    contactName: "Marcos Silva 10",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -160,8 +160,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 11).toISOString(),
   },
   {
-    phone: "4399000011",
-    contactName: "Patrícia Silva 11",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -174,8 +174,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
   },
   {
-    phone: "4399000012",
-    contactName: "Carlos Silva 12",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -188,8 +188,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 13).toISOString(),
   },
   {
-    phone: "4399000013",
-    contactName: "Ana Silva 13",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -202,8 +202,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 14).toISOString(),
   },
   {
-    phone: "4399000014",
-    contactName: "João Silva 14",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -216,8 +216,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 15).toISOString(),
   },
   {
-    phone: "4399000015",
-    contactName: "Maria Silva 15",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -230,8 +230,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 16).toISOString(),
   },
   {
-    phone: "4399000016",
-    contactName: "Fernanda Silva 16",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -244,8 +244,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 17).toISOString(),
   },
   {
-    phone: "4399000017",
-    contactName: "Rafael Silva 17",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -258,8 +258,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
   },
   {
-    phone: "4399000018",
-    contactName: "Pedro Silva 18",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -272,8 +272,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 19).toISOString(),
   },
   {
-    phone: "4399000019",
-    contactName: "Juliana Silva 19",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -286,8 +286,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
   },
   {
-    phone: "4399000020",
-    contactName: "Lucas Silva 20",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -300,8 +300,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 21).toISOString(),
   },
   {
-    phone: "4399000021",
-    contactName: "Mariana Silva 21",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Sérgio Onofre
@@ -314,8 +314,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 22).toISOString(),
   },
   {
-    phone: "4399000022",
-    contactName: "Marcos Silva 22",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -328,8 +328,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 23).toISOString(),
   },
   {
-    phone: "4399000023",
-    contactName: "Patrícia Silva 23",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -342,8 +342,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
   },
   {
-    phone: "4399000024",
-    contactName: "Carlos Silva 24",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -356,8 +356,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 25).toISOString(),
   },
   {
-    phone: "4399000025",
-    contactName: "Ana Silva 25",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -370,8 +370,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 26).toISOString(),
   },
   {
-    phone: "4399000026",
-    contactName: "João Silva 26",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -384,8 +384,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 27).toISOString(),
   },
   {
-    phone: "4399000027",
-    contactName: "Maria Silva 27",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -398,8 +398,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 28).toISOString(),
   },
   {
-    phone: "4399000028",
-    contactName: "Fernanda Silva 28",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -412,8 +412,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 29).toISOString(),
   },
   {
-    phone: "4399000029",
-    contactName: "Rafael Silva 29",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
@@ -426,8 +426,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 30).toISOString(),
   },
   {
-    phone: "4399000030",
-    contactName: "Pedro Silva 30",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -440,8 +440,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 31).toISOString(),
   },
   {
-    phone: "4399000031",
-    contactName: "Juliana Silva 31",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -454,8 +454,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 32).toISOString(),
   },
   {
-    phone: "4399000032",
-    contactName: "Lucas Silva 32",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -468,8 +468,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 33).toISOString(),
   },
   {
-    phone: "4399000033",
-    contactName: "Mariana Silva 33",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -482,8 +482,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 34).toISOString(),
   },
   {
-    phone: "4399000034",
-    contactName: "Marcos Silva 34",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -496,8 +496,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 35).toISOString(),
   },
   {
-    phone: "4399000035",
-    contactName: "Patrícia Silva 35",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Delegado Jacovos
@@ -510,8 +510,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 36).toISOString(),
   },
   {
-    phone: "4399000036",
-    contactName: "Carlos Silva 36",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -524,8 +524,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 37).toISOString(),
   },
   {
-    phone: "4399000037",
-    contactName: "Ana Silva 37",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -538,8 +538,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 38).toISOString(),
   },
   {
-    phone: "4399000038",
-    contactName: "João Silva 38",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -552,8 +552,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 39).toISOString(),
   },
   {
-    phone: "4399000039",
-    contactName: "Maria Silva 39",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -566,8 +566,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 40).toISOString(),
   },
   {
-    phone: "4399000040",
-    contactName: "Fernanda Silva 40",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Aline Franzon
@@ -580,8 +580,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 41).toISOString(),
   },
   {
-    phone: "4399000041",
-    contactName: "Rafael Silva 41",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -594,8 +594,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 42).toISOString(),
   },
   {
-    phone: "4399000042",
-    contactName: "Pedro Silva 42",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -608,8 +608,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 43).toISOString(),
   },
   {
-    phone: "4399000043",
-    contactName: "Juliana Silva 43",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -622,8 +622,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 44).toISOString(),
   },
   {
-    phone: "4399000044",
-    contactName: "Lucas Silva 44",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Cobra Repórter
@@ -636,8 +636,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 45).toISOString(),
   },
   {
-    phone: "4399000045",
-    contactName: "Mariana Silva 45",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -650,8 +650,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 46).toISOString(),
   },
   {
-    phone: "4399000046",
-    contactName: "Marcos Silva 46",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -664,8 +664,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 47).toISOString(),
   },
   {
-    phone: "4399000047",
-    contactName: "Patrícia Silva 47",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -678,8 +678,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
   },
   {
-    phone: "4399000048",
-    contactName: "Carlos Silva 48",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -692,8 +692,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 49).toISOString(),
   },
   {
-    phone: "4399000049",
-    contactName: "Ana Silva 49",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -706,8 +706,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 50).toISOString(),
   },
   {
-    phone: "4399000050",
-    contactName: "João Silva 50",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -720,8 +720,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 51).toISOString(),
   },
   {
-    phone: "4399000051",
-    contactName: "Maria Silva 51",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Outro
@@ -734,8 +734,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 52).toISOString(),
   },
   {
-    phone: "4399000052",
-    contactName: "Fernanda Silva 52",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -748,8 +748,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 53).toISOString(),
   },
   {
-    phone: "4399000053",
-    contactName: "Rafael Silva 53",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -762,8 +762,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 54).toISOString(),
   },
   {
-    phone: "4399000054",
-    contactName: "Pedro Silva 54",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -776,8 +776,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 55).toISOString(),
   },
   {
-    phone: "4399000055",
-    contactName: "Juliana Silva 55",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -790,8 +790,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 56).toISOString(),
   },
   {
-    phone: "4399000056",
-    contactName: "Lucas Silva 56",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Centro",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -804,8 +804,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 57).toISOString(),
   },
   {
-    phone: "4399000057",
-    contactName: "Mariana Silva 57",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Petrópolis",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -818,8 +818,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 58).toISOString(),
   },
   {
-    phone: "4399000058",
-    contactName: "Marcos Silva 58",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Araponguinha",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -832,8 +832,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 59).toISOString(),
   },
   {
-    phone: "4399000059",
-    contactName: "Patrícia Silva 59",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Primavera",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -846,8 +846,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 60).toISOString(),
   },
   {
-    phone: "4399000060",
-    contactName: "Carlos Silva 60",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Conjunto Flamingos",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -860,8 +860,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 61).toISOString(),
   },
   {
-    phone: "4399000061",
-    contactName: "Ana Silva 61",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Zona Sul",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -874,8 +874,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 62).toISOString(),
   },
   {
-    phone: "4399000062",
-    contactName: "João Silva 62",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Vila Nova",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
@@ -888,8 +888,8 @@ const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
     timestamp: new Date(Date.now() - 3600000 * 63).toISOString(),
   },
   {
-    phone: "4399000063",
-    contactName: "Maria Silva 63",
+    phone: "Enquete Digital",
+    contactName: "Eleitor Arapongas",
     district: "Jardim Panorama",
     city: "Arapongas",
     messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
