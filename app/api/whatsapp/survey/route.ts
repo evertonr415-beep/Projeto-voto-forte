@@ -1,1073 +1,229 @@
+import surveyBackup from "../../../../backups/backup_votos_enquete.json";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient } from "../admin";
-import { CANDIDATE_NAMES_MAP, formatCandidateOrOption } from "../survey-formatter";
+import { formatCandidateOrOption } from "../survey-formatter";
 import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 
-// Base consolidada e calibrada com as 21 respostas completas de Arapongas
-const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 7).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 9).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 10).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 11).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 13).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 14).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 15).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 16).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 17).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 19).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Pedro Lupion
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Pedro Lupion",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 21).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 22).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 23).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 25).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 26).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 27).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 28).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 29).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 30).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 31).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 32).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Neto Santos
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Neto Santos",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 33).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sergio Moro
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 34).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 35).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Flávio Bolsonaro`,
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 36).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Aline Franzon
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 37).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Aline Franzon
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 38).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Aline Franzon
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 39).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Aline Franzon
-🇧🇷 Deputado Federal: Beto Preto
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Beto Preto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 40).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Aline Franzon
-🇧🇷 Deputado Federal: Ricardo Barros
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 41).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Cobra Repórter
-🇧🇷 Deputado Federal: Ricardo Barros
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 42).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Cobra Repórter
-🇧🇷 Deputado Federal: Ricardo Barros
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 43).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Cobra Repórter
-🇧🇷 Deputado Federal: Ricardo Barros
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 44).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Cobra Repórter
-🇧🇷 Deputado Federal: Ricardo Barros
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 45).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Luciano Ducci
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Outro",
-    federalCandidate: "Luciano Ducci",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 46).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Luciano Ducci
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Outro",
-    federalCandidate: "Luciano Ducci",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 47).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Luciano Ducci
-📍 Governador: Sandro Alex
-🗳️ Presidente: Lula`,
-    stateCandidate: "Outro",
-    federalCandidate: "Luciano Ducci",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Luciano Ducci
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Outro",
-    federalCandidate: "Luciano Ducci",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 49).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Bonin
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Outro",
-    federalCandidate: "Bonin",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 50).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Bonin
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Outro",
-    federalCandidate: "Bonin",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 51).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Outro
-🇧🇷 Deputado Federal: Marco Brasil
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Outro",
-    federalCandidate: "Marco Brasil",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 52).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 53).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Requião Filho
-🗳️ Presidente: Augusto Cury`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 54).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Requião Filho
-🗳️ Presidente: Ronaldo Caiado`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 55).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Requião Filho
-🗳️ Presidente: Ronaldo Caiado`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 56).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Centro",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Requião Filho
-🗳️ Presidente: Ronaldo Caiado`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 57).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Petrópolis",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Luiz França
-🗳️ Presidente: Ronaldo Caiado`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 58).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Araponguinha",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Luiz França
-🗳️ Presidente: Ronaldo Caiado`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 59).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Primavera",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Luiz França
-🗳️ Presidente: Romeu Zema`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 60).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Conjunto Flamingos",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Luiz França
-🗳️ Presidente: Romeu Zema`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 61).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Zona Sul",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Indeciso / Não sabe
-🗳️ Presidente: Romeu Zema`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 62).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Vila Nova",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Indeciso / Não sabe
-🗳️ Presidente: Indeciso / Não sabe`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 63).toISOString(),
-  },
-  {
-    phone: "Enquete Digital",
-    contactName: "Eleitor Arapongas",
-    district: "Jardim Panorama",
-    city: "Arapongas",
-    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
-🇧🇷 Deputado Federal: Não especificado / Em aberto
-📍 Governador: Indeciso / Não sabe
-🗳️ Presidente: Indeciso / Não sabe`,
-    stateCandidate: "Não especificado / Em aberto",
-    federalCandidate: "Não especificado / Em aberto",
-    sentiment: "declarado",
-    timestamp: new Date(Date.now() - 3600000 * 64).toISOString(),
-  }
-];
+const HISTORICAL_BACKUP_CUTOFF = "2026-09-13T00:52:33.000Z";
+
+type BackupRow = {
+  id_voto: number;
+  telefone: string;
+  nome: string;
+  bairro: string;
+  cidade: string;
+  deputado_estadual: string;
+  deputado_federal: string;
+  governador: string;
+  presidente: string;
+  status: string;
+};
+
+type ConsolidatedResponse = SurveyAnalysisResult & {
+  governorCandidate?: string;
+  presidentCandidate?: string;
+  sourceKey: string;
+};
 
 function toRanking(counts: Record<string, number>) {
   const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
   return Object.entries(counts)
-    .filter(([_, votes]) => votes > 0)
+    .filter(([, votes]) => votes > 0)
     .map(([candidate, votes]) => ({
       candidate,
       votes,
       percentage: total > 0 ? Math.round((votes / total) * 1000) / 10 : 0,
     }))
-    .sort((a, b) => b.votes - a.votes || a.candidate.localeCompare(b.candidate));
+    .sort((a, b) => b.votes - a.votes || a.candidate.localeCompare(b.candidate, "pt-BR"));
 }
 
-let memorySurveyResponses: SurveyAnalysisResult[] = [];
+function backupResponses(): ConsolidatedResponse[] {
+  return (surveyBackup as BackupRow[]).map((row) => ({
+    phone: row.telefone,
+    contactName: row.nome,
+    district: row.bairro,
+    city: row.cidade,
+    messageText: [
+      `🏛️ Deputado Estadual: ${row.deputado_estadual}`,
+      `🇧🇷 Deputado Federal: ${row.deputado_federal}`,
+      `📍 Governador: ${row.governador}`,
+      `🗳️ Presidente: ${row.presidente}`,
+    ].join("\n"),
+    stateCandidate: row.deputado_estadual,
+    federalCandidate: row.deputado_federal,
+    governorCandidate: row.governador,
+    presidentCandidate: row.presidente,
+    sentiment: "declarado",
+    timestamp: new Date(new Date(HISTORICAL_BACKUP_CUTOFF).getTime() - row.id_voto * 1000).toISOString(),
+    sourceKey: `backup-${row.id_voto}`,
+  }));
+}
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const filterDistrict = searchParams.get("district") || "all";
+function parseJsonEvent(event: Record<string, unknown>): ConsolidatedResponse | null {
+  const rawText = String(event.message_text || "").trim();
+  if (!rawText) return null;
 
-  const responsesMap = new Map<string, SurveyAnalysisResult>();
+  try {
+    const vote = JSON.parse(rawText) as Record<string, unknown>;
+    const hasSurveyFields = Boolean(vote.poll || vote.q6 || vote.q7 || vote.q8 || vote.q9);
+    if (!hasSurveyFields) return null;
 
-  // 1. Inicializa com as 21 respostas consolidadas para sincronismo total com o monitor
-  for (const b of BASELINE_SURVEY_RESPONSES) {
-    const key = `${b.phone}-${b.messageText}`;
-    responsesMap.set(key, { ...b });
+    const stateCandidate = formatCandidateOrOption(String(vote.q9 || vote.stateCandidate || vote.deputado_estadual || "")) || "Não especificado / Em aberto";
+    const federalCandidate = formatCandidateOrOption(String(vote.q8 || vote.federalCandidate || vote.deputado_federal || "")) || "Não especificado / Em aberto";
+    const governorCandidate = formatCandidateOrOption(String(vote.q7 || vote.governorCandidate || vote.governador || ""));
+    const presidentCandidate = formatCandidateOrOption(String(vote.q6 || vote.presidentCandidate || vote.presidente || ""));
+    const district = String(vote.bairro || vote.district || "Não informado");
+    const eventId = String(event.id || `${event.phone || "web"}-${event.created_at || event.occurred_at || rawText}`);
+
+    return {
+      phone: String(event.phone || "Enquete Digital (Web)"),
+      contactName: String(event.contact_name || "Participante da Enquete"),
+      district,
+      city: String(vote.cidade || vote.city || "Arapongas"),
+      messageText: [
+        `🏛️ Deputado Estadual: ${stateCandidate}`,
+        `🇧🇷 Deputado Federal: ${federalCandidate}`,
+        governorCandidate ? `📍 Governador: ${governorCandidate}` : "",
+        presidentCandidate ? `🗳️ Presidente: ${presidentCandidate}` : "",
+      ].filter(Boolean).join("\n"),
+      stateCandidate,
+      federalCandidate,
+      governorCandidate,
+      presidentCandidate,
+      sentiment: "declarado",
+      timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
+      sourceKey: `event-${eventId}`,
+    };
+  } catch {
+    return null;
   }
+}
 
-  // 2. Busca eventos reais do WhatsApp e Enquete no Supabase sem bloqueio RLS
+async function loadNewResponses(): Promise<ConsolidatedResponse[]> {
   const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
-  if (supabase) {
-    try {
-      const { data: waEvents, error } = await supabase
-        .from("vf_whatsapp_events")
-        .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
-        .order("created_at", { ascending: false })
-        .limit(1000);
+  if (!supabase) return [];
 
-      if (!error && Array.isArray(waEvents)) {
-        for (const ev of waEvents) {
-          const rawText = (ev.message_text || "").trim();
-          if (!rawText) continue;
+  const { data, error } = await supabase
+    .from("vf_whatsapp_events")
+    .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
+    .or("event_type.ilike.%poll%,event_type.eq.survey_response_manual")
+    .gte("created_at", HISTORICAL_BACKUP_CUTOFF)
+    .order("created_at", { ascending: true })
+    .limit(5000);
 
-          const isInbound = ev.direction === "inbound" || ev.event_type?.includes("poll") || ev.event_type?.includes("survey");
-          if (!isInbound) continue;
+  if (error) throw error;
 
-          // Se for voto da enquete web em formato JSON
-          if (ev.event_type?.includes("poll") || (rawText.startsWith("{") && rawText.includes("poll")) || (rawText.startsWith("{") && rawText.includes("q"))) {
-            try {
-              const vote = JSON.parse(rawText);
-              const stateCode = vote.q9 || vote.stateCandidate || vote.deputado_estadual;
-              const fedCode = vote.q8 || vote.federalCandidate || vote.deputado_federal;
-              const dist = vote.bairro || vote.district || "Centro";
+  const responses: ConsolidatedResponse[] = [];
+  for (const rawEvent of data || []) {
+    const event = rawEvent as Record<string, unknown>;
+    const parsed = parseJsonEvent(event);
+    if (parsed) {
+      responses.push(parsed);
+      continue;
+    }
 
-              const stateName = stateCode ? formatCandidateOrOption(stateCode) : "Delegado Jacovos";
-              const fedName = fedCode ? formatCandidateOrOption(fedCode) : "Neto Santos";
-
-              const key = `poll-${ev.id || ev.phone || Math.random()}`;
-              responsesMap.set(key, {
-                phone: ev.phone?.startsWith("phone:") ? ev.phone.replace("phone:", "") : (ev.phone || "Enquete Online"),
-                contactName: ev.contact_name || "Participante da Enquete",
-                district: dist,
-                city: "Arapongas",
-                messageText: `🏛️ Deputado Estadual: ${stateName}\n🇧🇷 Deputado Federal: ${fedName}`,
-                stateCandidate: stateName,
-                federalCandidate: fedName,
-                sentiment: "declarado",
-                timestamp: ev.occurred_at || ev.created_at || new Date().toISOString(),
-              });
-              continue;
-            } catch {
-              // Continua
-            }
-          }
-
-          const phone = ev.phone || "";
-          const key = `${phone}-${rawText}`;
-
-          if (phone && !responsesMap.has(key)) {
-            const parsed = await analyzeSurveyResponse(phone, rawText);
-            if (ev.contact_name && parsed.contactName === "Eleitor") {
-              parsed.contactName = ev.contact_name;
-            }
-            parsed.timestamp = ev.occurred_at || ev.created_at || new Date().toISOString();
-            responsesMap.set(key, parsed);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Erro ao buscar dados da enquete no Supabase:", err);
+    if (String(event.event_type || "") === "survey_response_manual") {
+      const text = String(event.message_text || "").trim();
+      if (!text) continue;
+      responses.push({
+        phone: String(event.phone || ""),
+        contactName: String(event.contact_name || "Eleitor"),
+        district: "Não informado",
+        city: "Arapongas",
+        messageText: text,
+        stateCandidate: "Não especificado / Em aberto",
+        federalCandidate: "Não especificado / Em aberto",
+        sentiment: "declarado",
+        timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
+        sourceKey: `event-${String(event.id || `${event.phone}-${event.created_at}`)}`,
+      });
     }
   }
 
-  // 3. Inclui respostas salvas em memória
-  for (const m of memorySurveyResponses) {
-    const key = `${m.phone}-${m.messageText}`;
-    responsesMap.set(key, m);
+  return responses;
+}
+
+async function getConsolidatedResponses() {
+  const bySource = new Map<string, ConsolidatedResponse>();
+
+  for (const response of backupResponses()) {
+    bySource.set(response.sourceKey, response);
   }
 
-  let responses = Array.from(responsesMap.values()).sort(
+  for (const response of await loadNewResponses()) {
+    bySource.set(response.sourceKey, response);
+  }
+
+  return Array.from(bySource.values()).sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
+}
 
-  // Filtro por Bairro
-  if (filterDistrict !== "all") {
-    responses = responses.filter(
-      (r) => r.district.toLowerCase() === filterDistrict.toLowerCase(),
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const filterDistrict = searchParams.get("district") || "all";
+
+    let responses = await getConsolidatedResponses();
+    if (filterDistrict !== "all") {
+      responses = responses.filter((response) => response.district.toLowerCase() === filterDistrict.toLowerCase());
+    }
+
+    const stateCounts: Record<string, number> = {};
+    const federalCounts: Record<string, number> = {};
+    const governorCounts: Record<string, number> = {};
+    const presidentCounts: Record<string, number> = {};
+    const districtCounts: Record<string, number> = {};
+
+    for (const response of responses) {
+      if (response.stateCandidate && response.stateCandidate !== "Não especificado / Em aberto") {
+        stateCounts[response.stateCandidate] = (stateCounts[response.stateCandidate] || 0) + 1;
+      }
+      if (response.federalCandidate && response.federalCandidate !== "Não especificado / Em aberto") {
+        federalCounts[response.federalCandidate] = (federalCounts[response.federalCandidate] || 0) + 1;
+      }
+      if (response.governorCandidate) {
+        governorCounts[response.governorCandidate] = (governorCounts[response.governorCandidate] || 0) + 1;
+      }
+      if (response.presidentCandidate) {
+        presidentCounts[response.presidentCandidate] = (presidentCounts[response.presidentCandidate] || 0) + 1;
+      }
+      if (response.district && response.district !== "Não informado") {
+        districtCounts[response.district] = (districtCounts[response.district] || 0) + 1;
+      }
+    }
+
+    const stateRanking = toRanking(stateCounts);
+    const federalRanking = toRanking(federalCounts);
+    const governorRanking = toRanking(governorCounts);
+    const presidentRanking = toRanking(presidentCounts);
+    const districtRanking = Object.entries(districtCounts)
+      .map(([district, total]) => ({ district, total }))
+      .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
+
+    return Response.json({
+      success: true,
+      totalResponses: responses.length,
+      kpis: {
+        totalResponses: responses.length,
+        topStateCandidate: stateRanking[0] ? `${stateRanking[0].candidate} (${stateRanking[0].percentage}%)` : "-",
+        topFederalCandidate: federalRanking[0] ? `${federalRanking[0].candidate} (${federalRanking[0].percentage}%)` : "-",
+        activeDistrictsCount: districtRanking.length,
+      },
+      stateRanking,
+      federalRanking,
+      governorRanking,
+      presidentRanking,
+      districtRanking,
+      responses: responses.map(({ sourceKey: _sourceKey, governorCandidate: _governorCandidate, presidentCandidate: _presidentCandidate, ...response }) => response),
+    });
+  } catch (error) {
+    console.error("[whatsapp-survey] failed to consolidate responses", error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Falha ao carregar respostas da enquete" },
+      { status: 500 },
     );
   }
-
-  // Agregações de Votos
-  const stateCounts: Record<string, number> = {};
-  const federalCounts: Record<string, number> = {};
-  const governorCounts: Record<string, number> = {
-    "Sergio Moro": 11,
-    "Sandro Alex": 4,
-    "Requião Filho": 3,
-    "Luiz França": 2,
-    "Indeciso / Não sabe": 1,
-  };
-  const presidentCounts: Record<string, number> = {
-    "Flávio Bolsonaro": 12,
-    "Lula": 3,
-    "Augusto Cury": 2,
-    "Ronaldo Caiado": 2,
-    "Romeu Zema": 1,
-    "Indeciso / Não sabe": 1,
-  };
-  const districtCounts: Record<string, number> = {};
-
-  for (const r of responses) {
-    if (r.stateCandidate && r.stateCandidate !== "Não especificado / Em aberto") {
-      stateCounts[r.stateCandidate] = (stateCounts[r.stateCandidate] || 0) + 1;
-    }
-    if (r.federalCandidate && r.federalCandidate !== "Não especificado / Em aberto") {
-      federalCounts[r.federalCandidate] = (federalCounts[r.federalCandidate] || 0) + 1;
-    }
-    if (r.district && r.district !== "Não informado") {
-      districtCounts[r.district] = (districtCounts[r.district] || 0) + 1;
-    }
-  }
-
-  const stateRanking = toRanking(stateCounts);
-  const federalRanking = toRanking(federalCounts);
-  const governorRanking = toRanking(governorCounts);
-  const presidentRanking = toRanking(presidentCounts);
-
-  const districtRanking = Object.entries(districtCounts)
-    .map(([district, total]) => ({ district, total }))
-    .sort((a, b) => b.total - a.total);
-
-  return Response.json({
-    success: true,
-    totalResponses: responses.length,
-    kpis: {
-      totalResponses: responses.length,
-      topStateCandidate: stateRanking[0] ? `${stateRanking[0].candidate} (${stateRanking[0].percentage}%)` : "-",
-      topFederalCandidate: federalRanking[0] ? `${federalRanking[0].candidate} (${federalRanking[0].percentage}%)` : "-",
-      activeDistrictsCount: districtRanking.length,
-    },
-    stateRanking,
-    federalRanking,
-    governorRanking,
-    presidentRanking,
-    districtRanking,
-    responses,
-  });
 }
 
 export async function POST(request: Request) {
@@ -1081,29 +237,24 @@ export async function POST(request: Request) {
     }
 
     const analyzed = await analyzeSurveyResponse(phone, message);
-    memorySurveyResponses.unshift(analyzed);
-
-    // Persiste no Supabase caso disponível
-    try {
-      const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
-      if (supabase) {
-        await supabase.from("vf_whatsapp_events").insert({
-          direction: "inbound",
-          event_type: "survey_response_manual",
-          status: "received",
-          phone,
-          contact_name: analyzed.contactName,
-          message_type: "text",
-          message_text: message,
-          occurred_at: new Date().toISOString(),
-        });
-      }
-    } catch {
-      // Silencia
+    const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
+    if (supabase) {
+      const { error } = await supabase.from("vf_whatsapp_events").insert({
+        direction: "inbound",
+        event_type: "survey_response_manual",
+        status: "received",
+        phone,
+        contact_name: analyzed.contactName,
+        message_type: "text",
+        message_text: message,
+        occurred_at: new Date().toISOString(),
+      });
+      if (error) throw error;
     }
 
     return Response.json({ success: true, result: analyzed });
   } catch (error) {
+    console.error("[whatsapp-survey] manual response failed", error);
     return Response.json(
       { error: error instanceof Error ? error.message : "Falha ao processar resposta" },
       { status: 500 },
