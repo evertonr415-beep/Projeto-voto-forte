@@ -1,8 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 
+const PUBLIC_ENV_FALLBACKS: Record<string, string> = {
+  NEXT_PUBLIC_SUPABASE_URL: "https://dtcvudwmosxhbgpwphsx.supabase.co",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    "sb_publishable_tXsklaQ9alfe6IfcYd-RhA_NBxIWA15",
+};
+
 function requiredEnv(name: string) {
-  const value = process.env[name];
+  const value = process.env[name] || PUBLIC_ENV_FALLBACKS[name];
   if (!value) throw new Error(`Variável de ambiente ausente: ${name}`);
   return value;
 }
@@ -28,4 +34,3 @@ export function getAutonomousSupabase() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
-
