@@ -98,7 +98,7 @@ export default function AdministrationAccessHost() {
       <style jsx global>{`
         [data-vf-access-stable-active="true"]
           > .management-filter[role="tablist"][aria-label="Seções administrativas"]
-          ~ *:not([data-vf-access-stable-host]) {
+          ~ *:not([data-vf-access-stable-host]):not(:has(.vf-access-workspace)) {
           display: none !important;
         }
 
@@ -116,6 +116,15 @@ export default function AdministrationAccessHost() {
 
         [data-vf-access-stable-active="true"] > [data-vf-access-stable-host] {
           display: block !important;
+        }
+
+        [data-vf-access-stable-active="true"]
+          > .management-filter[role="tablist"][aria-label="Seções administrativas"]
+          ~ *:has(.vf-access-workspace) {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
         }
       `}</style>
     </>
