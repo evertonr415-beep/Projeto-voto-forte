@@ -27,12 +27,13 @@ export default function AdministrationAccessHost() {
   const [accessActive, setAccessActive] = useState(false);
 
   useEffect(() => {
-    let frame = 0;
     let currentParent: HTMLElement | null = null;
     let currentHost: HTMLElement | null = null;
 
     const deactivate = () => {
       setAccessActive(false);
+      currentHost?.classList.remove("users-admin-grid");
+      currentHost?.removeAttribute("data-vf-hierarchy-replaced");
       restoreNativeGrids();
       currentParent?.removeAttribute("data-vf-access-stable-active");
       currentHost?.style.setProperty("display", "none", "important");
@@ -62,8 +63,10 @@ export default function AdministrationAccessHost() {
       let host = parent.querySelector<HTMLElement>(HOST_SELECTOR);
       if (!host) {
         host = document.createElement("div");
-        host.className = "users-admin-grid vf-access-stable-host";
+        host.className = "vf-access-stable-host";
         host.dataset.vfAccessStableHost = "true";
+        filter.insertAdjacentElement("afterend", host);
+      } else if (host.previousElementSibling !== filter) {
         filter.insertAdjacentElement("afterend", host);
       }
       currentHost = host;
@@ -91,14 +94,6 @@ export default function AdministrationAccessHost() {
       }
     };
 
-    const schedule = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        sync();
-      });
-    };
-
     const handleAdministrativeTabClick = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -119,14 +114,17 @@ export default function AdministrationAccessHost() {
         municipalitiesTab.classList.remove("active");
         municipalitiesTab.setAttribute("aria-selected", "false");
       }
-
-      schedule();
     };
 
     document.addEventListener("click", handleAdministrativeTabClick, true);
     sync();
 
-    const observer = new MutationObserver(schedule);
+    // O painel de Acessos procura por .users-admin-grid. A grade nativa pode ser
+    // recriada pelo dashboard durante a renderização. Sincronizamos no próprio
+    // ciclo da mutação, antes do observador interno do painel, para manter somente
+    // o host exclusivo de Acessos com essa classe e impedir que o portal migre
+    // para um bloco oculto.
+    const observer = new MutationObserver(sync);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -135,9 +133,10 @@ export default function AdministrationAccessHost() {
     });
 
     return () => {
-      if (frame) window.cancelAnimationFrame(frame);
       document.removeEventListener("click", handleAdministrativeTabClick, true);
       observer.disconnect();
+      currentHost?.classList.remove("users-admin-grid");
+      currentHost?.removeAttribute("data-vf-hierarchy-replaced");
       restoreNativeGrids();
       currentParent?.removeAttribute("data-vf-access-stable-active");
       currentHost?.remove();
