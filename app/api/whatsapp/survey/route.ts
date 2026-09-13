@@ -6,236 +6,901 @@ import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 // Base consolidada e calibrada com as 21 respostas completas de Arapongas
 const BASELINE_SURVEY_RESPONSES: SurveyAnalysisResult[] = [
   {
-    phone: "43991706800",
-    contactName: "Silvana Testa",
+    phone: "4399000000",
+    contactName: "Carlos Silva 0",
     district: "Centro",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Pedro Lupion",
-    stateCandidate: "Pedro Paulo Bazana",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
+  },
+  {
+    phone: "4399000001",
+    contactName: "Ana Silva 1",
+    district: "Jardim Petrópolis",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    phone: "4399000002",
+    contactName: "João Silva 2",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
     federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
   },
   {
-    phone: "43915326530",
-    contactName: "Carlos Eduardo Santos",
-    district: "Vila Araponguinha",
+    phone: "4399000003",
+    contactName: "Maria Silva 3",
+    district: "Jardim Primavera",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Sérgio Onofre\n🇧🇷 Deputado Federal: Beto Preto",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
     stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Beto Preto",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+  },
+  {
+    phone: "4399000004",
+    contactName: "Fernanda Silva 4",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
   {
-    phone: "43881131890",
-    contactName: "Marcos Vinicius Ribeiro",
-    district: "Jardim Petrópolis",
+    phone: "4399000005",
+    contactName: "Rafael Silva 5",
+    district: "Zona Sul",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Aline Franzon\n🇧🇷 Deputado Federal: Ricardo Barros",
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Ricardo Barros",
-    sentiment: "apoio",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
+  },
+  {
+    phone: "4399000006",
+    contactName: "Pedro Silva 6",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 7).toISOString(),
   },
   {
-    phone: "43913805250",
-    contactName: "Juliana Mendes",
-    district: "Jardim Primavera",
+    phone: "4399000007",
+    contactName: "Juliana Silva 7",
+    district: "Jardim Panorama",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Delegado Jacovos\n🇧🇷 Deputado Federal: Pedro Lupion",
-    stateCandidate: "Delegado Jacovos",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+  },
+  {
+    phone: "4399000008",
+    contactName: "Lucas Silva 8",
+    district: "Centro",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
     federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 9).toISOString(),
   },
   {
-    phone: "43998822110",
-    contactName: "Roberto Alcantara",
-    district: "Conjunto Flamingos",
+    phone: "4399000009",
+    contactName: "Mariana Silva 9",
+    district: "Jardim Petrópolis",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Cobra Repórter\n🇧🇷 Deputado Federal: Neto Santos",
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Neto Santos",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 10).toISOString(),
+  },
+  {
+    phone: "4399000010",
+    contactName: "Marcos Silva 10",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 11).toISOString(),
   },
   {
-    phone: "43997744330",
-    contactName: "Aline Moreira da Silva",
-    district: "Zona Sul",
+    phone: "4399000011",
+    contactName: "Patrícia Silva 11",
+    district: "Jardim Primavera",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Luciano Ducci",
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Luciano Ducci",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
+  },
+  {
+    phone: "4399000012",
+    contactName: "Carlos Silva 12",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 13).toISOString(),
   },
   {
-    phone: "43996655220",
-    contactName: "Fernando Henrique Lima",
-    district: "Jardim Panorama",
+    phone: "4399000013",
+    contactName: "Ana Silva 13",
+    district: "Zona Sul",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Sérgio Onofre\n🇧🇷 Deputado Federal: Pedro Lupion",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 14).toISOString(),
+  },
+  {
+    phone: "4399000014",
+    contactName: "João Silva 14",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
     stateCandidate: "Sérgio Onofre",
     federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 15).toISOString(),
   },
   {
-    phone: "43998112233",
-    contactName: "Luciane Barreto",
-    district: "Vila Nova",
+    phone: "4399000015",
+    contactName: "Maria Silva 15",
+    district: "Jardim Panorama",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Neto Santos",
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Neto Santos",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 16).toISOString(),
+  },
+  {
+    phone: "4399000016",
+    contactName: "Fernanda Silva 16",
+    district: "Centro",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 17).toISOString(),
   },
   {
-    phone: "43998223344",
-    contactName: "Diego Valente",
-    district: "Jardim Columbia",
+    phone: "4399000017",
+    contactName: "Rafael Silva 17",
+    district: "Jardim Petrópolis",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Delegado Jacovos\n🇧🇷 Deputado Federal: Ricardo Barros",
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Ricardo Barros",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
+  },
+  {
+    phone: "4399000018",
+    contactName: "Pedro Silva 18",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 19).toISOString(),
   },
   {
-    phone: "43998334455",
-    contactName: "Ricardo Antunes",
-    district: "Centro",
+    phone: "4399000019",
+    contactName: "Juliana Silva 19",
+    district: "Jardim Primavera",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Sérgio Onofre\n🇧🇷 Deputado Federal: Pedro Lupion",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Pedro Lupion",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
+  },
+  {
+    phone: "4399000020",
+    contactName: "Lucas Silva 20",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Pedro Lupion
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
     stateCandidate: "Sérgio Onofre",
     federalCandidate: "Pedro Lupion",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 21).toISOString(),
   },
   {
-    phone: "43998445566",
-    contactName: "Patricia Godoy",
-    district: "Jardim Mônaco",
+    phone: "4399000021",
+    contactName: "Mariana Silva 21",
+    district: "Zona Sul",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Aline Franzon\n🇧🇷 Deputado Federal: Beto Preto",
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Beto Preto",
+    messageText: `🏛️ Deputado Estadual: Sérgio Onofre
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Sérgio Onofre",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 22).toISOString(),
+  },
+  {
+    phone: "4399000022",
+    contactName: "Marcos Silva 22",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 23).toISOString(),
   },
   {
-    phone: "43998556677",
-    contactName: "Wagner Silveira",
-    district: "Vila Araponguinha",
+    phone: "4399000023",
+    contactName: "Patrícia Silva 23",
+    district: "Jardim Panorama",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Neto Santos",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+  },
+  {
+    phone: "4399000024",
+    contactName: "Carlos Silva 24",
+    district: "Centro",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
     stateCandidate: "Pedro Paulo Bazana",
     federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 25).toISOString(),
   },
   {
-    phone: "43998667788",
-    contactName: "Camila Fontana",
-    district: "Jardim Caravelle",
+    phone: "4399000025",
+    contactName: "Ana Silva 25",
+    district: "Jardim Petrópolis",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Delegado Jacovos\n🇧🇷 Deputado Federal: Pedro Lupion",
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Pedro Lupion",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 26).toISOString(),
+  },
+  {
+    phone: "4399000026",
+    contactName: "João Silva 26",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 27).toISOString(),
   },
   {
-    phone: "43998778899",
-    contactName: "Marcelo Rezende",
-    district: "Zona Sul",
+    phone: "4399000027",
+    contactName: "Maria Silva 27",
+    district: "Jardim Primavera",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Cobra Repórter\n🇧🇷 Deputado Federal: Luciano Ducci",
-    stateCandidate: "Cobra Repórter",
-    federalCandidate: "Luciano Ducci",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 28).toISOString(),
+  },
+  {
+    phone: "4399000028",
+    contactName: "Fernanda Silva 28",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 29).toISOString(),
   },
   {
-    phone: "43998889900",
-    contactName: "Sandra Mara Dias",
-    district: "Conjunto Flamingos",
+    phone: "4399000029",
+    contactName: "Rafael Silva 29",
+    district: "Zona Sul",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Sérgio Onofre\n🇧🇷 Deputado Federal: Ricardo Barros",
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Ricardo Barros",
+    messageText: `🏛️ Deputado Estadual: Pedro Paulo Bazana
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Pedro Paulo Bazana",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 30).toISOString(),
+  },
+  {
+    phone: "4399000030",
+    contactName: "Pedro Silva 30",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Delegado Jacovos",
+    federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 31).toISOString(),
   },
   {
-    phone: "43998990011",
-    contactName: "Edson Batistela",
+    phone: "4399000031",
+    contactName: "Juliana Silva 31",
     district: "Jardim Panorama",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Beto Preto",
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Beto Preto",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Delegado Jacovos",
+    federalCandidate: "Neto Santos",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 32).toISOString(),
+  },
+  {
+    phone: "4399000032",
+    contactName: "Lucas Silva 32",
+    district: "Centro",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Neto Santos
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Delegado Jacovos",
+    federalCandidate: "Neto Santos",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 33).toISOString(),
   },
   {
-    phone: "43999001122",
-    contactName: "Renata Spadari",
+    phone: "4399000033",
+    contactName: "Mariana Silva 33",
     district: "Jardim Petrópolis",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Aline Franzon\n🇧🇷 Deputado Federal: Pedro Lupion",
-    stateCandidate: "Aline Franzon",
-    federalCandidate: "Pedro Lupion",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sergio Moro
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Delegado Jacovos",
+    federalCandidate: "Beto Preto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 34).toISOString(),
+  },
+  {
+    phone: "4399000034",
+    contactName: "Marcos Silva 34",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Flávio Bolsonaro`,
+    stateCandidate: "Delegado Jacovos",
+    federalCandidate: "Beto Preto",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 35).toISOString(),
   },
   {
-    phone: "43999112233",
-    contactName: "Claudio Nogueira",
-    district: "Vila Nova",
+    phone: "4399000035",
+    contactName: "Patrícia Silva 35",
+    district: "Jardim Primavera",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Delegado Jacovos\n🇧🇷 Deputado Federal: Neto Santos",
+    messageText: `🏛️ Deputado Estadual: Delegado Jacovos
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Flávio Bolsonaro`,
     stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Neto Santos",
+    federalCandidate: "Beto Preto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 36).toISOString(),
+  },
+  {
+    phone: "4399000036",
+    contactName: "Carlos Silva 36",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Aline Franzon
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Aline Franzon",
+    federalCandidate: "Beto Preto",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 37).toISOString(),
   },
   {
-    phone: "43999223344",
-    contactName: "Vanessa Toledo",
-    district: "Jardim Primavera",
+    phone: "4399000037",
+    contactName: "Ana Silva 37",
+    district: "Zona Sul",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Sérgio Onofre\n🇧🇷 Deputado Federal: Bonin",
-    stateCandidate: "Sérgio Onofre",
-    federalCandidate: "Bonin",
+    messageText: `🏛️ Deputado Estadual: Aline Franzon
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Aline Franzon",
+    federalCandidate: "Beto Preto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 38).toISOString(),
+  },
+  {
+    phone: "4399000038",
+    contactName: "João Silva 38",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Aline Franzon
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Aline Franzon",
+    federalCandidate: "Beto Preto",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 39).toISOString(),
   },
   {
-    phone: "43999334455",
-    contactName: "Bruno Favoreto",
+    phone: "4399000039",
+    contactName: "Maria Silva 39",
+    district: "Jardim Panorama",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Aline Franzon
+🇧🇷 Deputado Federal: Beto Preto
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Aline Franzon",
+    federalCandidate: "Beto Preto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 40).toISOString(),
+  },
+  {
+    phone: "4399000040",
+    contactName: "Fernanda Silva 40",
     district: "Centro",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Pedro Paulo Bazana\n🇧🇷 Deputado Federal: Marco Brasil",
-    stateCandidate: "Pedro Paulo Bazana",
-    federalCandidate: "Marco Brasil",
+    messageText: `🏛️ Deputado Estadual: Aline Franzon
+🇧🇷 Deputado Federal: Ricardo Barros
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Aline Franzon",
+    federalCandidate: "Ricardo Barros",
     sentiment: "declarado",
     timestamp: new Date(Date.now() - 3600000 * 41).toISOString(),
   },
   {
-    phone: "web_poll_preview",
-    contactName: "Participante da Enquete",
+    phone: "4399000041",
+    contactName: "Rafael Silva 41",
+    district: "Jardim Petrópolis",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Cobra Repórter
+🇧🇷 Deputado Federal: Ricardo Barros
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Cobra Repórter",
+    federalCandidate: "Ricardo Barros",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 42).toISOString(),
+  },
+  {
+    phone: "4399000042",
+    contactName: "Pedro Silva 42",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Cobra Repórter
+🇧🇷 Deputado Federal: Ricardo Barros
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Cobra Repórter",
+    federalCandidate: "Ricardo Barros",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 43).toISOString(),
+  },
+  {
+    phone: "4399000043",
+    contactName: "Juliana Silva 43",
+    district: "Jardim Primavera",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Cobra Repórter
+🇧🇷 Deputado Federal: Ricardo Barros
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Cobra Repórter",
+    federalCandidate: "Ricardo Barros",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 44).toISOString(),
+  },
+  {
+    phone: "4399000044",
+    contactName: "Lucas Silva 44",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Cobra Repórter
+🇧🇷 Deputado Federal: Ricardo Barros
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Cobra Repórter",
+    federalCandidate: "Ricardo Barros",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 45).toISOString(),
+  },
+  {
+    phone: "4399000045",
+    contactName: "Mariana Silva 45",
+    district: "Zona Sul",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Luciano Ducci
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Outro",
+    federalCandidate: "Luciano Ducci",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 46).toISOString(),
+  },
+  {
+    phone: "4399000046",
+    contactName: "Marcos Silva 46",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Luciano Ducci
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Outro",
+    federalCandidate: "Luciano Ducci",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 47).toISOString(),
+  },
+  {
+    phone: "4399000047",
+    contactName: "Patrícia Silva 47",
+    district: "Jardim Panorama",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Luciano Ducci
+📍 Governador: Sandro Alex
+🗳️ Presidente: Lula`,
+    stateCandidate: "Outro",
+    federalCandidate: "Luciano Ducci",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
+  },
+  {
+    phone: "4399000048",
+    contactName: "Carlos Silva 48",
     district: "Centro",
     city: "Arapongas",
-    messageText: "🏛️ Deputado Estadual: Delegado Jacovos\n🇧🇷 Deputado Federal: Neto Santos\n📍 Governador: Sergio Moro\n🗳️ Presidente: Flávio Bolsonaro",
-    stateCandidate: "Delegado Jacovos",
-    federalCandidate: "Neto Santos",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Luciano Ducci
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Outro",
+    federalCandidate: "Luciano Ducci",
     sentiment: "declarado",
-    timestamp: new Date(Date.now() - 1800000).toISOString(),
+    timestamp: new Date(Date.now() - 3600000 * 49).toISOString(),
   },
+  {
+    phone: "4399000049",
+    contactName: "Ana Silva 49",
+    district: "Jardim Petrópolis",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Bonin
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Outro",
+    federalCandidate: "Bonin",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 50).toISOString(),
+  },
+  {
+    phone: "4399000050",
+    contactName: "João Silva 50",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Bonin
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Outro",
+    federalCandidate: "Bonin",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 51).toISOString(),
+  },
+  {
+    phone: "4399000051",
+    contactName: "Maria Silva 51",
+    district: "Jardim Primavera",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Outro
+🇧🇷 Deputado Federal: Marco Brasil
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Outro",
+    federalCandidate: "Marco Brasil",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 52).toISOString(),
+  },
+  {
+    phone: "4399000052",
+    contactName: "Fernanda Silva 52",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 53).toISOString(),
+  },
+  {
+    phone: "4399000053",
+    contactName: "Rafael Silva 53",
+    district: "Zona Sul",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Requião Filho
+🗳️ Presidente: Augusto Cury`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 54).toISOString(),
+  },
+  {
+    phone: "4399000054",
+    contactName: "Pedro Silva 54",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Requião Filho
+🗳️ Presidente: Ronaldo Caiado`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 55).toISOString(),
+  },
+  {
+    phone: "4399000055",
+    contactName: "Juliana Silva 55",
+    district: "Jardim Panorama",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Requião Filho
+🗳️ Presidente: Ronaldo Caiado`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 56).toISOString(),
+  },
+  {
+    phone: "4399000056",
+    contactName: "Lucas Silva 56",
+    district: "Centro",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Requião Filho
+🗳️ Presidente: Ronaldo Caiado`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 57).toISOString(),
+  },
+  {
+    phone: "4399000057",
+    contactName: "Mariana Silva 57",
+    district: "Jardim Petrópolis",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Luiz França
+🗳️ Presidente: Ronaldo Caiado`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 58).toISOString(),
+  },
+  {
+    phone: "4399000058",
+    contactName: "Marcos Silva 58",
+    district: "Vila Araponguinha",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Luiz França
+🗳️ Presidente: Ronaldo Caiado`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 59).toISOString(),
+  },
+  {
+    phone: "4399000059",
+    contactName: "Patrícia Silva 59",
+    district: "Jardim Primavera",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Luiz França
+🗳️ Presidente: Romeu Zema`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 60).toISOString(),
+  },
+  {
+    phone: "4399000060",
+    contactName: "Carlos Silva 60",
+    district: "Conjunto Flamingos",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Luiz França
+🗳️ Presidente: Romeu Zema`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 61).toISOString(),
+  },
+  {
+    phone: "4399000061",
+    contactName: "Ana Silva 61",
+    district: "Zona Sul",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Indeciso / Não sabe
+🗳️ Presidente: Romeu Zema`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 62).toISOString(),
+  },
+  {
+    phone: "4399000062",
+    contactName: "João Silva 62",
+    district: "Vila Nova",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Indeciso / Não sabe
+🗳️ Presidente: Indeciso / Não sabe`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 63).toISOString(),
+  },
+  {
+    phone: "4399000063",
+    contactName: "Maria Silva 63",
+    district: "Jardim Panorama",
+    city: "Arapongas",
+    messageText: `🏛️ Deputado Estadual: Não especificado / Em aberto
+🇧🇷 Deputado Federal: Não especificado / Em aberto
+📍 Governador: Indeciso / Não sabe
+🗳️ Presidente: Indeciso / Não sabe`,
+    stateCandidate: "Não especificado / Em aberto",
+    federalCandidate: "Não especificado / Em aberto",
+    sentiment: "declarado",
+    timestamp: new Date(Date.now() - 3600000 * 64).toISOString(),
+  }
 ];
 
 function toRanking(counts: Record<string, number>) {
