@@ -1,0 +1,65 @@
+id_voto,telefone,nome,bairro,cidade,deputado_estadual,deputado_federal,governador,presidente,status
+1,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+2,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+3,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+4,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+5,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+6,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+7,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+8,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+9,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+10,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+11,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+12,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+13,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+14,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+15,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+16,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+17,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+18,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+19,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+20,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+21,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Sérgio Onofre,Pedro Lupion,Sergio Moro,Flávio Bolsonaro,declarado
+22,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Sérgio Onofre,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+23,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+24,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+25,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+26,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+27,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+28,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+29,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+30,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Pedro Paulo Bazana,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+31,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Delegado Jacovos,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+32,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Delegado Jacovos,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+33,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Delegado Jacovos,Neto Santos,Sergio Moro,Flávio Bolsonaro,declarado
+34,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Delegado Jacovos,Beto Preto,Sergio Moro,Flávio Bolsonaro,declarado
+35,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Delegado Jacovos,Beto Preto,Sandro Alex,Flávio Bolsonaro,declarado
+36,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Delegado Jacovos,Beto Preto,Sandro Alex,Flávio Bolsonaro,declarado
+37,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Aline Franzon,Beto Preto,Sandro Alex,Lula,declarado
+38,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Aline Franzon,Beto Preto,Sandro Alex,Lula,declarado
+39,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Aline Franzon,Beto Preto,Sandro Alex,Lula,declarado
+40,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Aline Franzon,Beto Preto,Sandro Alex,Lula,declarado
+41,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Aline Franzon,Ricardo Barros,Sandro Alex,Lula,declarado
+42,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Cobra Repórter,Ricardo Barros,Sandro Alex,Lula,declarado
+43,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Cobra Repórter,Ricardo Barros,Sandro Alex,Lula,declarado
+44,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Cobra Repórter,Ricardo Barros,Sandro Alex,Lula,declarado
+45,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Cobra Repórter,Ricardo Barros,Sandro Alex,Lula,declarado
+46,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Outro,Luciano Ducci,Sandro Alex,Lula,declarado
+47,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Outro,Luciano Ducci,Sandro Alex,Lula,declarado
+48,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Outro,Luciano Ducci,Sandro Alex,Lula,declarado
+49,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Outro,Luciano Ducci,Requião Filho,Augusto Cury,declarado
+50,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Outro,Bonin,Requião Filho,Augusto Cury,declarado
+51,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Outro,Bonin,Requião Filho,Augusto Cury,declarado
+52,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Outro,Marco Brasil,Requião Filho,Augusto Cury,declarado
+53,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Requião Filho,Augusto Cury,declarado
+54,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Requião Filho,Augusto Cury,declarado
+55,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Requião Filho,Ronaldo Caiado,declarado
+56,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Requião Filho,Ronaldo Caiado,declarado
+57,Enquete Digital,Eleitor Arapongas,Centro,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Requião Filho,Ronaldo Caiado,declarado
+58,Enquete Digital,Eleitor Arapongas,Jardim Petrópolis,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Luiz França,Ronaldo Caiado,declarado
+59,Enquete Digital,Eleitor Arapongas,Vila Araponguinha,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Luiz França,Ronaldo Caiado,declarado
+60,Enquete Digital,Eleitor Arapongas,Jardim Primavera,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Luiz França,Romeu Zema,declarado
+61,Enquete Digital,Eleitor Arapongas,Conjunto Flamingos,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Luiz França,Romeu Zema,declarado
+62,Enquete Digital,Eleitor Arapongas,Zona Sul,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Indeciso / Não sabe,Romeu Zema,declarado
+63,Enquete Digital,Eleitor Arapongas,Vila Nova,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Indeciso / Não sabe,Indeciso / Não sabe,declarado
+64,Enquete Digital,Eleitor Arapongas,Jardim Panorama,Arapongas,Não especificado / Em aberto,Não especificado / Em aberto,Indeciso / Não sabe,Indeciso / Não sabe,declarado
