@@ -19,11 +19,28 @@ export async function GET(request: Request) {
     const timestamp = now.toISOString();
     const dateStr = timestamp.slice(0, 10);
     
-    // Identificar se é o turno das 13:00 ou das 02:30 (horário de Brasília UTC-3)
+    // Identificar se é o turno das 14:00 ou das 02:00 (horário de Brasília UTC-3)
     const brHour = (now.getUTCHours() - 3 + 24) % 24;
     const brMin = now.getUTCMinutes();
-    const timeLabel = brHour >= 11 && brHour <= 15 ? "13:00" : "02:30";
+    const timeLabel = brHour >= 12 && brHour <= 16 ? "14:00" : "02:00";
     const timeStr = `${String(brHour).padStart(2, "0")}h${String(brMin).padStart(2, "0")}`;
+
+    // Buscar os dados da Enquete Digital dinamicamente da API local
+    let surveyData = null;
+    try {
+      // Como o Vercel pode não ter uma URL base confiável durante a execução do cron, 
+      // e os dados base já estão disponíveis importando a lógica ou através da URL oficial:
+      const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+      const host = process.env.VERCEL_URL || "sistemavotoforte.com.br";
+      const surveyRes = await fetch(`${protocol}://${host}/api/whatsapp/survey`, {
+        cache: "no-store",
+      });
+      if (surveyRes.ok) {
+        surveyData = await surveyRes.json();
+      }
+    } catch (err) {
+      console.warn("[Cron Backup] Falha ao buscar dados da enquete:", err);
+    }
 
     // 1. Extrair TODAS as tabelas vitais para restauração completa 100% de desastre
     const [
@@ -80,6 +97,7 @@ export async function GET(request: Request) {
         contactExports: exportsRes.data || [],
         auditLogs: auditRes.data || [],
         districtAliases: aliasesRes.data || [],
+        surveyResponses: surveyData || { erro: "Falha ao obter respostas da enquete no momento do backup" },
       },
     };
 
@@ -144,7 +162,7 @@ export async function GET(request: Request) {
     return Response.json({
       success: true,
       timestamp,
-      schedule: `2x ao dia: 02:30 e 13:00 (Turno atual: ${timeLabel})`,
+      schedule: `2x ao dia: 02:00 e 14:00 (Turno atual: ${timeLabel})`,
       googleDriveSync: driveSyncResult,
       notificationSent: true,
       stats: backupSnapshotData.stats,
