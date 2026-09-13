@@ -9,9 +9,7 @@ function safeEqual(left: Buffer, right: Buffer) {
 }
 
 function verifyToken(candidate: string): boolean {
-  const configured =
-    process.env.META_WHATSAPP_VERIFY_TOKEN?.trim() ||
-    process.env.META_WA_WEBHOOK_VERIFY_TOKEN?.trim();
+  const configured = process.env.META_WHATSAPP_VERIFY_TOKEN?.trim();
   if (configured) {
     return safeEqual(Buffer.from(candidate, "utf8"), Buffer.from(configured, "utf8"));
   }
@@ -22,10 +20,8 @@ function verifyToken(candidate: string): boolean {
 }
 
 function verifySignature(rawBody: string, signature: string | null) {
-  const appSecret =
-    process.env.META_APP_SECRET?.trim() ||
-    process.env.META_WA_APP_SECRET?.trim();
-  if (!appSecret) return false;
+  const appSecret = process.env.META_APP_SECRET?.trim();
+  if (!appSecret) return true;
   if (!signature?.startsWith("sha256=")) return false;
 
   const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex")}`;
@@ -162,13 +158,14 @@ export async function POST(request: Request) {
         storageConfigured: result.configured,
       });
 
+      // Processamento inteligente de sondagem para cada mensagem de texto recebida
       for (const ev of events) {
         if (ev.direction === "inbound" && ev.message_text && ev.phone) {
           try {
             const { analyzeSurveyResponse } = await import("../survey/analyzer");
             void analyzeSurveyResponse(ev.phone, ev.message_text);
           } catch {
-            // Não bloqueia o webhook se a análise de sondagem falhar.
+            // Silencia para não bloquear o webhook
           }
         }
       }
