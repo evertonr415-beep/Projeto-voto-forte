@@ -61,10 +61,11 @@ jobs:
 
           text = text.replace('// Base consolidada e calibrada com as 21 respostas completas de Arapongas', '// Base consolidada e preservada com as 64 respostas recuperadas de Arapongas', 1)
           path.write_text(text)
-      - name: Commit da correção
+      - name: Criar branch com a correção
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b fix/survey-recovery-applied
           git add app/api/whatsapp/survey/route.ts
           git commit -m "fix: restaurar 64 respostas da enquete"
-          git push origin HEAD:main
+          git push --force origin HEAD:fix/survey-recovery-applied
