@@ -25,6 +25,14 @@ const statusLabel: Record<Municipality["status"], string> = {
   inactive: "Inativo",
 };
 
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim();
+}
+
 export default function MunicipalityManagementEnhancer() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
@@ -32,6 +40,8 @@ export default function MunicipalityManagementEnhancer() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [active, setActive] = useState(false);
+  const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(5);
 
   const applyMunicipalities = useCallback((items: Municipality[]) => {
     setMunicipalities(items);
@@ -45,11 +55,14 @@ export default function MunicipalityManagementEnhancer() {
   }, []);
 
   const load = useCallback(async () => {
-    const response = await apiFetch("/api/admin-municipalities");
+    const response = await apiFetch("/api/admin-municipalities", { cache: "no-store" });
     if (response.status === 401 || response.status === 403) return false;
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Não foi possível carregar os municípios.");
-    applyMunicipalities(Array.isArray(data.municipalities) ? data.municipalities : []);
+    if (!response.ok)
+      throw new Error(data.error || "Não foi possível carregar os municípios.");
+    applyMunicipalities(
+      Array.isArray(data.municipalities) ? data.municipalities : [],
+    );
     return true;
   }, [applyMunicipalities]);
 
@@ -75,7 +88,9 @@ export default function MunicipalityManagementEnhancer() {
         filter.append(tab);
       }
 
-      let node = parent.querySelector<HTMLElement>(":scope > [data-vf-admin-municipalities-host]");
+      let node = parent.querySelector<HTMLElement>(
+        ":scope > [data-vf-admin-municipalities-host]",
+      );
       if (!node) {
         node = document.createElement("div");
         node.dataset.vfAdminMunicipalitiesHost = "true";
@@ -92,17 +107,31 @@ export default function MunicipalityManagementEnhancer() {
         setActive(true);
         setHost(node);
         setMessage("");
-        void load().catch((error) => setMessage(error instanceof Error ? error.message : "Não foi possível carregar os municípios."));
+        setQuery("");
+        setVisibleCount(5);
+        void load().catch((error) =>
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar os municípios.",
+          ),
+        );
       };
 
-      filter.querySelectorAll<HTMLButtonElement>("button:not([data-vf-municipalities-tab])").forEach((button) => {
-        if (button.dataset.vfMunicipalitiesBound === "true") return;
-        button.dataset.vfMunicipalitiesBound = "true";
-        button.addEventListener("click", () => {
-          delete parent.dataset.vfMunicipalitiesActive;
-          setActive(false);
+      filter
+        .querySelectorAll<HTMLButtonElement>(
+          "button:not([data-vf-municipalities-tab])",
+        )
+        .forEach((button) => {
+          if (button.dataset.vfMunicipalitiesBound === "true") return;
+          button.dataset.vfMunicipalitiesBound = "true";
+          button.addEventListener("click", () => {
+            delete parent.dataset.vfMunicipalitiesActive;
+            tab?.classList.remove("active");
+            tab?.setAttribute("aria-selected", "false");
+            setActive(false);
+          });
         });
-      });
 
       setHost(node);
     };
@@ -122,15 +151,44 @@ export default function MunicipalityManagementEnhancer() {
     };
   }, [load]);
 
+  useEffect(() => {
+    setVisibleCount(5);
+  }, [query]);
+
   const totals = useMemo(
-    () => municipalities.reduce(
-      (acc, item) => ({ users: acc.users + Number(item.users || 0), contacts: acc.contacts + Number(item.contacts || 0) }),
-      { users: 0, contacts: 0 },
-    ),
+    () =>
+      municipalities.reduce(
+        (acc, item) => ({
+          users: acc.users + Number(item.users || 0),
+          contacts: acc.contacts + Number(item.contacts || 0),
+        }),
+        { users: 0, contacts: 0 },
+      ),
     [municipalities],
   );
 
-  async function submit(municipality: Municipality, action: "invite_master" | "activate") {
+  const filteredMunicipalities = useMemo(() => {
+    const normalizedQuery = normalize(query);
+    return municipalities
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+      .filter((municipality) => {
+        if (!normalizedQuery) return true;
+        return normalize(
+          `${municipality.name} ${municipality.state} ${statusLabel[municipality.status]} ${municipality.master?.name || ""} ${municipality.master?.email || ""}`,
+        ).includes(normalizedQuery);
+      });
+  }, [municipalities, query]);
+
+  const visibleMunicipalities = useMemo(
+    () => (query.trim() ? filteredMunicipalities : filteredMunicipalities.slice(0, visibleCount)),
+    [filteredMunicipalities, query, visibleCount],
+  );
+
+  async function submit(
+    municipality: Municipality,
+    action: "invite_master" | "activate",
+  ) {
     const draft = drafts[municipality.id] || { name: "", email: "" };
     if (action === "invite_master" && (!draft.name.trim() || !draft.email.trim())) {
       setMessage(`Informe nome e e-mail do Master de ${municipality.name}.`);
@@ -151,17 +209,25 @@ export default function MunicipalityManagementEnhancer() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível concluir a ação.");
+      if (!response.ok)
+        throw new Error(data.error || "Não foi possível concluir a ação.");
       if (Array.isArray(data.municipalities)) applyMunicipalities(data.municipalities);
       else await load();
-      setDrafts((current) => ({ ...current, [municipality.id]: { name: "", email: "" } }));
+      setDrafts((current) => ({
+        ...current,
+        [municipality.id]: { name: "", email: "" },
+      }));
       setMessage(
         action === "activate"
           ? `${municipality.name} foi ativado.`
           : `Convite de Master criado para ${municipality.name}.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível concluir a ação.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível concluir a ação.",
+      );
     } finally {
       setBusyId(null);
     }
@@ -170,52 +236,112 @@ export default function MunicipalityManagementEnhancer() {
   if (!host || !active) return null;
 
   return createPortal(
-    <section className="vf-admin-municipalities" aria-label="Administração de municípios">
+    <section
+      className="vf-admin-municipalities"
+      aria-label="Administração de municípios"
+    >
       <div className="vf-admin-municipalities-head">
         <div>
-          <small>CENTRAL ESTADUAL · ADM GERAL</small>
+          <small>REDE TERRITORIAL · ADM GERAL</small>
           <h2>Municípios</h2>
-          <p>Ative e administre as operações municipais no mesmo banco, mantendo usuários e dados isolados por município.</p>
+          <p>
+            Consulte e administre as operações municipais sem carregar os 399
+            registros de uma vez.
+          </p>
         </div>
         <div className="vf-admin-municipalities-kpis">
-          <span><b>{municipalities.length}</b><small>municípios</small></span>
-          <span><b>{totals.users.toLocaleString("pt-BR")}</b><small>usuários</small></span>
-          <span><b>{totals.contacts.toLocaleString("pt-BR")}</b><small>contatos</small></span>
+          <span>
+            <b>{municipalities.length}</b>
+            <small>municípios</small>
+          </span>
+          <span>
+            <b>{totals.users.toLocaleString("pt-BR")}</b>
+            <small>usuários</small>
+          </span>
+          <span>
+            <b>{totals.contacts.toLocaleString("pt-BR")}</b>
+            <small>contatos</small>
+          </span>
         </div>
       </div>
 
-      {message && <div className="vf-admin-municipalities-message" role="status">{message}</div>}
+      {message && (
+        <div className="vf-admin-municipalities-message" role="status">
+          {message}
+        </div>
+      )}
+
+      <div className="vf-admin-municipalities-toolbar">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar município, status ou responsável"
+          aria-label="Buscar município"
+        />
+        <span>
+          {query.trim()
+            ? `${filteredMunicipalities.length} resultado${filteredMunicipalities.length === 1 ? "" : "s"}`
+            : `Exibindo ${Math.min(visibleCount, filteredMunicipalities.length)} de ${filteredMunicipalities.length}`}
+        </span>
+      </div>
 
       <div className="vf-admin-municipalities-list">
-        {municipalities.map((municipality) => {
+        {visibleMunicipalities.map((municipality) => {
           const draft = drafts[municipality.id] || { name: "", email: "" };
           const configuring = municipality.status === "configuring";
-          const canInvite = municipality.status !== "inactive" && !municipality.master && !municipality.pendingMasterInvitation;
+          const canInvite =
+            municipality.status !== "inactive" &&
+            !municipality.master &&
+            !municipality.pendingMasterInvitation;
           const canActivate = configuring;
 
           return (
-            <article key={municipality.id} className={`vf-admin-municipality-card ${municipality.status}`}>
+            <article
+              key={municipality.id}
+              className={`vf-admin-municipality-card ${municipality.status}`}
+            >
               <header>
                 <div>
                   <small>{municipality.state}</small>
                   <h3>{municipality.name}</h3>
                 </div>
-                <span className={`vf-municipality-status ${municipality.status}`}>{statusLabel[municipality.status]}</span>
+                <span
+                  className={`vf-municipality-status ${municipality.status}`}
+                >
+                  {statusLabel[municipality.status]}
+                </span>
               </header>
 
               <div className="vf-admin-municipality-metrics">
-                <span><b>{Number(municipality.users || 0).toLocaleString("pt-BR")}</b><small>usuários</small></span>
-                <span><b>{Number(municipality.contacts || 0).toLocaleString("pt-BR")}</b><small>contatos</small></span>
+                <span>
+                  <b>{Number(municipality.users || 0).toLocaleString("pt-BR")}</b>
+                  <small>usuários</small>
+                </span>
+                <span>
+                  <b>{Number(municipality.contacts || 0).toLocaleString("pt-BR")}</b>
+                  <small>contatos</small>
+                </span>
               </div>
 
               <div className="vf-admin-municipality-master">
                 <small>MASTER MUNICIPAL · OPCIONAL</small>
                 {municipality.master ? (
-                  <div><b>{municipality.master.name}</b><span>{municipality.master.email}</span></div>
+                  <div>
+                    <b>{municipality.master.name}</b>
+                    <span>{municipality.master.email}</span>
+                  </div>
                 ) : municipality.pendingMasterInvitation ? (
-                  <div><b>{municipality.pendingMasterInvitation.name}</b><span>{municipality.pendingMasterInvitation.email} · convite pendente</span></div>
+                  <div>
+                    <b>{municipality.pendingMasterInvitation.name}</b>
+                    <span>
+                      {municipality.pendingMasterInvitation.email} · convite pendente
+                    </span>
+                  </div>
                 ) : (
-                  <p>Sem Master municipal. O ADM Geral permanece responsável pela operação.</p>
+                  <p>
+                    Sem Master municipal. O ADM Geral permanece responsável pela
+                    operação.
+                  </p>
                 )}
               </div>
 
@@ -231,7 +357,15 @@ export default function MunicipalityManagementEnhancer() {
                     Nome do Master
                     <input
                       value={draft.name}
-                      onChange={(event) => setDrafts((current) => ({ ...current, [municipality.id]: { ...draft, name: event.target.value } }))}
+                      onChange={(event) =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [municipality.id]: {
+                            ...draft,
+                            name: event.target.value,
+                          },
+                        }))
+                      }
                       required
                     />
                   </label>
@@ -240,17 +374,30 @@ export default function MunicipalityManagementEnhancer() {
                     <input
                       type="email"
                       value={draft.email}
-                      onChange={(event) => setDrafts((current) => ({ ...current, [municipality.id]: { ...draft, email: event.target.value } }))}
+                      onChange={(event) =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [municipality.id]: {
+                            ...draft,
+                            email: event.target.value,
+                          },
+                        }))
+                      }
                       required
                     />
                   </label>
-                  <button disabled={busyId === municipality.id}>Convidar Master</button>
+                  <button disabled={busyId === municipality.id}>
+                    Convidar Master
+                  </button>
                 </form>
               )}
 
               {configuring && (
                 <footer>
-                  <p>O ADM Geral pode ativar este município agora. Você pode definir um Master municipal depois, se quiser delegar a gestão.</p>
+                  <p>
+                    O ADM Geral pode ativar este município agora e definir um Master
+                    depois, se quiser delegar a gestão.
+                  </p>
                   <button
                     type="button"
                     disabled={!canActivate || busyId === municipality.id}
@@ -263,7 +410,31 @@ export default function MunicipalityManagementEnhancer() {
             </article>
           );
         })}
+
+        {!visibleMunicipalities.length && (
+          <p className="vf-admin-municipalities-empty">
+            Nenhum município encontrado com esse filtro.
+          </p>
+        )}
       </div>
+
+      {!query.trim() && filteredMunicipalities.length > 5 && (
+        <div className="vf-admin-municipalities-pagination">
+          {visibleCount < filteredMunicipalities.length && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((current) => current + 5)}
+            >
+              Ver mais 5
+            </button>
+          )}
+          {visibleCount > 5 && (
+            <button type="button" onClick={() => setVisibleCount(5)}>
+              Mostrar menos
+            </button>
+          )}
+        </div>
+      )}
     </section>,
     host,
   );
