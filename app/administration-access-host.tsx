@@ -27,6 +27,7 @@ export default function AdministrationAccessHost() {
   const [accessActive, setAccessActive] = useState(false);
 
   useEffect(() => {
+    let frame = 0;
     let currentParent: HTMLElement | null = null;
     let currentHost: HTMLElement | null = null;
 
@@ -84,9 +85,9 @@ export default function AdministrationAccessHost() {
       const active = accessSelected && !municipalitiesSelected;
 
       if (active) {
-        host.classList.add("users-admin-grid");
+        if (!host.classList.contains("users-admin-grid")) host.classList.add("users-admin-grid");
         suspendNativeGrids(host);
-        parent.dataset.vfAccessStableActive = "true";
+        if (parent.dataset.vfAccessStableActive !== "true") parent.dataset.vfAccessStableActive = "true";
         host.style.setProperty("display", "block", "important");
         setAccessActive(true);
       } else {
@@ -94,45 +95,52 @@ export default function AdministrationAccessHost() {
       }
     };
 
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        sync();
+      });
+    };
+
     const handleAdministrativeTabClick = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
       const button = target.closest<HTMLButtonElement>(`${FILTER_SELECTOR} button`);
-      if (!button || button.matches(MUNICIPALITIES_TAB_SELECTOR)) return;
+      if (!button) return;
 
       const filter = button.closest<HTMLElement>(FILTER_SELECTOR);
       const parent = filter?.parentElement;
       if (!filter || !parent) return;
 
-      // Municípios é uma aba adicionada fora do estado React nativo da Administração.
-      // Ao voltar para Acessos/Auditoria/Backup, limpamos esse estado antes do clique
-      // nativo ser processado para garantir que apenas uma aba permaneça selecionada.
-      delete parent.dataset.vfMunicipalitiesActive;
-      const municipalitiesTab = filter.querySelector<HTMLButtonElement>(MUNICIPALITIES_TAB_SELECTOR);
-      if (municipalitiesTab) {
-        municipalitiesTab.classList.remove("active");
-        municipalitiesTab.setAttribute("aria-selected", "false");
+      if (!button.matches(MUNICIPALITIES_TAB_SELECTOR)) {
+        delete parent.dataset.vfMunicipalitiesActive;
+        const municipalitiesTab = filter.querySelector<HTMLButtonElement>(MUNICIPALITIES_TAB_SELECTOR);
+        if (municipalitiesTab) {
+          municipalitiesTab.classList.remove("active");
+          municipalitiesTab.setAttribute("aria-selected", "false");
+        }
       }
+
+      // Deixa o clique nativo/React terminar primeiro; depois sincroniza o host.
+      schedule();
     };
 
     document.addEventListener("click", handleAdministrativeTabClick, true);
     sync();
 
-    // O painel de Acessos procura por .users-admin-grid. A grade nativa pode ser
-    // recriada pelo dashboard durante a renderização. Sincronizamos no próprio
-    // ciclo da mutação, antes do observador interno do painel, para manter somente
-    // o host exclusivo de Acessos com essa classe e impedir que o portal migre
-    // para um bloco oculto.
-    const observer = new MutationObserver(sync);
+    // Observa somente criação/remoção de elementos. Não observa classes/atributos,
+    // pois o próprio sincronizador altera esses valores e isso poderia gerar um
+    // ciclo de MutationObserver no Safari/mobile.
+    const observer = new MutationObserver(schedule);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ["class", "aria-selected"],
     });
 
     return () => {
+      if (frame) window.cancelAnimationFrame(frame);
       document.removeEventListener("click", handleAdministrativeTabClick, true);
       observer.disconnect();
       currentHost?.classList.remove("users-admin-grid");
