@@ -1,4 +1,4 @@
-const DEFAULT_GRAPH_VERSION = "v20.0";
+const DEFAULT_GRAPH_VERSION = "v26.0";
 const DEFAULT_PHONE_NUMBER_ID = "1319478581243565";
 const DEFAULT_WABA_ID = "3428932017267478";
 export const DEFAULT_ACCESS_TOKEN =
@@ -27,7 +27,6 @@ export function getMetaConfig() {
     ""
   );
 
-  // Se o token de ambiente for um dos tokens expirados conhecidos, ignora e usa o ativo
   if (!envToken || EXPIRED_TOKENS.some((exp) => envToken.includes(exp.slice(0, 30)))) {
     envToken = DEFAULT_ACCESS_TOKEN;
   }
@@ -123,7 +122,6 @@ export async function metaRequest(
 
   let res = await execute(accessToken);
 
-  // Auto-recovery: Se falhou por token expirado/inválido (190), tenta imediatamente com DEFAULT_ACCESS_TOKEN
   if (!res.ok && accessToken !== DEFAULT_ACCESS_TOKEN) {
     const errCode = (res.data as { error?: { code?: number } })?.error?.code;
     if (errCode === 190) {
