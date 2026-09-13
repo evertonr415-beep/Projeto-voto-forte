@@ -6,6 +6,7 @@ import UserHierarchyPanel from "./user-hierarchy-panel";
 const FILTER_SELECTOR = '.management-filter[role="tablist"][aria-label="Seções administrativas"]';
 const HOST_SELECTOR = ':scope > [data-vf-access-stable-host]';
 const SUSPENDED_SELECTOR = '[data-vf-native-users-grid-suspended="true"]';
+const MUNICIPALITIES_TAB_SELECTOR = '[data-vf-municipalities-tab]';
 
 function restoreNativeGrids() {
   document.querySelectorAll<HTMLElement>(SUSPENDED_SELECTOR).forEach((grid) => {
@@ -68,7 +69,7 @@ export default function AdministrationAccessHost() {
       currentHost = host;
 
       const nativeTabs = Array.from(
-        filter.querySelectorAll<HTMLButtonElement>("button:not([data-vf-municipalities-tab])"),
+        filter.querySelectorAll<HTMLButtonElement>(`button:not(${MUNICIPALITIES_TAB_SELECTOR})`),
       );
       const accessButton = nativeTabs[0] || null;
       const accessSelected = Boolean(
@@ -98,7 +99,33 @@ export default function AdministrationAccessHost() {
       });
     };
 
+    const handleAdministrativeTabClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest<HTMLButtonElement>(`${FILTER_SELECTOR} button`);
+      if (!button || button.matches(MUNICIPALITIES_TAB_SELECTOR)) return;
+
+      const filter = button.closest<HTMLElement>(FILTER_SELECTOR);
+      const parent = filter?.parentElement;
+      if (!filter || !parent) return;
+
+      // Municípios é uma aba adicionada fora do estado React nativo da Administração.
+      // Ao voltar para Acessos/Auditoria/Backup, limpamos esse estado antes do clique
+      // nativo ser processado para garantir que apenas uma aba permaneça selecionada.
+      delete parent.dataset.vfMunicipalitiesActive;
+      const municipalitiesTab = filter.querySelector<HTMLButtonElement>(MUNICIPALITIES_TAB_SELECTOR);
+      if (municipalitiesTab) {
+        municipalitiesTab.classList.remove("active");
+        municipalitiesTab.setAttribute("aria-selected", "false");
+      }
+
+      schedule();
+    };
+
+    document.addEventListener("click", handleAdministrativeTabClick, true);
     sync();
+
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, {
       childList: true,
@@ -109,6 +136,7 @@ export default function AdministrationAccessHost() {
 
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
+      document.removeEventListener("click", handleAdministrativeTabClick, true);
       observer.disconnect();
       restoreNativeGrids();
       currentParent?.removeAttribute("data-vf-access-stable-active");
