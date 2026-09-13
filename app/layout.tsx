@@ -91,6 +91,7 @@ import "./administration-directory-actions.css";
 import "./administration-v6.css";
 import "./administration-v7.css";
 import "./administration-v8.css";
+import "./administration-v9.css";
 import "./pwa-installed-safe-area.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
