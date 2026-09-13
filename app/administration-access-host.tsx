@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import UserHierarchyPanel from "./user-hierarchy-panel";
 
 const FILTER_SELECTOR = '.management-filter[role="tablist"][aria-label="Seções administrativas"]';
 const HOST_SELECTOR = ':scope > [data-vf-access-stable-host]';
 
 export default function AdministrationAccessHost() {
+  const [hostReady, setHostReady] = useState(false);
+
   useEffect(() => {
     let frame = 0;
     let currentParent: HTMLElement | null = null;
@@ -16,11 +19,17 @@ export default function AdministrationAccessHost() {
       if (!filter) {
         currentParent?.removeAttribute("data-vf-access-stable-active");
         currentHost?.style.setProperty("display", "none", "important");
+        currentParent = null;
+        currentHost = null;
+        setHostReady(false);
         return;
       }
 
       const parent = filter.parentElement;
-      if (!parent) return;
+      if (!parent) {
+        setHostReady(false);
+        return;
+      }
 
       if (currentParent && currentParent !== parent) {
         currentParent.removeAttribute("data-vf-access-stable-active");
@@ -35,6 +44,7 @@ export default function AdministrationAccessHost() {
         filter.insertAdjacentElement("afterend", host);
       }
       currentHost = host;
+      setHostReady(true);
 
       const nativeTabs = Array.from(
         filter.querySelectorAll<HTMLButtonElement>("button:not([data-vf-municipalities-tab])"),
@@ -83,23 +93,31 @@ export default function AdministrationAccessHost() {
   }, []);
 
   return (
-    <style jsx global>{`
-      [data-vf-access-stable-active="true"]
-        > .management-filter[role="tablist"][aria-label="Seções administrativas"]
-        ~ *:not([data-vf-access-stable-host]) {
-        display: none !important;
-      }
+    <>
+      {hostReady ? <UserHierarchyPanel /> : null}
+      <style jsx global>{`
+        [data-vf-access-stable-active="true"]
+          > .management-filter[role="tablist"][aria-label="Seções administrativas"]
+          ~ *:not([data-vf-access-stable-host]) {
+          display: none !important;
+        }
 
-      [data-vf-access-stable-host] {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-    `}</style>
+        [data-vf-access-stable-host] {
+          display: none !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        [data-vf-access-stable-active="true"] > [data-vf-access-stable-host] {
+          display: block !important;
+        }
+      `}</style>
+    </>
   );
 }
