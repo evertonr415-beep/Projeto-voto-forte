@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import AdministrationAccessHost from "./administration-access-host";
 import AdministrationAuditWorkspace from "./administration-audit-workspace";
 import MunicipalityManagementEnhancer from "./municipality-management-enhancer";
 import UserHierarchyPanel from "./user-hierarchy-panel";
@@ -22,6 +23,7 @@ export default function GestorAccessGate() {
   if (!isFullDashboardRoute(pathname)) return null;
   return (
     <>
+      <AdministrationAccessHost />
       <UserHierarchyPanel />
       <MunicipalityManagementEnhancer />
       <AdministrationAuditWorkspace />
