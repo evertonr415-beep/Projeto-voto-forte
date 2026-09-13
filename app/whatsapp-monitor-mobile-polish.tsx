@@ -9,10 +9,10 @@ export default function WhatsappMonitorMobilePolish() {
 
     const syncSurveyKpis = async () => {
       try {
-        const response = await fetch("/api/whatsapp/survey", { cache: "no-store" });
+        const response = await fetch("/api/whatsapp/monitor", { cache: "no-store" });
         if (!response.ok) return;
         const data = await response.json();
-        const total = Number(data?.totalResponses ?? data?.kpis?.totalResponses ?? 0);
+        const total = Number(data?.kpis?.repliedCount ?? data?.totalResponses ?? 0);
         if (stopped || !Number.isFinite(total)) return;
 
         const monitor = document.querySelector("article.panel:has(.wt-kpi-grid-5)");
@@ -21,11 +21,9 @@ export default function WhatsappMonitorMobilePolish() {
         const replyCard = monitor.querySelector(".wt-kpi-card.is-reply strong");
         if (replyCard) replyCard.textContent = String(total);
 
-        const totalCard = monitor.querySelector(".wt-kpi-card.is-primary strong");
-        const totalOutbound = Number((totalCard?.textContent || "").replace(/\D/g, ""));
-        const rate = totalOutbound > 0 ? Math.round((total / totalOutbound) * 1000) / 10 : 0;
+        const rate = Number(data?.kpis?.responseRate ?? 0);
         const rateCard = monitor.querySelector(".wt-kpi-card.is-rate strong");
-        if (rateCard) rateCard.textContent = `${rate}%`;
+        if (rateCard && Number.isFinite(rate)) rateCard.textContent = `${rate}%`;
 
         const replyPill = monitor.querySelector(".wt-filter-pill.is-reply");
         if (replyPill) {
@@ -33,7 +31,7 @@ export default function WhatsappMonitorMobilePolish() {
           replyPill.textContent = `${label} (${total})`;
         }
       } catch {
-        // O monitor continua funcional mesmo se a apuração estiver temporariamente indisponível.
+        // O monitor continua funcional mesmo se a fonte consolidada estiver temporariamente indisponível.
       }
     };
 
