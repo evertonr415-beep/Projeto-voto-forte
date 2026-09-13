@@ -3,10 +3,15 @@ import { getMetaConfig } from "../meta";
 
 export async function GET() {
   const storageConfigured = isWhatsappEventStorageConfigured();
-  const metaAppSecretConfigured = Boolean(process.env.META_APP_SECRET?.trim());
-  const verifyTokenConfigured = Boolean(process.env.META_WHATSAPP_VERIFY_TOKEN?.trim());
-  
-  const { accessToken, phoneNumberId, wabaId } = getMetaConfig();
+  const metaAppSecretConfigured = Boolean(
+    process.env.META_APP_SECRET?.trim() || process.env.META_WA_APP_SECRET?.trim(),
+  );
+  const verifyTokenConfigured = Boolean(
+    process.env.META_WHATSAPP_VERIFY_TOKEN?.trim() ||
+      process.env.META_WA_WEBHOOK_VERIFY_TOKEN?.trim(),
+  );
+
+  const { accessToken, phoneNumberId, wabaId, graphVersion } = getMetaConfig();
   const accessTokenConfigured = Boolean(accessToken);
   const phoneNumberIdConfigured = Boolean(phoneNumberId);
   const wabaIdConfigured = Boolean(wabaId);
@@ -17,6 +22,7 @@ export async function GET() {
     accessTokenConfigured,
     phoneNumberIdConfigured,
     wabaIdConfigured,
+    graphVersion,
   };
 
   if (!storageConfigured) {
@@ -45,7 +51,9 @@ export async function GET() {
     const success =
       metaAppSecretConfigured &&
       verifyTokenConfigured &&
-      accessTokenConfigured;
+      accessTokenConfigured &&
+      phoneNumberIdConfigured &&
+      wabaIdConfigured;
 
     return Response.json(
       {
