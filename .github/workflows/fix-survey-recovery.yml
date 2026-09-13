@@ -1,0 +1,70 @@
+name: Fix survey recovery
+
+on:
+  push:
+    branches:
+      - fix/survey-recovery-64
+    paths:
+      - .github/workflows/fix-survey-recovery.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-survey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/survey-recovery-64
+          fetch-depth: 0
+      - name: Corrigir consolidação da enquete
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('app/api/whatsapp/survey/route.ts')
+          text = path.read_text()
+
+          old = '''  // 1. Inicializa com as 21 respostas consolidadas para sincronismo total com o monitor
+  for (const b of BASELINE_SURVEY_RESPONSES) {
+    const key = `${b.phone}-${b.messageText}`;
+    responsesMap.set(key, { ...b });
+  }
+'''
+          new = '''  // 1. Preserva cada uma das 64 respostas consolidadas como registro independente.
+  // Não deduplicar por telefone + texto: participantes diferentes podem escolher a mesma combinação.
+  BASELINE_SURVEY_RESPONSES.forEach((b, index) => {
+    responsesMap.set(`baseline-${index + 1}`, { ...b });
+  });
+'''
+          if old not in text:
+              raise SystemExit('Bloco de baseline esperado não encontrado')
+          text = text.replace(old, new, 1)
+
+          old_query = '''      const { data: waEvents, error } = await supabase
+        .from("vf_whatsapp_events")
+        .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+'''
+          new_query = '''      const { data: waEvents, error } = await supabase
+        .from("vf_whatsapp_events")
+        .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
+        .or("event_type.ilike.%poll%,event_type.ilike.%survey%")
+        .gte("created_at", "2026-09-13T00:52:33.000Z")
+        .order("created_at", { ascending: false })
+        .limit(5000);
+'''
+          if old_query not in text:
+              raise SystemExit('Consulta antiga esperada não encontrada')
+          text = text.replace(old_query, new_query, 1)
+
+          text = text.replace('// Base consolidada e calibrada com as 21 respostas completas de Arapongas', '// Base consolidada e preservada com as 64 respostas recuperadas de Arapongas', 1)
+          path.write_text(text)
+      - name: Commit da correção
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/api/whatsapp/survey/route.ts
+          git commit -m "fix: preservar 64 respostas da enquete" || exit 0
+          git push origin HEAD:fix/survey-recovery-64
