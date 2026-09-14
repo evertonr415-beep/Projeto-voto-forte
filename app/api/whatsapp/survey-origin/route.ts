@@ -2,7 +2,7 @@ import { getAccount } from "../../../server-identity";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient } from "../admin";
 import { normalizeWhatsappPhone } from "../meta";
-import { CANDIDATE_NAMES_MAP, formatReadableSurveyText } from "../survey-formatter";
+import { formatReadableSurveyText } from "../survey-formatter";
 
 export const dynamic = "force-dynamic";
 
@@ -44,38 +44,12 @@ function phoneKeys(value = "") {
 
 function isGenericName(value = "") {
   const name = normalize(value);
-  return !name || name === "eleitor" || name === "eleitor arapongas" || name.includes("participante da enquete");
-}
-
-const excludedGenericOptions = new Set([
-  "boa",
-  "regular / media",
-  "ruim",
-  "sim",
-  "nao",
-  "indeciso",
-  "alguns / nao lembro",
-]);
-
-const candidateTerms = Array.from(
-  new Set([
-    ...Object.values(CANDIDATE_NAMES_MAP)
-      .map((value) => normalize(value))
-      .filter((value) => value.length >= 4 && !excludedGenericOptions.has(value)),
-    normalize("Tenente Hélio"),
-    normalize("Nenhum deles"),
-    normalize("Branco/Nulo"),
-    normalize("Ainda não sei"),
-  ]),
-);
-
-function looksLikeSurveyReply(rawText?: string | null) {
-  const text = normalize(rawText || "");
-  if (!text) return false;
-  if (["deputado", "governador", "presidente", "gestao municipal", "gestao estadual", "candidato"].some((term) => text.includes(term))) {
-    return true;
-  }
-  return candidateTerms.some((term) => text === term || text.includes(term));
+  return (
+    !name ||
+    name === "eleitor" ||
+    name === "eleitor arapongas" ||
+    name.includes("participante da enquete")
+  );
 }
 
 export async function GET() {
@@ -84,19 +58,20 @@ export async function GET() {
 
   try {
     const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
-    if (!supabase) return Response.json({ success: true, total: 0, responses: [] as IdentifiedResponse[] });
+    if (!supabase) {
+      return Response.json({ success: true, total: 0, responses: [] as IdentifiedResponse[] });
+    }
 
-    const [contactsResult, inboundResult] = await Promise.all([
+    const [contactsResult, eventsResult] = await Promise.all([
       supabase.from("vf_owned_records").select("payload").eq("kind", "contact").limit(5000),
       supabase
         .from("vf_whatsapp_events")
-        .select("id, phone, contact_name, message_text, event_type, occurred_at, created_at")
-        .eq("direction", "inbound")
+        .select("id, phone, contact_name, message_text, direction, event_type, status, occurred_at, created_at")
         .order("created_at", { ascending: false })
-        .limit(5000),
+        .limit(10000),
     ]);
 
-    if (inboundResult.error) throw inboundResult.error;
+    if (eventsResult.error) throw eventsResult.error;
 
     const contactLookup = new Map<string, { name: string; district?: string }>();
     for (const row of contactsResult.data || []) {
@@ -105,38 +80,64 @@ export async function GET() {
       const name = String(payload.name || "").trim();
       const district = String(payload.district || payload.bairro || "").trim();
       if (!name || !rawPhone) continue;
-      for (const key of phoneKeys(rawPhone)) contactLookup.set(key, { name, district: district || undefined });
+      for (const key of phoneKeys(rawPhone)) {
+        contactLookup.set(key, { name, district: district || undefined });
+      }
     }
 
-    const grouped = new Map<string, { phone: string; contactName: string; district?: string; timestamp: string; messages: string[] }>();
+    const rows = eventsResult.data || [];
+    const outboundPhones = new Set<string>();
 
-    for (const row of inboundResult.data || []) {
+    for (const row of rows) {
+      if (row.direction !== "outbound") continue;
+      const rawPhone = String(row.phone || "");
+      if (!isRealPhone(rawPhone)) continue;
+      for (const key of phoneKeys(rawPhone)) outboundPhones.add(key);
+    }
+
+    const grouped = new Map<
+      string,
+      { phone: string; contactName: string; district?: string; timestamp: string; messages: string[] }
+    >();
+
+    for (const row of rows) {
+      if (row.direction !== "inbound") continue;
+
       const rawPhone = String(row.phone || "");
       if (!isRealPhone(rawPhone)) continue;
 
-      const rawText = String(row.message_text || "").trim();
-      if (!looksLikeSurveyReply(rawText)) continue;
-
       const keys = phoneKeys(rawPhone);
+      const cameFromDispatch = [...keys].some((key) => outboundPhones.has(key));
+      if (!cameFromDispatch) continue;
+
       const lookup = [...keys].map((key) => contactLookup.get(key)).find(Boolean);
       const eventName = String(row.contact_name || "").trim();
-      const contactName = !isGenericName(eventName) ? eventName : (lookup?.name || "");
+      const contactName = !isGenericName(eventName) ? eventName : lookup?.name || "";
       if (isGenericName(contactName)) continue;
 
+      const rawText = String(row.message_text || "").trim();
+      const readable = rawText ? formatReadableSurveyText(rawText) || rawText : "Resposta recebida pelo WhatsApp";
       const phone = normalizeWhatsappPhone(rawPhone) || rawPhone;
       const district = lookup?.district;
       const timestamp = String(row.occurred_at || row.created_at || new Date().toISOString());
-      const readable = formatReadableSurveyText(rawText) || rawText;
       const groupKey = digits(phone);
       const existing = grouped.get(groupKey);
 
       if (!existing) {
-        grouped.set(groupKey, { phone, contactName, district, timestamp, messages: [readable] });
+        grouped.set(groupKey, {
+          phone,
+          contactName,
+          district,
+          timestamp,
+          messages: [readable],
+        });
       } else {
         if (contactName) existing.contactName = contactName;
         if (district) existing.district = district;
         if (!existing.messages.includes(readable)) existing.messages.push(readable);
-        if (new Date(timestamp).getTime() > new Date(existing.timestamp).getTime()) existing.timestamp = timestamp;
+        if (new Date(timestamp).getTime() > new Date(existing.timestamp).getTime()) {
+          existing.timestamp = timestamp;
+        }
       }
     }
 
@@ -145,7 +146,7 @@ export async function GET() {
         phone: item.phone,
         contactName: item.contactName,
         district: item.district,
-        messageText: item.messages.join("\n"),
+        messageText: item.messages.join("\n\n"),
         timestamp: item.timestamp,
       }))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
