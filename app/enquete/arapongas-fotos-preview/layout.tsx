@@ -8,7 +8,7 @@ const PHOTO_FIXES = [
     url: "https://live.staticflickr.com/65535/55450244258_b5195947f7.jpg",
   },
   {
-    label: "Sandro Alex (PSD)",
+    label: "Sandro Alex",
     url: "https://upload.wikimedia.org/wikipedia/commons/9/95/Sandro_Alex_em_fevereiro_de_2015.jpg",
   },
 ] as const;
@@ -22,26 +22,29 @@ function applyPhotoFixes() {
     });
   }
 
+  // Fallback somente para o card imediato do candidato correto.
+  // Não percorre mais ancestrais da página, evitando aplicar a foto em
+  // opções genéricas como Outro, Branco/Nulo e Ainda não sei.
   document.querySelectorAll<HTMLElement>('div[aria-hidden="true"]').forEach((avatar) => {
     if (avatar.dataset.photoFix === "1") return;
 
-    let context: HTMLElement | null = avatar.parentElement;
-    let matchedUrl = "";
+    const card = avatar.parentElement;
+    if (!card) return;
 
-    for (let depth = 0; context && depth < 4; depth += 1, context = context.parentElement) {
-      const text = context.textContent || "";
-      const match = PHOTO_FIXES.find(({ label }) => text.includes(label));
-      if (match) {
-        matchedUrl = match.url;
-        break;
-      }
-    }
+    const text = (card.textContent || "").replace(/\s+/g, " ").trim();
+    const match = PHOTO_FIXES.find(({ label }) =>
+      text === label ||
+      text.startsWith(`${label} `) ||
+      text.includes(`${label} (`) ||
+      text.includes(`${label} PT`) ||
+      text.includes(`${label} PSD`),
+    );
 
-    if (!matchedUrl) return;
+    if (!match) return;
 
     avatar.dataset.photoFix = "1";
     avatar.textContent = "";
-    avatar.style.backgroundImage = `url("${matchedUrl}")`;
+    avatar.style.backgroundImage = `url("${match.url}")`;
     avatar.style.backgroundSize = "cover";
     avatar.style.backgroundPosition = "center";
     avatar.style.backgroundRepeat = "no-repeat";
