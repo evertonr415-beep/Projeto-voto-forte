@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import EnqueteArapongasFotosPreviewPage from "../arapongas-fotos-preview/page";
+import ArapongasFotosPreviewLayout from "../arapongas-fotos-preview/layout";
 
 const OFFICIAL_PARTICIPANT_KEY = "vf_poll_arapongas_pid_v1";
 const VISUAL_PARTICIPANT_KEY = "vf_poll_arapongas_photos_preview_pid_v1";
@@ -52,5 +53,9 @@ export default function EnqueteArapongasPage() {
     );
   }
 
-  return <EnqueteArapongasFotosPreviewPage />;
+  return (
+    <ArapongasFotosPreviewLayout>
+      <EnqueteArapongasFotosPreviewPage />
+    </ArapongasFotosPreviewLayout>
+  );
 }
