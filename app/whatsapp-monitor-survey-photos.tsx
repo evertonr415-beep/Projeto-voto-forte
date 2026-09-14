@@ -6,12 +6,13 @@ type VisualAsset = {
   url?: string;
   fallback: string;
   alt: string;
+  kind?: "portrait" | "flag" | "symbol";
 };
 
 const RAFAEL_CITA_PHOTO =
   "https://commons.wikimedia.org/wiki/Special:Redirect/file/2024_RAFAEL_CITA_CANDIDATO_PREFEITO_PR_ARAPONGAS_TSE_%28160002071893%29.jpg";
-const PARANA_COAT_OF_ARMS =
-  "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bras%C3%A3o_do_Paran%C3%A1.svg";
+const PARANA_FLAG =
+  "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bandeira_do_Paran%C3%A1.svg?width=330";
 
 const CANDIDATE_PHOTOS: Record<string, string> = {
   lula: "https://live.staticflickr.com/65535/55450244258_b5195947f7.jpg",
@@ -49,6 +50,39 @@ const SURVEY_LABELS = new Set([
   "Região",
 ]);
 
+const PRECONNECT_HOSTS = [
+  "https://commons.wikimedia.org",
+  "https://upload.wikimedia.org",
+  "https://www.camara.leg.br",
+  "https://live.staticflickr.com",
+  "https://storage2.assembleia.pr.leg.br",
+];
+
+const warmedImages = new Set<string>();
+
+function warmConnections() {
+  PRECONNECT_HOSTS.forEach((href) => {
+    if (document.head.querySelector(`link[data-vf-survey-preconnect="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = href;
+    link.crossOrigin = "anonymous";
+    link.dataset.vfSurveyPreconnect = href;
+    document.head.appendChild(link);
+  });
+}
+
+function warmImage(url: string) {
+  if (!url || warmedImages.has(url)) return;
+  warmedImages.add(url);
+  const image = new Image();
+  image.decoding = "async";
+  image.loading = "eager";
+  image.setAttribute("fetchpriority", "high");
+  image.referrerPolicy = "no-referrer";
+  image.src = url;
+}
+
 function normalize(value: string) {
   return value
     .normalize("NFD")
@@ -71,31 +105,42 @@ function assetFor(label: string, value: string): VisualAsset {
   const normalized = normalize(value);
 
   if (label === "Gestão Municipal") {
-    return { url: RAFAEL_CITA_PHOTO, fallback: "RC", alt: "Rafael Cita" };
+    return {
+      url: RAFAEL_CITA_PHOTO,
+      fallback: "RC",
+      alt: "Rafael Cita",
+      kind: "portrait",
+    };
   }
 
   if (label === "Gestão Estadual") {
-    return { url: PARANA_COAT_OF_ARMS, fallback: "PR", alt: "Brasão do Paraná" };
+    return {
+      url: PARANA_FLAG,
+      fallback: "PR",
+      alt: "Bandeira oficial do Paraná",
+      kind: "flag",
+    };
   }
 
   if (label === "Região") {
-    return { fallback: "⌖", alt: "Região" };
+    return { fallback: "⌖", alt: "Região", kind: "symbol" };
   }
 
   if (normalized.includes("outro candidato") || normalized === "outro") {
-    return { fallback: "+", alt: "Outro candidato" };
+    return { fallback: "+", alt: "Outro candidato", kind: "symbol" };
   }
   if (normalized.includes("branco") || normalized.includes("nulo")) {
-    return { fallback: "—", alt: "Branco ou nulo" };
+    return { fallback: "—", alt: "Branco ou nulo", kind: "symbol" };
   }
   if (normalized.includes("indeciso") || normalized.includes("ainda nao")) {
-    return { fallback: "?", alt: "Ainda não sabe" };
+    return { fallback: "?", alt: "Ainda não sabe", kind: "symbol" };
   }
 
   return {
     url: CANDIDATE_PHOTOS[normalized],
     fallback: initials(value),
     alt: value,
+    kind: "portrait",
   };
 }
 
@@ -103,6 +148,7 @@ function makeAvatar(asset: VisualAsset) {
   const avatar = document.createElement("span");
   avatar.className = "vf-survey-answer-avatar";
   avatar.setAttribute("aria-label", asset.alt);
+  if (asset.kind === "flag") avatar.classList.add("is-flag");
 
   const fallback = document.createElement("span");
   fallback.className = "vf-survey-answer-avatar-fallback";
@@ -114,15 +160,23 @@ function makeAvatar(asset: VisualAsset) {
     return avatar;
   }
 
+  warmImage(asset.url);
+
   const image = document.createElement("img");
   image.src = asset.url;
   image.alt = asset.alt;
-  image.loading = "lazy";
+  image.loading = "eager";
+  image.decoding = "async";
+  image.setAttribute("fetchpriority", "high");
   image.referrerPolicy = "no-referrer";
-  image.addEventListener("error", () => {
-    image.style.display = "none";
-    fallback.style.display = "grid";
-  }, { once: true });
+  image.addEventListener(
+    "error",
+    () => {
+      image.style.display = "none";
+      fallback.style.display = "grid";
+    },
+    { once: true },
+  );
 
   avatar.append(image, fallback);
   return avatar;
@@ -157,6 +211,11 @@ function decorateSurveyReplies() {
       .filter((item): item is { label: string; value: string } => Boolean(item));
 
     if (!parsed.length) return;
+
+    parsed.forEach(({ label, value }) => {
+      const asset = assetFor(label, value);
+      if (asset.url) warmImage(asset.url);
+    });
 
     content.dataset.vfSurveyPhotos = "1";
     content.dataset.vfSurveyOriginal = originalText;
@@ -193,6 +252,8 @@ function decorateSurveyReplies() {
 
 export default function WhatsappMonitorSurveyPhotos() {
   useEffect(() => {
+    warmConnections();
+
     let scheduled = false;
     const schedule = () => {
       if (scheduled) return;
@@ -246,6 +307,13 @@ export default function WhatsappMonitorSurveyPhotos() {
         border: 2px solid rgba(255, 255, 255, 0.92);
         box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35), 0 3px 10px rgba(2, 8, 23, 0.28);
       }
+      .vf-survey-answer-avatar.is-flag {
+        width: 44px;
+        height: 31px;
+        min-width: 44px;
+        border-radius: 7px;
+        background: #fff;
+      }
       .vf-survey-answer-avatar img {
         width: 100%;
         height: 100%;
@@ -253,6 +321,11 @@ export default function WhatsappMonitorSurveyPhotos() {
         object-fit: cover;
         object-position: center;
         background: #e2e8f0;
+      }
+      .vf-survey-answer-avatar.is-flag img {
+        object-fit: cover;
+        object-position: center;
+        background: #fff;
       }
       .vf-survey-answer-avatar-fallback {
         width: 100%;
@@ -296,6 +369,12 @@ export default function WhatsappMonitorSurveyPhotos() {
           width: 36px;
           height: 36px;
           min-width: 36px;
+        }
+        .vf-survey-answer-avatar.is-flag {
+          width: 42px;
+          height: 30px;
+          min-width: 42px;
+          border-radius: 6px;
         }
         .vf-survey-answer-label { font-size: 9.5px; }
         .vf-survey-answer-value { font-size: 12.5px; }
