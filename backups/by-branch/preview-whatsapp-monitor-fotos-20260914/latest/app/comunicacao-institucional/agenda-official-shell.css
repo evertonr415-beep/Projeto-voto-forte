@@ -1,0 +1,234 @@
+/* Agenda oficial dentro da casca visual nativa do Voto Forte. */
+.vf-agenda-official-shell .vf-agenda-route-content {
+  min-width: 0;
+}
+
+@media (max-width: 1050px) {
+  .vf-agenda-official-shell .vf-agenda-route-content .vf-ic-back-link,
+  .vf-agenda-official-shell .vf-agenda-route-content [data-vf-standard-back-navigation] {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell,
+  .vf-agenda-official-shell .main,
+  .vf-agenda-official-shell .workspace,
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    background: #051929 !important;
+    background-color: #051929 !important;
+  }
+
+  .vf-agenda-official-shell .workspace {
+    min-height: calc(100dvh - 60px) !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content {
+    width: 100% !important;
+    min-height: calc(100dvh - 60px) !important;
+    padding: 0 !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content > .ae-root {
+    margin: 0 !important;
+  }
+}
+
+/* Replica o cabeçalho compacto das abas principais e move a identidade da Agenda para o topo. */
+@media (max-width: 760px) {
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] {
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .mobile-menu {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .page-id {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-logo {
+    display: block !important;
+    flex: 0 0 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+    object-fit: cover !important;
+    object-position: center 45% !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(56, 189, 248, 0.30) !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-label {
+    display: block !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    color: #f8fafc !important;
+    font-size: 13px !important;
+    line-height: 1.12 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .top-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 0 !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    margin: 0 !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > span {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > div,
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > i {
+    display: none !important;
+  }
+
+  /* Remove a identidade duplicada no card da Agenda; ações continuam visíveis. */
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar .ae-brand {
+    display: none !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-topbar {
+    padding-top: 12px !important;
+  }
+
+  /* Drawer mobile igual ao dashboard real. */
+  .vf-agenda-official-shell .sidebar {
+    width: 280px !important;
+    max-width: 85vw !important;
+    padding: 26px 18px 15px !important;
+  }
+
+  .vf-agenda-official-shell .sidebar-header-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-right: 8px !important;
+  }
+
+  .vf-agenda-official-shell .menu-label {
+    display: block !important;
+  }
+
+  .vf-agenda-official-shell .sidebar-close-mobile-btn {
+    display: flex !important;
+  }
+
+  .vf-agenda-official-shell .sidebar nav button.active {
+    background: linear-gradient(90deg, rgba(54, 102, 168, 0.42), rgba(28, 62, 112, 0.12)) !important;
+    border-left-color: #d6ad5e !important;
+    color: #fff !important;
+  }
+
+  .vf-agenda-official-shell.collapsed .brand-lockup > div:last-child,
+  .vf-agenda-official-shell.collapsed .menu-label,
+  .vf-agenda-official-shell.collapsed .nav-name,
+  .vf-agenda-official-shell.collapsed .sidebar-message,
+  .vf-agenda-official-shell.collapsed .collapse span {
+    display: block !important;
+  }
+
+  .vf-agenda-official-shell.collapsed .brand-icons {
+    min-width: 63px !important;
+  }
+
+  .vf-agenda-official-shell.collapsed .sidebar nav button {
+    justify-content: flex-start !important;
+    padding: 0 12px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] {
+    padding-inline: 8px !important;
+    gap: 5px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .mobile-menu {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-title-wrap {
+    gap: 6px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-logo {
+    flex-basis: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .vf-agenda-header-label {
+    font-size: 12px !important;
+  }
+
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile,
+  .vf-agenda-official-shell .topbar[data-vf-agenda-header="true"] .profile > span {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+  }
+}

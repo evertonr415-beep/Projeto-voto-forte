@@ -1,0 +1,89 @@
+name: Automatic repository backup
+
+on:
+  push:
+    branches-ignore:
+      - backup/automatic
+
+permissions:
+  contents: write
+
+concurrency:
+  group: automatic-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout changed branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Prepare source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/voto-forte-snapshot
+          rsync -a \
+            --exclude '.git' \
+            --exclude 'backups' \
+            ./ /tmp/voto-forte-snapshot/
+
+      - name: Checkout backup branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin backup/automatic:refs/remotes/origin/backup/automatic
+          git worktree add /tmp/voto-forte-backup origin/backup/automatic
+
+      - name: Update backup folder
+        shell: bash
+        env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_ACTOR: ${{ github.actor }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          SAFE_BRANCH="$(printf '%s' "$SOURCE_BRANCH" | sed 's#[^A-Za-z0-9._-]#-#g')"
+          TARGET="/tmp/voto-forte-backup/backups/by-branch/${SAFE_BRANCH}/latest"
+
+          mkdir -p "$TARGET"
+          find "$TARGET" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          rsync -a /tmp/voto-forte-snapshot/ "$TARGET/"
+
+          cat > "/tmp/voto-forte-backup/backups/by-branch/${SAFE_BRANCH}/BACKUP_INFO.md" <<EOF
+          # Automatic Backup
+
+          - Repository: ${SOURCE_REPOSITORY}
+          - Source branch: ${SOURCE_BRANCH}
+          - Source commit: ${SOURCE_SHA}
+          - Triggered by: ${SOURCE_ACTOR}
+          - Generated at (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+          The `latest/` directory contains the complete repository snapshot for this branch at the commit above.
+          Previous snapshots remain recoverable through the Git history of the `backup/automatic` branch.
+          EOF
+
+      - name: Commit backup
+        shell: bash
+        env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cd /tmp/voto-forte-backup
+          git config user.name 'voto-forte-backup-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- backups
+
+          if git diff --cached --quiet; then
+            echo 'No backup changes to commit.'
+            exit 0
+          fi
+
+          git commit -m "backup(${SOURCE_BRANCH}): ${SOURCE_SHA}"
+          git push origin HEAD:backup/automatic
