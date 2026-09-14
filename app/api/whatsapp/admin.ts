@@ -15,8 +15,13 @@ export type WhatsappEventInsert = {
   payload?: Record<string, unknown>;
 };
 
+const DEFAULT_SUPABASE_URL = "https://dtcvudwmosxhbgpwphsx.supabase.co";
+
 function getAdminConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
+  const url =
+    process.env.SUPABASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    DEFAULT_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SECRET_KEY?.trim() ||
     process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
