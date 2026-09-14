@@ -62,16 +62,17 @@ export async function GET() {
       return Response.json({ success: true, total: 0, responses: [] as IdentifiedResponse[] });
     }
 
-    const [contactsResult, eventsResult] = await Promise.all([
+    const [contactsResult, inboundResult] = await Promise.all([
       supabase.from("vf_owned_records").select("payload").eq("kind", "contact").limit(5000),
       supabase
         .from("vf_whatsapp_events")
         .select("id, phone, contact_name, message_text, direction, event_type, status, occurred_at, created_at")
+        .eq("direction", "inbound")
         .order("created_at", { ascending: false })
         .limit(10000),
     ]);
 
-    if (eventsResult.error) throw eventsResult.error;
+    if (inboundResult.error) throw inboundResult.error;
 
     const contactLookup = new Map<string, { name: string; district?: string }>();
     for (const row of contactsResult.data || []) {
@@ -85,31 +86,16 @@ export async function GET() {
       }
     }
 
-    const rows = eventsResult.data || [];
-    const outboundPhones = new Set<string>();
-
-    for (const row of rows) {
-      if (row.direction !== "outbound") continue;
-      const rawPhone = String(row.phone || "");
-      if (!isRealPhone(rawPhone)) continue;
-      for (const key of phoneKeys(rawPhone)) outboundPhones.add(key);
-    }
-
     const grouped = new Map<
       string,
       { phone: string; contactName: string; district?: string; timestamp: string; messages: string[] }
     >();
 
-    for (const row of rows) {
-      if (row.direction !== "inbound") continue;
-
+    for (const row of inboundResult.data || []) {
       const rawPhone = String(row.phone || "");
       if (!isRealPhone(rawPhone)) continue;
 
       const keys = phoneKeys(rawPhone);
-      const cameFromDispatch = [...keys].some((key) => outboundPhones.has(key));
-      if (!cameFromDispatch) continue;
-
       const lookup = [...keys].map((key) => contactLookup.get(key)).find(Boolean);
       const eventName = String(row.contact_name || "").trim();
       const contactName = !isGenericName(eventName) ? eventName : lookup?.name || "";
