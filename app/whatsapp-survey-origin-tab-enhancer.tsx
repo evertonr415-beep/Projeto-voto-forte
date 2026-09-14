@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "./whatsapp-survey-origin-monitor-v2";
+export { default } from "./whatsapp-survey-origin-monitor-v3";
