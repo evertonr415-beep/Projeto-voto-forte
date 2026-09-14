@@ -52,9 +52,18 @@ function isGenericName(value = "") {
   );
 }
 
+function isOriginPreviewBranch() {
+  return (
+    process.env.VERCEL_ENV === "preview" &&
+    String(process.env.VERCEL_GIT_COMMIT_REF || "").startsWith("preview/origem-respostas-enquete-")
+  );
+}
+
 export async function GET() {
   const account = await getAccount();
-  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account && !isOriginPreviewBranch()) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
 
   try {
     const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
