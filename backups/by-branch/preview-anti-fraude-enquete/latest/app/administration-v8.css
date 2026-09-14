@@ -1,0 +1,280 @@
+/* Administração V8 — correções objetivas para iPhone/mobile.
+   Esta camada vem por último para neutralizar conflitos entre o CSS legado e V6/V7. */
+
+/* 1) Navegação superior: usa APENAS os rótulos curtos. */
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(1),
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(2),
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(3) {
+  font-size: 0 !important;
+  line-height: 1 !important;
+}
+
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(1)::after {
+  content: "Acessos" !important;
+}
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(2)::after {
+  content: "Auditoria" !important;
+}
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(3)::after {
+  content: "Backup" !important;
+}
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+.management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(-n+3)::after {
+  display: inline !important;
+  color: inherit !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* 2) A caixa de solicitações vazia deve ser um aviso compacto, não um card inteiro. */
+.vf-municipality-applications:has(.vf-municipality-empty) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 9px 14px 10px !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(56, 189, 248, .12) !important;
+  border-radius: 11px !important;
+  background: #0a223d !important;
+}
+
+.vf-municipality-applications:has(.vf-municipality-empty) > header {
+  display: contents !important;
+}
+.vf-municipality-applications:has(.vf-municipality-empty) > header > div {
+  min-width: 0 !important;
+}
+.vf-municipality-applications:has(.vf-municipality-empty) > header small,
+.vf-municipality-applications:has(.vf-municipality-empty) > header p {
+  display: none !important;
+}
+.vf-municipality-applications:has(.vf-municipality-empty) > header h4 {
+  margin: 0 !important;
+  color: #f8fbff !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+.vf-municipality-applications:has(.vf-municipality-empty) > header > span {
+  grid-column: 2 !important;
+  grid-row: 1 / span 2 !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  background: #113653 !important;
+  color: #b8d4e9 !important;
+  font-size: 11px !important;
+}
+.vf-municipality-applications:has(.vf-municipality-empty) .vf-municipality-empty {
+  grid-column: 1 !important;
+  margin: 2px 0 0 !important;
+  color: #8fa7bd !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  opacity: 1 !important;
+}
+
+/* 3) KPI superior: todos visíveis, sem carrossel cortado. */
+@media (max-width: 760px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+  .management-filter[role="tablist"][aria-label="Seções administrativas"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    width: 100% !important;
+    margin: 7px 0 10px !important;
+    padding: 5px !important;
+    overflow: hidden !important;
+    border-radius: 13px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+  .management-filter[role="tablist"][aria-label="Seções administrativas"] > button,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+  .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:last-child:nth-child(3) {
+    grid-column: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 43px !important;
+    padding: 6px 8px !important;
+    overflow: hidden !important;
+    border-radius: 9px !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+  .management-filter[role="tablist"][aria-label="Seções administrativas"] > button:nth-child(-n+3)::after {
+    font-size: 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    width: 100% !important;
+    margin: 0 0 8px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article {
+    display: grid !important;
+    align-content: center !important;
+    min-width: 0 !important;
+    min-height: 76px !important;
+    padding: 9px 7px !important;
+    overflow: hidden !important;
+    border-radius: 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article small {
+    display: block !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article:nth-child(1) small::after { content: "ADM"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article:nth-child(2) small::after { content: "GESTORES"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article:nth-child(3) small::after { content: "ATIVIDADES"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article small::after {
+    color: #9eb3c7 !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article b {
+    margin: 5px 0 0 !important;
+    overflow: hidden !important;
+    color: #fff !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article span {
+    display: none !important;
+  }
+
+  /* 4) Segurança vira faixa curta. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner {
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    min-height: 52px !important;
+    margin: 0 0 9px !important;
+    padding: 8px 10px !important;
+    border-left-width: 3px !important;
+    border-radius: 10px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner > span:first-child {
+    font-size: 16px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner b {
+    display: block !important;
+    overflow: hidden !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner p,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .security-banner i {
+    display: none !important;
+  }
+
+  /* 5) Painel principal mais compacto e sem camadas gigantes. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel {
+    border-radius: 13px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header {
+    padding: 12px 12px 9px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header small {
+    font-size: 8px !important;
+    letter-spacing: .11em !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header h3 {
+    margin: 3px 0 2px !important;
+    font-size: 18px !important;
+    line-height: 1.08 !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header p {
+    overflow: hidden !important;
+    color: #8fa6bd !important;
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .vf-municipality-applications:has(.vf-municipality-empty) {
+    margin: 7px 10px 8px !important;
+    padding: 9px 10px !important;
+  }
+
+  /* 6) Subabas de Acessos em uma única linha, com rótulos curtos. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin: 8px 10px !important;
+    padding: 4px !important;
+    overflow: hidden !important;
+    border-radius: 10px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button {
+    grid-column: auto !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding: 5px 4px !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(1)::after { content: "Gerenciar"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(2)::after { content: "Cadastrar"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(3)::after { content: "Convites"; }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(-n+3)::after {
+    display: inline !important;
+    color: inherit !important;
+    font-size: 9px !important;
+    font-weight: 850 !important;
+    white-space: nowrap !important;
+  }
+
+  /* 7) Cards internos aproveitam toda a largura sem margem dupla. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-create-card,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-list-card,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin {
+    margin-inline: 10px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"])
+  .management-filter[role="tablist"][aria-label="Seções administrativas"] > button {
+    min-height: 42px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article {
+    min-height: 72px !important;
+    padding-inline: 6px !important;
+  }
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .admin-kpis > article b {
+    font-size: 22px !important;
+  }
+}
