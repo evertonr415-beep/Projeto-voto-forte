@@ -1,9 +1,12 @@
-import { createHash, createHmac, randomUUID } from "crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { getWhatsappAdminClient } from "../../whatsapp/admin";
 
 const EVENT_TYPE = "web_poll_arapongas_preview_v3";
 const POLL_ID = "arapongas-preview-v3";
 const DEVICE_COOKIE = "vf_poll_device_v2";
+const GUARD_COOKIE = "vf_poll_guard_v1";
+const GUARD_MIN_AGE_MS = 1_500;
+const GUARD_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 const MAX_BODY_BYTES = 12_000;
 const MAX_VOTES_PER_IP = 4;
 const RATE_WINDOW_MS = 60_000;
@@ -70,13 +73,21 @@ function digest(value: string) {
   return createHmac("sha256", securitySecret()).update(`${POLL_ID}:${value}`).digest("hex");
 }
 
+function safeDecodeCookie(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return "";
+  }
+}
+
 function parseCookies(request: Request) {
   const raw = request.headers.get("cookie") || "";
   return Object.fromEntries(
     raw.split(";").map((part) => part.trim()).filter(Boolean).map((part) => {
       const index = part.indexOf("=");
       if (index < 0) return [part, ""];
-      return [part.slice(0, index), decodeURIComponent(part.slice(index + 1))];
+      return [part.slice(0, index), safeDecodeCookie(part.slice(index + 1))];
     }),
   );
 }
@@ -105,6 +116,29 @@ function browserSignal(request: Request) {
   ].join("|").slice(0, 1500);
 }
 
+function issueGuard(deviceRaw: string, browserHash: string) {
+  const issuedAt = Date.now();
+  const signature = digest(`guard:v1:${deviceRaw}:${browserHash}:${issuedAt}`);
+  return `${issuedAt}.${signature}`;
+}
+
+function guardValid(request: Request, deviceRaw: string, browserHash: string) {
+  const token = String(parseCookies(request)[GUARD_COOKIE] || "");
+  const [issuedAtRaw, signature = ""] = token.split(".", 2);
+  if (!/^\d{10,16}$/.test(issuedAtRaw) || !/^[a-f0-9]{64}$/i.test(signature)) return false;
+
+  const issuedAt = Number(issuedAtRaw);
+  const age = Date.now() - issuedAt;
+  if (!Number.isFinite(issuedAt) || age < GUARD_MIN_AGE_MS || age > GUARD_MAX_AGE_MS) return false;
+
+  const expected = digest(`guard:v1:${deviceRaw}:${browserHash}:${issuedAt}`);
+  try {
+    return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(signature, "hex"));
+  } catch {
+    return false;
+  }
+}
+
 function legacyParticipantKey(participantId: unknown, phone: unknown) {
   const normalizedPhone = String(phone || "").replace(/\D/g, "");
   const phoneValue = normalizedPhone.length >= 10 && normalizedPhone.length <= 15 ? normalizedPhone : "";
@@ -115,13 +149,28 @@ function legacyParticipantKey(participantId: unknown, phone: unknown) {
 }
 
 function sameOrigin(request: Request) {
+  const expectedHost = new URL(request.url).host;
   const origin = request.headers.get("origin");
-  if (!origin) return true;
-  try {
-    return new URL(origin).host === new URL(request.url).host;
-  } catch {
-    return false;
+  if (origin) {
+    try {
+      if (new URL(origin).host !== expectedHost) return false;
+    } catch {
+      return false;
+    }
   }
+
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      if (new URL(referer).host !== expectedHost) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  const fetchSite = (request.headers.get("sec-fetch-site") || "").toLowerCase();
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return false;
+  return true;
 }
 
 function rateAllowed(key: string) {
@@ -140,15 +189,22 @@ function rateAllowed(key: string) {
   return entry.count <= RATE_MAX_REQUESTS;
 }
 
-function secureJson(body: unknown, init: ResponseInit = {}, cookie?: string) {
+function secureJson(body: unknown, init: ResponseInit = {}, deviceCookie?: string, guardCookie?: string) {
   const headers = new Headers(init.headers);
   headers.set("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
   headers.set("Pragma", "no-cache");
   headers.set("X-Content-Type-Options", "nosniff");
-  if (cookie) {
+  headers.set("Referrer-Policy", "same-origin");
+  if (deviceCookie) {
     headers.append(
       "Set-Cookie",
-      `${DEVICE_COOKIE}=${encodeURIComponent(cookie)}; Max-Age=31536000; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      `${DEVICE_COOKIE}=${encodeURIComponent(deviceCookie)}; Max-Age=31536000; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    );
+  }
+  if (guardCookie) {
+    headers.append(
+      "Set-Cookie",
+      `${GUARD_COOKIE}=${encodeURIComponent(guardCookie)}; Max-Age=${Math.floor(GUARD_MAX_AGE_MS / 1000)}; Path=/; HttpOnly; Secure; SameSite=Lax`,
     );
   }
   return Response.json(body, { ...init, headers });
@@ -248,6 +304,18 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const action = String(body.action || "submit");
+    if (action !== "status" && action !== "submit") {
+      return secureJson({ error: "Ação inválida" }, { status: 400 }, device.shouldSetCookie ? device.raw : undefined);
+    }
+
+    if (action === "submit" && !guardValid(request, device.raw, browserHash)) {
+      return secureJson(
+        { error: "A validação de segurança expirou ou não foi iniciada. Recarregue a página e tente novamente." },
+        { status: 403 },
+        device.shouldSetCookie ? device.raw : undefined,
+      );
+    }
+
     const legacyKey = legacyParticipantKey(body.participantId, body.phone);
     const keys = [device.key, legacyKey].filter(Boolean);
     const supabase = getSurveyDb();
@@ -266,9 +334,14 @@ export async function POST(request: Request) {
     }
 
     if (action === "status") {
-      return secureJson({ success: true, alreadyAnswered }, {}, device.shouldSetCookie ? device.raw : undefined);
+      const guard = issueGuard(device.raw, browserHash);
+      return secureJson(
+        { success: true, alreadyAnswered },
+        {},
+        device.shouldSetCookie ? device.raw : undefined,
+        guard,
+      );
     }
-    if (action !== "submit") return secureJson({ error: "Ação inválida" }, { status: 400 }, device.shouldSetCookie ? device.raw : undefined);
 
     const q1 = String(body.q1 || "");
     const q2 = String(body.q2 || "");
@@ -309,7 +382,7 @@ export async function POST(request: Request) {
       message_type: "survey",
       message_text: messageText,
       occurred_at: new Date().toISOString(),
-      payload: { source: "web_poll", poll: POLL_ID, ipHash, browserHash, antiFraudVersion: 2 },
+      payload: { source: "web_poll", poll: POLL_ID, ipHash, browserHash, antiFraudVersion: 3, guardVersion: 1 },
     });
     if (insertError) throw insertError;
 
