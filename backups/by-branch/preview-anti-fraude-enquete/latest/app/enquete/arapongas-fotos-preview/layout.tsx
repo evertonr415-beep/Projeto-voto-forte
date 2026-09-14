@@ -4,8 +4,8 @@ import { useEffect } from "react";
 
 const PHOTO_FIXES = [
   {
-    label: "Lula (PT)",
-    url: "https://upload.wikimedia.org/wikipedia/commons/4/40/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28estreita%29.jpg",
+    label: "Lula",
+    url: "https://live.staticflickr.com/65535/55450244258_b5195947f7.jpg",
   },
   {
     label: "Sandro Alex (PSD)",
