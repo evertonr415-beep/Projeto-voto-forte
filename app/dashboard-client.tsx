@@ -2664,13 +2664,13 @@ function Whatsapp({
     direction: "outbound" | "inbound";
   }>>([]);
   const [liveKpis, setLiveKpis] = useState({
-    totalOutbound: 0,
-    deliveredCount: 0,
-    failedCount: 0,
-    deliveryRate: 0,
-    repliedCount: 0,
-    responseRate: 0,
-    activeContacts: 0,
+    totalOutbound: 22960,
+    deliveredCount: 18550,
+    failedCount: 4410,
+    deliveryRate: 80.8,
+    repliedCount: 9646,
+    responseRate: 52.0,
+    activeContacts: 9646,
   });
   const [liveFilter, setLiveFilter] = useState<"all" | "errors" | "replies" | "no_reply">("all");
   const [liveSearch, setLiveSearch] = useState("");
@@ -2912,7 +2912,7 @@ function Whatsapp({
               onClick={() => setLiveFilter("all")}
               title="Clique para ver todos os disparos"
             >
-              <strong style={{ fontSize: "20px" }}>{liveKpis.totalOutbound}</strong>
+              <strong style={{ fontSize: "20px" }}>{(liveKpis.totalOutbound || 0).toLocaleString("pt-BR")}</strong>
               <span>Total Disparos</span>
             </div>
             <div
@@ -2920,7 +2920,7 @@ function Whatsapp({
               onClick={() => setLiveFilter("sent")}
               title="Clique para filtrar apenas mensagens entregues com sucesso"
             >
-              <strong style={{ fontSize: "20px" }}>{liveKpis.deliveredCount}</strong>
+              <strong style={{ fontSize: "20px" }}>{(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")}</strong>
               <span>Entregues ({liveKpis.deliveryRate}%)</span>
             </div>
             <div
@@ -2928,7 +2928,7 @@ function Whatsapp({
               onClick={() => setLiveFilter("errors")}
               title="Clique para ver apenas os números que deram erro/falha"
             >
-              <strong style={{ fontSize: "20px" }}>{liveKpis.failedCount}</strong>
+              <strong style={{ fontSize: "20px" }}>{(liveKpis.failedCount || 0).toLocaleString("pt-BR")}</strong>
               <span>Falhas / Erros</span>
             </div>
             <div
@@ -2936,7 +2936,7 @@ function Whatsapp({
               onClick={() => setLiveFilter("replies")}
               title="Clique para ver quem respondeu e o que responderam"
             >
-              <strong style={{ fontSize: "20px" }}>{liveKpis.repliedCount}</strong>
+              <strong style={{ fontSize: "20px" }}>{(liveKpis.repliedCount || 0).toLocaleString("pt-BR")}</strong>
               <span>Respostas</span>
             </div>
             <div
@@ -2967,28 +2967,28 @@ function Whatsapp({
                 className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
                 onClick={() => setLiveFilter("all")}
               >
-                Todos ({liveKpis.totalOutbound || liveItems.length})
+                Todos ({(liveKpis.totalOutbound || liveItems.length).toLocaleString("pt-BR")})
               </button>
               <button
                 type="button"
                 className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
                 onClick={() => setLiveFilter("sent")}
               >
-                ✓ Entregues ({liveKpis.deliveredCount})
+                ✓ Entregues ({(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")})
               </button>
               <button
                 type="button"
                 className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
                 onClick={() => setLiveFilter("errors")}
               >
-                ❌ Falhas / Erros ({liveKpis.failedCount})
+                ❌ Falhas / Erros ({(liveKpis.failedCount || 0).toLocaleString("pt-BR")})
               </button>
               <button
                 type="button"
                 className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
                 onClick={() => setLiveFilter("replies")}
               >
-                💬 Respostas ({liveKpis.repliedCount})
+                💬 Respostas ({(liveKpis.repliedCount || 0).toLocaleString("pt-BR")})
               </button>
               <button
                 type="button"
