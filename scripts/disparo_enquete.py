@@ -4,7 +4,7 @@ import urllib.error
 import time
 import os
 
-PHONE_NUMBER_ID = "1319478581243565"
+PHONE_NUMBER_ID = "1306645972534063"
 
 def get_token():
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env.local")
@@ -26,12 +26,14 @@ NUMBERS = [
     "5543999709710"
 ]
 
-MESSAGE_BODY = """Olá! Tudo bem?
+MESSAGE_BODY = """👀 Você sabe como sua cidade está pensando?
 
-Estamos realizando uma rápida enquete cidadã para ouvir a população sobre as prioridades e o futuro de Arapongas.
+Responda nossa enquete — leva menos de 1 minuto.
 
-Sua opinião é fundamental e leva menos de 1 minuto para responder. Acesse pelo link:
-https://voto-forte-parana.vercel.app/enquete/arapongas"""
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Clique no link e descubra se a maioria pensa como você:
+https://sistemavotoforte.com.br/enquete/arapongas"""
 
 def send_message(phone, token):
     url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
