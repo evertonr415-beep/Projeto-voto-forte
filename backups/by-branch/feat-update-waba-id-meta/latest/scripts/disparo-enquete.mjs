@@ -31,12 +31,14 @@ const numbers = [
   "5543999709710",
 ];
 
-const messageBody = `Olá! Tudo bem?
+const messageBody = `👀 Você sabe como sua cidade está pensando?
 
-Estamos realizando uma rápida enquete cidadã para ouvir a população sobre as prioridades e o futuro de Arapongas.
+Responda nossa enquete — leva menos de 1 minuto.
 
-Sua opinião é fundamental e leva menos de 1 minuto para responder. Acesse pelo link:
-https://voto-forte-parana.vercel.app/enquete/arapongas`;
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Clique no link e descubra se a maioria pensa como você:
+https://sistemavotoforte.com.br/enquete/arapongas`;
 
 async function sendMessages() {
   if (!token || token.startsWith("SEU_TOKEN")) {
