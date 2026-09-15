@@ -121,3 +121,54 @@ html[data-vf-theme="light"] .app-shell .topbar .profile {
     margin-left: 2px !important;
   }
 }
+
+/* Fallback robusto: algumas telas renderizam o cabecalho fora da hierarquia .app-shell. */
+html[data-vf-theme="dark"] .topbar,
+html:not([data-vf-theme="light"]) .topbar {
+  background: #081222 !important;
+  color: #f8fafc !important;
+  border-bottom-color: rgba(56, 189, 248, 0.18) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+html[data-vf-theme="dark"] .topbar .page-id h1,
+html[data-vf-theme="dark"] .topbar .page-id h2,
+html[data-vf-theme="dark"] .topbar .page-id strong,
+html:not([data-vf-theme="light"]) .topbar .page-id h1,
+html:not([data-vf-theme="light"]) .topbar .page-id h2,
+html:not([data-vf-theme="light"]) .topbar .page-id strong {
+  color: #f8fafc !important;
+}
+
+html[data-vf-theme="dark"] .topbar .page-id small,
+html:not([data-vf-theme="light"]) .topbar .page-id small {
+  color: #d7ae60 !important;
+}
+
+html[data-vf-theme="light"] .topbar {
+  background: #ffffff !important;
+  color: #132238 !important;
+  border-bottom-color: #d8e2ec !important;
+  box-shadow: 0 8px 28px rgba(15, 42, 70, 0.08) !important;
+}
+
+html[data-vf-theme="light"] .topbar .page-id h1,
+html[data-vf-theme="light"] .topbar .page-id h2,
+html[data-vf-theme="light"] .topbar .page-id strong {
+  color: #132238 !important;
+}
+
+html[data-vf-theme="light"] .topbar .page-id small {
+  color: #b1843c !important;
+}
+
+@media (max-width: 900px) {
+  html[data-vf-theme="dark"] .topbar,
+  html:not([data-vf-theme="light"]) .topbar {
+    background: #071120 !important;
+  }
+
+  html[data-vf-theme="light"] .topbar {
+    background: #ffffff !important;
+  }
+}
