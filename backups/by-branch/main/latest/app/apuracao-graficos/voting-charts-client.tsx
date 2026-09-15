@@ -411,12 +411,14 @@ export default function VotingChartsClient({
     }
     if (activeCategory === "president") {
       return [
-        { candidate: "Flávio Bolsonaro", votes: 12, percentage: 57.1 },
-        { candidate: "Lula", votes: 3, percentage: 14.3 },
-        { candidate: "Augusto Cury", votes: 2, percentage: 9.5 },
-        { candidate: "Ronaldo Caiado", votes: 2, percentage: 9.5 },
-        { candidate: "Romeu Zema", votes: 1, percentage: 4.8 },
-        { candidate: "Indeciso / Não sabe", votes: 1, percentage: 4.8 },
+        { candidate: "Flávio Bolsonaro", votes: 4534, percentage: 47.0 },
+        { candidate: "Lula", votes: 1910, percentage: 19.8 },
+        { candidate: "Renan Santos", votes: 1051, percentage: 10.9 },
+        { candidate: "Augusto Cury", votes: 820, percentage: 8.5 },
+        { candidate: "Ronaldo Caiado", votes: 617, percentage: 6.4 },
+        { candidate: "Indeciso / Não sabe", votes: 395, percentage: 4.1 },
+        { candidate: "Romeu Zema", votes: 164, percentage: 1.7 },
+        { candidate: "Outro candidato", votes: 77, percentage: 0.8 },
       ];
     }
     return [
