@@ -1194,7 +1194,7 @@ export async function GET(request: Request) {
 
   // 1. Inicializa com a base de alimentação padrão para garantir que nunca fique vazio
   for (const item of BASELINE_FEED_ITEMS) {
-    phoneMap.set(item.phone, { ...item });
+    phoneMap.set(item.id, { ...item });
   }
 
   // 2. Resolve o cliente Supabase sem restrição RLS (usando Service Role Admin)
@@ -1359,6 +1359,16 @@ export async function GET(request: Request) {
   let allItems = Array.from(phoneMap.values());
 
   // Calcula KPIs
+  let deliveredCount = 0;
+  let failedCount = 0;
+  let repliedCount = 0;
+
+  for (const item of allItems) {
+    if (item.status === "delivered" || item.status === "sent" || item.status === "replied") deliveredCount++;
+    if (item.status === "error") failedCount++;
+    if (item.status === "replied" || Boolean(item.replyText)) repliedCount++;
+  }
+
   const effectiveReplied = Math.max(repliedCount, 9646);
   const effectiveDelivered = Math.max(deliveredCount, 18550);
   const effectiveFailed = Math.max(failedCount, 4410);
@@ -1376,6 +1386,8 @@ export async function GET(request: Request) {
     responseRate,
     activeContacts: effectiveReplied,
   };
+
+  const failedList = allItems.filter((i) => i.status === "error");
 
   // Aplica busca
   if (search) {
