@@ -21,6 +21,7 @@ type BackupRow = {
 
 type ConsolidatedResponse = SurveyAnalysisResult & {
   governorCandidate?: string;
+  senatorCandidate?: string;
   presidentCandidate?: string;
   sourceKey: string;
 };
@@ -65,12 +66,13 @@ function parseJsonEvent(event: Record<string, unknown>): ConsolidatedResponse | 
 
   try {
     const vote = JSON.parse(rawText) as Record<string, unknown>;
-    const hasSurveyFields = Boolean(vote.poll || vote.q6 || vote.q7 || vote.q8 || vote.q9);
+    const hasSurveyFields = Boolean(vote.poll || vote.q6 || vote.q7 || vote.q8 || vote.q9 || vote.q10);
     if (!hasSurveyFields) return null;
 
     const stateCandidate = formatCandidateOrOption(String(vote.q9 || vote.stateCandidate || vote.deputado_estadual || "")) || "Não especificado / Em aberto";
     const federalCandidate = formatCandidateOrOption(String(vote.q8 || vote.federalCandidate || vote.deputado_federal || "")) || "Não especificado / Em aberto";
     const governorCandidate = formatCandidateOrOption(String(vote.q7 || vote.governorCandidate || vote.governador || ""));
+    const senatorCandidate = formatCandidateOrOption(String(vote.q10 || vote.senatorCandidate || vote.senador || ""));
     const presidentCandidate = formatCandidateOrOption(String(vote.q6 || vote.presidentCandidate || vote.presidente || ""));
     const district = String(vote.bairro || vote.district || "Não informado");
     const eventId = String(event.id || `${event.phone || "web"}-${event.created_at || event.occurred_at || rawText}`);
@@ -84,11 +86,13 @@ function parseJsonEvent(event: Record<string, unknown>): ConsolidatedResponse | 
         `🏛️ Deputado Estadual: ${stateCandidate}`,
         `🇧🇷 Deputado Federal: ${federalCandidate}`,
         governorCandidate ? `📍 Governador: ${governorCandidate}` : "",
+        senatorCandidate ? `🏛️ Senador: ${senatorCandidate}` : "",
         presidentCandidate ? `🗳️ Presidente: ${presidentCandidate}` : "",
       ].filter(Boolean).join("\n"),
       stateCandidate,
       federalCandidate,
       governorCandidate,
+      senatorCandidate,
       presidentCandidate,
       sentiment: "declarado",
       timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
@@ -172,6 +176,7 @@ export async function GET(request: Request) {
     const stateCounts: Record<string, number> = {};
     const federalCounts: Record<string, number> = {};
     const governorCounts: Record<string, number> = {};
+    const senatorCounts: Record<string, number> = {};
     const presidentCounts: Record<string, number> = {};
     const districtCounts: Record<string, number> = {};
 
@@ -185,6 +190,9 @@ export async function GET(request: Request) {
       if (response.governorCandidate) {
         governorCounts[response.governorCandidate] = (governorCounts[response.governorCandidate] || 0) + 1;
       }
+      if (response.senatorCandidate) {
+        senatorCounts[response.senatorCandidate] = (senatorCounts[response.senatorCandidate] || 0) + 1;
+      }
       if (response.presidentCandidate) {
         presidentCounts[response.presidentCandidate] = (presidentCounts[response.presidentCandidate] || 0) + 1;
       }
@@ -196,6 +204,7 @@ export async function GET(request: Request) {
     const stateRanking = toRanking(stateCounts);
     const federalRanking = toRanking(federalCounts);
     const governorRanking = toRanking(governorCounts);
+    const senatorRanking = toRanking(senatorCounts);
     const presidentRanking = toRanking(presidentCounts);
     const districtRanking = Object.entries(districtCounts)
       .map(([district, total]) => ({ district, total }))
@@ -213,9 +222,10 @@ export async function GET(request: Request) {
       stateRanking,
       federalRanking,
       governorRanking,
+      senatorRanking,
       presidentRanking,
       districtRanking,
-      responses: responses.map(({ sourceKey: _sourceKey, governorCandidate: _governorCandidate, presidentCandidate: _presidentCandidate, ...response }) => response),
+      responses: responses.map(({ sourceKey: _sourceKey, governorCandidate: _governorCandidate, senatorCandidate: _senatorCandidate, presidentCandidate: _presidentCandidate, ...response }) => response),
     });
   } catch (error) {
     console.error("[whatsapp-survey] failed to consolidate responses", error);
