@@ -806,15 +806,15 @@ export default function WhaticketBroadcastDrawer() {
                     onClick={() => setLiveFilter("all")}
                     title="Clique para ver todos os disparos"
                   >
-                    <strong>{liveKpis.totalOutbound}</strong>
-                    <span>Disparos</span>
+                    <strong>{(liveKpis.totalOutbound || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Total Disparos</span>
                   </div>
                   <div
                     className={`wt-kpi-card is-success ${liveFilter === "sent" ? "is-active-kpi" : ""}`}
                     onClick={() => setLiveFilter("sent")}
                     title="Clique para ver apenas mensagens entregues"
                   >
-                    <strong>{liveKpis.deliveredCount}</strong>
+                    <strong>{(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")}</strong>
                     <span>Entregues ({liveKpis.deliveryRate}%)</span>
                   </div>
                   <div
@@ -822,15 +822,15 @@ export default function WhaticketBroadcastDrawer() {
                     onClick={() => setLiveFilter("errors")}
                     title="Clique para ver apenas erros/falhas"
                   >
-                    <strong>{liveKpis.failedCount}</strong>
-                    <span>Falhas</span>
+                    <strong>{(liveKpis.failedCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Falhas / Erros</span>
                   </div>
                   <div
                     className={`wt-kpi-card is-reply ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
                     onClick={() => setLiveFilter("replies")}
                     title="Clique para ver respostas recebidas"
                   >
-                    <strong>{liveKpis.repliedCount}</strong>
+                    <strong>{(liveKpis.repliedCount || 0).toLocaleString("pt-BR")}</strong>
                     <span>Respostas</span>
                   </div>
                   <div
@@ -849,7 +849,7 @@ export default function WhaticketBroadcastDrawer() {
                   <span className="search-icon">🔍</span>
                   <input
                     type="text"
-                    placeholder="Buscar por nome, telefone ou mensagem..."
+                    placeholder="Buscar por telefone, nome ou mensagem..."
                     value={liveSearch}
                     onChange={(e) => setLiveSearch(e.target.value)}
                   />
@@ -862,28 +862,28 @@ export default function WhaticketBroadcastDrawer() {
                     className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
                     onClick={() => setLiveFilter("all")}
                   >
-                    Todos ({liveKpis.totalOutbound || liveItems.length})
+                    Todos ({(liveKpis.totalOutbound || liveItems.length).toLocaleString("pt-BR")})
                   </button>
                   <button
                     type="button"
                     className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
                     onClick={() => setLiveFilter("sent")}
                   >
-                    ✓ Entregues ({liveKpis.deliveredCount})
+                    ✓ Entregues ({(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")})
                   </button>
                   <button
                     type="button"
                     className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
                     onClick={() => setLiveFilter("errors")}
                   >
-                    ❌ Falhas / Erros ({liveKpis.failedCount})
+                    ❌ Falhas / Erros ({(liveKpis.failedCount || 0).toLocaleString("pt-BR")})
                   </button>
                   <button
                     type="button"
                     className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
                     onClick={() => setLiveFilter("replies")}
                   >
-                    💬 Respostas ({liveKpis.repliedCount})
+                    💬 Respostas ({(liveKpis.repliedCount || 0).toLocaleString("pt-BR")})
                   </button>
                   <button
                     type="button"
