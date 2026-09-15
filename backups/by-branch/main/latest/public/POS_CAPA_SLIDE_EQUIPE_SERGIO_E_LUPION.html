@@ -18,6 +18,7 @@
       --primary-blue: #2563eb;
       --accent-gold: #fbbf24;
       --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -57,7 +58,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 44px 52px;
+      padding: 40px 48px;
     }
 
     /* Linhas e Detalhes Decorativos */
@@ -68,7 +69,7 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, #2563eb, #38bdf8, #fbbf24, #10b981);
+      background: linear-gradient(90deg, #2563eb, #38bdf8, #fbbf24, #a855f7, #10b981);
     }
 
     .watermark-glow {
@@ -87,8 +88,8 @@
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-      padding-bottom: 20px;
-      margin-bottom: 24px;
+      padding-bottom: 18px;
+      margin-bottom: 20px;
     }
 
     .header-left {
@@ -139,7 +140,7 @@
     }
 
     .campaign-name {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 800;
       color: #e2e8f0;
       background: rgba(30, 41, 59, 0.6);
@@ -152,8 +153,8 @@
     /* Conteúdo Principal em Grid */
     .main-grid {
       display: grid;
-      grid-template-columns: 1.15fr 1.85fr;
-      gap: 24px;
+      grid-template-columns: 1.1fr 1.9fr;
+      gap: 22px;
       flex: 1;
     }
 
@@ -192,7 +193,7 @@
     }
 
     .card-title {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.8px;
@@ -207,7 +208,7 @@
     }
 
     .group-name {
-      font-size: 16px;
+      font-size: 15.5px;
       font-weight: 800;
       color: var(--primary-cyan);
       margin-bottom: 8px;
@@ -230,7 +231,7 @@
     }
 
     .info-label {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--text-dim);
       font-weight: 600;
       text-transform: uppercase;
@@ -256,18 +257,18 @@
       gap: 16px;
     }
 
-    /* KPIs de Materiais */
+    /* KPIs de Materiais (4 Boxes) */
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
     }
 
     .kpi-box {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
       border-radius: 12px;
-      padding: 16px 14px;
+      padding: 14px 12px;
       text-align: left;
       position: relative;
       overflow: hidden;
@@ -284,53 +285,56 @@
     }
 
     .kpi-box.gold::after { background: var(--accent-gold); }
+    .kpi-box.purple::after { background: var(--accent-purple); }
     .kpi-box.emerald::after { background: var(--accent-emerald); }
 
     .kpi-header {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      white-space: nowrap;
     }
 
     .kpi-value {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       color: #ffffff;
-      margin-top: 6px;
+      margin-top: 5px;
       letter-spacing: -0.5px;
     }
 
     .kpi-sub {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--primary-cyan);
       font-weight: 700;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .kpi-sub.gold { color: var(--accent-gold); }
+    .kpi-sub.purple { color: var(--accent-purple); }
     .kpi-sub.emerald { color: var(--accent-emerald); }
 
     /* Grid de Locais de Atuação e Adesivaço */
     .locations-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      gap: 9px;
     }
 
     .location-pill {
       background: rgba(30, 41, 59, 0.5);
       border: 1px solid rgba(148, 163, 184, 0.12);
       border-radius: 8px;
-      padding: 9px 12px;
+      padding: 8px 12px;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 600;
       color: #e2e8f0;
       transition: all 0.2s;
@@ -348,7 +352,7 @@
     }
 
     .loc-tag {
-      font-size: 9.5px;
+      font-size: 9px;
       background: rgba(56, 189, 248, 0.15);
       color: var(--primary-cyan);
       padding: 2px 6px;
@@ -363,8 +367,8 @@
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid rgba(148, 163, 184, 0.12);
-      padding-top: 14px;
-      margin-top: 14px;
+      padding-top: 12px;
+      margin-top: 12px;
       font-size: 11.5px;
       color: var(--text-dim);
     }
@@ -419,7 +423,7 @@
         border: none;
         border-radius: 0;
         box-shadow: none;
-        padding: 36px 44px;
+        padding: 32px 40px;
       }
     }
   </style>
@@ -463,7 +467,7 @@
               <div class="group-name">
                 <span>📱</span> Equipe Sergio e Lupion Arapongas
               </div>
-              <p style="font-size: 12px; color: #94a3b8; line-height: 1.4;">
+              <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.4;">
                 Grupo oficial de alinhamento tático, comunicação e coordenação de lideranças de rua.
               </p>
 
@@ -481,11 +485,11 @@
           </div>
 
           <!-- RESUMO ESTRATÉGICO -->
-          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 10px; padding: 14px; margin-top: 12px;">
-            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 10px; padding: 12px; margin-top: 10px;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">
               ⚡ Coordenação de Linha de Frente
             </div>
-            <p style="font-size: 11.5px; color: #cbd5e1; line-height: 1.45;">
+            <p style="font-size: 11px; color: #cbd5e1; line-height: 1.4;">
               Engajamento orgânico diário com disparo de rotas, abastecimento de materiais e cobertura dos pontos comerciais e feiras livres.
             </p>
           </div>
@@ -496,31 +500,39 @@
       <!-- COLUNA DA DIREITA: VOLUMES E LOCAIS -->
       <div class="right-column">
 
-        <!-- MÉTRICAS DE MATERIAIS ENTREGUES (KPIS) -->
+        <!-- MÉTRICAS DE MATERIAIS ENTREGUES (KPIS - 4 BOXES) -->
         <div class="kpi-row">
           
           <div class="kpi-box">
             <div class="kpi-header">
-              <span>📰</span> Jornais Distribuídos
+              <span>📰</span> Jornais
             </div>
             <div class="kpi-value">30.000</div>
-            <div class="kpi-sub">Jornal Pedro & Sergio</div>
+            <div class="kpi-sub">Pedro & Sergio</div>
           </div>
 
           <div class="kpi-box gold">
             <div class="kpi-header">
-              <span>📑</span> Colinhas Entregues
+              <span>📑</span> Colinhas
             </div>
             <div class="kpi-value">50.000</div>
             <div class="kpi-sub gold">Distribuição Estratégica</div>
           </div>
 
+          <div class="kpi-box purple">
+            <div class="kpi-header">
+              <span>🚩</span> Wind Banners
+            </div>
+            <div class="kpi-value">80</div>
+            <div class="kpi-sub purple">Pontos de Impacto</div>
+          </div>
+
           <div class="kpi-box emerald">
             <div class="kpi-header">
-              <span>🚗</span> Perfurados (Adesivaço)
+              <span>🚗</span> Perfurados
             </div>
             <div class="kpi-value">800</div>
-            <div class="kpi-sub emerald">660 Aplicados · 140 Estoque</div>
+            <div class="kpi-sub emerald">660 Aplicados · 140 Est.</div>
           </div>
 
         </div>
@@ -529,7 +541,7 @@
         <div class="glass-card" style="flex: 1;">
           <div class="card-title-row">
             <div class="icon-box">📍</div>
-            <div class="card-title">Locais Atendidos · Adesivaço & Panfletagem</div>
+            <div class="card-title">Locais Atendidos · Adesivaço, Wind Banners & Panfletagem</div>
           </div>
 
           <div class="locations-grid">
@@ -569,8 +581,8 @@
             </div>
 
             <div class="location-pill">
-              <span class="loc-icon">🎯</span> Pontos Estratégicos da Cidade
-              <span class="loc-tag">Geral</span>
+              <span class="loc-icon">🎯</span> Pontos Estratégicos & Vias
+              <span class="loc-tag">Wind Banners</span>
             </div>
           </div>
         </div>
