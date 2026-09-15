@@ -1,0 +1,108 @@
+.vf-district-summary-card {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 1180;
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  width: min(680px, calc(100vw - 48px));
+  padding: 12px 14px;
+  border: 1px solid rgba(239, 132, 41, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 16px 38px rgba(23, 52, 92, 0.18);
+  backdrop-filter: blur(14px);
+  animation: vfDistrictSummaryIn 180ms ease-out both;
+}
+
+.vf-district-summary-main small,
+.vf-district-summary-main strong {
+  display: block;
+}
+
+.vf-district-summary-main small {
+  color: #a45b1e;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.vf-district-summary-main strong {
+  margin-top: 3px;
+  color: #17345c;
+  font-size: 15px;
+}
+
+.vf-district-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(70px, auto));
+  gap: 8px;
+}
+
+.vf-district-summary-stats span {
+  min-width: 76px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: #f7f9fc;
+  color: #6b7280;
+  font-size: 9px;
+  text-align: center;
+}
+
+.vf-district-summary-stats b {
+  display: block;
+  margin-bottom: 2px;
+  color: #17345c;
+  font-size: 14px;
+}
+
+.vf-district-summary-card > button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #17345c;
+  color: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.vf-district-summary-card > button:hover {
+  background: #214a7d;
+}
+
+@media (max-width: 900px) {
+  .vf-district-summary-card {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    grid-template-columns: 1fr auto;
+    width: auto;
+  }
+
+  .vf-district-summary-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@keyframes vfDistrictSummaryIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-district-summary-card {
+    animation: none;
+  }
+}
