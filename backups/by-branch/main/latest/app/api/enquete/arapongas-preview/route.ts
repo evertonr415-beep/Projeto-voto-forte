@@ -304,7 +304,12 @@ async function getResults() {
     delegado_jacovos: 385,
     aline_franzon: 192,
   };
-  const managementCounts = emptyCounts(MANAGEMENT_OPTIONS);
+  const managementCounts: Record<string, number> = {
+    ...emptyCounts(MANAGEMENT_OPTIONS),
+    boa: 5282,
+    ruim: 2331,
+    media: 2033,
+  };
   let totalResponses = 9646;
 
   for (const row of data || []) {
