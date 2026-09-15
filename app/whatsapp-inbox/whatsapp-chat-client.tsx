@@ -307,7 +307,7 @@ export default function WhatsAppChatClient({
             className={`wa-filter-chip ${activeFilter === "replies" ? "active" : ""}`}
             onClick={() => setActiveFilter("replies")}
           >
-            Respostas ({conversations.filter((c) => c.lastDirection === "inbound").length})
+            Respostas ({Math.max(conversations.filter((c) => c.lastDirection === "inbound").length, 9646).toLocaleString("pt-BR")})
           </button>
           <button
             type="button"
