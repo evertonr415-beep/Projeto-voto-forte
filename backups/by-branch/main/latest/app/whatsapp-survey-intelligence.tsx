@@ -112,22 +112,47 @@ export default function WhatsappSurveyIntelligence() {
     }
   };
 
-  const exportCsv = () => {
-    if (!responses.length) return;
-    const headers = "Nome,Telefone,Bairro,Cidade,Deputado Estadual,Deputado Federal,Sentimento,Mensagem,DataHora\n";
-    const rows = responses
-      .map(
-        (r) =>
-          `"${r.contactName.replace(/"/g, '""')}","${r.phone}","${r.district}","${r.city}","${r.stateCandidate}","${r.federalCandidate}","${r.sentiment}","${r.messageText.replace(/"/g, '""')}","${r.timestamp}"`,
-      )
-      .join("\n");
+  const exportCsv = async () => {
+    try {
+      const res = await apiFetch(`/api/whatsapp/survey?all=true&district=${encodeURIComponent(selectedDistrict)}`);
+      const data = await res.json();
+      const exportItems: SurveyResponseItem[] =
+        data.success && Array.isArray(data.responses) && data.responses.length > 0
+          ? data.responses
+          : responses;
 
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `VotoForte-Apuracao-WhatsApp-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+      if (!exportItems.length) return;
+      const headers = "ID,Nome,Telefone,Bairro,Cidade,Deputado Estadual,Deputado Federal,Sentimento,Mensagem,DataHora\n";
+      const rows = exportItems
+        .map(
+          (r, idx) =>
+            `"${exportItems.length - idx}","${(r.contactName || "Eleitor").replace(/"/g, '""')}","${r.phone}","${r.district}","${r.city || "Arapongas"}","${r.stateCandidate || ""}","${r.federalCandidate || ""}","${r.sentiment}","${(r.messageText || "").replace(/"/g, '""').replace(/\n/g, " | ")}","${r.timestamp}"`,
+        )
+        .join("\n");
+
+      const blob = new Blob(["\uFEFF" + headers + rows], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `VotoForte-Apuracao-WhatsApp-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch {
+      // Fallback simples se houver falha de rede
+      if (!responses.length) return;
+      const headers = "Nome,Telefone,Bairro,Cidade,Deputado Estadual,Deputado Federal,Sentimento,Mensagem,DataHora\n";
+      const rows = responses
+        .map(
+          (r) =>
+            `"${r.contactName.replace(/"/g, '""')}","${r.phone}","${r.district}","${r.city}","${r.stateCandidate}","${r.federalCandidate}","${r.sentiment}","${r.messageText.replace(/"/g, '""')}","${r.timestamp}"`,
+        )
+        .join("\n");
+      const blob = new Blob(["\uFEFF" + headers + rows], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `VotoForte-Apuracao-WhatsApp-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
   };
 
   const downloadPrint = (item: SurveyResponseItem) => {
