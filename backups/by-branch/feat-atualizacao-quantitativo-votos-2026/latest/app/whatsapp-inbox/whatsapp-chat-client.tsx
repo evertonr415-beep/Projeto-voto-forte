@@ -1,0 +1,550 @@
+"use client";
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { apiFetch } from "../supabase-client";
+import { Icons } from "../ui-icons";
+import { formatDisplayPhone, formatReadableSurveyText } from "../api/whatsapp/survey-formatter";
+import "./whatsapp-chat.css";
+
+export type ChatConversation = {
+  id: string;
+  phone: string;
+  contactName: string;
+  district?: string;
+  avatarUrl?: string;
+  lastMessageText: string;
+  lastMessageTime: string;
+  lastDirection: "inbound" | "outbound" | "status";
+  lastStatus: "sent" | "delivered" | "read" | "failed" | "received";
+  unreadCount: number;
+  totalMessages: number;
+  votingSentiment?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  messageId?: string;
+  phone: string;
+  direction: "inbound" | "outbound";
+  text: string;
+  type: string;
+  status: "sent" | "delivered" | "read" | "failed" | "received";
+  timestamp: string;
+  senderName?: string;
+};
+
+const QUICK_RESPONSES = [
+  "Olá! Como posso ajudar você hoje?",
+  "Obrigado por responder nossa pesquisa eleitoral em Arapongas! 🤝",
+  "Gostaríamos de saber: quem você prefere para Deputado Estadual e Federal?",
+  "Muito obrigado pelo seu apoio e carinho com nossa equipe! 🗳️",
+  "Ficamos à disposição para qualquer dúvida ou sugestão para nossa cidade.",
+];
+
+export default function WhatsAppChatClient({
+  onBackToDashboard,
+  initialPhone,
+}: {
+  onBackToDashboard?: () => void;
+  initialPhone?: string;
+}) {
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [selectedPhone, setSelectedPhone] = useState<string>(initialPhone || "");
+  const [selectedContact, setSelectedContact] = useState<{
+    name?: string;
+    district?: string;
+    phone?: string;
+    notes?: string;
+  } | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "replies" | "sent">("all");
+  const [inputText, setInputText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loadingList, setLoadingList] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendSuccessNotice, setSendSuccessNotice] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Formata telefone
+  const formatPhone = (raw: string) => {
+    return formatDisplayPhone(raw);
+  };
+
+  // Formata horário
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return "";
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const isToday =
+        date.getDate() === now.getDate() &&
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear();
+
+      if (isToday) {
+        return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
+
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+      const isYesterday =
+        date.getDate() === yesterday.getDate() &&
+        date.getMonth() === yesterday.getMonth() &&
+        date.getFullYear() === yesterday.getFullYear();
+
+      if (isYesterday) return "Ontem";
+
+      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
+
+  // Carrega conversas
+  const loadConversations = useCallback(async (silent = false) => {
+    if (!silent) setLoadingList(true);
+    try {
+      const res = await apiFetch(`/api/whatsapp/chat?search=${encodeURIComponent(searchQuery)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setConversations(data.conversations || []);
+        if (!selectedPhone && data.conversations?.length > 0 && typeof window !== "undefined" && window.innerWidth > 768) {
+          setSelectedPhone(data.conversations[0].phone);
+        }
+      }
+    } catch (err) {
+      console.warn("Erro ao carregar conversas do WhatsApp:", err);
+    } finally {
+      if (!silent) setLoadingList(false);
+    }
+  }, [searchQuery, selectedPhone]);
+
+  // Carrega mensagens do telefone selecionado
+  const loadMessages = useCallback(async (phone: string, silent = false) => {
+    if (!phone) return;
+    if (!silent) setLoadingMessages(true);
+    try {
+      const res = await apiFetch(`/api/whatsapp/chat?phone=${encodeURIComponent(phone)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessages(data.messages || []);
+        if (data.contact) {
+          setSelectedContact(data.contact);
+        }
+      }
+    } catch (err) {
+      console.warn("Erro ao carregar mensagens da conversa:", err);
+    } finally {
+      if (!silent) setLoadingMessages(false);
+    }
+  }, []);
+
+  // Polling automático
+  useEffect(() => {
+    void loadConversations();
+    const interval = setInterval(() => {
+      void loadConversations(true);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (selectedPhone) {
+      void loadMessages(selectedPhone);
+      const interval = setInterval(() => {
+        void loadMessages(selectedPhone, true);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedPhone, loadMessages]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Enviar Mensagem
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!inputText.trim() || !selectedPhone || sending) return;
+
+    const messageText = inputText.trim();
+    setInputText("");
+    setSending(true);
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      phone: selectedPhone,
+      direction: "outbound",
+      text: messageText,
+      type: "text",
+      status: "sent",
+      timestamp: new Date().toISOString(),
+      senderName: "Voto Forte",
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setSendSuccessNotice(true);
+    setTimeout(() => setSendSuccessNotice(false), 3000);
+
+    try {
+      const res = await apiFetch("/api/whatsapp/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: selectedPhone,
+          message: messageText,
+          contactName: selectedContact?.name || activeConv?.contactName,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)),
+        );
+      } else {
+        void loadMessages(selectedPhone, true);
+        void loadConversations(true);
+      }
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)),
+      );
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSendMessage();
+    }
+  };
+
+  const filteredConversations = useMemo(() => {
+    return conversations.filter((c) => {
+      if (activeFilter === "unread") return c.unreadCount > 0;
+      if (activeFilter === "replies") return c.lastDirection === "inbound";
+      if (activeFilter === "sent") return c.lastDirection === "outbound";
+      return true;
+    });
+  }, [conversations, activeFilter]);
+
+  const activeConv = useMemo(() => {
+    return conversations.find((c) => c.phone === selectedPhone);
+  }, [conversations, selectedPhone]);
+
+  return (
+    <div className="wa-container">
+      {/* Sidebar: Lista de Conversas */}
+      <div className={`wa-sidebar ${selectedPhone ? "is-hidden-mobile" : ""}`}>
+        <div className="wa-sidebar-header">
+          <div className="wa-profile-row">
+            <div className="wa-profile-avatar">VF</div>
+            <div>
+              <div className="wa-profile-title">
+                WhatsApp Oficial
+                <span className="wa-profile-badge">Meta Cloud</span>
+              </div>
+            </div>
+          </div>
+          <div className="wa-header-actions">
+            {onBackToDashboard && (
+              <button
+                type="button"
+                className="wa-icon-btn"
+                title="Voltar ao Painel"
+                onClick={onBackToDashboard}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Busca */}
+        <div className="wa-search-container">
+          <div className="wa-search-box">
+            <span className="wa-search-icon">🔍</span>
+            <input
+              type="text"
+              className="wa-search-input"
+              placeholder="Pesquisar ou começar uma nova conversa"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="wa-filter-chips">
+          <button
+            type="button"
+            className={`wa-filter-chip ${activeFilter === "all" ? "active" : ""}`}
+            onClick={() => setActiveFilter("all")}
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            className={`wa-filter-chip ${activeFilter === "unread" ? "active" : ""}`}
+            onClick={() => setActiveFilter("unread")}
+          >
+            Não lidas
+          </button>
+          <button
+            type="button"
+            className={`wa-filter-chip ${activeFilter === "replies" ? "active" : ""}`}
+            onClick={() => setActiveFilter("replies")}
+          >
+            Respostas ({conversations.filter((c) => c.lastDirection === "inbound").length})
+          </button>
+          <button
+            type="button"
+            className={`wa-filter-chip ${activeFilter === "sent" ? "active" : ""}`}
+            onClick={() => setActiveFilter("sent")}
+          >
+            Disparos
+          </button>
+        </div>
+
+        {/* Lista */}
+        <div className="wa-conversation-list">
+          {loadingList && conversations.length === 0 ? (
+            <div style={{ padding: 24, textAlign: "center", color: "#8696a0", fontSize: 13 }}>
+              Carregando conversas do WhatsApp…
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", color: "#8696a0", fontSize: 13 }}>
+              Nenhuma conversa encontrada.
+            </div>
+          ) : (
+            filteredConversations.map((conv) => {
+              const isActive = conv.phone === selectedPhone;
+              const initial = (conv.contactName || "E").charAt(0).toUpperCase();
+
+              return (
+                <div
+                  key={conv.phone}
+                  className={`wa-conversation-item ${isActive ? "is-active" : ""}`}
+                  onClick={() => setSelectedPhone(conv.phone)}
+                >
+                  <div className="wa-conv-avatar">
+                    {initial}
+                  </div>
+                  <div className="wa-conv-details">
+                    <div className="wa-conv-top">
+                      <span className="wa-conv-name" title={conv.contactName}>
+                        {conv.contactName}
+                        {conv.district && (
+                          <span className="wa-conv-district">{conv.district}</span>
+                        )}
+                      </span>
+                      <span className="wa-conv-time">{formatTime(conv.lastMessageTime)}</span>
+                    </div>
+                    <div className="wa-conv-bottom">
+                      <div className="wa-conv-preview">
+                        {conv.lastDirection === "outbound" && (
+                          <span className="wa-check-icon">
+                            {conv.lastStatus === "read" ? (
+                              <span className="wa-check-blue">✓✓</span>
+                            ) : conv.lastStatus === "delivered" ? (
+                              <span className="wa-check-grey">✓✓</span>
+                            ) : conv.lastStatus === "failed" ? (
+                              <span style={{ color: "#ea0038" }}>⚠️</span>
+                            ) : (
+                              <span className="wa-check-grey">✓</span>
+                            )}
+                          </span>
+                        )}
+                        <span>{formatReadableSurveyText(conv.lastMessageText)}</span>
+                      </div>
+                      {conv.unreadCount > 0 && (
+                        <div className="wa-conv-badge">{conv.unreadCount}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Painel Central: Chat Aberto */}
+      {selectedPhone ? (
+        <div className={`wa-chat-area ${!selectedPhone ? "is-hidden-mobile" : ""}`}>
+          {/* Header do Chat */}
+          <div className="wa-chat-header">
+            <div className="wa-chat-header-user">
+              <button
+                type="button"
+                className="wa-back-btn"
+                onClick={() => setSelectedPhone("")}
+                title="Voltar para a lista"
+              >
+                ←
+              </button>
+              <div className="wa-chat-header-avatar">
+                {(selectedContact?.name || activeConv?.contactName || "E").charAt(0).toUpperCase()}
+              </div>
+              <div className="wa-chat-header-info">
+                <div className="wa-chat-header-name">
+                  {selectedContact?.name || activeConv?.contactName || formatPhone(selectedPhone)}
+                  {selectedContact?.district && (
+                    <span className="wa-conv-district">{selectedContact.district}</span>
+                  )}
+                </div>
+                <div className="wa-chat-header-status">
+                  {formatPhone(selectedPhone)} • online via WhatsApp API
+                </div>
+              </div>
+            </div>
+
+            <div className="wa-chat-header-actions">
+              <button
+                type="button"
+                className="wa-icon-btn"
+                title="Atualizar mensagens"
+                onClick={() => void loadMessages(selectedPhone)}
+              >
+                🔄
+              </button>
+            </div>
+          </div>
+
+          {/* Área de Mensagens (Thread) */}
+          <div className="wa-messages-body">
+            <div className="wa-date-divider">
+              🔒 As mensagens são protegidas pela criptografia oficial da Meta
+            </div>
+
+            {loadingMessages && messages.length === 0 ? (
+              <div style={{ textAlign: "center", color: "#8696a0", padding: 20 }}>
+                Carregando histórico de mensagens…
+              </div>
+            ) : messages.length === 0 ? (
+              <div style={{ textAlign: "center", color: "#8696a0", padding: 40 }}>
+                Nenhuma mensagem nesta conversa ainda. Digite uma mensagem abaixo e envie agora mesmo!
+              </div>
+            ) : (
+              messages.map((msg) => {
+                const isInbound = msg.direction === "inbound";
+                return (
+                  <div
+                    key={msg.id}
+                    className={`wa-bubble-row ${isInbound ? "inbound" : "outbound"}`}
+                  >
+                    <div className={`wa-bubble ${isInbound ? "inbound" : "outbound"}`}>
+                      {isInbound && msg.senderName && (
+                        <div className="wa-bubble-sender">{msg.senderName}</div>
+                      )}
+                      <div className="wa-bubble-text" style={{ whiteSpace: "pre-wrap" }}>
+                        {formatReadableSurveyText(msg.text)}
+                      </div>
+                      <div className="wa-bubble-meta">
+                        <span className="wa-bubble-time">{formatTime(msg.timestamp)}</span>
+                        {!isInbound && (
+                          <span className="wa-check-icon">
+                            {msg.status === "read" ? (
+                              <span className="wa-check-blue">✓✓</span>
+                            ) : msg.status === "delivered" ? (
+                              <span className="wa-check-grey">✓✓</span>
+                            ) : msg.status === "failed" ? (
+                              <span style={{ color: "#ea0038" }}>⚠️</span>
+                            ) : (
+                              <span className="wa-check-grey">✓</span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Barra de Respostas Rápidas / Sugestões */}
+          <div className="wa-quick-replies-bar">
+            <span style={{ fontSize: 11, color: "#667781", fontWeight: 700 }}>⚡ Respostas Rápidas:</span>
+            {QUICK_RESPONSES.map((qr, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="wa-quick-reply-chip"
+                onClick={() => {
+                  setInputText(qr);
+                  inputRef.current?.focus();
+                }}
+              >
+                {qr}
+              </button>
+            ))}
+          </div>
+
+          {/* Footer de Envio Oficial */}
+          <div className="wa-chat-input-bar">
+            <button
+              type="button"
+              className="wa-icon-btn"
+              title="Inserir Emoji"
+              onClick={() => {
+                setInputText((prev) => prev + " 🤝");
+                inputRef.current?.focus();
+              }}
+            >
+              😊
+            </button>
+            <div className="wa-input-wrapper">
+              <textarea
+                ref={inputRef}
+                className="wa-input-field"
+                rows={1}
+                placeholder="Digite uma mensagem para este contato (Pressione Enter para enviar)"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+              />
+            </div>
+            <button
+              type="button"
+              className="wa-send-btn"
+              onClick={() => void handleSendMessage()}
+              disabled={!inputText.trim() || sending}
+              title={inputText.trim() ? "Enviar Mensagem (Enter)" : "Digite uma mensagem para enviar"}
+            >
+              {sending ? "⏳" : "➤"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Estado Vazio (Desktop) */
+        <div className="wa-empty-chat">
+          <div className="wa-empty-icon">
+            <Icons.WhatsApp size={64} />
+          </div>
+          <div className="wa-empty-title">Voto Forte WhatsApp Web</div>
+          <div className="wa-empty-subtitle">
+            Selecione uma conversa à esquerda para ler, acompanhar as mensagens e responder os eleitores diretamente pelo WhatsApp.
+          </div>
+          <div className="wa-encryption-badge">
+            🔒 Integrado com a Meta Cloud API Oficial
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
