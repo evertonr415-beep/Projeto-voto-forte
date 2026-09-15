@@ -1021,6 +1021,15 @@ export async function GET(request: Request) {
     "Luiz França": 2,
     "Indeciso / Não sabe": 1,
   };
+  const senatorCounts: Record<string, number> = {
+    "Alexandre Curi": 8,
+    "Cristina Graeml": 7,
+    "Deltan Dallagnol": 7,
+    "Filipe Barros": 5,
+    "Gleisi": 4,
+    "Dr Rosinha": 2,
+    "Indeciso / Não sabe": 1,
+  };
   const presidentCounts: Record<string, number> = {
     "Flávio Bolsonaro": 12,
     "Lula": 3,
@@ -1046,6 +1055,7 @@ export async function GET(request: Request) {
   const stateRanking = toRanking(stateCounts);
   const federalRanking = toRanking(federalCounts);
   const governorRanking = toRanking(governorCounts);
+  const senatorRanking = toRanking(senatorCounts);
   const presidentRanking = toRanking(presidentCounts);
 
   const districtRanking = Object.entries(districtCounts)
@@ -1064,6 +1074,7 @@ export async function GET(request: Request) {
     stateRanking,
     federalRanking,
     governorRanking,
+    senatorRanking,
     presidentRanking,
     districtRanking,
     responses,
