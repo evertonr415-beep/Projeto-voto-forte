@@ -8,6 +8,7 @@ type PollResults = {
   totalResponses: number;
   presidentRanking: RankingItem[];
   governorRanking: RankingItem[];
+  senatorRanking: RankingItem[];
   federalRanking: RankingItem[];
   stateRanking: RankingItem[];
 };
@@ -28,6 +29,15 @@ const governorCandidates: Candidate[] = [
   { id: "requiao_filho_pdt", name: "Requião Filho", party: "PDT" },
   { id: "sandro_alex_psd", name: "Sandro Alex", party: "PSD" },
   { id: "luiz_franca_missao", name: "Luiz França", party: "Missão" },
+];
+
+const senatorCandidates: Candidate[] = [
+  { id: "alexandre_curi", name: "Alexandre Curi", party: "REPUBLICANOS" },
+  { id: "cristina_graeml", name: "Cristina Graeml", party: "PSD" },
+  { id: "deltan_dallagnol", name: "Deltan Dallagnol", party: "NOVO" },
+  { id: "filipe_barros", name: "Filipe Barros", party: "PL" },
+  { id: "gleisi", name: "Gleisi", party: "PT" },
+  { id: "dr_rosinha", name: "Dr Rosinha", party: "PT" },
 ];
 
 const federalCandidates: Candidate[] = [
@@ -56,10 +66,16 @@ const specialCandidates: Candidate[] = [
 ];
 
 const allCandidateInfo: Record<string, Candidate> = Object.fromEntries(
-  [...presidentCandidates, ...governorCandidates, ...federalCandidates, ...stateCandidates, ...specialCandidates].map((c) => [c.id, c]),
+  [...presidentCandidates, ...governorCandidates, ...senatorCandidates, ...federalCandidates, ...stateCandidates, ...specialCandidates].map((c) => [c.id, c]),
 );
 
 const candidatePhotos: Record<string, string> = {
+  alexandre_curi: "https://storage2.assembleia.pr.leg.br/img/y3n1sE1n35-E4-L_2B8B_P5U3qQ=/full-fit-in/300x300/deputados/alexandre-curi.png",
+  cristina_graeml: "https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/foto/2/160002005080/2024/75353",
+  deltan_dallagnol: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/220559.jpg",
+  dr_rosinha: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73459.jpg",
+  filipe_barros: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204374.jpg",
+  gleisi: "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/74416.jpg",
   lula_pt: "https://www.gov.br/planejamento/pt-br/assuntos/noticias/2026/imagens/55156120202_eb131de887_o.jpg",
   flavio_bolsonaro_pl: "https://legis.senado.leg.br/senadores/fotos-oficiais/5894",
   augusto_cury_avante: "https://media.gcmais.com.br/site-assets/articles/politica/augusto-cury--rimg.webp",
@@ -290,7 +306,7 @@ function EnqueteForm() {
             <h2 style={{ margin: "0 0 9px", color: "#172033", fontSize: 22, fontWeight: 900 }}>{alreadyAnswered ? "Você já participou desta enquete" : "Obrigado pela participação!"}</h2>
             <p style={{ margin: 0, color: "#64748b", fontSize: 14, lineHeight: 1.6 }}>{alreadyAnswered ? "Sua participação anterior foi reconhecida. Para manter a enquete justa, é permitida apenas uma resposta por participante." : `Sua resposta foi registrada com sucesso${name ? `, ${name}` : ""}. Obrigado por contribuir com a enquete de Arapongas.`}</p>
             <div style={{ marginTop: 20, padding: 14, borderRadius: 14, background: "#f5f9ff", border: "1px solid #dbeafe" }}><div style={{ color: "#1e40af", fontWeight: 900, fontSize: 16 }}>Resultado parcial</div><div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>{results?.totalResponses ?? 0} participação{(results?.totalResponses ?? 0) === 1 ? "" : "ões"} válida{(results?.totalResponses ?? 0) === 1 ? "" : "s"} nesta preview</div></div>
-            {results && <><RankingCard title="Presidente da República" icon="🇧🇷" ranking={results.presidentRanking} /><RankingCard title="Governador do Paraná" icon="🗳️" ranking={results.governorRanking} /><RankingCard title="Deputado Federal" icon="🏛️" ranking={results.federalRanking} /><RankingCard title="Deputado Estadual" icon="📊" ranking={results.stateRanking} /></>}
+            {results && <><RankingCard title="Presidente da República" icon="🇧🇷" ranking={results.presidentRanking} /><RankingCard title="Governador do Paraná" icon="🗳️" ranking={results.governorRanking} /><RankingCard title="Senador pelo Paraná" icon="🏛️" ranking={results.senatorRanking} /><RankingCard title="Deputado Federal" icon="🏛️" ranking={results.federalRanking} /><RankingCard title="Deputado Estadual" icon="📊" ranking={results.stateRanking} /></>}
             <p style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, margin: "18px 4px 0" }}>Resultado parcial de uma enquete online. As porcentagens são calculadas somente sobre as participações válidas desta versão de teste.</p>
           </div>
         </main>
