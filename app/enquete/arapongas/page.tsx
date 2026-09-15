@@ -6,6 +6,7 @@ import ArapongasFotosPreviewLayout from "../arapongas-fotos-preview/layout";
 
 const OFFICIAL_PARTICIPANT_KEY = "vf_poll_arapongas_pid_v1";
 const VISUAL_PARTICIPANT_KEY = "vf_poll_arapongas_photos_preview_pid_v1";
+const RESULT_URL = "https://www.votofortearapongas.com.br/resultado/";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
@@ -21,6 +22,48 @@ export default function EnqueteArapongasPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    const patchedFetch: typeof window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init);
+
+      try {
+        const requestUrl =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+
+        if (method === "POST" && requestUrl.includes("/api/enquete/arapongas-fotos-preview")) {
+          let action = "";
+          if (typeof init?.body === "string") {
+            try {
+              action = String(JSON.parse(init.body)?.action || "");
+            } catch {
+              action = "";
+            }
+          }
+
+          if (action === "submit") {
+            const data = await response.clone().json().catch(() => null);
+            if (response.ok && (data?.success || data?.alreadyAnswered)) {
+              window.setTimeout(() => {
+                window.location.assign(RESULT_URL);
+              }, 180);
+            }
+          }
+        }
+      } catch {
+        // Se a detecção falhar, preserva o fluxo normal da enquete.
+      }
+
+      return response;
+    };
+
+    window.fetch = patchedFetch;
+
     try {
       const officialId =
         window.localStorage.getItem(OFFICIAL_PARTICIPANT_KEY) || readCookie(OFFICIAL_PARTICIPANT_KEY);
@@ -34,6 +77,10 @@ export default function EnqueteArapongasPage() {
     } finally {
       setReady(true);
     }
+
+    return () => {
+      if (window.fetch === patchedFetch) window.fetch = originalFetch;
+    };
   }, []);
 
   if (!ready) {
