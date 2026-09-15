@@ -718,7 +718,7 @@ export default function VotingChartsClient({
       <section className="voting-recent-feed">
         <div className="voting-chart-header">
           <h2><Icons.Clock size={20} color="#38bdf8" /><span>Últimas participações</span></h2>
-          <span className="voting-total-badge">{Math.min(responses.length, 10)} recentes</span>
+          <span className="voting-total-badge">{displayedTotalVotes.toLocaleString("pt-BR")} participações</span>
         </div>
 
         <div className="voting-feed-desktop">
