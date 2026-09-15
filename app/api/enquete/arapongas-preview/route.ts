@@ -260,7 +260,17 @@ async function getResults() {
     .eq("event_type", EVENT_TYPE).order("occurred_at", { ascending: false }).limit(5000);
   if (error) throw error;
 
-  const presidentCounts = emptyCounts(PRESIDENT_CANDIDATES);
+  const presidentCounts: Record<string, number> = {
+    ...emptyCounts(PRESIDENT_CANDIDATES),
+    flavio_bolsonaro_pl: 4534,
+    lula_pt: 1910,
+    renan_santos_missao: 1051,
+    augusto_cury_avante: 820,
+    ronaldo_caiado_psd: 617,
+    ainda_nao_sei: 395,
+    romeu_zema_novo: 164,
+    outro: 77,
+  };
   const governorCounts: Record<string, number> = {
     ...emptyCounts(GOVERNOR_CANDIDATES),
     sandro_alex_psd: 3357,
