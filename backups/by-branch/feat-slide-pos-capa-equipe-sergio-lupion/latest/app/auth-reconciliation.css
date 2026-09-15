@@ -1,0 +1,264 @@
+.vf-auth-reconciliation {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #e1e8f0;
+}
+
+.vf-auth-reconciliation > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.vf-auth-reconciliation > header small {
+  color: #b7832e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.6px;
+}
+
+.vf-auth-reconciliation > header h4 {
+  margin: 4px 0 6px;
+  color: #123759;
+  font-size: 20px;
+}
+
+.vf-auth-reconciliation > header p {
+  max-width: 760px;
+  margin: 0;
+  color: #6b7d91;
+  line-height: 1.5;
+}
+
+.vf-auth-reconciliation > header button,
+.vf-auth-account-list article > button,
+.vf-auth-reconcile-actions button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #123f72;
+  color: #fff;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.vf-auth-reconciliation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.vf-auth-reconciliation-message,
+.vf-auth-reconcile-warning,
+.vf-auth-parent-note {
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: #fff7e7;
+  color: #755018;
+  line-height: 1.5;
+}
+
+.vf-auth-reconciliation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.vf-auth-reconciliation-summary span {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #496078;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.vf-auth-account-list {
+  display: grid;
+  gap: 10px;
+}
+
+.vf-auth-account-list article {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(280px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e0e8f0;
+  border-radius: 14px;
+  background: #fbfcfe;
+}
+
+.vf-auth-account-main strong,
+.vf-auth-account-main small {
+  display: block;
+}
+
+.vf-auth-account-main strong {
+  color: #153554;
+}
+
+.vf-auth-account-main small {
+  margin-top: 3px;
+  color: #718297;
+}
+
+.vf-auth-account-main > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.vf-auth-account-main span,
+.vf-auth-account-main em {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.vf-auth-account-main span {
+  background: #edf2f7;
+  color: #34506d;
+}
+
+.vf-auth-account-main .state-confirmed_unlinked {
+  background: #fff3d8;
+  color: #856019;
+}
+
+.vf-auth-account-main .state-unconfirmed {
+  background: #fdecec;
+  color: #a43c3c;
+}
+
+.vf-auth-account-main .state-pending_invitation {
+  background: #eaf0fb;
+  color: #315b92;
+}
+
+.vf-auth-account-main em {
+  background: transparent;
+  color: #77889c;
+  font-weight: 700;
+}
+
+.vf-auth-account-list dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.vf-auth-account-list dl div {
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.vf-auth-account-list dt {
+  color: #7b8da0;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.vf-auth-account-list dd {
+  margin: 3px 0 0;
+  color: #153554;
+  font-weight: 900;
+}
+
+.vf-auth-account-list article > button:disabled {
+  background: #e4e9ef;
+  color: #7b8896;
+}
+
+.vf-auth-reconcile-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #e1c888;
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+.vf-auth-reconcile-warning,
+.vf-auth-reconcile-actions {
+  grid-column: 1 / -1;
+}
+
+.vf-auth-reconcile-warning {
+  margin: 0;
+}
+
+.vf-auth-reconcile-form label,
+.vf-auth-parent-note {
+  display: grid;
+  gap: 6px;
+  color: #607287;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vf-auth-reconcile-form input,
+.vf-auth-reconcile-form select {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 11px;
+  border: 1px solid #ced9e5;
+  border-radius: 10px;
+  background: #fff;
+  color: #173b60;
+  font: inherit;
+  font-weight: 650;
+}
+
+.vf-auth-parent-note {
+  margin: 0;
+  justify-content: center;
+  background: #eef5fd;
+  color: #264d75;
+}
+
+.vf-auth-reconcile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.vf-auth-reconcile-actions button:first-child {
+  background: #eaf0f6;
+  color: #254663;
+}
+
+@media (max-width: 900px) {
+  .vf-auth-account-list article {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .vf-auth-reconciliation > header {
+    display: grid;
+  }
+
+  .vf-auth-account-list dl,
+  .vf-auth-reconcile-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vf-auth-reconcile-form label,
+  .vf-auth-parent-note,
+  .vf-auth-reconcile-warning,
+  .vf-auth-reconcile-actions {
+    grid-column: 1 / -1;
+  }
+}
