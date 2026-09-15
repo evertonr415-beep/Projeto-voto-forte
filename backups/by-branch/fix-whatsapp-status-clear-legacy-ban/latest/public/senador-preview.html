@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VotoForte Paraná — Apuração e Gráficos com Aba Senador</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080d17;
+      --card-bg: #101a2b;
+      --border: rgba(148, 163, 184, 0.16);
+      --accent-blue: #38bdf8;
+      --accent-green: #34d399;
+      --accent-gold: #fbbf24;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 24px 16px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .header-card {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.10), transparent 38%), linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(23, 37, 58, 0.88));
+      box-shadow: 0 14px 38px rgba(2, 8, 23, 0.24);
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-row h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px;
+      border: 1px solid rgba(52, 211, 153, 0.34);
+      border-radius: 999px;
+      color: #44d9aa;
+      background: rgba(16, 185, 129, 0.11);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
+    }
+
+    /* BARRA DE ABAS IGUAL AO SEU SISTEMA */
+    .voting-nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 10px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .voting-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: rgba(30, 41, 59, 0.5);
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .voting-tab-btn:hover {
+      background: rgba(51, 65, 85, 0.6);
+      color: #f1f5f9;
+    }
+
+    .voting-tab-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 18px rgba(2, 132, 199, 0.45);
+    }
+
+    .voting-tab-btn.highlight-new {
+      position: relative;
+    }
+
+    .badge-new {
+      background: #10b981;
+      color: #042f2e;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 8px;
+      margin-left: 4px;
+    }
+
+    /* RANKING CARD */
+    .ranking-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .ranking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+
+    .ranking-title {
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #38bdf8;
+    }
+
+    .candidate-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .candidate-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #152238;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      transition: transform 0.15s ease;
+    }
+
+    .candidate-item:hover {
+      transform: translateX(4px);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .candidate-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      object-fit: cover;
+      background: #1e293b;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #38bdf8;
+    }
+
+    .candidate-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .candidate-meta {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 2px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .party-tag {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #60a5fa;
+      font-size: 12px;
+    }
+
+    .number-tag {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      color: #fbbf24;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-card">
+      <div>
+        <div class="title-row">
+          <h1>📊 Apuração e Gráficos de Votação</h1>
+          <span class="live-badge"><span class="live-dot"></span> Tempo Real</span>
+        </div>
+        <p style="color: #94a3b8; font-size: 13px; margin-top: 6px;">VotoForte Paraná • Prévia oficial atualizada</p>
+      </div>
+    </div>
+
+    <!-- ABAS DO SISTEMA COM A NOVA ABA SENADOR ADICIONADA AO LADO DE GOVERNADOR -->
+    <nav class="voting-nav-tabs" aria-label="Cargo da apuração">
+      <button class="voting-tab-btn" onclick="switchTab('state')">
+        🏛️ <span>Estadual</span>
+      </button>
+      <button class="voting-tab-btn" onclick="switchTab('federal')">
+        🇧🇷 <span>Federal</span>
+      </button>
+      <button class="voting-tab-btn" onclick="switchTab('governor')">
+        🗳️ <span>Governador</span>
+      </button>
+      <button class="voting-tab-btn active highlight-new" onclick="switchTab('senator')">
+        🏛️ <span>Senador</span> <span class="badge-new">NOVA</span>
+      </button>
+      <button class="voting-tab-btn" onclick="switchTab('president')">
+        🏢 <span>Presidente</span>
+      </button>
+      <button class="voting-tab-btn" onclick="switchTab('management')">
+        📈 <span>Gestão</span>
+      </button>
+    </nav>
+
+    <!-- CONTEÚDO DA ABA SENADOR -->
+    <div class="ranking-card" id="card-senator">
+      <div class="ranking-header">
+        <div class="ranking-title">
+          <span>🏛️</span>
+          <span>Ranking — Senador pelo Paraná</span>
+        </div>
+        <span style="font-size: 13px; color: #94a3b8;">Candidatos Configurados</span>
+      </div>
+
+      <div class="candidate-list">
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://storage2.assembleia.pr.leg.br/img/y3n1sE1n35-E4-L_2B8B_P5U3qQ=/full-fit-in/300x300/deputados/alexandre-curi.png" alt="Alexandre Curi" onerror="this.outerHTML='<div class=\'avatar\'>AC</div>'">
+            <div>
+              <div class="candidate-name">Alexandre Curi</div>
+              <div class="candidate-meta">
+                <span class="party-tag">REPUBLICANOS</span>
+                <span class="number-tag">Nº 100</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/foto/2/160002005080/2024/75353" alt="Cristina Graeml" onerror="this.outerHTML='<div class=\'avatar\'>CG</div>'">
+            <div>
+              <div class="candidate-name">Cristina Graeml</div>
+              <div class="candidate-meta">
+                <span class="party-tag">PSD</span>
+                <span class="number-tag">Nº 555</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/220559.jpg" alt="Deltan Dallagnol" onerror="this.outerHTML='<div class=\'avatar\'>DD</div>'">
+            <div>
+              <div class="candidate-name">Deltan Dallagnol</div>
+              <div class="candidate-meta">
+                <span class="party-tag">NOVO</span>
+                <span class="number-tag">Nº 300</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204374.jpg" alt="Filipe Barros" onerror="this.outerHTML='<div class=\'avatar\'>FB</div>'">
+            <div>
+              <div class="candidate-name">Filipe Barros</div>
+              <div class="candidate-meta">
+                <span class="party-tag">PL</span>
+                <span class="number-tag">Nº 222</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/74416.jpg" alt="Gleisi" onerror="this.outerHTML='<div class=\'avatar\'>GL</div>'">
+            <div>
+              <div class="candidate-name">Gleisi</div>
+              <div class="candidate-meta">
+                <span class="party-tag">PT</span>
+                <span class="number-tag">Nº 131</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="candidate-item">
+          <div class="candidate-left">
+            <img class="avatar" src="https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73459.jpg" alt="Dr Rosinha" onerror="this.outerHTML='<div class=\'avatar\'>DR</div>'">
+            <div>
+              <div class="candidate-name">Dr Rosinha</div>
+              <div class="candidate-meta">
+                <span class="party-tag">PT</span>
+                <span class="number-tag">Nº 132</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.voting-tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+    }
+  </script>
+</body>
+</html>
