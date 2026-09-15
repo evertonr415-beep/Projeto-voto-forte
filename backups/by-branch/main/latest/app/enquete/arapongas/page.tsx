@@ -46,12 +46,17 @@ export default function EnqueteArapongasPage() {
             }
           }
 
-          if (action === "submit") {
+          if (action === "submit" || action === "status") {
             const data = await response.clone().json().catch(() => null);
-            if (response.ok && (data?.success || data?.alreadyAnswered)) {
+            const shouldRedirect =
+              action === "submit"
+                ? response.ok && (data?.success || data?.alreadyAnswered)
+                : response.ok && data?.alreadyAnswered;
+
+            if (shouldRedirect) {
               window.setTimeout(() => {
                 window.location.assign(RESULT_URL);
-              }, 180);
+              }, action === "status" ? 40 : 180);
             }
           }
         }
