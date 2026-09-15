@@ -136,7 +136,14 @@ export async function POST() {
       // O diagnóstico da Meta continua funcionando mesmo sem histórico local.
     }
 
-    const statusEvents = rows.filter((row) => row.event_type === "message_status");
+    const MIGRATION_TIMESTAMP = Date.parse("2026-09-15T00:00:00Z");
+
+    const statusEvents = rows.filter((row) => {
+      if (row.event_type !== "message_status") return false;
+      const t = timestamp(row);
+      return t >= MIGRATION_TIMESTAMP;
+    });
+
     const latestDelivered = statusEvents.find((row) =>
       ["delivered", "read"].includes(String(row.status || "").toLowerCase()),
     );
@@ -146,6 +153,7 @@ export async function POST() {
     let latestBanState = "";
     let latestBanStateAt = "";
     for (const row of rows) {
+      if (timestamp(row) < MIGRATION_TIMESTAMP) continue;
       const state = findBanState(row.payload);
       if (state) {
         latestBanState = state;
