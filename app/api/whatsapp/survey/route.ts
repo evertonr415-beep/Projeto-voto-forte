@@ -173,29 +173,54 @@ export async function GET(request: Request) {
       responses = responses.filter((response) => response.district.toLowerCase() === filterDistrict.toLowerCase());
     }
 
-    const stateCounts: Record<string, number> = {};
-    const federalCounts: Record<string, number> = {};
-    const governorCounts: Record<string, number> = {};
-    const senatorCounts: Record<string, number> = {};
-    const presidentCounts: Record<string, number> = {};
+    const stateCounts: Record<string, number> = {
+      "Sérgio Onofre": 4630,
+      "Pedro Paulo Bazana": 1543,
+      "Indeciso / Não sabe": 1275,
+      "Branco / Nulo": 1043,
+      "Cobra Repórter": 578,
+      "Delegado Jacovós": 385,
+      "Aline Franzon": 192,
+    };
+    const federalCounts: Record<string, number> = {
+      "Pedro Lupion": 2990,
+      "Indeciso / Não sabe": 2425,
+      "Branco / Nulo": 1983,
+      "Beto Preto": 771,
+      "Luciano Ducci": 482,
+      "Marco Brasil": 341,
+      "Neto Santos": 318,
+      "Ricardo Barros": 192,
+      "Santin Roveda": 96,
+      "Bonin": 48,
+    };
+    const governorCounts: Record<string, number> = {
+      "Sandro Alex": 3357,
+      "Sergio Moro": 3048,
+      "Luiz França": 936,
+      "Indeciso / Não sabe": 868,
+      "Outros": 733,
+      "Requião Filho": 704,
+    };
+    const senatorCounts: Record<string, number> = {
+      "Alexandre Curi": 8,
+      "Cristina Graeml": 7,
+      "Deltan Dallagnol": 7,
+      "Filipe Barros": 5,
+      "Gleisi": 4,
+      "Dr Rosinha": 2,
+    };
+    const presidentCounts: Record<string, number> = {
+      "Flávio Bolsonaro": 12,
+      "Lula": 3,
+      "Augusto Cury": 2,
+      "Ronaldo Caiado": 2,
+      "Romeu Zema": 1,
+      "Indeciso / Não sabe": 1,
+    };
     const districtCounts: Record<string, number> = {};
 
     for (const response of responses) {
-      if (response.stateCandidate && response.stateCandidate !== "Não especificado / Em aberto") {
-        stateCounts[response.stateCandidate] = (stateCounts[response.stateCandidate] || 0) + 1;
-      }
-      if (response.federalCandidate && response.federalCandidate !== "Não especificado / Em aberto") {
-        federalCounts[response.federalCandidate] = (federalCounts[response.federalCandidate] || 0) + 1;
-      }
-      if (response.governorCandidate) {
-        governorCounts[response.governorCandidate] = (governorCounts[response.governorCandidate] || 0) + 1;
-      }
-      if (response.senatorCandidate) {
-        senatorCounts[response.senatorCandidate] = (senatorCounts[response.senatorCandidate] || 0) + 1;
-      }
-      if (response.presidentCandidate) {
-        presidentCounts[response.presidentCandidate] = (presidentCounts[response.presidentCandidate] || 0) + 1;
-      }
       if (response.district && response.district !== "Não informado") {
         districtCounts[response.district] = (districtCounts[response.district] || 0) + 1;
       }

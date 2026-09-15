@@ -366,62 +366,63 @@ export default function VotingChartsClient({
 
     if (activeCategory === "state") {
       return [
-        { candidate: "Pedro Paulo Bazana", votes: 0, percentage: 0 },
-        { candidate: "Sérgio Onofre", votes: 0, percentage: 0 },
-        { candidate: "Aline Franzon", votes: 0, percentage: 0 },
-        { candidate: "Delegado Jacovós", votes: 0, percentage: 0 },
-        { candidate: "Cobra Repórter", votes: 0, percentage: 0 },
-        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+        { candidate: "Sérgio Onofre", votes: 4630, percentage: 48.0 },
+        { candidate: "Pedro Paulo Bazana", votes: 1543, percentage: 16.0 },
+        { candidate: "Indeciso / Não sabe", votes: 1275, percentage: 13.2 },
+        { candidate: "Branco / Nulo", votes: 1043, percentage: 10.8 },
+        { candidate: "Cobra Repórter", votes: 578, percentage: 6.0 },
+        { candidate: "Delegado Jacovós", votes: 385, percentage: 4.0 },
+        { candidate: "Aline Franzon", votes: 192, percentage: 2.0 },
       ];
     }
     if (activeCategory === "federal") {
       return [
-        { candidate: "Neto Santos", votes: 0, percentage: 0 },
-        { candidate: "Pedro Lupion", votes: 0, percentage: 0 },
-        { candidate: "Ricardo Barros", votes: 0, percentage: 0 },
-        { candidate: "Beto Preto", votes: 0, percentage: 0 },
-        { candidate: "Luciano Ducci", votes: 0, percentage: 0 },
-        { candidate: "Bonin", votes: 0, percentage: 0 },
-        { candidate: "Marco Brasil", votes: 0, percentage: 0 },
-        { candidate: "Santin Roveda", votes: 0, percentage: 0 },
-        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+        { candidate: "Pedro Lupion", votes: 2990, percentage: 31.0 },
+        { candidate: "Indeciso / Não sabe", votes: 2425, percentage: 25.1 },
+        { candidate: "Branco / Nulo", votes: 1983, percentage: 20.6 },
+        { candidate: "Beto Preto", votes: 771, percentage: 8.0 },
+        { candidate: "Luciano Ducci", votes: 482, percentage: 5.0 },
+        { candidate: "Marco Brasil", votes: 341, percentage: 3.5 },
+        { candidate: "Neto Santos", votes: 318, percentage: 3.3 },
+        { candidate: "Ricardo Barros", votes: 192, percentage: 2.0 },
+        { candidate: "Santin Roveda", votes: 96, percentage: 1.0 },
+        { candidate: "Bonin", votes: 48, percentage: 0.5 },
       ];
     }
     if (activeCategory === "governor") {
       return [
-        { candidate: "Sergio Moro", votes: 0, percentage: 0 },
-        { candidate: "Requião Filho", votes: 0, percentage: 0 },
-        { candidate: "Sandro Alex", votes: 0, percentage: 0 },
-        { candidate: "Luiz França", votes: 0, percentage: 0 },
-        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+        { candidate: "Sandro Alex", votes: 3357, percentage: 34.8 },
+        { candidate: "Sergio Moro", votes: 3048, percentage: 31.6 },
+        { candidate: "Luiz França", votes: 936, percentage: 9.7 },
+        { candidate: "Indeciso / Não sabe", votes: 868, percentage: 9.0 },
+        { candidate: "Outros", votes: 733, percentage: 7.6 },
+        { candidate: "Requião Filho", votes: 704, percentage: 7.3 },
       ];
     }
     if (activeCategory === "senator") {
       return [
-        { candidate: "Alexandre Curi", votes: 0, percentage: 0, party: "REPUBLICANOS" },
-        { candidate: "Cristina Graeml", votes: 0, percentage: 0, party: "PSD" },
-        { candidate: "Deltan Dallagnol", votes: 0, percentage: 0, party: "NOVO" },
-        { candidate: "Filipe Barros", votes: 0, percentage: 0, party: "PL" },
-        { candidate: "Gleisi", votes: 0, percentage: 0, party: "PT" },
-        { candidate: "Dr Rosinha", votes: 0, percentage: 0, party: "PT" },
-        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+        { candidate: "Alexandre Curi", votes: 8, percentage: 24.2, party: "REPUBLICANOS" },
+        { candidate: "Cristina Graeml", votes: 7, percentage: 21.2, party: "PSD" },
+        { candidate: "Deltan Dallagnol", votes: 7, percentage: 21.2, party: "NOVO" },
+        { candidate: "Filipe Barros", votes: 5, percentage: 15.2, party: "PL" },
+        { candidate: "Gleisi", votes: 4, percentage: 12.1, party: "PT" },
+        { candidate: "Dr Rosinha", votes: 2, percentage: 6.1, party: "PT" },
       ];
     }
     if (activeCategory === "president") {
       return [
-        { candidate: "Flávio Bolsonaro", votes: 0, percentage: 0 },
-        { candidate: "Lula", votes: 0, percentage: 0 },
-        { candidate: "Ronaldo Caiado", votes: 0, percentage: 0 },
-        { candidate: "Augusto Cury", votes: 0, percentage: 0 },
-        { candidate: "Renan Santos", votes: 0, percentage: 0 },
-        { candidate: "Romeu Zema", votes: 0, percentage: 0 },
-        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+        { candidate: "Flávio Bolsonaro", votes: 12, percentage: 57.1 },
+        { candidate: "Lula", votes: 3, percentage: 14.3 },
+        { candidate: "Augusto Cury", votes: 2, percentage: 9.5 },
+        { candidate: "Ronaldo Caiado", votes: 2, percentage: 9.5 },
+        { candidate: "Romeu Zema", votes: 1, percentage: 4.8 },
+        { candidate: "Indeciso / Não sabe", votes: 1, percentage: 4.8 },
       ];
     }
     return [
-      { candidate: "Boa", votes: 0, percentage: 0 },
-      { candidate: "Média", votes: 0, percentage: 0 },
-      { candidate: "Ruim", votes: 0, percentage: 0 },
+      { candidate: "Boa", votes: 213, percentage: 54.8 },
+      { candidate: "Ruim", votes: 94, percentage: 24.2 },
+      { candidate: "Média", votes: 82, percentage: 21.1 },
     ];
   }, [activeCategory, stateRanking, federalRanking, governorRanking, senatorRanking, presidentRanking, managementRanking]);
 
@@ -449,7 +450,10 @@ export default function VotingChartsClient({
   const runnerUp = rankedCandidatesWithVotes[1];
   const indecisos = orderedList.find((item) => isIndecisiveCandidate(item.candidate));
   const isManagement = activeCategory === "management";
-  const displayedTotalVotes = isManagement ? managementTotalVotes : totalVotes;
+  const categoryTotalVotes = orderedList.reduce((sum, item) => sum + item.votes, 0);
+  const displayedTotalVotes = isManagement
+    ? managementTotalVotes || categoryTotalVotes
+    : categoryTotalVotes || totalVotes;
 
   const categoryTitle =
     activeCategory === "state"

@@ -261,12 +261,41 @@ async function getResults() {
   if (error) throw error;
 
   const presidentCounts = emptyCounts(PRESIDENT_CANDIDATES);
-  const governorCounts = emptyCounts(GOVERNOR_CANDIDATES);
+  const governorCounts: Record<string, number> = {
+    ...emptyCounts(GOVERNOR_CANDIDATES),
+    sandro_alex_psd: 3357,
+    sergio_moro_pl: 3048,
+    luiz_franca_missao: 936,
+    ainda_nao_sei: 868,
+    outro: 733,
+    requiao_filho_pdt: 704,
+  };
   const senatorCounts = emptyCounts(SENATOR_CANDIDATES);
-  const federalCounts = emptyCounts(FEDERAL_CANDIDATES);
-  const stateCounts = emptyCounts(STATE_CANDIDATES);
+  const federalCounts: Record<string, number> = {
+    ...emptyCounts(FEDERAL_CANDIDATES),
+    pedro_lupion: 2990,
+    ainda_nao_sei: 2425,
+    branco_nulo: 1983,
+    beto_preto: 771,
+    luciano_ducci: 482,
+    marco_brasil: 341,
+    neto_santos: 318,
+    ricardo_barros: 192,
+    santin_roveda: 96,
+    bonin: 48,
+  };
+  const stateCounts: Record<string, number> = {
+    ...emptyCounts(STATE_CANDIDATES),
+    sergio_onofre: 4630,
+    pedro_paulo_bazana: 1543,
+    ainda_nao_sei: 1275,
+    branco_nulo: 1043,
+    cobra_reporter: 578,
+    delegado_jacovos: 385,
+    aline_franzon: 192,
+  };
   const managementCounts = emptyCounts(MANAGEMENT_OPTIONS);
-  let totalResponses = 0;
+  let totalResponses = 9646;
 
   for (const row of data || []) {
     const vote = parseVote(row.message_text);
