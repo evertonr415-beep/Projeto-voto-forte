@@ -6,7 +6,7 @@ import ArapongasFotosPreviewLayout from "../arapongas-fotos-preview/layout";
 
 const OFFICIAL_PARTICIPANT_KEY = "vf_poll_arapongas_pid_v1";
 const VISUAL_PARTICIPANT_KEY = "vf_poll_arapongas_photos_preview_pid_v1";
-const RESULT_URL = "https://www.votofortearapongas.com.br/resultado/";
+const RESULT_URL = "https://www.votofortearapongas.com.br/resultado/?v=20260915";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
