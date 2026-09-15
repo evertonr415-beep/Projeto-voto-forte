@@ -71,8 +71,12 @@ def send_message(phone, token):
 
 def main():
     token = get_token()
-    print(f"Testando envio com token: {token[:15]}...{token[-10:]}")
-    
+    if not token:
+        print("❌ Token da Meta não configurado. Defina META_WA_ACCESS_TOKEN no ambiente ou em .env.local.")
+        return
+
+    print("🔐 Token da Meta carregado com segurança a partir do ambiente.")
+
     # Testa primeiro com o primeiro número
     success, res = send_message(NUMBERS[0], token)
     if not success:
@@ -81,7 +85,7 @@ def main():
         return
 
     print(f"✅ Sucesso para {NUMBERS[0]}: {res}")
-    
+
     # Continua para os demais
     for phone in NUMBERS[1:]:
         time.sleep(1)
