@@ -5,7 +5,11 @@ export async function GET() {
   const storageConfigured = isWhatsappEventStorageConfigured();
   const metaAppSecretConfigured = Boolean(process.env.META_APP_SECRET?.trim());
   const verifyTokenConfigured = Boolean(process.env.META_WHATSAPP_VERIFY_TOKEN?.trim());
-  
+  const accessTokenEnvConfigured = Boolean(
+    process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
+      process.env.META_WA_ACCESS_TOKEN?.trim(),
+  );
+
   const { accessToken, phoneNumberId, wabaId } = getMetaConfig();
   const accessTokenConfigured = Boolean(accessToken);
   const phoneNumberIdConfigured = Boolean(phoneNumberId);
@@ -15,6 +19,7 @@ export async function GET() {
     metaAppSecretConfigured,
     verifyTokenConfigured,
     accessTokenConfigured,
+    accessTokenEnvConfigured,
     phoneNumberIdConfigured,
     wabaIdConfigured,
   };
