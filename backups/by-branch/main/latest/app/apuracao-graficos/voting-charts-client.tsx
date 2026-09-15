@@ -54,11 +54,27 @@ const candidatePartyMap: Record<string, string> = {
   "Flávio Bolsonaro": "PL",
   "Augusto Cury": "Avante",
   "Renan Santos": "Missão",
+  "Alexandre Curi": "REPUBLICANOS",
+  "Cristina Graeml": "PSD",
+  "Deltan Dallagnol": "NOVO",
+  "Dr Rosinha": "PT",
+  "Dr. Rosinha": "PT",
+  "Filipe Barros": "PL",
+  "Gleisi": "PT",
+  "Gleisi Hoffmann": "PT",
   "Ronaldo Caiado": "PSD",
   "Romeu Zema": "Novo",
 };
 
 const candidatePhotos: Record<string, string> = {
+  "alexandre curi": "https://storage2.assembleia.pr.leg.br/img/y3n1sE1n35-E4-L_2B8B_P5U3qQ=/full-fit-in/300x300/deputados/alexandre-curi.png",
+  "cristina graeml": "https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/foto/2/160002005080/2024/75353",
+  "deltan dallagnol": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/220559.jpg",
+  "dr rosinha": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73459.jpg",
+  "dr. rosinha": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73459.jpg",
+  "filipe barros": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204374.jpg",
+  "gleisi": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/74416.jpg",
+  "gleisi hoffmann": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/74416.jpg",
   "neto santos": "https://cdn.tnonline.com.br/eleicoes/2026/pr/fotos/FPR160002542284_div.jpg",
   "ricardo barros": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73788.jpg",
   "pedro lupion": "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/204395.jpg",
@@ -232,7 +248,7 @@ export default function VotingChartsClient({
   onBackToDashboard?: () => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<
-    "state" | "federal" | "governor" | "president" | "management"
+    "state" | "federal" | "governor" | "senator" | "president" | "management"
   >("state");
   const [loading, setLoading] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>("all");
@@ -240,6 +256,7 @@ export default function VotingChartsClient({
   const [stateRanking, setStateRanking] = useState<CandidateItem[]>([]);
   const [federalRanking, setFederalRanking] = useState<CandidateItem[]>([]);
   const [governorRanking, setGovernorRanking] = useState<CandidateItem[]>([]);
+  const [senatorRanking, setSenatorRanking] = useState<CandidateItem[]>([]);
   const [presidentRanking, setPresidentRanking] = useState<CandidateItem[]>([]);
   const [managementRanking, setManagementRanking] = useState<CandidateItem[]>([]);
   const [managementTotalVotes, setManagementTotalVotes] = useState<number>(0);
@@ -263,6 +280,7 @@ export default function VotingChartsClient({
         setStateRanking(surveyData.stateRanking || []);
         setFederalRanking(surveyData.federalRanking || []);
         if (surveyData.governorRanking?.length) setGovernorRanking(surveyData.governorRanking);
+        if (surveyData.senatorRanking?.length) setSenatorRanking(surveyData.senatorRanking);
         if (surveyData.presidentRanking?.length) setPresidentRanking(surveyData.presidentRanking);
         setDistrictRanking(surveyData.districtRanking || []);
         setTotalVotes(
@@ -277,6 +295,9 @@ export default function VotingChartsClient({
       if (previewData?.success) {
         if (!surveyData?.governorRanking?.length && previewData.governorRanking?.length) {
           setGovernorRanking(previewData.governorRanking);
+        }
+        if (!surveyData?.senatorRanking?.length && previewData.senatorRanking?.length) {
+          setSenatorRanking(previewData.senatorRanking);
         }
         if (!surveyData?.presidentRanking?.length && previewData.presidentRanking?.length) {
           setPresidentRanking(previewData.presidentRanking);
@@ -337,6 +358,7 @@ export default function VotingChartsClient({
     if (activeCategory === "state") list = stateRanking;
     else if (activeCategory === "federal") list = federalRanking;
     else if (activeCategory === "governor") list = governorRanking;
+    else if (activeCategory === "senator") list = senatorRanking;
     else if (activeCategory === "president") list = presidentRanking;
     else list = managementRanking;
 
@@ -374,6 +396,17 @@ export default function VotingChartsClient({
         { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
       ];
     }
+    if (activeCategory === "senator") {
+      return [
+        { candidate: "Alexandre Curi", votes: 0, percentage: 0, party: "REPUBLICANOS" },
+        { candidate: "Cristina Graeml", votes: 0, percentage: 0, party: "PSD" },
+        { candidate: "Deltan Dallagnol", votes: 0, percentage: 0, party: "NOVO" },
+        { candidate: "Filipe Barros", votes: 0, percentage: 0, party: "PL" },
+        { candidate: "Gleisi", votes: 0, percentage: 0, party: "PT" },
+        { candidate: "Dr Rosinha", votes: 0, percentage: 0, party: "PT" },
+        { candidate: "Indeciso / Não sabe", votes: 0, percentage: 0 },
+      ];
+    }
     if (activeCategory === "president") {
       return [
         { candidate: "Flávio Bolsonaro", votes: 0, percentage: 0 },
@@ -390,7 +423,7 @@ export default function VotingChartsClient({
       { candidate: "Média", votes: 0, percentage: 0 },
       { candidate: "Ruim", votes: 0, percentage: 0 },
     ];
-  }, [activeCategory, stateRanking, federalRanking, governorRanking, presidentRanking, managementRanking]);
+  }, [activeCategory, stateRanking, federalRanking, governorRanking, senatorRanking, presidentRanking, managementRanking]);
 
   const orderedList = useMemo(() => {
     const byVotes = (a: CandidateItem, b: CandidateItem) =>
@@ -425,9 +458,11 @@ export default function VotingChartsClient({
         ? "Deputado Federal"
         : activeCategory === "governor"
           ? "Governador do Paraná"
-          : activeCategory === "president"
-            ? "Presidente da República"
-            : "Avaliação da Gestão Municipal";
+          : activeCategory === "senator"
+            ? "Senador pelo Paraná"
+            : activeCategory === "president"
+              ? "Presidente da República"
+              : "Avaliação da Gestão Municipal";
 
   const exportCsv = () => {
     const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
@@ -562,6 +597,9 @@ export default function VotingChartsClient({
         </button>
         <button className={`voting-tab-btn ${activeCategory === "governor" ? "active" : ""}`} onClick={() => setActiveCategory("governor")}>
           🗳️ <span>Governador</span>
+        </button>
+        <button className={`voting-tab-btn ${activeCategory === "senator" ? "active" : ""}`} onClick={() => setActiveCategory("senator")}>
+          🏛️ <span>Senador</span>
         </button>
         <button className={`voting-tab-btn ${activeCategory === "president" ? "active" : ""}`} onClick={() => setActiveCategory("president")}>
           🏢 <span>Presidente</span>

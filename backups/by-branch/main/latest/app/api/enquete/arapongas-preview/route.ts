@@ -28,6 +28,17 @@ const GOVERNOR_CANDIDATES = [
   "sergio_moro_pl", "requiao_filho_pdt", "sandro_alex_psd", "luiz_franca_missao",
   "outro", "branco_nulo", "ainda_nao_sei",
 ] as const;
+const SENATOR_CANDIDATES = [
+  "alexandre_curi",
+  "cristina_graeml",
+  "deltan_dallagnol",
+  "filipe_barros",
+  "gleisi",
+  "dr_rosinha",
+  "outro",
+  "branco_nulo",
+  "ainda_nao_sei",
+] as const;
 const FEDERAL_CANDIDATES = [
   "neto_santos", "ricardo_barros", "pedro_lupion", "beto_preto", "luciano_ducci",
   "bonin", "marco_brasil", "santin_roveda", "outro", "branco_nulo", "ainda_nao_sei",
@@ -48,6 +59,7 @@ type VotePayload = {
   q7?: string;
   q8?: string;
   q9?: string;
+  q10?: string;
 };
 
 type RateEntry = { startedAt: number; count: number };
@@ -250,6 +262,7 @@ async function getResults() {
 
   const presidentCounts = emptyCounts(PRESIDENT_CANDIDATES);
   const governorCounts = emptyCounts(GOVERNOR_CANDIDATES);
+  const senatorCounts = emptyCounts(SENATOR_CANDIDATES);
   const federalCounts = emptyCounts(FEDERAL_CANDIDATES);
   const stateCounts = emptyCounts(STATE_CANDIDATES);
   const managementCounts = emptyCounts(MANAGEMENT_OPTIONS);
@@ -262,6 +275,7 @@ async function getResults() {
     if (vote.q2 && isAllowed(vote.q2, MANAGEMENT_OPTIONS)) managementCounts[vote.q2] += 1;
     if (vote.q6 && isAllowed(vote.q6, PRESIDENT_CANDIDATES)) presidentCounts[vote.q6] += 1;
     if (vote.q7 && isAllowed(vote.q7, GOVERNOR_CANDIDATES)) governorCounts[vote.q7] += 1;
+    if (vote.q10 && isAllowed(vote.q10, SENATOR_CANDIDATES)) senatorCounts[vote.q10] += 1;
     if (vote.q8 && isAllowed(vote.q8, FEDERAL_CANDIDATES)) federalCounts[vote.q8] += 1;
     if (vote.q9 && isAllowed(vote.q9, STATE_CANDIDATES)) stateCounts[vote.q9] += 1;
   }
@@ -271,6 +285,7 @@ async function getResults() {
     managementRanking: toManagementRanking(managementCounts),
     presidentRanking: toRanking(presidentCounts),
     governorRanking: toRanking(governorCounts),
+    senatorRanking: toRanking(senatorCounts),
     federalRanking: toRanking(federalCounts),
     stateRanking: toRanking(stateCounts),
   };
