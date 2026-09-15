@@ -6,7 +6,8 @@ import ArapongasFotosPreviewLayout from "../arapongas-fotos-preview/layout";
 
 const OFFICIAL_PARTICIPANT_KEY = "vf_poll_arapongas_pid_v1";
 const VISUAL_PARTICIPANT_KEY = "vf_poll_arapongas_photos_preview_pid_v1";
-const RESULT_URL = "https://www.votofortearapongas.com.br/resultado/?v=20260915";
+const CANONICAL_ORIGIN = "https://sistemavotoforte.com.br";
+const CANONICAL_PATH = "/enquete/arapongas";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
@@ -22,52 +23,21 @@ export default function EnqueteArapongasPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const originalFetch = window.fetch.bind(window);
+    // A enquete pública deve permanecer no endereço oficial. URLs únicas de preview
+    // da Vercel não entram nesta regra para continuarem disponíveis para testes.
+    const host = window.location.hostname.toLowerCase();
+    const publicAliases = new Set([
+      "www.sistemavotoforte.com.br",
+      "voto-forte-parana.vercel.app",
+      "voto-forte-parana-evertonr415-1150s-projects.vercel.app",
+      "voto-forte-parana-git-main-evertonr415-1150s-projects.vercel.app",
+    ]);
 
-    const patchedFetch: typeof window.fetch = async (input, init) => {
-      const response = await originalFetch(input, init);
-
-      try {
-        const requestUrl =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
-        const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
-
-        if (method === "POST" && requestUrl.includes("/api/enquete/arapongas-fotos-preview")) {
-          let action = "";
-          if (typeof init?.body === "string") {
-            try {
-              action = String(JSON.parse(init.body)?.action || "");
-            } catch {
-              action = "";
-            }
-          }
-
-          if (action === "submit" || action === "status") {
-            const data = await response.clone().json().catch(() => null);
-            const shouldRedirect =
-              action === "submit"
-                ? response.ok && (data?.success || data?.alreadyAnswered)
-                : response.ok && data?.alreadyAnswered;
-
-            if (shouldRedirect) {
-              window.setTimeout(() => {
-                window.location.assign(RESULT_URL);
-              }, action === "status" ? 40 : 180);
-            }
-          }
-        }
-      } catch {
-        // Se a detecção falhar, preserva o fluxo normal da enquete.
-      }
-
-      return response;
-    };
-
-    window.fetch = patchedFetch;
+    if (publicAliases.has(host)) {
+      const canonicalUrl = `${CANONICAL_ORIGIN}${CANONICAL_PATH}${window.location.search}${window.location.hash}`;
+      window.location.replace(canonicalUrl);
+      return;
+    }
 
     try {
       const officialId =
@@ -82,10 +52,6 @@ export default function EnqueteArapongasPage() {
     } finally {
       setReady(true);
     }
-
-    return () => {
-      if (window.fetch === patchedFetch) window.fetch = originalFetch;
-    };
   }, []);
 
   if (!ready) {
