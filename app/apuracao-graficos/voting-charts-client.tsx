@@ -422,9 +422,9 @@ export default function VotingChartsClient({
       ];
     }
     return [
-      { candidate: "Boa", votes: 213, percentage: 54.8 },
-      { candidate: "Ruim", votes: 94, percentage: 24.2 },
-      { candidate: "Média", votes: 82, percentage: 21.1 },
+      { candidate: "Boa", votes: 5282, percentage: 54.8 },
+      { candidate: "Ruim", votes: 2331, percentage: 24.2 },
+      { candidate: "Média", votes: 2033, percentage: 21.0 },
     ];
   }, [activeCategory, stateRanking, federalRanking, governorRanking, senatorRanking, presidentRanking, managementRanking]);
 
