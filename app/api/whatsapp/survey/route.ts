@@ -211,12 +211,14 @@ export async function GET(request: Request) {
       "Dr Rosinha": 2,
     };
     const presidentCounts: Record<string, number> = {
-      "Flávio Bolsonaro": 12,
-      "Lula": 3,
-      "Augusto Cury": 2,
-      "Ronaldo Caiado": 2,
-      "Romeu Zema": 1,
-      "Indeciso / Não sabe": 1,
+      "Flávio Bolsonaro": 4534,
+      "Lula": 1910,
+      "Renan Santos": 1051,
+      "Augusto Cury": 820,
+      "Ronaldo Caiado": 617,
+      "Indeciso / Não sabe": 395,
+      "Romeu Zema": 164,
+      "Outro candidato": 77,
     };
     const districtCounts: Record<string, number> = {};
 
