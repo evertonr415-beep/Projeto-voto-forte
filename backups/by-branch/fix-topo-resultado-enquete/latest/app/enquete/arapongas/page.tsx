@@ -166,22 +166,39 @@ function PostVoteResults() {
     <div style={{ minHeight: "100vh", background: "#f3f6fb", fontFamily: "Inter, Arial, sans-serif", color: "#243247" }}>
       <header
         style={{
+          width: "100%",
+          background: "#0d2342",
+          textAlign: "center",
+          boxShadow: "0 4px 16px rgba(0,0,0,.15)",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+        }}
+      >
+        <img
+          src="/enquete-capa-voto-forte.png"
+          alt="Enquete Voto Forte Paraná"
+          style={{
+            width: "100%",
+            maxWidth: 700,
+            display: "block",
+            margin: "0 auto",
+          }}
+        />
+      </header>
+
+      <section
+        style={{
           background: "linear-gradient(180deg,#0d2d50 0%,#0a2542 100%)",
           color: "#fff",
-          padding: "28px 18px 58px",
+          padding: "30px 18px 58px",
           textAlign: "center",
         }}
       >
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontWeight: 900, fontSize: 18 }}>
-            <img src="/voto-forte-bandeira-icon.jpg" alt="Voto Forte" style={{ width: 38, height: 38, borderRadius: 10, objectFit: "cover" }} />
-            <span>VotoForte Arapongas</span>
-          </div>
-          <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "24px auto 14px", display: "grid", placeItems: "center", background: "#16b874", fontSize: 42, fontWeight: 900 }}>✓</div>
+          <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto 14px", display: "grid", placeItems: "center", background: "#16b874", fontSize: 42, fontWeight: 900 }}>✓</div>
           <h1 style={{ margin: "0 0 9px", fontSize: 28, lineHeight: 1.15, fontWeight: 950 }}>Voto registrado com sucesso</h1>
           <p style={{ margin: 0, color: "#cbd8e7", fontSize: 14, lineHeight: 1.55 }}>Obrigado por participar. Abaixo estão os percentuais atualizados da enquete.</p>
         </div>
-      </header>
+      </section>
 
       <main style={{ maxWidth: 540, margin: "-34px auto 42px", padding: "0 12px" }}>
         <div
