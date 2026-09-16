@@ -1,13 +1,6 @@
 const DEFAULT_GRAPH_VERSION = "v26.0";
 const DEFAULT_PHONE_NUMBER_ID = "1241017955771085";
 const DEFAULT_WABA_ID = "1102972178907917";
-export const DEFAULT_ACCESS_TOKEN =
-  "EAAvdN6QU4V4BSVjwglEO85mfaT8levVAY3ibruscPOm6s9otMhygouyZBMdVGgLQoKClbAkqHTgr3GN8c4nrPkZCZB8977ZBiiaCxmhnnZBZBtZAHQBZButtsJbQ1qqabX0i3fWXlkz8UNXEaUCTv1L7aS8LACBVI0bTDTOpcsVTRkNJDZBZBs3A1c7ZC2B6o2RAAZDZD";
-
-const EXPIRED_TOKENS = [
-  "EAAe90I6QErgBSbTwmPPgavGXLH9G6P0BshwH5sUY6yzAA4IZCqvX2ngHA4nY9sJZBlH8EpFxvCdilYiAGR1ofZCGQ8h5aNOjEPy1NofZAsVGoo6aEMRHv1JDJNy0giKxMImyKEbNo2MFAJDfZA6sAgtxMjwzjJ2EtZAxSA5l2xzzjLKu52BHPquUy9tUnauizxMpPJOFKg9o8iWcd0fNU5FuMpT5shPQOgxOA2Ew2jijbFkOKu9bjZBo0XxCmjLTZB79k1Oih0YPx9RrgdZBughy2HnUIJbK1Ek2NKHMZD",
-  "EAAe90I6QErgBSb0tnTUCcyv2mhog84Cjlrd7ZBkgfeSx1kYEBTjTsTIQMPZCQSoJEohkxNsGGPdDOdb6g4R0R5zXzRPasBcBP2gJpyuDLMexV5X5MmuXb608ofdSlO1lUBxLe1GmcijhoHiL6gksHnjwea8AILRgx8wDitjKtlu0qSRZBvEOwKmpy4gEtEhCxcqwUvPnYk6hHQhMPNE1asMd1KyUeqPUOIlqQ93LB6xRhsmLC73ix141chkCLvEi1RINuCiqimXtWRAekt5Td1vT1ZA5LqmOvpiVmgZDZD",
-];
 
 export type MetaTemplateParameter = {
   type: "text";
@@ -21,15 +14,10 @@ export type MetaApiResult = {
 };
 
 export function getMetaConfig() {
-  let envToken = (
+  const accessToken =
     process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.META_WA_ACCESS_TOKEN?.trim() ||
-    ""
-  );
-
-  if (!envToken || EXPIRED_TOKENS.some((exp) => envToken.includes(exp.slice(0, 30)))) {
-    envToken = DEFAULT_ACCESS_TOKEN;
-  }
+    "";
 
   return {
     graphVersion:
@@ -44,7 +32,7 @@ export function getMetaConfig() {
       process.env.META_WHATSAPP_WABA_ID?.trim() ||
       process.env.META_WA_WABA_ID?.trim() ||
       DEFAULT_WABA_ID,
-    accessToken: envToken || DEFAULT_ACCESS_TOKEN,
+    accessToken,
   };
 }
 
@@ -99,37 +87,24 @@ export async function metaRequest(
     };
   }
 
-  const execute = async (token: string) => {
-    const headers = new Headers(init.headers || {});
-    headers.set("Authorization", `Bearer ${token}`);
+  const headers = new Headers(init.headers || {});
+  headers.set("Authorization", `Bearer ${accessToken}`);
 
-    const response = await fetch(
-      `https://graph.facebook.com/${graphVersion}/${path.replace(/^\/+/, "")}`,
-      {
-        ...init,
-        headers,
-        signal: init.signal || AbortSignal.timeout(20_000),
-      },
-    );
+  const response = await fetch(
+    `https://graph.facebook.com/${graphVersion}/${path.replace(/^\/+/, "")}`,
+    {
+      ...init,
+      headers,
+      signal: init.signal || AbortSignal.timeout(20_000),
+    },
+  );
 
-    const data = await readMetaResponse(response);
-    return {
-      ok: response.ok,
-      status: response.status,
-      data,
-    };
+  const data = await readMetaResponse(response);
+  return {
+    ok: response.ok,
+    status: response.status,
+    data,
   };
-
-  let res = await execute(accessToken);
-
-  if (!res.ok && accessToken !== DEFAULT_ACCESS_TOKEN) {
-    const errCode = (res.data as { error?: { code?: number } })?.error?.code;
-    if (errCode === 190) {
-      res = await execute(DEFAULT_ACCESS_TOKEN);
-    }
-  }
-
-  return res;
 }
 
 export async function sendMetaMessage(payload: Record<string, unknown>) {
