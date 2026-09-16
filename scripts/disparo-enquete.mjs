@@ -4,7 +4,7 @@ import path from "path";
 // Carrega variáveis do .env.local
 const envPath = path.resolve(process.cwd(), ".env.local");
 let token = process.env.META_WA_ACCESS_TOKEN;
-let phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID || "1306645972534063";
+let phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID || "1241017955771085";
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf-8");

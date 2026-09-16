@@ -4,9 +4,12 @@ import urllib.error
 import time
 import os
 
-PHONE_NUMBER_ID = "1306645972534063"
+TOKEN = "EAAvdN6QU4V4BSVjwglEO85mfaT8levVAY3ibruscPOm6s9otMhygouyZBMdVGgLQoKClbAkqHTgr3GN8c4nrPkZCZB8977ZBiiaCxmhnnZBZBtZAHQBZButtsJbQ1qqabX0i3fWXlkz8UNXEaUCTv1L7aS8LACBVI0bTDTOpcsVTRkNJDZBZBs3A1c7ZC2B6o2RAAZDZD"
+PHONE_NUMBER_ID = "1241017955771085"
 
 def get_token():
+    if TOKEN:
+        return TOKEN
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env.local")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8") as f:
