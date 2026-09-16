@@ -16,6 +16,16 @@ type BackupSignalRow = {
   item_count: number | null;
 };
 
+type BackupCatalogRow = {
+  id: number;
+  created_at: string;
+  created_by: string | null;
+  item_count: number | null;
+  checksum: string | null;
+  backup_version: number | null;
+  format: string | null;
+};
+
 type ContactMetricRow = {
   owner_email: string;
   total_contacts: number | string | null;
@@ -67,6 +77,7 @@ export async function GET() {
       userMetricsResult,
       usersResult,
       backupResult,
+      backupCatalogResult,
       auditMetricsResult,
     ] = await Promise.all([
       account.supabase.rpc("vf_intelligence_contact_metrics"),
@@ -80,6 +91,11 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      account.supabase
+        .from("vf_backup_snapshots")
+        .select("id,created_at,created_by,item_count,checksum,backup_version,format:data->>format")
+        .order("created_at", { ascending: false })
+        .limit(20),
       account.supabase.rpc("vf_system_audit_metrics", {
         p_since: thirtyDaysAgo,
       }),
@@ -90,6 +106,7 @@ export async function GET() {
       userMetricsResult,
       usersResult,
       backupResult,
+      backupCatalogResult,
       auditMetricsResult,
     ]) {
       if (result.error) throw new Error(result.error.message);
@@ -141,9 +158,26 @@ export async function GET() {
       })
       .filter((item) => item.count > 0);
 
+    const backupSnapshots = ((backupCatalogResult.data ?? []) as BackupCatalogRow[]).map((row) => {
+      const format = row.format ?? null;
+      const recoverable = format === "voto-forte-backup";
+      return {
+        id: Number(row.id),
+        createdAt: row.created_at,
+        createdBy: row.created_by,
+        itemCount: Number(row.item_count ?? 0),
+        checksum: row.checksum,
+        backupVersion: row.backup_version,
+        format,
+        recoverable,
+        status: recoverable ? "recoverable" : "metadata_only",
+      };
+    });
+
     let backup = (backupResult.data ?? null) as BackupSignalRow | null;
 
-    // Se o backup não existir ou tiver mais de 24h, a inteligência neural atualiza e registra o snapshot automaticamente
+    // Mantido temporariamente neste tópico para preservar o comportamento atual.
+    // A remoção de escrita em GET será tratada no Tópico 6 da auditoria.
     if (!backup || (backupAgeHours(backup.created_at) ?? 999) > 24) {
       const nowIso = new Date().toISOString();
       const autoChecksum = `SHA256-${nowIso.slice(0, 10)}-NEURAL-AUTO`;
@@ -204,6 +238,7 @@ export async function GET() {
       {
         generatedAt: signals.generatedAt,
         signals,
+        backupSnapshots,
         ...analyzeSystemSignals(signals),
       },
       {
