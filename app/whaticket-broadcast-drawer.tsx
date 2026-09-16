@@ -133,6 +133,32 @@ export default function WhaticketBroadcastDrawer() {
   const [liveSearch, setLiveSearch] = useState("");
   const [liveLoading, setLiveLoading] = useState(false);
   const [failedNumbers, setFailedNumbers] = useState<{ phone: string; name: string; error: string }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string } | null>(null);
+
+  useEffect(() => {
+    void apiFetch("/api/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user || d?.account) {
+          setCurrentUser(d.user || d.account);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const isAuthorized = useMemo(() => {
+    if (!currentUser) return true;
+    const email = String(currentUser.email || "").trim().toLowerCase();
+    const name = String(currentUser.name || "").trim().toLowerCase();
+    return (
+      email === "evertonr415@gmail.com" ||
+      name.includes("everton") ||
+      name.includes("rafael rodrigues") ||
+      name.includes("rafael alessandro") ||
+      name.includes("rafael") ||
+      email.includes("rafael")
+    );
+  }, [currentUser]);
 
   // Carrega feed de mensagens em tempo real
   const loadLiveFeed = useCallback(async (silent = false) => {
@@ -767,10 +793,27 @@ export default function WhaticketBroadcastDrawer() {
                     style={{ width: "100%" }}
                   />
                 </div>
+                {!isAuthorized && Boolean(currentUser) && (
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid #ef4444",
+                      borderRadius: 8,
+                      color: "#fca5a5",
+                      fontSize: 12,
+                      marginBottom: 10,
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    🔒 Disparos restritos aos usuários autorizados: <strong>Everton Moreira</strong> e <strong>Rafael Rodrigues</strong>.
+                  </div>
+                )}
                 <button
                   type="button"
                   className="wt-primary-btn"
-                  disabled={isExecuting || !recipients.length || !selectedTemplate}
+                  disabled={isExecuting || !recipients.length || !selectedTemplate || (!isAuthorized && Boolean(currentUser))}
                   onClick={startBroadcast}
                 >
                   {isExecuting ? "Enviando campanha..." : `Enviar para ${recipients.length} contato(s)`}

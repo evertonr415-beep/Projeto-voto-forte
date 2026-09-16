@@ -19,6 +19,27 @@ export function isGestorEmail(email: string): boolean {
   return GESTOR_EMAILS.some((e) => e.toLowerCase() === clean);
 }
 
+export function isAuthorizedForWhatsappBroadcast(
+  account: { name?: string | null; email?: string | null } | null | undefined,
+): boolean {
+  if (!account) return false;
+  const email = String(account.email || "").trim().toLowerCase();
+  const name = String(account.name || "").trim().toLowerCase();
+
+  const isEverton =
+    email === "evertonr415@gmail.com" ||
+    name.includes("everton") ||
+    name.includes("everton moreira");
+
+  const isRafael =
+    name.includes("rafael rodrigues") ||
+    name.includes("rafael alessandro") ||
+    name.includes("rafael") ||
+    email.includes("rafael");
+
+  return isEverton || isRafael;
+}
+
 export type UserRole = "master" | "gestor" | "lider" | "liderado";
 export type AccessRole =
   | "adm"
