@@ -74,29 +74,45 @@ function parseJsonEvent(event: Record<string, unknown>): ConsolidatedResponse | 
 
   try {
     const vote = JSON.parse(rawText) as Record<string, unknown>;
-    const hasSurveyFields = Boolean(vote.poll || vote.q6 || vote.q7 || vote.q8 || vote.q9 || vote.q10);
+    const hasSurveyFields = Boolean(
+      vote.poll || vote.q1 || vote.q2 || vote.q6 || vote.q7 || vote.q8 || vote.q9 || vote.q10 ||
+      vote.stateCandidate || vote.federalCandidate || vote.governorCandidate || vote.senatorCandidate || vote.presidentCandidate
+    );
     if (!hasSurveyFields) return null;
 
-    const stateCandidate = formatCandidateOrOption(String(vote.q9 || vote.stateCandidate || vote.deputado_estadual || "")) || "Não especificado / Em aberto";
-    const federalCandidate = formatCandidateOrOption(String(vote.q8 || vote.federalCandidate || vote.deputado_federal || "")) || "Não especificado / Em aberto";
+    const stateCandidate =
+      formatCandidateOrOption(String(vote.q9 || vote.stateCandidate || vote.deputado_estadual || vote.estadual || "")) ||
+      "Não especificado / Em aberto";
+    const federalCandidate =
+      formatCandidateOrOption(String(vote.q8 || vote.federalCandidate || vote.deputado_federal || vote.federal || "")) ||
+      "Não especificado / Em aberto";
     const governorCandidate = formatCandidateOrOption(String(vote.q7 || vote.governorCandidate || vote.governador || ""));
     const senatorCandidate = formatCandidateOrOption(String(vote.q10 || vote.senatorCandidate || vote.senador || ""));
     const presidentCandidate = formatCandidateOrOption(String(vote.q6 || vote.presidentCandidate || vote.presidente || ""));
-    const district = String(vote.bairro || vote.district || "Não informado");
+    const gestaoMunicipal = formatCandidateOrOption(String(vote.q1 || vote.gestao_municipal || ""));
+    const gestaoEstadual = formatCandidateOrOption(String(vote.q2 || vote.gestao_estadual || ""));
+    const district = String(vote.bairro || vote.district || "Centro");
     const eventId = String(event.id || `${event.phone || "web"}-${event.created_at || event.occurred_at || rawText}`);
 
+    const rawPhone = String(event.phone || "");
+    const displayPhone = formatDisplayPhone(rawPhone) || "Enquete Digital (Web)";
+
+    const formattedLines = [
+      `🏛️ Deputado Estadual: ${stateCandidate}`,
+      `🇧🇷 Deputado Federal: ${federalCandidate}`,
+      governorCandidate ? `📍 Governador: ${governorCandidate}` : "",
+      senatorCandidate ? `🏛️ Senador: ${senatorCandidate}` : "",
+      presidentCandidate ? `🗳️ Presidente: ${presidentCandidate}` : "",
+      gestaoMunicipal ? `⭐ Gestão Municipal: ${gestaoMunicipal}` : "",
+      gestaoEstadual ? `⭐ Gestão Estadual: ${gestaoEstadual}` : "",
+    ].filter(Boolean);
+
     return {
-      phone: String(event.phone || "Enquete Digital (Web)"),
+      phone: displayPhone,
       contactName: String(event.contact_name || "Participante da Enquete"),
       district,
       city: String(vote.cidade || vote.city || "Arapongas"),
-      messageText: [
-        `🏛️ Deputado Estadual: ${stateCandidate}`,
-        `🇧🇷 Deputado Federal: ${federalCandidate}`,
-        governorCandidate ? `📍 Governador: ${governorCandidate}` : "",
-        senatorCandidate ? `🏛️ Senador: ${senatorCandidate}` : "",
-        presidentCandidate ? `🗳️ Presidente: ${presidentCandidate}` : "",
-      ].filter(Boolean).join("\n"),
+      messageText: formattedLines.join("\n"),
       stateCandidate,
       federalCandidate,
       governorCandidate,
@@ -115,44 +131,71 @@ async function loadNewResponses(): Promise<ConsolidatedResponse[]> {
   const supabase = getWhatsappAdminClient() || getAutonomousSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("vf_whatsapp_events")
-    .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
-    .or("event_type.ilike.%poll%,event_type.eq.survey_response_manual")
-    .gte("created_at", HISTORICAL_BACKUP_CUTOFF)
-    .order("created_at", { ascending: true })
-    .limit(5000);
+  try {
+    const { data, error } = await supabase
+      .from("vf_whatsapp_events")
+      .select("id, phone, contact_name, message_text, occurred_at, created_at, event_type, direction")
+      .or("event_type.ilike.%poll%,event_type.eq.survey_response_manual,direction.eq.inbound,event_type.eq.message_received")
+      .gte("created_at", HISTORICAL_BACKUP_CUTOFF)
+      .order("created_at", { ascending: false })
+      .limit(5000);
 
-  if (error) throw error;
-
-  const responses: ConsolidatedResponse[] = [];
-  for (const rawEvent of data || []) {
-    const event = rawEvent as Record<string, unknown>;
-    const parsed = parseJsonEvent(event);
-    if (parsed) {
-      responses.push(parsed);
-      continue;
+    if (error) {
+      console.error("[whatsapp-survey] error loading events:", error);
+      return [];
     }
 
-    if (String(event.event_type || "") === "survey_response_manual") {
+    const responses: ConsolidatedResponse[] = [];
+    for (const rawEvent of data || []) {
+      const event = rawEvent as Record<string, unknown>;
+      const parsed = parseJsonEvent(event);
+      if (parsed) {
+        responses.push(parsed);
+        continue;
+      }
+
       const text = String(event.message_text || "").trim();
       if (!text) continue;
-      responses.push({
-        phone: String(event.phone || ""),
-        contactName: String(event.contact_name || "Eleitor"),
-        district: "Não informado",
-        city: "Arapongas",
-        messageText: text,
-        stateCandidate: "Não especificado / Em aberto",
-        federalCandidate: "Não especificado / Em aberto",
-        sentiment: "declarado",
-        timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
-        sourceKey: `event-${String(event.id || `${event.phone}-${event.created_at}`)}`,
-      });
-    }
-  }
 
-  return responses;
+      const rawPhone = String(event.phone || "");
+      const displayPhone = formatDisplayPhone(rawPhone) || rawPhone;
+      const eventId = String(event.id || `${rawPhone}-${event.created_at || Date.now()}`);
+
+      try {
+        const analyzed = await analyzeSurveyResponse(rawPhone, text);
+        responses.push({
+          phone: displayPhone,
+          contactName: String(event.contact_name || analyzed.contactName || "Eleitor"),
+          district: analyzed.district && analyzed.district !== "Não informado" ? analyzed.district : "Arapongas",
+          city: "Arapongas",
+          messageText: text,
+          stateCandidate: analyzed.stateCandidate,
+          federalCandidate: analyzed.federalCandidate,
+          sentiment: analyzed.sentiment,
+          timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
+          sourceKey: `event-${eventId}`,
+        });
+      } catch {
+        responses.push({
+          phone: displayPhone,
+          contactName: String(event.contact_name || "Eleitor"),
+          district: "Arapongas",
+          city: "Arapongas",
+          messageText: text,
+          stateCandidate: "Não especificado / Em aberto",
+          federalCandidate: "Não especificado / Em aberto",
+          sentiment: "declarado",
+          timestamp: String(event.occurred_at || event.created_at || new Date().toISOString()),
+          sourceKey: `event-${eventId}`,
+        });
+      }
+    }
+
+    return responses;
+  } catch (err) {
+    console.error("[whatsapp-survey] loadNewResponses exception:", err);
+    return [];
+  }
 }
 
 async function getConsolidatedResponses() {
