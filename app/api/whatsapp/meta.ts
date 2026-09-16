@@ -7,6 +7,7 @@ export const DEFAULT_ACCESS_TOKEN =
 const EXPIRED_TOKENS = [
   "EAAe90I6QErgBSbTwmPPgavGXLH9G6P0BshwH5sUY6yzAA4IZCqvX2ngHA4nY9sJZBlH8EpFxvCdilYiAGR1ofZCGQ8h5aNOjEPy1NofZAsVGoo6aEMRHv1JDJNy0giKxMImyKEbNo2MFAJDfZA6sAgtxMjwzjJ2EtZAxSA5l2xzzjLKu52BHPquUy9tUnauizxMpPJOFKg9o8iWcd0fNU5FuMpT5shPQOgxOA2Ew2jijbFkOKu9bjZBo0XxCmjLTZB79k1Oih0YPx9RrgdZBughy2HnUIJbK1Ek2NKHMZD",
   "EAAe90I6QErgBSb0tnTUCcyv2mhog84Cjlrd7ZBkgfeSx1kYEBTjTsTIQMPZCQSoJEohkxNsGGPdDOdb6g4R0R5zXzRPasBcBP2gJpyuDLMexV5X5MmuXb608ofdSlO1lUBxLe1GmcijhoHiL6gksHnjwea8AILRgx8wDitjKtlu0qSRZBvEOwKmpy4gEtEhCxcqwUvPnYk6hHQhMPNE1asMd1KyUeqPUOIlqQ93LB6xRhsmLC73ix141chkCLvEi1RINuCiqimXtWRAekt5Td1vT1ZA5LqmOvpiVmgZDZD",
+  "EAAvdN6QU4V4BScZBisHBdgFyJ8ZAWTmo2hIZC42ZAME3ZAwRmY7kDjNCkGIQC0mEA1c5iz4ZAXb3gsIfP4Ftg1lM8bCTIEbvjZBRGCZA5IbUbkYqZA2ddSmVTsPIEkrKILs8fF62FiMDhr038S61ixVpYuIEJuD6c52gBGpzTWbD8IJKEZAJ5gRzCkRkCLJ9pvagZDZD",
 ];
 
 export type MetaTemplateParameter = {
@@ -21,15 +22,16 @@ export type MetaApiResult = {
 };
 
 export function getMetaConfig() {
-  let envToken = (
+  const envToken = (
     process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.META_WA_ACCESS_TOKEN?.trim() ||
     ""
   );
 
-  if (!envToken || EXPIRED_TOKENS.some((exp) => envToken.includes(exp.slice(0, 30)))) {
-    envToken = DEFAULT_ACCESS_TOKEN;
-  }
+  const tokenToUse =
+    envToken && !envToken.includes("EAAvdN6QU4V4BScZ") && !EXPIRED_TOKENS.some((exp) => envToken.includes(exp.slice(0, 30)))
+      ? envToken
+      : DEFAULT_ACCESS_TOKEN;
 
   return {
     graphVersion:
@@ -44,7 +46,7 @@ export function getMetaConfig() {
       process.env.META_WHATSAPP_WABA_ID?.trim() ||
       process.env.META_WA_WABA_ID?.trim() ||
       DEFAULT_WABA_ID,
-    accessToken: envToken || DEFAULT_ACCESS_TOKEN,
+    accessToken: tokenToUse,
   };
 }
 
