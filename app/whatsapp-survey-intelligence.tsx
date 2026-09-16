@@ -36,9 +36,9 @@ export default function WhatsappSurveyIntelligence() {
   const [federalRanking, setFederalRanking] = useState<CandidateRanking[]>([]);
   const [districtRanking, setDistrictRanking] = useState<DistrictRanking[]>([]);
   const [kpis, setKpis] = useState({
-    totalResponses: 9646,
-    topStateCandidate: "Sérgio Onofre (48%)",
-    topFederalCandidate: "Pedro Lupion (31%)",
+    totalResponses: 10050,
+    topStateCandidate: "Sérgio Onofre (48.5%)",
+    topFederalCandidate: "Pedro Lupion (31.7%)",
     activeDistrictsCount: 8,
   });
 
@@ -337,7 +337,7 @@ export default function WhatsappSurveyIntelligence() {
             <>
               <div className="wt-stats-grid survey-kpis">
                 <div className="wt-stat-card survey-kpi-card">
-                  <strong>{(kpis.totalResponses || 9646).toLocaleString("pt-BR")}</strong>
+                  <strong>{(kpis.totalResponses || 10050).toLocaleString("pt-BR")}</strong>
                   <span>Total de respostas</span>
                 </div>
                 <div className="wt-stat-card survey-kpi-card">

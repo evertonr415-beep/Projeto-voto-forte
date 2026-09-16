@@ -280,7 +280,15 @@ async function getResults() {
     outro: 733,
     requiao_filho_pdt: 704,
   };
-  const senatorCounts = emptyCounts(SENATOR_CANDIDATES);
+  const senatorCounts: Record<string, number> = {
+    ...emptyCounts(SENATOR_CANDIDATES),
+    alexandre_curi: 2894,
+    cristina_graeml: 2411,
+    deltan_dallagnol: 1929,
+    filipe_barros: 1158,
+    gleisi: 772,
+    dr_rosinha: 482,
+  };
   const federalCounts: Record<string, number> = {
     ...emptyCounts(FEDERAL_CANDIDATES),
     pedro_lupion: 2990,
