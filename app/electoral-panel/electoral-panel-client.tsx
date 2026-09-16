@@ -1,41 +1,72 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import {
-  VERIFIED_ARAPONGAS_ELECTIONS,
-  type VerifiedCandidate,
-} from "./verified-electoral-data";
-import "./electoral-panel.css";
-import "./electoral-panel-mobile-official.css";
 
-type SortOption = "votes_desc" | "votes_asc" | "name_asc" | "number_asc";
-type StatusFilter = "all" | "elected";
+const MAPA_SNAPSHOT = "d7a280e173dd1f4431d1e910fd9b6672dab37e33";
+const MAPA_BASE = `https://cdn.jsdelivr.net/gh/evertonr415-beep/mapa-eleitoral@${MAPA_SNAPSHOT}/`;
 
-function ballotNumberValue(value: number | string) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
-}
-
-function statusLabel(candidate: VerifiedCandidate) {
-  return candidate.situation || (candidate.elected ? "Eleito" : "Não eleito");
-}
-
-function coverageTitle(coverage: "complete" | "elected-only" | "top-candidates") {
-  if (coverage === "complete") return "Resultado completo";
-  if (coverage === "top-candidates") return "Ranking dos mais votados";
-  return "Eleitos verificados";
-}
-
-function coverageDescription(
-  coverage: "complete" | "elected-only" | "top-candidates",
-) {
-  if (coverage === "complete") {
-    return "Cobertura completa desta disputa na base verificada";
+function buildIntegratedMapHtml() {
+  const loader = String.raw`<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#080d17" />
+<style>
+html,body{margin:0;width:100%;height:100%;background:#080d17;color:#dbeafe;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+#vf-shell-loader{position:fixed;inset:0;display:grid;place-items:center;background:#080d17;color:#94a3b8;font-size:13px;z-index:2147483647}
+</style>
+</head>
+<body>
+<div id="vf-shell-loader">Carregando Mapa Eleitoral de Arapongas…</div>
+<script>
+(async function(){
+  const base=${JSON.stringify(MAPA_BASE)};
+  try{
+    const response=await fetch(base+'index.html',{cache:'no-store'});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    let html=await response.text();
+    html=html.replace(/<base\\b[^>]*>/gi,'');
+    const integrationCss=`
+      <base href="${MAPA_BASE}">
+      <style id="vf-integrated-panel-style">
+        html,body{margin:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#080d17!important}
+        #vf-preview-badge{display:none!important}
+        #modal-auth-flow,#modal-force-change-password,#modal-switch-user,#modal-change-password{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+        .topbar-user-section{display:none!important}
+        .topbar{padding-right:10px!important}
+        .brand-info h1{font-size:clamp(12px,1.35vw,18px)!important}
+        .brand-info p{font-size:clamp(9px,.85vw,12px)!important}
+        @media(max-width:900px){
+          .topbar-user-section{display:none!important}
+          #modal-auth-flow,#modal-force-change-password,#modal-switch-user,#modal-change-password{display:none!important}
+        }
+      </style>`;
+    html=html.replace(/<head([^>]*)>/i,'<head$1>'+integrationCss);
+    const integrationScript=`<scr`+`ipt>
+      (function(){
+        function cleanAuthUi(){
+          ['modal-auth-flow','modal-force-change-password','modal-switch-user','modal-change-password'].forEach(function(id){
+            var el=document.getElementById(id);if(el){el.style.setProperty('display','none','important');el.style.setProperty('visibility','hidden','important');}
+          });
+          document.querySelectorAll('.topbar-user-section').forEach(function(el){el.style.setProperty('display','none','important')});
+        }
+        cleanAuthUi();
+        new MutationObserver(cleanAuthUi).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
+        window.addEventListener('load',cleanAuthUi);
+        setInterval(cleanAuthUi,1200);
+      })();
+    </scr`+`ipt>`;
+    html=html.replace('</body>',integrationScript+'</body>');
+    document.open();document.write(html);document.close();
+  }catch(error){
+    document.body.innerHTML='<div style="height:100vh;display:grid;place-items:center;background:#080d17;color:#94a3b8;font:600 13px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Não foi possível carregar o Mapa Eleitoral nesta preview.</div>';
   }
-  if (coverage === "top-candidates") {
-    return "Ranking parcial identificado explicitamente; os totais gerais permanecem os oficiais da disputa";
-  }
-  return "A fonte consultada nesta etapa contém somente os eleitos";
+})();
+</script>
+</body>
+</html>`;
+  return loader;
 }
 
 export default function ElectoralPanelClient({
@@ -43,443 +74,95 @@ export default function ElectoralPanelClient({
 }: {
   onBackToDashboard?: () => void;
 } = {}) {
-  const [selectedYear, setSelectedYear] = useState<number>(2024);
-  const [selectedOffice, setSelectedOffice] = useState<string>("prefeito");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("votes_desc");
-
-  const handleBack = () => {
-    if (onBackToDashboard) {
-      onBackToDashboard();
-      return;
-    }
-
-    window.dispatchEvent(new CustomEvent("voto-forte:navigate-overview"));
-    if (
-      typeof window !== "undefined" &&
-      window.location.pathname.includes("painel-eleitoral")
-    ) {
-      window.location.href = "/";
-    }
-  };
-
-  const currentElection = useMemo(
-    () =>
-      VERIFIED_ARAPONGAS_ELECTIONS.find((election) => election.year === selectedYear) ||
-      VERIFIED_ARAPONGAS_ELECTIONS[0],
-    [selectedYear],
-  );
-
-  const availableOffices = useMemo(
-    () => currentElection?.offices || [],
-    [currentElection],
-  );
-
-  React.useEffect(() => {
-    if (!availableOffices.length) return;
-    if (!availableOffices.some((office) => office.office === selectedOffice)) {
-      setSelectedOffice(availableOffices[0].office);
-    }
-  }, [availableOffices, selectedOffice]);
-
-  const activeOffice = useMemo(
-    () =>
-      availableOffices.find((office) => office.office === selectedOffice) ||
-      availableOffices[0] ||
-      null,
-    [availableOffices, selectedOffice],
-  );
-
-  const hasElectionStatus = useMemo(
-    () => activeOffice?.candidates.some((candidate) => candidate.elected !== undefined) ?? false,
-    [activeOffice],
-  );
-
-  React.useEffect(() => {
-    if (!hasElectionStatus && statusFilter === "elected") {
-      setStatusFilter("all");
-    }
-  }, [hasElectionStatus, statusFilter]);
-
-  const filteredCandidates = useMemo(() => {
-    if (!activeOffice) return [];
-
-    const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
-    const list = activeOffice.candidates.filter((candidate) => {
-      if (statusFilter === "elected" && hasElectionStatus && !candidate.elected) {
-        return false;
-      }
-      if (!query) return true;
-
-      return (
-        candidate.name.toLocaleLowerCase("pt-BR").includes(query) ||
-        candidate.party.toLocaleLowerCase("pt-BR").includes(query) ||
-        String(candidate.ballotNumber).includes(query) ||
-        statusLabel(candidate).toLocaleLowerCase("pt-BR").includes(query)
-      );
-    });
-
-    return [...list].sort((a, b) => {
-      if (sortBy === "votes_desc") return b.votes - a.votes;
-      if (sortBy === "votes_asc") return a.votes - b.votes;
-      if (sortBy === "name_asc") return a.name.localeCompare(b.name, "pt-BR");
-      if (sortBy === "number_asc") {
-        return ballotNumberValue(a.ballotNumber) - ballotNumberValue(b.ballotNumber);
-      }
-      return 0;
-    });
-  }, [activeOffice, hasElectionStatus, searchQuery, sortBy, statusFilter]);
-
-  const topLeaders = useMemo(() => {
-    if (!activeOffice) return [];
-    return [...activeOffice.candidates].sort((a, b) => b.votes - a.votes).slice(0, 3);
-  }, [activeOffice]);
-
-  const blankNullVotes = activeOffice
-    ? activeOffice.blankNullVotes ??
-      (activeOffice.blankVotes || 0) + (activeOffice.nullVotes || 0)
-    : 0;
-
-  const totalVotesCast = activeOffice
-    ? activeOffice.totalValidVotes + blankNullVotes
-    : 0;
-
-  const turnoutRate =
-    activeOffice && activeOffice.totalElectorate > 0
-      ? ((totalVotesCast / activeOffice.totalElectorate) * 100).toFixed(1)
-      : "0";
-
-  const exportCsv = () => {
-    if (!activeOffice) return;
-
-    const header =
-      "Posição,Candidato,Número,Partido,Votos,Percentual (%),Situação,Fonte\n";
-    const rows = filteredCandidates
-      .map(
-        (candidate, index) =>
-          `"${index + 1}","${candidate.name}","${candidate.ballotNumber}","${candidate.party}","${candidate.votes}","${candidate.percentage}%","${statusLabel(candidate)}","${activeOffice.sourceLabel}"`,
-      )
-      .join("\n");
-
-    const blob = new Blob(["\ufeff" + header + rows], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `tse-arapongas-${selectedYear}-${selectedOffice}.csv`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 500);
-  };
+  const [loading, setLoading] = useState(true);
+  const srcDoc = useMemo(() => buildIntegratedMapHtml(), []);
 
   return (
-    <div className="tse-panel-root">
-      <div className="tse-panel-shell">
-        <header className="tse-panel-topbar">
-          <div className="tse-panel-brand">
-            <div className="tse-panel-logo">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/voto-forte-bandeira-icon.jpg"
-                alt="Paraná"
-                className="tse-panel-logo-img"
-              />
-            </div>
-            <div className="tse-panel-heading-copy">
-              <h1 className="tse-panel-title">
-                <span>Painel Eleitoral — Arapongas / PR</span>
-                <span className="tse-panel-badge">TSE</span>
-              </h1>
-              <div className="tse-panel-subtitle">
-                Resultados eleitorais conferidos para Arapongas. Sem projeção de votos por
-                bairro, colégio ou seção.
-              </div>
-            </div>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100dvh - 88px)",
+        height: "calc(100dvh - 88px)",
+        background: "#080d17",
+        borderRadius: 16,
+        overflow: "hidden",
+        border: "1px solid rgba(56,189,248,.18)",
+        boxShadow: "0 14px 42px rgba(0,0,0,.28)",
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          minHeight: 48,
+          padding: "8px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          background: "#071524",
+          borderBottom: "1px solid rgba(56,189,248,.16)",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: "#38bdf8", fontSize: 10, fontWeight: 900, letterSpacing: ".08em" }}>
+            PAINEL ELEITORAL · ARAPONGAS / PR
           </div>
-
-          <div className="tse-panel-actions">
-            <button type="button" className="tse-btn" onClick={exportCsv}>
-              ⬇️ Exportar CSV
-            </button>
-            <button type="button" className="tse-btn" onClick={() => window.print()}>
-              🖨️ Imprimir
-            </button>
-            <button
-              type="button"
-              className="vf-back-dashboard-btn"
-              onClick={handleBack}
-              title="Voltar ao Dashboard Principal"
-            >
-              <span className="vf-back-arrow" aria-hidden="true">
-                ←
-              </span>
-              <span>Voltar ao Sistema</span>
-            </button>
+          <div style={{ color: "#e5edf8", fontSize: 13, fontWeight: 800, marginTop: 2 }}>
+            Mapa Eleitoral integrado ao Voto Forte Paraná
           </div>
-        </header>
-
-        <section className="tse-panel-integrity-note" aria-label="Integridade dos dados">
-          <strong>Dados sem estimativa.</strong>
-          <span>
-            O painel exibe somente resultados inseridos na base verificada. Filtros que
-            simulavam votação por local foram removidos.
-          </span>
-        </section>
-
-        <section className="tse-filters-bar">
-          <div className="tse-years-nav">
-            <span className="tse-select-label">Ano eleitoral:</span>
-            {VERIFIED_ARAPONGAS_ELECTIONS.map((election) => (
-              <button
-                key={election.year}
-                type="button"
-                className={`tse-year-btn ${selectedYear === election.year ? "active" : ""}`}
-                onClick={() => setSelectedYear(election.year)}
-              >
-                🗳️ {election.year} {election.type === "geral" ? "(Gerais)" : "(Municipais)"}
-              </button>
-            ))}
-          </div>
-
-          <div className="tse-offices-nav">
-            <span className="tse-select-label">Cargo:</span>
-            {availableOffices.map((office) => (
-              <button
-                key={office.office}
-                type="button"
-                className={`tse-office-btn ${selectedOffice === office.office ? "active" : ""}`}
-                onClick={() => setSelectedOffice(office.office)}
-              >
-                {office.officeLabel}
-              </button>
-            ))}
-          </div>
-
-          <div className="tse-subfilters tse-subfilters-verified">
-            <input
-              type="text"
-              className="tse-search-input"
-              placeholder="🔍 Buscar candidato, partido ou número..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-
-            {hasElectionStatus && (
-              <select
-                className="tse-select tse-compact-select"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-              >
-                <option value="all">Todos os resultados</option>
-                <option value="elected">Apenas eleitos</option>
-              </select>
-            )}
-
-            <select
-              className="tse-select tse-compact-select"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-            >
-              <option value="votes_desc">Mais votados</option>
-              <option value="votes_asc">Menos votados</option>
-              <option value="name_asc">Nome A-Z</option>
-              <option value="number_asc">Número do candidato</option>
-            </select>
-          </div>
-        </section>
-
-        {activeOffice && (
-          <>
-            <section className="tse-stats-grid">
-              <div className="tse-stat-card">
-                <div className="tse-stat-label">Eleitorado apto</div>
-                <div className="tse-stat-number" style={{ color: "#38bdf8" }}>
-                  {activeOffice.totalElectorate.toLocaleString("pt-BR")}
-                </div>
-                <div className="tse-stat-sub">Município de Arapongas / PR</div>
-              </div>
-
-              <div className="tse-stat-card">
-                <div className="tse-stat-label">Votos válidos</div>
-                <div className="tse-stat-number" style={{ color: "#4ade80" }}>
-                  {activeOffice.totalValidVotes.toLocaleString("pt-BR")}
-                </div>
-                <div className="tse-stat-sub">{activeOffice.sourceLabel}</div>
-              </div>
-
-              <div className="tse-stat-card">
-                <div className="tse-stat-label">Brancos & nulos</div>
-                <div className="tse-stat-number" style={{ color: "#facc15" }}>
-                  {blankNullVotes.toLocaleString("pt-BR")}
-                </div>
-                <div className="tse-stat-sub">
-                  {activeOffice.blankVotes !== undefined && activeOffice.nullVotes !== undefined
-                    ? `${activeOffice.blankVotes.toLocaleString("pt-BR")} brancos • ${activeOffice.nullVotes.toLocaleString("pt-BR")} nulos`
-                    : "Total combinado disponível na base verificada"}
-                </div>
-              </div>
-
-              <div className="tse-stat-card">
-                <div className="tse-stat-label">Comparecimento</div>
-                <div className="tse-stat-number" style={{ color: "#a78bfa" }}>
-                  {turnoutRate}%
-                </div>
-                <div className="tse-stat-sub">
-                  {activeOffice.abstentions.toLocaleString("pt-BR")} abstenções
-                </div>
-              </div>
-            </section>
-
-            <section className="tse-leaders-section">
-              <h2 className="tse-section-title">
-                🏆 Mais votados — {activeOffice.officeLabel} ({selectedYear})
-              </h2>
-              <div className="tse-leaders-grid">
-                {topLeaders.map((candidate, index) => (
-                  <div
-                    key={`${candidate.ballotNumber}-${candidate.name}`}
-                    className={`tse-leader-card ${candidate.elected ? "elected" : ""}`}
-                  >
-                    <div className="tse-leader-top">
-                      <div className="tse-leader-pos">{index + 1}º</div>
-                      {candidate.elected && (
-                        <span className="tse-leader-tag">✓ ELEITO</span>
-                      )}
-                    </div>
-                    <div className="tse-leader-info">
-                      <div className="tse-leader-name">{candidate.name}</div>
-                      <div className="tse-leader-meta">
-                        <b>{candidate.party}</b>
-                        {candidate.ballotNumber !== "—" && ` • Nº ${candidate.ballotNumber}`}
-                      </div>
-                    </div>
-                    <div className="tse-leader-votes-bar">
-                      <div className="tse-bar-track">
-                        <div
-                          className="tse-bar-fill"
-                          style={{ width: `${Math.min(100, candidate.percentage)}%` }}
-                        />
-                      </div>
-                      <div className="tse-bar-labels">
-                        <span>{candidate.votes.toLocaleString("pt-BR")} votos</span>
-                        <span>{candidate.percentage}%</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="tse-table-container">
-              <div className="tse-table-heading">
-                <h2 className="tse-section-title">
-                  📋 {coverageTitle(activeOffice.coverage)}
-                  {` (${filteredCandidates.length})`}
-                </h2>
-                <span className="tse-table-meta">
-                  {coverageDescription(activeOffice.coverage)}
-                </span>
-              </div>
-
-              <table className="tse-table tse-desktop-table">
-                <thead>
-                  <tr>
-                    <th>Pos.</th>
-                    <th>Candidato</th>
-                    <th>Número</th>
-                    <th>Partido</th>
-                    <th style={{ textAlign: "right" }}>Votos em Arapongas</th>
-                    <th style={{ textAlign: "right" }}>% válidos</th>
-                    <th>Situação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCandidates.map((candidate, index) => (
-                    <tr
-                      key={`${candidate.ballotNumber}-${candidate.name}`}
-                      className={candidate.elected ? "elected-row" : ""}
-                    >
-                      <td>{index + 1}º</td>
-                      <td>
-                        <span className="tse-cand-name">{candidate.name}</span>
-                      </td>
-                      <td>
-                        <code className="tse-ballot-number">{candidate.ballotNumber}</code>
-                      </td>
-                      <td>
-                        <span className="tse-party-tag">{candidate.party}</span>
-                      </td>
-                      <td className="tse-votes-cell">
-                        {candidate.votes.toLocaleString("pt-BR")}
-                      </td>
-                      <td className="tse-percent-cell">{candidate.percentage}%</td>
-                      <td>
-                        <span
-                          className={
-                            candidate.elected
-                              ? "tse-badge-elected"
-                              : "tse-badge-not-elected"
-                          }
-                        >
-                          {statusLabel(candidate)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="tse-candidate-mobile-list">
-                {filteredCandidates.map((candidate, index) => (
-                  <article
-                    key={`mobile-${candidate.ballotNumber}-${candidate.name}`}
-                    className={`tse-candidate-mobile-card ${candidate.elected ? "elected" : ""}`}
-                  >
-                    <div className="tse-candidate-mobile-top">
-                      <span className="tse-candidate-mobile-rank">{index + 1}º</span>
-                      <span
-                        className={
-                          candidate.elected
-                            ? "tse-badge-elected"
-                            : "tse-badge-not-elected"
-                        }
-                      >
-                        {statusLabel(candidate)}
-                      </span>
-                    </div>
-                    <strong>{candidate.name}</strong>
-                    <div className="tse-candidate-mobile-meta">
-                      {candidate.ballotNumber !== "—" && <span>Nº {candidate.ballotNumber}</span>}
-                      <span>{candidate.party}</span>
-                    </div>
-                    <div className="tse-candidate-mobile-result">
-                      <b>{candidate.votes.toLocaleString("pt-BR")} votos</b>
-                      <span>{candidate.percentage}% dos válidos</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              <div className="tse-source-footnote">
-                <strong>Fonte exibida:</strong> {activeOffice.sourceLabel}.
-                {activeOffice.sourceUrl && (
-                  <>
-                    {" "}
-                    <a
-                      href={activeOffice.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Abrir fonte oficial do TSE
-                    </a>
-                  </>
-                )}
-              </div>
-            </section>
-          </>
+        </div>
+        {onBackToDashboard && (
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            style={{
+              border: "1px solid rgba(125,211,252,.28)",
+              background: "rgba(8,47,73,.55)",
+              color: "#bae6fd",
+              borderRadius: 9,
+              padding: "7px 10px",
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            ← Voltar
+          </button>
         )}
       </div>
+
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            inset: "49px 0 0",
+            zIndex: 4,
+            display: "grid",
+            placeItems: "center",
+            background: "#080d17",
+            color: "#94a3b8",
+            fontSize: 13,
+          }}
+        >
+          Carregando projeto VotoForte Arapongas…
+        </div>
+      )}
+
+      <iframe
+        title="Mapa Eleitoral de Arapongas integrado"
+        srcDoc={srcDoc}
+        onLoad={() => setLoading(false)}
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"
+        referrerPolicy="strict-origin-when-cross-origin"
+        style={{
+          width: "100%",
+          height: "calc(100% - 49px)",
+          display: "block",
+          border: 0,
+          background: "#080d17",
+        }}
+      />
     </div>
   );
 }
