@@ -1,9 +1,27 @@
+import {
+  isRealSha256,
+  serializeCanonicalJson,
+  sha256Checksum,
+} from "../../../backup-integrity";
 import { getAccount } from "../../../server-identity";
 
 type SnapshotPayload = {
   format?: string | null;
+  schemaVersion?: string | null;
+  data?: unknown;
   [key: string]: unknown;
 };
+
+function isRecoverablePayload(payload: SnapshotPayload | null) {
+  if (!payload) return false;
+  if (payload.format === "voto-forte-backup") return true;
+  if (payload.format === "voto-forte-master-full-backup") return true;
+  return (
+    payload.format === "voto-forte-automated-daily-backup" &&
+    payload.schemaVersion === "2.0" &&
+    Boolean(payload.data)
+  );
+}
 
 export async function GET(
   _request: Request,
@@ -39,7 +57,7 @@ export async function GET(
   }
 
   const payload = snapshot.data as SnapshotPayload | null;
-  if (!payload || payload.format !== "voto-forte-backup") {
+  if (!isRecoverablePayload(payload)) {
     return Response.json(
       {
         error:
@@ -49,7 +67,20 @@ export async function GET(
     );
   }
 
-  const serialized = JSON.stringify(payload, null, 2);
+  const serialized = serializeCanonicalJson(payload);
+  const actualChecksum = sha256Checksum(serialized);
+  const storedChecksum = String(snapshot.checksum ?? "");
+
+  if (isRealSha256(storedChecksum) && storedChecksum.toLowerCase() !== actualChecksum) {
+    return Response.json(
+      {
+        error:
+          "Falha de integridade: o conteúdo persistido não corresponde ao SHA-256 registrado para este snapshot.",
+      },
+      { status: 409 },
+    );
+  }
+
   const date = new Date(snapshot.created_at).toISOString().slice(0, 10);
 
   return new Response(serialized, {
@@ -59,7 +90,8 @@ export async function GET(
       "Content-Disposition": `attachment; filename="VotoForte-Snapshot-${snapshot.id}-${date}.json"`,
       "Cache-Control": "private, no-store, max-age=0",
       "X-VotoForte-Snapshot-Id": String(snapshot.id),
-      "X-VotoForte-Snapshot-Checksum": String(snapshot.checksum ?? ""),
+      "X-VotoForte-Snapshot-Checksum": actualChecksum,
+      "X-VotoForte-Checksum-Scope": "exact-response-body",
     },
   });
 }
