@@ -42,6 +42,14 @@ export const CANDIDATE_NAMES_MAP: Record<string, string> = {
   luiz_franca_missao: "Luiz França",
   luiz_franca: "Luiz França",
 
+  // Senador
+  alexandre_curi: "Alexandre Curi",
+  cristina_graeml: "Cristina Graeml",
+  deltan_dallagnol: "Deltan Dallagnol",
+  filipe_barros: "Filipe Barros",
+  gleisi: "Gleisi",
+  dr_rosinha: "Dr Rosinha",
+
   // Presidente
   lula_pt: "Lula",
   lula: "Lula",

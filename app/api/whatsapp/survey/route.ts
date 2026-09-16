@@ -240,6 +240,29 @@ export async function GET(request: Request) {
       "Jardim Panorama": 476,
     };
 
+    // Acumula novos votos recebidos em tempo real nos rankings
+    for (const r of responses) {
+      if (r.sourceKey.startsWith("backup-")) continue;
+      if (r.stateCandidate && r.stateCandidate !== "Não especificado / Em aberto") {
+        stateCounts[r.stateCandidate] = (stateCounts[r.stateCandidate] || 0) + 1;
+      }
+      if (r.federalCandidate && r.federalCandidate !== "Não especificado / Em aberto") {
+        federalCounts[r.federalCandidate] = (federalCounts[r.federalCandidate] || 0) + 1;
+      }
+      if (r.governorCandidate) {
+        governorCounts[r.governorCandidate] = (governorCounts[r.governorCandidate] || 0) + 1;
+      }
+      if (r.senatorCandidate) {
+        senatorCounts[r.senatorCandidate] = (senatorCounts[r.senatorCandidate] || 0) + 1;
+      }
+      if (r.presidentCandidate) {
+        presidentCounts[r.presidentCandidate] = (presidentCounts[r.presidentCandidate] || 0) + 1;
+      }
+      if (r.district && r.district !== "Não informado") {
+        districtCounts[r.district] = (districtCounts[r.district] || 0) + 1;
+      }
+    }
+
     const stateRanking = toRanking(stateCounts);
     const federalRanking = toRanking(federalCounts);
     const governorRanking = toRanking(governorCounts);
@@ -249,11 +272,13 @@ export async function GET(request: Request) {
       .map(([district, total]) => ({ district, total }))
       .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
 
+    const dynamicTotalResponses = responses.length;
+
     return Response.json({
       success: true,
-      totalResponses: 9646,
+      totalResponses: dynamicTotalResponses,
       kpis: {
-        totalResponses: 9646,
+        totalResponses: dynamicTotalResponses,
         topStateCandidate: stateRanking[0] ? `${stateRanking[0].candidate} (${stateRanking[0].percentage}%)` : "-",
         topFederalCandidate: federalRanking[0] ? `${federalRanking[0].candidate} (${federalRanking[0].percentage}%)` : "-",
         activeDistrictsCount: districtRanking.length,
