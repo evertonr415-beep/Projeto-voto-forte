@@ -2,6 +2,8 @@ import { getAccount } from "../../server-identity";
 
 export const dynamic = "force-dynamic";
 
+const CONTACT_PAGE_SIZE = 1000;
+
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account || account.role !== "master") {
@@ -20,15 +22,47 @@ export async function GET(request: Request) {
     const dateStr = targetDate || timestamp.slice(0, 10);
     const timeStr = isScheduledDaily ? "02h30" : timestamp.slice(11, 16).replace(":", "h");
 
-    // 1. Fetch all system tables safely
-    const [
-      contactsRes,
-      usersRes,
-      auditRes,
-      exportsRes,
-      backupsRes,
-    ] = await Promise.all([
-      account.supabase.from("vf_contacts").select("*").limit(20000),
+    const countResult = await account.supabase
+      .from("vf_owned_records")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "contact");
+
+    if (countResult.error) {
+      throw new Error(`Falha ao contar os contatos: ${countResult.error.message}`);
+    }
+    if (countResult.count == null) {
+      throw new Error("A contagem exata de contatos não foi retornada pelo banco.");
+    }
+
+    const expectedContactsCount = countResult.count;
+    const contacts: Array<Record<string, unknown>> = [];
+
+    for (let from = 0; from < expectedContactsCount; from += CONTACT_PAGE_SIZE) {
+      const to = Math.min(from + CONTACT_PAGE_SIZE - 1, expectedContactsCount - 1);
+      const pageResult = await account.supabase
+        .from("vf_owned_records")
+        .select("*")
+        .eq("kind", "contact")
+        .order("id", { ascending: true })
+        .range(from, to);
+
+      if (pageResult.error) {
+        throw new Error(
+          `Falha ao exportar contatos ${from + 1}-${to + 1}: ${pageResult.error.message}`,
+        );
+      }
+
+      contacts.push(...((pageResult.data ?? []) as Array<Record<string, unknown>>));
+    }
+
+    if (contacts.length !== expectedContactsCount) {
+      throw new Error(
+        `Backup interrompido: o banco informou ${expectedContactsCount} contatos, mas somente ${contacts.length} foram exportados.`,
+      );
+    }
+
+    // 1. Fetch the remaining system tables. Contacts are paginated above and must be complete.
+    const [usersRes, auditRes, exportsRes, backupsRes] = await Promise.all([
       account.supabase.from("vf_users").select("id,email,name,role,status,parent_user_id,created_at"),
       account.supabase.from("vf_audit_logs").select("*").order("created_at", { ascending: false }).limit(500),
       account.supabase.from("vf_contact_exports").select("*").order("created_at", { ascending: false }).limit(200),
@@ -56,7 +90,9 @@ export async function GET(request: Request) {
         { name: "Administração de Usuários", route: "/administracao" },
       ],
       databaseSummary: {
-        contactsCount: contactsRes.data?.length ?? 57683,
+        contactsCount: contacts.length,
+        expectedContactsCount,
+        contactsComplete: contacts.length === expectedContactsCount,
         usersCount: usersRes.data?.length ?? 2,
         auditLogsCount: auditRes.data?.length ?? 0,
         exportsCount: exportsRes.data?.length ?? 0,
@@ -69,7 +105,7 @@ export async function GET(request: Request) {
       system: systemManifest,
       data: {
         users: usersRes.data ?? [],
-        contacts: contactsRes.data ?? [],
+        contacts,
         auditLogs: auditRes.data ?? [],
         contactExports: exportsRes.data ?? [],
         previousSnapshots: backupsRes.data ?? [],
