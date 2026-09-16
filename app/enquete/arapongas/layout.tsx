@@ -1,8 +1,92 @@
 import type { ReactNode } from "react";
 
+const candidatePhotoProxyScript = String.raw`
+(function () {
+  var candidateNames = new Set([
+    "lula",
+    "flavio bolsonaro",
+    "augusto cury",
+    "renan santos",
+    "ronaldo caiado",
+    "romeu zema",
+    "sergio moro",
+    "requiao filho",
+    "sandro alex",
+    "luiz franca",
+    "alexandre curi",
+    "cristina graeml",
+    "deltan dallagnol",
+    "filipe barros",
+    "gleisi",
+    "dr rosinha",
+    "neto santos",
+    "ricardo barros",
+    "pedro lupion",
+    "beto preto",
+    "luciano ducci",
+    "bonin",
+    "marco brasil",
+    "santin roveda",
+    "pedro paulo bazana",
+    "sergio onofre",
+    "aline franzon",
+    "delegado jacovos",
+    "cobra reporter"
+  ]);
+
+  function normalize(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\\u0300-\\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function proxyCandidateImage(img) {
+    if (!(img instanceof HTMLImageElement)) return;
+    if (!candidateNames.has(normalize(img.getAttribute("alt")))) return;
+
+    var raw = img.getAttribute("src");
+    if (!raw) return;
+
+    try {
+      var current = new URL(raw, window.location.href);
+      if (current.origin === window.location.origin) return;
+
+      var proxied = "/api/enquete/candidate-photo?url=" + encodeURIComponent(current.href);
+      if (img.getAttribute("src") !== proxied) img.setAttribute("src", proxied);
+    } catch (_) {}
+  }
+
+  function scan(root) {
+    if (!root) return;
+    if (root instanceof HTMLImageElement) proxyCandidateImage(root);
+    if (root.querySelectorAll) root.querySelectorAll("img").forEach(proxyCandidateImage);
+  }
+
+  scan(document);
+
+  new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      if (mutation.type === "attributes") {
+        proxyCandidateImage(mutation.target);
+        return;
+      }
+      mutation.addedNodes.forEach(scan);
+    });
+  }).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["src"]
+  });
+})();
+`;
+
 export default function EnqueteArapongasLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <script dangerouslySetInnerHTML={{ __html: candidatePhotoProxyScript }} />
       <style>{`
         /* Pós-voto: mantém o mesmo azul do banner até a confirmação. */
         div:has(> header > img[alt="Enquete Voto Forte Paraná"]) > header {
