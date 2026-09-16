@@ -1,15 +1,10 @@
-import { getAccount, isAdminEmail } from "../../server-identity";
+import { getAccount } from "../../server-identity";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const account = await getAccount();
-  if (
-    !account ||
-    (account.accessRole !== "adm" &&
-      account.accessRole !== "master" &&
-      !isAdminEmail(account.email))
-  ) {
+  if (!account || account.role !== "master") {
     return Response.json(
       { error: "Acesso exclusivo dos usuários Master do sistema." },
       { status: 403 },
