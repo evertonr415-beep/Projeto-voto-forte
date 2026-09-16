@@ -64,20 +64,27 @@ function weservFallback(source: string) {
 
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("url");
+  const probe = request.nextUrl.searchParams.get("probe") === "1";
 
   if (!source) {
-    return new Response("URL da foto não informada", { status: 400 });
+    return probe
+      ? Response.json({ ok: false, error: "URL da foto não informada" }, { status: 400 })
+      : new Response("URL da foto não informada", { status: 400 });
   }
 
   let parsed: URL;
   try {
     parsed = new URL(source);
   } catch {
-    return new Response("URL inválida", { status: 400 });
+    return probe
+      ? Response.json({ ok: false, error: "URL inválida" }, { status: 400 })
+      : new Response("URL inválida", { status: 400 });
   }
 
   if (parsed.protocol !== "https:" || !ALLOWED_HOSTS.has(parsed.hostname)) {
-    return new Response("Origem da foto não permitida", { status: 403 });
+    return probe
+      ? Response.json({ ok: false, error: "Origem da foto não permitida", host: parsed.hostname }, { status: 403 })
+      : new Response("Origem da foto não permitida", { status: 403 });
   }
 
   const resolvedSource = SOURCE_OVERRIDES.get(parsed.toString()) || parsed.toString();
@@ -86,25 +93,47 @@ export async function GET(request: NextRequest) {
   try {
     resolved = new URL(resolvedSource);
   } catch {
-    return new Response("URL da foto inválida", { status: 400 });
+    return probe
+      ? Response.json({ ok: false, error: "URL da foto inválida" }, { status: 400 })
+      : new Response("URL da foto inválida", { status: 400 });
   }
 
   if (resolved.protocol !== "https:" || !ALLOWED_HOSTS.has(resolved.hostname)) {
-    return new Response("Origem alternativa da foto não permitida", { status: 403 });
+    return probe
+      ? Response.json({ ok: false, error: "Origem alternativa da foto não permitida", host: resolved.hostname }, { status: 403 })
+      : new Response("Origem alternativa da foto não permitida", { status: 403 });
   }
 
+  let usedFallback = false;
   let image = await fetchImage(resolved.toString());
 
   if (!image && resolved.hostname !== "images.weserv.nl") {
+    usedFallback = true;
     image = await fetchImage(weservFallback(resolved.toString()));
   }
 
   if (!image) {
-    return new Response("Foto indisponível", { status: 404 });
+    return probe
+      ? Response.json(
+          { ok: false, error: "Foto indisponível", source: parsed.toString(), resolvedSource: resolved.toString() },
+          { status: 404 },
+        )
+      : new Response("Foto indisponível", { status: 404 });
+  }
+
+  const contentType = image.headers.get("content-type") || "image/jpeg";
+
+  if (probe) {
+    return Response.json({
+      ok: true,
+      source: parsed.toString(),
+      resolvedSource: resolved.toString(),
+      contentType,
+      usedFallback,
+    });
   }
 
   const body = await image.arrayBuffer();
-  const contentType = image.headers.get("content-type") || "image/jpeg";
 
   return new Response(body, {
     status: 200,
