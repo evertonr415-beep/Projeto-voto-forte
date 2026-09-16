@@ -1,55 +1,24 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { supabase } from "../supabase-client";
+import { redirect } from "next/navigation";
+import { getAccount } from "../server-identity";
 import SystemIntelligenceClient from "./system-intelligence-client";
 import NeuralBackNavigation from "./neural-back-navigation";
 
-export default function SystemIntelligencePage() {
-  const [sessionReady, setSessionReady] = useState(false);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    let active = true;
+export default async function SystemIntelligencePage() {
+  const account = await getAccount();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active) return;
+  if (!account) {
+    redirect("/contatos");
+  }
 
-      if (event === "INITIAL_SESSION") {
-        if (session) {
-          setSessionReady(true);
-        } else {
-          window.location.replace("/contatos");
-        }
-        return;
-      }
-
-      if (event === "SIGNED_OUT") {
-        window.location.replace("/contatos");
-        return;
-      }
-
-      if (session) setSessionReady(true);
-    });
-
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+  if (account.role !== "master") {
+    redirect("/sistema-completo");
+  }
 
   return (
     <>
-      {sessionReady ? (
-        <SystemIntelligenceClient />
-      ) : (
-        <main className="system-intelligence-state" aria-live="polite">
-          <section className="system-intelligence-state-card" role="status">
-            <div className="system-intelligence-spinner" aria-hidden="true" />
-            <strong>Confirmando sessão…</strong>
-            <p>Preparando o acesso à Inteligência do Sistema.</p>
-          </section>
-        </main>
-      )}
+      <SystemIntelligenceClient />
       <NeuralBackNavigation />
     </>
   );
