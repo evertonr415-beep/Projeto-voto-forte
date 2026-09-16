@@ -327,7 +327,7 @@ export async function GET(request: Request) {
       missing_street: summaryMap.missing_street || 0,
     };
 
-    const severityCounts = {
+    const severityCounts: Record<string, number> = {
       critical: summaryMap.critical || categoryCounts.invalid_phone + categoryCounts.missing_name,
       warning:
         summaryMap.warning ||

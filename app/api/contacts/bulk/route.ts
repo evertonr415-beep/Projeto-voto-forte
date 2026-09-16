@@ -10,6 +10,12 @@ type BulkActionBody = {
   kind?: "Eleitor" | "Liderança";
 };
 
+type BulkContactRecord = {
+  id: number;
+  owner_email: string;
+  payload: Record<string, unknown> | null;
+};
+
 export async function POST(request: Request) {
   const account = await getAccount();
   if (!account) {
@@ -34,7 +40,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Resolve allowed emails scope
     const users = await getVisibleUsers(account);
     const emails = users
       .filter((user) => user.status === "active")
@@ -46,7 +51,6 @@ export async function POST(request: Request) {
       account.accessRole === "gestor" ||
       isAdministrator(account.role);
 
-    // Fetch existing records to update payloads
     let fetchQuery = account.supabase
       .from("vf_owned_records")
       .select("id,owner_email,payload")
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
     const { data: records, error: fetchErr } = await fetchQuery;
     if (fetchErr) throw new Error(fetchErr.message);
 
-    const validRecords = records ?? [];
+    const validRecords = (records ?? []) as BulkContactRecord[];
     if (!validRecords.length) {
       return Response.json(
         { error: "Nenhum contato válido encontrado no seu escopo de permissão." },
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
 
     if (action === "delete") {
-      const validIds = validRecords.map((r) => r.id);
+      const validIds = validRecords.map((record) => record.id);
       const { error: delErr } = await account.supabase
         .from("vf_owned_records")
         .delete()
@@ -94,10 +98,9 @@ export async function POST(request: Request) {
       });
     }
 
-    // Process Updates
     let updatedCount = 0;
     for (const record of validRecords) {
-      const oldPayload = (record.payload ?? {}) as Record<string, unknown>;
+      const oldPayload = record.payload ?? {};
       const newPayload = { ...oldPayload };
 
       if (action === "update_district" && district !== undefined) {
