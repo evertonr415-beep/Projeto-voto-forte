@@ -21,6 +21,18 @@ type Finding = {
   actionLabel?: string;
 };
 
+type BackupSnapshot = {
+  id: number;
+  createdAt: string;
+  createdBy: string | null;
+  itemCount: number;
+  checksum: string | null;
+  backupVersion: number | null;
+  format: string | null;
+  recoverable: boolean;
+  status: "recoverable" | "metadata_only";
+};
+
 type IntelligenceData = {
   generatedAt: string;
   engine: {
@@ -55,6 +67,7 @@ type IntelligenceData = {
       ageHours: number | null;
     };
   };
+  backupSnapshots: BackupSnapshot[];
   findings: Finding[];
 };
 
@@ -96,7 +109,7 @@ export default function SystemIntelligenceClient() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | Severity>("all");
   const [downloadingMasterBackup, setDownloadingMasterBackup] = useState(false);
-  const [downloadingDate, setDownloadingDate] = useState<string | null>(null);
+  const [downloadingSnapshotId, setDownloadingSnapshotId] = useState<number | null>(null);
   const [masterBackupMessage, setMasterBackupMessage] = useState("");
 
   const handleMasterFullBackup = async () => {
@@ -132,13 +145,14 @@ export default function SystemIntelligenceClient() {
     }
   };
 
-  const handleDownloadDailyBackup = async (dateStr: string) => {
-    setDownloadingDate(dateStr);
+  const handleDownloadSnapshot = async (snapshot: BackupSnapshot) => {
+    if (!snapshot.recoverable) return;
+    setDownloadingSnapshotId(snapshot.id);
     try {
-      const res = await apiFetch(`/api/master-full-backup?date=${encodeURIComponent(dateStr)}&scheduled=true`);
+      const res = await apiFetch(`/api/backup-snapshots/${snapshot.id}`);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Falha ao baixar backup.");
+        throw new Error(errorData.error || "Falha ao baixar o snapshot histórico.");
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -148,7 +162,7 @@ export default function SystemIntelligenceClient() {
       const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
       anchor.download = filenameMatch
         ? filenameMatch[1]
-        : `VotoForte-Backup-Automatico-Diario-${dateStr}-02h30.json`;
+        : `VotoForte-Snapshot-${snapshot.id}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -156,7 +170,7 @@ export default function SystemIntelligenceClient() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Erro ao baixar arquivo de backup.");
     } finally {
-      setDownloadingDate(null);
+      setDownloadingSnapshotId(null);
     }
   };
 
@@ -207,26 +221,6 @@ export default function SystemIntelligenceClient() {
       ),
     [data, filter],
   );
-
-  const dailyBackups = useMemo(() => {
-    const list = [];
-    const now = new Date();
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = d.toISOString().slice(0, 10);
-      const formattedDate = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-      list.push({
-        id: `auto-backup-${dateStr}`,
-        dateStr,
-        formattedDate: `${formattedDate} às 02:30:00`,
-        isToday: i === 0,
-        schedule: "🤖 Automático Neural (02:30 AM)",
-        totalContacts: data?.signals.totalContacts || 57683,
-        status: "Concluído & Protegido",
-      });
-    }
-    return list;
-  }, [data]);
 
   if (busy || !data) {
     return (
@@ -291,7 +285,6 @@ export default function SystemIntelligenceClient() {
         </article>
       </section>
 
-      {/* SEÇÃO EXCLUSIVA MASTER: BACKUP GERAL DO SISTEMA */}
       <section className="system-intelligence-master-backup">
         <div className="system-master-backup-content">
           <div className="system-master-backup-info">
@@ -402,21 +395,20 @@ export default function SystemIntelligenceClient() {
         </div>
       </section>
 
-      {/* SEÇÃO ININTERRUPTA: HISTÓRICO DE BACKUPS AUTOMÁTICOS DIÁRIOS (02:30 AM) */}
       <section className="system-intelligence-daily-backups">
         <div className="system-intelligence-section-head">
           <div>
             <span style={{ color: "#38bdf8", fontWeight: 800, letterSpacing: "0.5px" }}>
-              ⏰ ROTINA ININTERRUPTA DE CONTINGÊNCIA · 02:30 AM
+              🗄️ CATÁLOGO REAL DE SNAPSHOTS
             </span>
-            <h2>Histórico de Backups Automáticos Diários</h2>
+            <h2>Histórico de Backups Registrados</h2>
             <p>
-              O sistema executa automaticamente uma rotina diária às <strong>02:30 da manhã</strong> salvando todos os cadastros, permissões, auditoria e código com integridade blindada.
+              Esta lista mostra somente snapshots que realmente existem no banco. Registros de rotina que contêm apenas metadados são identificados e não podem ser baixados como se fossem um backup recuperável.
             </p>
           </div>
           <div className="system-daily-badge">
             <span className="system-pulse-dot" />
-            <span>Rotina Ativa Diária</span>
+            <span>{data.backupSnapshots.filter((item) => item.recoverable).length} recuperáveis</span>
           </div>
         </div>
 
@@ -425,49 +417,62 @@ export default function SystemIntelligenceClient() {
             <thead>
               <tr>
                 <th>Data & Horário</th>
-                <th>Origem & Rotina</th>
-                <th>Volume de Dados</th>
+                <th>Origem</th>
+                <th>Itens registrados</th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Download do Arquivo</th>
+                <th style={{ textAlign: "right" }}>Download</th>
               </tr>
             </thead>
             <tbody>
-              {dailyBackups.map((b) => (
-                <tr key={b.id} className="system-backup-row">
+              {data.backupSnapshots.map((snapshot) => (
+                <tr key={snapshot.id} className="system-backup-row">
                   <td>
                     <div className="system-backup-date-cell">
                       <span className="system-backup-icon">📅</span>
                       <div>
-                        <strong>{b.formattedDate}</strong>
-                        <small>{b.isToday ? "Hoje (Recente)" : "Registro Permanente"}</small>
+                        <strong>{formatDate(snapshot.createdAt)}</strong>
+                        <small>Snapshot #{snapshot.id}</small>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span className="system-backup-tag">{b.schedule}</span>
+                    <span className="system-backup-tag">{snapshot.createdBy || "Origem não informada"}</span>
                   </td>
                   <td>
-                    <strong>{b.totalContacts.toLocaleString("pt-BR")}</strong> contatos
-                    <small style={{ display: "block", color: "#94a3b8", fontSize: "11px" }}>Banco & Manifesto</small>
+                    <strong>{snapshot.itemCount.toLocaleString("pt-BR")}</strong> itens
+                    <small style={{ display: "block", color: "#94a3b8", fontSize: "11px" }}>
+                      {snapshot.format || "formato não identificado"}
+                    </small>
                   </td>
                   <td>
                     <span className="system-backup-status-pill">
-                      ✓ {b.status}
+                      {snapshot.recoverable ? "✓ Snapshot recuperável" : "⚠ Somente metadados"}
                     </span>
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <button
                       type="button"
                       className="system-backup-download-row-btn"
-                      onClick={() => handleDownloadDailyBackup(b.dateStr)}
-                      disabled={downloadingDate === b.dateStr}
-                      title={`Baixar snapshot de ${b.dateStr}`}
+                      onClick={() => handleDownloadSnapshot(snapshot)}
+                      disabled={!snapshot.recoverable || downloadingSnapshotId === snapshot.id}
+                      title={snapshot.recoverable ? `Baixar snapshot real #${snapshot.id}` : "Este registro não contém um backup recuperável"}
                     >
-                      {downloadingDate === b.dateStr ? "⏳ Baixando…" : "⬇️ Baixar Backup (.json)"}
+                      {!snapshot.recoverable
+                        ? "Sem arquivo recuperável"
+                        : downloadingSnapshotId === snapshot.id
+                          ? "⏳ Baixando…"
+                          : "⬇️ Baixar snapshot real"}
                     </button>
                   </td>
                 </tr>
               ))}
+              {!data.backupSnapshots.length && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: "28px" }}>
+                    Nenhum snapshot registrado foi encontrado.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
