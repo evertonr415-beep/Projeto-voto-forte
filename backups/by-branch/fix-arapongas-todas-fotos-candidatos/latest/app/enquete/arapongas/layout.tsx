@@ -37,7 +37,12 @@ const candidatePhotoProxyScript = String.raw`
   function normalize(value) {
     return String(value || "")
       .normalize("NFD")
-      .replace(/[\\u0300-\\u036f]/g, "")
+      .split("")
+      .filter(function (character) {
+        var code = character.charCodeAt(0);
+        return code < 768 || code > 879;
+      })
+      .join("")
       .trim()
       .toLowerCase();
   }
