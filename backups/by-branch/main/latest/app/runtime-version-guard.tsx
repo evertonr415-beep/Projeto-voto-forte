@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-const VERSION_CHECK_INTERVAL_MS = 60_000;
-const RELOAD_TARGET_KEY = "vf-runtime-version-reload-target";
+const VERSION_CHECK_INTERVAL_MS = 120_000;
 const BUILD_VERSION = String(process.env.NEXT_PUBLIC_VF_BUILD_VERSION || "").trim();
 
 type VersionPayload = {
@@ -34,15 +33,10 @@ export default function RuntimeVersionGuard() {
         return;
       }
 
-      if (nextVersion === baselineVersion.current) {
-        sessionStorage.removeItem(RELOAD_TARGET_KEY);
-        return;
-      }
-
-      const reloadedVersion = sessionStorage.getItem(RELOAD_TARGET_KEY);
-      if (reloadedVersion !== nextVersion) {
-        sessionStorage.setItem(RELOAD_TARGET_KEY, nextVersion);
-        window.location.reload();
+      // Evita recarregamento abrupto forçado de página (window.location.reload)
+      // para não causar tela branca nem interromper o usuário com o site aberto.
+      if (nextVersion !== baselineVersion.current) {
+        baselineVersion.current = nextVersion;
       }
     } catch {
       // Não bloqueia o sistema se a verificação falhar.
@@ -60,3 +54,4 @@ export default function RuntimeVersionGuard() {
 
   return null;
 }
+
