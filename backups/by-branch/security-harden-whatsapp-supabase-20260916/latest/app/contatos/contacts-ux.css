@@ -1,0 +1,110 @@
+/* Painel de contatos: hierarquia visual, leitura e mobile */
+.optimized-shell { overflow-x: clip; }
+.optimized-quick-actions { align-items: stretch; }
+.optimized-quick-actions > * { min-width: 0; }
+.optimized-panel.contacts-panel { scroll-margin-top: 12px; }
+
+.optimized-quick-actions a[href="/pendencias-localizacao"] {
+  border-color: #c9d8e8;
+  background: #f7fafc;
+  color: #173f70;
+}
+
+.optimized-hero-controls .vf-municipality-header-menu > summary,
+.optimized-hero-controls .vf-municipality-header-badge {
+  border-color: #b9c9da;
+  background: #ffffff;
+  color: #12345f;
+}
+.optimized-hero-controls .vf-municipality-header-menu > summary:focus-visible {
+  outline: 3px solid rgba(18, 63, 114, .22);
+  outline-offset: 2px;
+}
+
+.optimized-contact-load-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.optimized-contact-load-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #c9d5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #173f70;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.optimized-contact-load-actions button.primary {
+  border-color: #123f72;
+  background: #123f72;
+  color: #fff;
+}
+.optimized-contact-idle {
+  margin-top: 12px;
+  padding: 18px;
+  border: 1px dashed #bdccdb;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #52687e;
+}
+.optimized-contact-idle b { color: #173f70; }
+.optimized-contact-idle p { margin: 5px 0 0; line-height: 1.5; }
+
+.vf-whatsapp-queue {
+  scroll-margin-top: 12px;
+  border-color: rgba(18, 63, 114, .14);
+  box-shadow: 0 10px 28px rgba(15, 52, 96, .07);
+}
+
+@media (max-width: 760px) {
+  .optimized-shell { padding-inline: 12px; }
+  .optimized-topbar { gap: 10px; }
+  .optimized-brand-row h1 { font-size: clamp(1.45rem, 7vw, 2rem); }
+  .optimized-brand-row p { max-width: 32rem; }
+
+  .optimized-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .optimized-quick-actions > * { min-height: 64px; padding: 10px; }
+  .optimized-quick-actions small { display: none; }
+
+  .optimized-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .optimized-kpis article { min-width: 0; padding: 12px; }
+  .optimized-kpis article b { font-size: 1.35rem; }
+
+  .district-panel { max-height: none; }
+  .district-row-button { min-height: 48px; }
+  .district-name > span:first-child { color: #173f70; font-weight: 750; }
+
+  .optimized-panel.contacts-panel { padding: 12px; }
+  .optimized-panel-head { align-items: flex-start; gap: 10px; }
+  .optimized-contact-load-actions,
+  .optimized-contact-load-actions button { width: 100%; }
+  .optimized-filters.is-open {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .optimized-contact-idle { padding: 14px; }
+  .optimized-table-wrap table { min-width: 0; }
+  .optimized-pagination { align-items: stretch; gap: 8px; }
+  .optimized-pagination > div { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .optimized-pagination button { min-height: 44px; }
+
+  .vf-whatsapp-queue { margin-top: 10px; }
+  .vf-whatsapp-queue-setup { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 430px) {
+  .optimized-quick-actions { grid-template-columns: 1fr; }
+  .optimized-kpis { grid-template-columns: 1fr 1fr; }
+  .optimized-section-heading { align-items: flex-start; gap: 6px; }
+}
