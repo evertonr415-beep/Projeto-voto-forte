@@ -1241,18 +1241,29 @@ export async function GET(request: Request) {
       if (!error && Array.isArray(events)) {
         for (const ev of events) {
           const rawPhone = ev.phone || "";
-          const phone = normalizeWhatsappPhone(rawPhone) || rawPhone;
+          const phone = normalizeWhatsappPhone(rawPhone) || rawPhone || `event-${ev.id || Date.now()}`;
           if (!phone) continue;
 
           const occurredAt = ev.occurred_at || ev.created_at || new Date().toISOString();
           const isError = ev.status === "failed" || ev.status === "error" || Boolean(ev.error_code) || Boolean(ev.error_message);
-          const isInbound = ev.direction === "inbound" || ev.event_type?.includes("poll") || ev.event_type?.includes("survey");
+          const isInbound =
+            ev.direction === "inbound" ||
+            ev.event_type?.includes("poll") ||
+            ev.event_type?.includes("survey") ||
+            ev.event_type === "message_received";
           const isOutbound = ev.direction === "outbound";
           const formattedReply = formatReadableSurveyText(ev.message_text);
 
           const digitsOnly = phone.replace(/\D/g, "");
-          const matchedContact = contactLookup.get(digitsOnly) || (digitsOnly.startsWith("55") ? contactLookup.get(digitsOnly.slice(2)) : undefined);
-          const resolvedName = ev.contact_name || matchedContact?.name || (isInbound ? "Participante da Enquete" : "Eleitor");
+          const matchedContact =
+            digitsOnly.length >= 8
+              ? contactLookup.get(digitsOnly) ||
+                (digitsOnly.startsWith("55") ? contactLookup.get(digitsOnly.slice(2)) : undefined)
+              : undefined;
+          const resolvedName =
+            ev.contact_name ||
+            matchedContact?.name ||
+            (isInbound ? "Participante da Enquete" : "Eleitor");
           const resolvedDistrict = matchedContact?.district;
 
           let existing = phoneMap.get(phone);

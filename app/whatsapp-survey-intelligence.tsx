@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { apiFetch } from "./supabase-client";
+import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
 
 interface SurveyResponseItem {
   phone: string;
@@ -31,6 +32,7 @@ export default function WhatsappSurveyIntelligence() {
   const [activeTab, setActiveTab] = useState<"ranking" | "messages" | "simulate">("ranking");
   const [loading, setLoading] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>("all");
+  const [messageSearch, setMessageSearch] = useState<string>("");
   const [responses, setResponses] = useState<SurveyResponseItem[]>([]);
   const [stateRanking, setStateRanking] = useState<CandidateRanking[]>([]);
   const [federalRanking, setFederalRanking] = useState<CandidateRanking[]>([]);
@@ -426,12 +428,39 @@ export default function WhatsappSurveyIntelligence() {
 
           {activeTab === "messages" && (
             <div className="survey-message-list">
-              {responses.length === 0 ? (
-                <div className="survey-empty survey-empty-large">
-                  Nenhuma resposta recebida ainda. Dispare a enquete para começar a coletar os votos!
-                </div>
-              ) : (
-                responses.map((item, index) => (
+              <div style={{ marginBottom: 12 }}>
+                <input
+                  type="text"
+                  className="wt-input"
+                  placeholder="🔍 Buscar resposta por nome, telefone, bairro ou candidato..."
+                  value={messageSearch}
+                  onChange={(e) => setMessageSearch(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 8 }}
+                />
+              </div>
+
+              {(() => {
+                const filtered = messageSearch
+                  ? responses.filter(
+                      (r) =>
+                        r.contactName.toLowerCase().includes(messageSearch.toLowerCase()) ||
+                        r.phone.includes(messageSearch) ||
+                        r.district.toLowerCase().includes(messageSearch.toLowerCase()) ||
+                        r.messageText.toLowerCase().includes(messageSearch.toLowerCase()) ||
+                        r.stateCandidate.toLowerCase().includes(messageSearch.toLowerCase()) ||
+                        r.federalCandidate.toLowerCase().includes(messageSearch.toLowerCase()),
+                    )
+                  : responses;
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="survey-empty survey-empty-large">
+                      {messageSearch ? "Nenhuma resposta encontrada para esta busca." : "Nenhuma resposta recebida ainda. Dispare a enquete para começar a coletar os votos!"}
+                    </div>
+                  );
+                }
+
+                return filtered.map((item, index) => (
                   <article className="survey-message-card" key={`${item.phone}-${index}`}>
                     <div className="survey-message-header">
                       <div className="survey-contact">
@@ -441,7 +470,7 @@ export default function WhatsappSurveyIntelligence() {
                         <div className="survey-contact-copy">
                           <strong>{item.contactName || "Eleitor(a)"}</strong>
                           <small>
-                            📱 {item.phone} · 🏡 {item.district} ({item.city})
+                            📱 {formatDisplayPhone(item.phone)} · 🏡 {item.district} ({item.city || "Arapongas"})
                           </small>
                         </div>
                       </div>
@@ -455,7 +484,9 @@ export default function WhatsappSurveyIntelligence() {
                     </div>
 
                     <div className="survey-message-bubble">
-                      &quot;{item.messageText}&quot;
+                      <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
+                        {formatReadableSurveyText(item.messageText)}
+                      </div>
                       <span>
                         {new Date(item.timestamp).toLocaleTimeString("pt-BR")} ✓✓
                       </span>
@@ -468,8 +499,8 @@ export default function WhatsappSurveyIntelligence() {
                       <span className="sentiment">Intenção: {item.sentiment}</span>
                     </div>
                   </article>
-                ))
-              )}
+                ));
+              })()}
             </div>
           )}
 

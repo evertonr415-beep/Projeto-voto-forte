@@ -25,7 +25,8 @@ function getAdminConfig() {
   const key =
     process.env.SUPABASE_SECRET_KEY?.trim() ||
     process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    "";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    "sb_publishable_tXsklaQ9alfe6IfcYd-RhA_NBxIWA15";
   return { url, key };
 }
 
