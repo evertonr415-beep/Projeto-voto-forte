@@ -1,0 +1,162 @@
+name: Build recovery package 2026-09-16
+
+on:
+  push:
+    branches:
+      - backup/manual-db-snapshot-20260916
+    paths:
+      - .github/workflows/build-recovery-package-20260916.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact production source
+        uses: actions/checkout@v4
+        with:
+          ref: 4a3858681cfdb357e138ebc6da79058d2c85203b
+          fetch-depth: 0
+          path: source
+
+      - name: Build recovery point
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/VotoForte-RecoveryPoint-2026-09-16"
+          mkdir -p "$ROOT/source" "$ROOT/supabase/edge-functions/team-division-submit" "$ROOT/database"
+          rsync -a --exclude '.git' "$GITHUB_WORKSPACE/source/" "$ROOT/source/"
+
+          cat > "$ROOT/RECOVERY_MANIFEST.md" <<'EOF'
+          # Voto Forte — Recovery Point
+
+          Captured: 2026-09-16
+
+          ## Production identity
+          - GitHub repository: evertonr415-beep/Projeto-voto-forte
+          - Production branch: main
+          - Production commit: 4a3858681cfdb357e138ebc6da79058d2c85203b
+          - Vercel project: voto-forte-parana
+          - Vercel project ID: prj_oxLiFqaPSobZpQDFNfDVET6VeDfv
+          - Vercel team ID: team_MbwjvARvwzFqYZSaPzSEXUBf
+          - Production deployment: dpl_ByaLGcdPXnNFy5zxhcSC1BYjVxKw
+          - Production deployment URL: voto-forte-parana-qruosx57u-evertonr415-1150s-projects.vercel.app
+          - Production aliases: sistemavotoforte.com.br; www.sistemavotoforte.com.br
+          - Supabase project ref: dtcvudwmosxhbgpwphsx
+          - Supabase region: sa-east-1
+          - PostgreSQL major version: 17
+
+          ## Database inventory observed before packaging
+          - vf_owned_records: 57,684 rows
+          - vf_contact_quality: 57,682 rows
+          - vf_audit_logs: 15,115 rows
+          - vf_whatsapp_events: 4,358 rows
+          - auth.users: 14 rows
+          - storage.buckets: 1
+          - storage.objects: 0
+          - Active Edge Functions: 1 (team-division-submit, version 2)
+
+          ## IMPORTANT — database dump status
+          This package freezes the application code, deployment identity and Supabase function source, but DOES NOT contain a physical PostgreSQL dump.
+
+          A dedicated read-only pg_dump attempt was made from an isolated backup branch and failed before reading data because the GitHub Actions secret SUPABASE_DB_URL contains a stale/invalid database password. Production was not changed.
+
+          Do not call this package a complete disaster-recovery backup until a validated PostgreSQL custom-format dump and its real SHA-256 sidecar are added.
+
+          ## Secrets
+          Live secrets are intentionally NOT embedded in this archive. They must remain in the authorized secret managers (Vercel/Supabase/GitHub) or be exported separately into an encrypted secrets vault.
+          EOF
+
+          cat > "$ROOT/RESTORE_RUNBOOK.md" <<'EOF'
+          # Restore runbook
+
+          1. Restore the repository to commit 4a3858681cfdb357e138ebc6da79058d2c85203b.
+          2. Restore or reconnect the Vercel project and domain aliases.
+          3. Restore the PostgreSQL dump with pg_restore only after checksum verification.
+          4. Confirm auth users and application profiles reconcile correctly.
+          5. Redeploy the Supabase Edge Function included in this package if needed.
+          6. Reconnect environment variables from the authorized secret managers; do not source secrets from this ZIP.
+          7. Validate /api/version, login, contacts, Neural read paths, WhatsApp integrations and the public poll before switching traffic.
+          8. Only after validation, promote the recovered deployment to production.
+
+          A database restore must never be tested first against the live production database. Restore into an isolated recovery project/database, validate counts and behavior, then promote deliberately.
+          EOF
+
+          cat > "$ROOT/database/PHYSICAL_DUMP_PENDING.txt" <<'EOF'
+          PostgreSQL custom-format dump is pending because the existing GitHub Actions SUPABASE_DB_URL credential failed password authentication on 2026-09-16.
+
+          Required completion criteria:
+          - pg_dump exits successfully
+          - pg_restore --list reads the dump
+          - dump size is non-zero and plausible
+          - SHA-256 is a real 64-hex digest over the actual dump bytes
+          - uploaded copy is independently verified
+          EOF
+
+          cat > "$ROOT/supabase/edge-functions/team-division-submit/index.ts" <<'EOF'
+          import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+          import { createClient } from "jsr:@supabase/supabase-js@2";
+
+          const cors = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-client-info",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+          };
+          const jsonHeaders = { ...cors, "Content-Type": "application/json; charset=utf-8" };
+
+          Deno.serve(async (req) => {
+            if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+            if (req.method !== "POST") return new Response(JSON.stringify({ ok:false, error:"method_not_allowed" }), { status:405, headers:jsonHeaders });
+            try {
+              const body = await req.json();
+              const region = String(body?.region ?? "").trim();
+              const polling_place = String(body?.polling_place ?? "").trim();
+              const name = String(body?.name ?? "").trim();
+              const phone = String(body?.phone ?? "").trim();
+              const digits = phone.replace(/\D/g, "");
+              if (!["Norte","Oeste","Leste","Sul","Centro"].includes(region)) return new Response(JSON.stringify({ok:false,error:"invalid_region"}),{status:400,headers:jsonHeaders});
+              if (polling_place.length < 3 || polling_place.length > 220) return new Response(JSON.stringify({ok:false,error:"invalid_polling_place"}),{status:400,headers:jsonHeaders});
+              if (name.length < 2 || name.length > 120) return new Response(JSON.stringify({ok:false,error:"invalid_name"}),{status:400,headers:jsonHeaders});
+              if (digits.length < 10 || digits.length > 13) return new Response(JSON.stringify({ok:false,error:"invalid_phone"}),{status:400,headers:jsonHeaders});
+              const supabaseUrl = Deno.env.get("SUPABASE_URL");
+              const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+              if (!supabaseUrl || !serviceKey) return new Response(JSON.stringify({ok:false,error:"server_config"}),{status:500,headers:jsonHeaders});
+              const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession:false, autoRefreshToken:false } });
+              const { data, error } = await supabase.from("vf_team_division_responses").insert({ region, polling_place, name, phone }).select("id,created_at").single();
+              if (error) {
+                console.error("insert_error", error.code, error.message);
+                return new Response(JSON.stringify({ok:false,error:"database",code:error.code}),{status:500,headers:jsonHeaders});
+              }
+              return new Response(JSON.stringify({ok:true,id:data.id,created_at:data.created_at}),{status:201,headers:jsonHeaders});
+            } catch (e) {
+              console.error("submit_error", e);
+              return new Response(JSON.stringify({ok:false,error:"server"}),{status:500,headers:jsonHeaders});
+            }
+          });
+          EOF
+
+          cat > "$ROOT/supabase/edge-functions/team-division-submit/METADATA.txt" <<'EOF'
+          slug=team-division-submit
+          status=ACTIVE
+          version=2
+          verify_jwt=false
+          ezbr_sha256=372ddd5d9eb4f2bffda9f2c3c15397964d37e44b42821156d54b8261550a2a2b
+          EOF
+
+          cd "$GITHUB_WORKSPACE"
+          zip -qr VotoForte-RecoveryPoint-2026-09-16.zip VotoForte-RecoveryPoint-2026-09-16
+          sha256sum VotoForte-RecoveryPoint-2026-09-16.zip > VotoForte-RecoveryPoint-2026-09-16.zip.sha256
+          test -s VotoForte-RecoveryPoint-2026-09-16.zip
+          cat VotoForte-RecoveryPoint-2026-09-16.zip.sha256
+
+      - name: Upload recovery package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VotoForte-RecoveryPoint-2026-09-16
+          path: |
+            VotoForte-RecoveryPoint-2026-09-16.zip
+            VotoForte-RecoveryPoint-2026-09-16.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
