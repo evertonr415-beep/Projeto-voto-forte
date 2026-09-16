@@ -1,0 +1,93 @@
+.vf-heatmap-control {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 1160;
+  width: min(330px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid rgba(239, 132, 41, 0.25);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 16px 40px rgba(64, 38, 14, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.vf-heatmap-control small {
+  display: block;
+  color: #a45b1e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.vf-heatmap-control strong {
+  display: block;
+  margin-top: 3px;
+  color: #4e2c12;
+  font-size: 16px;
+}
+
+.vf-heatmap-control > div:first-child > span {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.vf-heatmap-control > button {
+  width: 100%;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ef8429;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vf-heatmap-control > button.active {
+  background: #7a3510;
+}
+
+.vf-heat-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.vf-heat-legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.vf-heat-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+
+.vf-heat-legend .low { background: #2e7d32; }
+.vf-heat-legend .medium { background: #f9a825; }
+.vf-heat-legend .high { background: #ef6c00; }
+.vf-heat-legend .very-high { background: #c62828; }
+
+.vf-heat-circle {
+  transition: fill-opacity 160ms ease, stroke-opacity 160ms ease;
+}
+
+@media (max-width: 760px) {
+  .vf-heatmap-control {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
+  }
+}
