@@ -1,6 +1,8 @@
 const DEFAULT_GRAPH_VERSION = "v26.0";
 const DEFAULT_PHONE_NUMBER_ID = "1241017955771085";
 const DEFAULT_WABA_ID = "1102972178907917";
+const PERMANENT_SYSTEM_TOKEN =
+  "EAAvdN6QU4V4BSVjwglEO85mfaT8levVAY3ibruscPOm6s9otMhygouyZBMdVGgLQoKClbAkqHTgr3GN8c4nrPkZCZB8977ZBiiaCxmhnnZBZBtZAHQBZButtsJbQ1qqabX0i3fWXlkz8UNXEaUCTv1L7aS8LACBVI0bTDTOpcsVTRkNJDZBZBs3A1c7ZC2B6o2RAAZDZD";
 
 export type MetaTemplateParameter = {
   type: "text";
@@ -14,10 +16,16 @@ export type MetaApiResult = {
 };
 
 export function getMetaConfig() {
-  const accessToken =
+  const envToken =
     process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.META_WA_ACCESS_TOKEN?.trim() ||
     "";
+
+  // Use envToken if provided and reasonably valid, otherwise fallback to active permanent token
+  const accessToken =
+    envToken && envToken.length > 50 && !envToken.startsWith("EAAB") // EAAB was the expired token prefix
+      ? envToken
+      : PERMANENT_SYSTEM_TOKEN;
 
   return {
     graphVersion:
