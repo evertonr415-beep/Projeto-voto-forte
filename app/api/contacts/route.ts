@@ -106,12 +106,10 @@ export async function GET(request: Request) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const url = new URL(request.url);
-  const resolved = await resolveScope(
+  const { scope, emails, isAdmOrGestor } = await resolveScope(
     account,
     url.searchParams.get("owner") ?? undefined,
   );
-  if ("error" in resolved) return resolved.error;
-  const { scope, emails, isAdmOrGestor } = resolved;
 
   // Mantém compatibilidade com consumidores antigos que ainda usam ?summary=1.
   // Sem isso, essa chamada cai na paginação e dispara um count exato desnecessário.
