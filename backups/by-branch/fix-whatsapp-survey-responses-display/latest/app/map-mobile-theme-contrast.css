@@ -1,0 +1,546 @@
+/*
+ * Contraste e coerencia de tema do Mapa Eleitoral no mobile.
+ *
+ * Este arquivo e carregado por ultimo e complementa map-mobile-visual-polish.css.
+ * O objetivo e manter todos os estados — recolhido, expandido, claro e escuro —
+ * legiveis sem alterar qualquer regra funcional do mapa.
+ */
+
+@media (max-width: 760px) {
+  /* ---------- TOKENS LOCAIS DO MAPA ---------- */
+  body:has(.full-map) {
+    --vf-map-gold-1: #e0b34e;
+    --vf-map-gold-2: #b98024;
+    --vf-map-gold-text: #fffaf0;
+    --vf-map-focus: #f2c968;
+  }
+
+  /* ---------- MODO ESCURO / PADRAO ---------- */
+  html:not([data-vf-theme="light"]) body:has(.full-map) {
+    --vf-map-card-bg-1: #08203d;
+    --vf-map-card-bg-2: #0e365b;
+    --vf-map-card-border: rgba(91, 165, 224, 0.28);
+    --vf-map-card-title: #f7fbff;
+    --vf-map-card-text: #c7d6e6;
+    --vf-map-card-muted: #9fb4c9;
+    --vf-map-row-bg: rgba(255, 255, 255, 0.055);
+    --vf-map-row-bg-hover: rgba(255, 255, 255, 0.09);
+    --vf-map-row-border: rgba(135, 181, 220, 0.18);
+    --vf-map-input-bg: #0b2a4a;
+    --vf-map-input-border: #41698e;
+    --vf-map-chip-bg: rgba(224, 179, 78, 0.15);
+    --vf-map-divider: rgba(171, 202, 228, 0.2);
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-center {
+    border-color: var(--vf-map-card-border) !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(48, 126, 191, 0.16), transparent 42%),
+      linear-gradient(145deg, var(--vf-map-card-bg-1), var(--vf-map-card-bg-2)) !important;
+    color: var(--vf-map-card-title) !important;
+  }
+
+  /* Contatos por bairro — conteudo expandido. */
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-list {
+    padding: 4px 8px 8px !important;
+    background: transparent !important;
+    scrollbar-color: rgba(179, 204, 227, 0.48) transparent;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-row {
+    margin: 2px 0 !important;
+    padding: 8px 9px !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    background: var(--vf-map-row-bg) !important;
+    color: var(--vf-map-card-title) !important;
+    opacity: 1 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-row:hover:not(:disabled) {
+    border-color: var(--vf-map-row-border) !important;
+    background: var(--vf-map-row-bg-hover) !important;
+  }
+
+  /* Um bairro sem ponto continua totalmente legivel; o estado e explicado
+     pelo texto auxiliar, e nao por opacidade baixa. */
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-row:disabled {
+    color: var(--vf-map-card-title) !important;
+    opacity: 1 !important;
+    cursor: default !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-row b {
+    color: #f0c96f !important;
+    font-weight: 850 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-row small {
+    color: var(--vf-map-card-muted) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-empty {
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-scale {
+    border-top-color: var(--vf-map-divider) !important;
+    background: rgba(3, 18, 35, 0.18) !important;
+    color: var(--vf-map-card-muted) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-scale span,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-district-map-scale em {
+    color: var(--vf-map-card-muted) !important;
+  }
+
+  /* Pendencias territoriais — corpo expandido. */
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-body {
+    border-top-color: var(--vf-map-divider) !important;
+    background: rgba(3, 18, 35, 0.14) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-intro {
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-tabs button {
+    border-color: var(--vf-map-row-border) !important;
+    background: rgba(255, 255, 255, 0.055) !important;
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-tabs button[data-active="true"] {
+    border-color: rgba(244, 202, 108, 0.7) !important;
+    background: linear-gradient(135deg, var(--vf-map-gold-1), var(--vf-map-gold-2)) !important;
+    color: #102b49 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-row {
+    border-color: var(--vf-map-row-border) !important;
+    background: var(--vf-map-row-bg) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-person strong {
+    color: var(--vf-map-card-title) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-person span,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-matching,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-footer span {
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-person span b {
+    color: #f0c96f !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-person em {
+    background: var(--vf-map-chip-bg) !important;
+    color: #f0c96f !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-actions select {
+    border-color: var(--vf-map-input-border) !important;
+    background: var(--vf-map-input-bg) !important;
+    color: #f7fbff !important;
+    color-scheme: dark;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-actions select option {
+    background: #0b2a4a !important;
+    color: #f7fbff !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-actions button,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-reference-actions button,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-footer button {
+    border: 1px solid rgba(244, 202, 108, 0.55) !important;
+    background: linear-gradient(135deg, var(--vf-map-gold-1), var(--vf-map-gold-2)) !important;
+    color: #102b49 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-reference-actions button[data-role="capture"] {
+    border-color: var(--vf-map-input-border) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: var(--vf-map-card-title) !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-actions button:disabled,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-reference-actions button:disabled,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-footer button:disabled {
+    opacity: 0.68 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-coordinate {
+    color: #9de0b8 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-capture {
+    border: 1px solid rgba(112, 178, 232, 0.25) !important;
+    background: rgba(72, 139, 198, 0.13) !important;
+    color: #c9e4f8 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-empty {
+    border: 1px solid rgba(92, 187, 133, 0.2) !important;
+    background: rgba(47, 137, 88, 0.12) !important;
+    color: #a9e2c0 !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .vf-territorial-error {
+    border: 1px solid rgba(245, 122, 122, 0.22) !important;
+    background: rgba(151, 47, 47, 0.16) !important;
+    color: #ffc1c1 !important;
+  }
+
+  /* ---------- MODO CLARO ---------- */
+  html[data-vf-theme="light"] body:has(.full-map) {
+    --vf-map-card-bg-1: #ffffff;
+    --vf-map-card-bg-2: #edf5fb;
+    --vf-map-card-border: #cbddeb;
+    --vf-map-card-title: #173b67;
+    --vf-map-card-text: #4f657d;
+    --vf-map-card-muted: #6c8095;
+    --vf-map-row-bg: #f6f9fc;
+    --vf-map-row-bg-hover: #edf4fa;
+    --vf-map-row-border: #d8e4ef;
+    --vf-map-input-bg: #ffffff;
+    --vf-map-input-border: #c7d7e6;
+    --vf-map-chip-bg: #fff3d5;
+    --vf-map-divider: #dce7f0;
+  }
+
+  /* No tema claro, os cards deixam de ser forcosamente azul-escuros. */
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control,
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-center {
+    border-color: var(--vf-map-card-border) !important;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(64, 135, 194, 0.09), transparent 42%),
+      linear-gradient(145deg, var(--vf-map-card-bg-1), var(--vf-map-card-bg-2)) !important;
+    box-shadow: 0 10px 24px rgba(26, 64, 103, 0.09) !important;
+    color: var(--vf-map-card-title) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control
+    header strong,
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-center > header strong {
+    color: var(--vf-map-card-title) !important;
+    text-shadow: none !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-mobile-district-host
+    .vf-district-map-control
+    header small,
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-center > header small {
+    color: var(--vf-map-card-muted) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-list {
+    padding: 4px 8px 8px !important;
+    background: transparent !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-row {
+    margin: 2px 0 !important;
+    padding: 8px 9px !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    background: var(--vf-map-row-bg) !important;
+    color: var(--vf-map-card-title) !important;
+    opacity: 1 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-district-map-row:hover:not(:disabled) {
+    border-color: var(--vf-map-row-border) !important;
+    background: var(--vf-map-row-bg-hover) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-row:disabled {
+    color: var(--vf-map-card-title) !important;
+    opacity: 1 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-row b {
+    color: #93651d !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-row small,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-empty,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-scale,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-scale span,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-scale em {
+    color: var(--vf-map-card-muted) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-district-map-scale {
+    border-top-color: var(--vf-map-divider) !important;
+    background: rgba(235, 244, 251, 0.6) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-body {
+    border-top-color: var(--vf-map-divider) !important;
+    background: rgba(245, 249, 252, 0.64) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-intro,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-person span,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-matching,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-footer span {
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-tabs button {
+    border-color: var(--vf-map-row-border) !important;
+    background: #ffffff !important;
+    color: var(--vf-map-card-text) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-tabs button[data-active="true"] {
+    border-color: #c38a2c !important;
+    background: linear-gradient(135deg, #e4b856, #c58b2d) !important;
+    color: #17345c !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-row {
+    border-color: var(--vf-map-row-border) !important;
+    background: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(31, 68, 104, 0.035) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-person strong {
+    color: var(--vf-map-card-title) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-person span b {
+    color: #8a5e19 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-person em {
+    background: var(--vf-map-chip-bg) !important;
+    color: #8a5e19 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-actions select {
+    border-color: var(--vf-map-input-border) !important;
+    background: var(--vf-map-input-bg) !important;
+    color: var(--vf-map-card-title) !important;
+    color-scheme: light;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-actions select option {
+    background: #ffffff !important;
+    color: #17345c !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-actions button,
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-reference-actions button,
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-footer button {
+    border: 1px solid #c58b2d !important;
+    background: linear-gradient(135deg, #e4b856, #c58b2d) !important;
+    color: #17345c !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-territorial-reference-actions button[data-role="capture"] {
+    border-color: var(--vf-map-input-border) !important;
+    background: #ffffff !important;
+    color: var(--vf-map-card-title) !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-coordinate {
+    color: #226740 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-capture {
+    border: 1px solid #cfe2f2 !important;
+    background: #eef7ff !important;
+    color: #23558a !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-empty {
+    border: 1px solid #cce7d5 !important;
+    background: #eff9f2 !important;
+    color: #2d6843 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-territorial-error {
+    border: 1px solid #f0cccc !important;
+    background: #fff4f4 !important;
+    color: #922f2f !important;
+  }
+
+  /* ---------- CONTROLES E LEGENDA DO MAPA ---------- */
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .full-map .real-map-toolbar,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .full-map .map-legend {
+    border-color: rgba(108, 171, 222, 0.25) !important;
+    background: rgba(7, 28, 52, 0.94) !important;
+    color: #f7fbff !important;
+  }
+
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .full-map .map-legend label,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .full-map .map-legend small,
+  html:not([data-vf-theme="light"])
+    body:has(.full-map)
+    .full-map .map-legend strong {
+    color: #c7d6e6 !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .full-map .real-map-toolbar,
+  html[data-vf-theme="light"] body:has(.full-map) .full-map .map-legend {
+    border-color: #d5e2ed !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #17345c !important;
+    box-shadow: 0 8px 22px rgba(27, 62, 98, 0.12) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .full-map .real-map-toolbar strong,
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .full-map .real-map-toolbar small,
+  html[data-vf-theme="light"] body:has(.full-map) .full-map .map-legend label,
+  html[data-vf-theme="light"] body:has(.full-map) .full-map .map-legend small,
+  html[data-vf-theme="light"] body:has(.full-map) .full-map .map-legend strong {
+    color: #294c70 !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .full-map .real-map-toolbar button:not(.map-home) {
+    border-color: #d5e2ed !important;
+    background: #f1f6fa !important;
+    color: #17345c !important;
+  }
+
+  html[data-vf-theme="light"] body:has(.full-map) .vf-map-layers-toggle {
+    border: 1px solid #d3e0eb !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #17345c !important;
+    box-shadow: 0 6px 18px rgba(24, 58, 92, 0.14) !important;
+  }
+
+  html[data-vf-theme="light"]
+    body:has(.full-map)
+    .vf-map-layers-toggle[aria-expanded="true"] {
+    border-color: #c58b2d !important;
+    background: linear-gradient(135deg, #e4b856, #c58b2d) !important;
+    color: #17345c !important;
+  }
+
+  /* ---------- FOCO / ACESSIBILIDADE ---------- */
+  body:has(.full-map) .vf-district-map-toggle:focus-visible,
+  body:has(.full-map) .vf-district-map-row:focus-visible,
+  body:has(.full-map) .vf-territorial-center button:focus-visible,
+  body:has(.full-map) .vf-territorial-center select:focus-visible,
+  body:has(.full-map) .vf-map-layers-toggle:focus-visible {
+    outline: 2px solid var(--vf-map-focus) !important;
+    outline-offset: 2px !important;
+  }
+}
