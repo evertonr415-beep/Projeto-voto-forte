@@ -1,3 +1,4 @@
+import { serializeCanonicalJson, sha256Checksum } from "../../backup-integrity";
 import { getAccount } from "../../server-identity";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // 1. Fetch the remaining system tables. Contacts are paginated above and must be complete.
     const [usersRes, auditRes, exportsRes, backupsRes] = await Promise.all([
       account.supabase.from("vf_users").select("id,email,name,role,status,parent_user_id,created_at"),
       account.supabase.from("vf_audit_logs").select("*").order("created_at", { ascending: false }).limit(500),
@@ -69,7 +69,6 @@ export async function GET(request: Request) {
       account.supabase.from("vf_backup_snapshots").select("id,created_at,created_by,backup_version,checksum,item_count").limit(50),
     ]);
 
-    // 2. System Architecture & Components Manifest
     const systemManifest = {
       platform: "VOTO FORTE PARANÁ",
       version: "2.5.0-PRO",
@@ -112,7 +111,9 @@ export async function GET(request: Request) {
       },
     };
 
-    // Log the master backup execution in audit
+    const serializedPayload = serializeCanonicalJson(fullBackupPayload);
+    const checksum = sha256Checksum(serializedPayload);
+
     await account.supabase.from("vf_audit_logs").insert({
       actor_id: account.auth_user_id,
       actor_email: account.email,
@@ -120,13 +121,12 @@ export async function GET(request: Request) {
       detail: `Exportação e download de segurança (${dateStr} às ${timeStr}) com ${systemManifest.databaseSummary.contactsCount} contatos e código do sistema.`,
     });
 
-    // Persist snapshot in vf_backup_snapshots
     try {
       await account.supabase.from("vf_backup_snapshots").insert({
         created_at: timestamp,
         created_by: account.email,
         backup_version: 2,
-        checksum: `SHA256-${dateStr}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        checksum,
         item_count: systemManifest.databaseSummary.contactsCount,
         data: fullBackupPayload,
       });
@@ -138,11 +138,13 @@ export async function GET(request: Request) {
       ? `VotoForte-Backup-Automatico-Diario-${dateStr}-02h30.json`
       : `VotoForte-BACKUP-MESTRE-COMPLETO-${dateStr}-${timeStr}.json`;
 
-    return new Response(JSON.stringify(fullBackupPayload, null, 2), {
+    return new Response(serializedPayload, {
       headers: {
         "content-type": "application/json; charset=utf-8",
         "content-disposition": `attachment; filename="${filename}"`,
         "x-backup-generator": "VOTO-FORTE-NEURAL-MASTER",
+        "x-backup-sha256": checksum,
+        "x-backup-checksum-scope": "exact-response-body",
       },
     });
   } catch (error) {
