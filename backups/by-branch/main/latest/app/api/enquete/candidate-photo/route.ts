@@ -29,6 +29,18 @@ const SOURCE_OVERRIDES = new Map<string, string>([
     "https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/foto/2/160002005080/2024/75353",
     "https://media.gazetadopovo.com.br/2024/10/05065054/cristina-graeml.jpg",
   ],
+  [
+    "https://storage2.assembleia.pr.leg.br/img/y3n1sE1n35-E4-L_2B8B_P5U3qQ=/full-fit-in/300x300/deputados/alexandre-curi.png",
+    "https://storage2.assembleia.pr.leg.br/img/zUDmDSIoJhc3TTXISx7XCl4Le9E%3D/full-fit-in/300x300/filters%3Aformat%28jpeg%29/deputados/622750e84eb5877dbea41f234b8cea536fa53e7b.jpg",
+  ],
+  [
+    "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/74416.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/2/24/Foto_oficial_de_Gleisi_Hoffmann.jpg",
+  ],
+  [
+    "https://www.camara.leg.br/internet/deputado/bandep/pagina_do_deputado/73459.jpg",
+    "https://www.camara.leg.br/internet/deputado/bandep/73459.jpgmaior.jpg",
+  ],
 ]);
 
 const IMAGE_HEADERS = {
