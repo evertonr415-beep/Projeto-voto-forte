@@ -10,12 +10,6 @@ type UserSignalRow = {
   last_seen_at: string | null;
 };
 
-type BackupSignalRow = {
-  created_at: string;
-  created_by: string | null;
-  item_count: number | null;
-};
-
 type BackupCatalogRow = {
   id: number;
   created_at: string;
@@ -59,6 +53,10 @@ function backupAgeHours(createdAt: string | null) {
   return Math.max(0, (Date.now() - new Date(createdAt).getTime()) / 3_600_000);
 }
 
+function isRecoverableSnapshotFormat(format: string | null) {
+  return format === "voto-forte-backup" || format === "voto-forte-master-full-backup";
+}
+
 export async function GET() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -76,7 +74,6 @@ export async function GET() {
       contactMetricsResult,
       userMetricsResult,
       usersResult,
-      backupResult,
       backupCatalogResult,
       auditMetricsResult,
     ] = await Promise.all([
@@ -87,15 +84,9 @@ export async function GET() {
         .select("id,role,status,last_seen_at"),
       account.supabase
         .from("vf_backup_snapshots")
-        .select("created_at,created_by,item_count")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      account.supabase
-        .from("vf_backup_snapshots")
         .select("id,created_at,created_by,item_count,checksum,backup_version,format:data->>format")
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(100),
       account.supabase.rpc("vf_system_audit_metrics", {
         p_since: thirtyDaysAgo,
       }),
@@ -105,7 +96,6 @@ export async function GET() {
       contactMetricsResult,
       userMetricsResult,
       usersResult,
-      backupResult,
       backupCatalogResult,
       auditMetricsResult,
     ]) {
@@ -160,7 +150,7 @@ export async function GET() {
 
     const backupSnapshots = ((backupCatalogResult.data ?? []) as BackupCatalogRow[]).map((row) => {
       const format = row.format ?? null;
-      const recoverable = format === "voto-forte-backup";
+      const recoverable = isRecoverableSnapshotFormat(format);
       return {
         id: Number(row.id),
         createdAt: row.created_at,
@@ -174,7 +164,7 @@ export async function GET() {
       };
     });
 
-    const backup = (backupResult.data ?? null) as BackupSignalRow | null;
+    const latestRecoverableBackup = backupSnapshots.find((snapshot) => snapshot.recoverable) ?? null;
 
     const signals: SystemSignals = {
       generatedAt: new Date().toISOString(),
@@ -197,11 +187,13 @@ export async function GET() {
         invalid: Number(auditMetric?.invalid ?? 0),
       },
       backup: {
-        exists: Boolean(backup),
-        createdAt: backup?.created_at ?? null,
-        createdBy: backup?.created_by ?? null,
-        itemCount: Number(backup?.item_count ?? 0),
-        ageHours: backup?.created_at ? backupAgeHours(backup.created_at) : null,
+        exists: Boolean(latestRecoverableBackup),
+        createdAt: latestRecoverableBackup?.createdAt ?? null,
+        createdBy: latestRecoverableBackup?.createdBy ?? null,
+        itemCount: Number(latestRecoverableBackup?.itemCount ?? 0),
+        ageHours: latestRecoverableBackup?.createdAt
+          ? backupAgeHours(latestRecoverableBackup.createdAt)
+          : null,
       },
       navigation,
     };
@@ -211,6 +203,20 @@ export async function GET() {
         generatedAt: signals.generatedAt,
         signals,
         backupSnapshots,
+        backupPolicy: {
+          snapshotHealthSource: "latest_recoverable_snapshot",
+          acceptedRecoverableFormats: [
+            "voto-forte-backup",
+            "voto-forte-master-full-backup",
+          ],
+          databaseBackupSchedule: {
+            configuredCronUtc: "30 6 * * *",
+            configuredLocalTime: "03:30",
+            timeZone: "America/Sao_Paulo",
+            mechanism: "GitHub Actions + pg_dump PostgreSQL 17",
+            executionStatusSource: "GitHub Actions workflow result",
+          },
+        },
         ...analyzeSystemSignals(signals),
       },
       {
