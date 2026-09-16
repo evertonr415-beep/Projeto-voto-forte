@@ -4,7 +4,7 @@ import path from "path";
 // Carrega variáveis do .env.local
 const envPath = path.resolve(process.cwd(), ".env.local");
 let token = process.env.META_WA_ACCESS_TOKEN;
-let phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID || "1306645972534063";
+let phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID || "1241017955771085";
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf-8");
@@ -31,12 +31,14 @@ const numbers = [
   "5543999709710",
 ];
 
-const messageBody = `Olá! Tudo bem?
+const messageBody = `👀 Você sabe como sua cidade está pensando?
 
-Estamos realizando uma rápida enquete cidadã para ouvir a população sobre as prioridades e o futuro de Arapongas.
+Responda nossa enquete — leva menos de 1 minuto.
 
-Sua opinião é fundamental e leva menos de 1 minuto para responder. Acesse pelo link:
-https://voto-forte-parana.vercel.app/enquete/arapongas`;
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Clique no link e descubra se a maioria pensa como você:
+https://sistemavotoforte.com.br/enquete/arapongas`;
 
 async function sendMessages() {
   if (!token || token.startsWith("SEU_TOKEN")) {

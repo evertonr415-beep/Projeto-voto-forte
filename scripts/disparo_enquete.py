@@ -4,9 +4,12 @@ import urllib.error
 import time
 import os
 
-PHONE_NUMBER_ID = "1319478581243565"
+TOKEN = "EAAvdN6QU4V4BSVjwglEO85mfaT8levVAY3ibruscPOm6s9otMhygouyZBMdVGgLQoKClbAkqHTgr3GN8c4nrPkZCZB8977ZBiiaCxmhnnZBZBtZAHQBZButtsJbQ1qqabX0i3fWXlkz8UNXEaUCTv1L7aS8LACBVI0bTDTOpcsVTRkNJDZBZBs3A1c7ZC2B6o2RAAZDZD"
+PHONE_NUMBER_ID = "1241017955771085"
 
 def get_token():
+    if TOKEN:
+        return TOKEN
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env.local")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8") as f:
@@ -26,12 +29,14 @@ NUMBERS = [
     "5543999709710"
 ]
 
-MESSAGE_BODY = """Olá! Tudo bem?
+MESSAGE_BODY = """👀 Você sabe como sua cidade está pensando?
 
-Estamos realizando uma rápida enquete cidadã para ouvir a população sobre as prioridades e o futuro de Arapongas.
+Responda nossa enquete — leva menos de 1 minuto.
 
-Sua opinião é fundamental e leva menos de 1 minuto para responder. Acesse pelo link:
-https://voto-forte-parana.vercel.app/enquete/arapongas"""
+📊 No final, você poderá ver a prévia do resultado!
+
+👉 Clique no link e descubra se a maioria pensa como você:
+https://sistemavotoforte.com.br/enquete/arapongas"""
 
 def send_message(phone, token):
     url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
