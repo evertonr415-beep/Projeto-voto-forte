@@ -53,8 +53,8 @@ export default function WhatsappSurveyIntelligence() {
     [districtRanking],
   );
 
-  const loadSurveyData = useCallback(async () => {
-    setLoading(true);
+  const loadSurveyData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const url = `/api/whatsapp/survey?district=${encodeURIComponent(selectedDistrict)}`;
       const res = await apiFetch(url, { cache: "no-store" });
@@ -69,7 +69,7 @@ export default function WhatsappSurveyIntelligence() {
     } catch {
       // Mantém os dados atuais em caso de falha de conexão.
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [selectedDistrict]);
 
@@ -82,9 +82,20 @@ export default function WhatsappSurveyIntelligence() {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      void loadSurveyData();
-    }
+    if (!isOpen) return;
+    void loadSurveyData(false);
+
+    const interval = setInterval(() => {
+      void loadSurveyData(true);
+    }, 4000);
+
+    const handleSync = () => void loadSurveyData(true);
+    window.addEventListener("voto-forte:survey-updated", handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("voto-forte:survey-updated", handleSync);
+    };
   }, [isOpen, loadSurveyData]);
 
   const handleSimulate = async (e: React.FormEvent) => {
@@ -105,7 +116,8 @@ export default function WhatsappSurveyIntelligence() {
       if (res.ok && data.success) {
         setSimStatus("✅ Resposta analisada e voto computado com sucesso!");
         setSimMessage("");
-        void loadSurveyData();
+        void loadSurveyData(false);
+        window.dispatchEvent(new CustomEvent("voto-forte:survey-updated"));
       } else {
         setSimStatus(`❌ Erro: ${data.error || "Falha ao processar"}`);
       }

@@ -333,11 +333,13 @@ export default function VotingChartsClient({
 
   useEffect(() => {
     void loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => void loadData(), 15000);
-    return () => window.clearInterval(interval);
+    const interval = window.setInterval(() => void loadData(), 5000);
+    const handleSync = () => void loadData();
+    window.addEventListener("voto-forte:survey-updated", handleSync);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("voto-forte:survey-updated", handleSync);
+    };
   }, [loadData]);
 
   useEffect(() => {

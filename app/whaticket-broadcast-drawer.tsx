@@ -188,7 +188,13 @@ export default function WhaticketBroadcastDrawer() {
       void loadLiveFeed(true);
     }, 4000);
 
-    return () => clearInterval(interval);
+    const handleSync = () => void loadLiveFeed(true);
+    window.addEventListener("voto-forte:survey-updated", handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("voto-forte:survey-updated", handleSync);
+    };
   }, [isOpen, loadLiveFeed]);
 
   useEffect(() => {
@@ -577,8 +583,9 @@ export default function WhaticketBroadcastDrawer() {
       }
     }
     setIsExecuting(false);
-    // Atualiza o feed em tempo real ao finalizar
+    // Atualiza o feed em tempo real e sincroniza a apuração analítica
     void loadLiveFeed();
+    window.dispatchEvent(new CustomEvent("voto-forte:survey-updated"));
   };
 
   const sentCount = logs.filter((item) => item.status === "sent").length;
