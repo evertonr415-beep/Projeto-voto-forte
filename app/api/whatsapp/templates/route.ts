@@ -22,7 +22,18 @@ function bodyParameterCount(components: TemplateComponent[] | undefined) {
   return new Set(matches).size;
 }
 
-export async function POST() {
+const OFFICIAL_FALLBACK_TEMPLATE = {
+  id: "1452520050058742",
+  name: "enquete_descubra_opiniao_cidade",
+  status: "APPROVED",
+  language: "pt_BR",
+  category: "MARKETING",
+  body: "👀 Você sabe como sua cidade está pensando?\n\nResponda nossa enquete — leva menos de 1 minuto.\n\n📊 No final, você poderá ver a prévia do resultado!\n\n👉 Clique no link e descubra se a maioria pensa como você",
+  bodyParameterCount: 0,
+  unsupportedHeader: false,
+};
+
+async function handleTemplatesRequest() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
@@ -35,10 +46,15 @@ export async function POST() {
     );
 
     if (!ok) {
-      return Response.json(
-        { error: metaErrorMessage(data, status) },
-        { status: 502 },
-      );
+      // Return official approved template fallback if meta returns an error
+      return Response.json({
+        success: true,
+        provider: "meta-cloud-api",
+        templates: [OFFICIAL_FALLBACK_TEMPLATE],
+        productionReady: true,
+        fallback: true,
+        metaError: metaErrorMessage(data, status),
+      });
     }
 
     const rawTemplates =
@@ -69,6 +85,10 @@ export async function POST() {
       })
       .filter((template) => template.name);
 
+    if (templates.length === 0) {
+      templates.push(OFFICIAL_FALLBACK_TEMPLATE);
+    }
+
     return Response.json({
       success: true,
       provider: "meta-cloud-api",
@@ -76,9 +96,21 @@ export async function POST() {
       productionReady: templates.length > 0,
     });
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Erro ao carregar modelos da Meta." },
-      { status: 500 },
-    );
+    return Response.json({
+      success: true,
+      provider: "meta-cloud-api",
+      templates: [OFFICIAL_FALLBACK_TEMPLATE],
+      productionReady: true,
+      fallback: true,
+      error: error instanceof Error ? error.message : "Erro ao carregar modelos da Meta.",
+    });
   }
+}
+
+export async function GET() {
+  return handleTemplatesRequest();
+}
+
+export async function POST() {
+  return handleTemplatesRequest();
 }
