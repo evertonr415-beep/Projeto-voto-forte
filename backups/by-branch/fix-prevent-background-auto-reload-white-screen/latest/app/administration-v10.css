@@ -1,0 +1,179 @@
+/* Administração V10 — elimina overflow horizontal no iPhone sem alterar a lógica. */
+
+@media (max-width: 760px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .users-admin-grid,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > *,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) [data-vf-gestor-municipalities-host],
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .users-admin-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel {
+    overflow-x: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel *,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin *,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation * {
+    box-sizing: border-box !important;
+  }
+
+  /* As três únicas subabas úteis de Acessos cabem sempre na mesma linha. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs {
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    min-width: 0 !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    margin: 7px 6px 9px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 2px !important;
+    overflow: hidden !important;
+    text-align: center !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(4) {
+    display: none !important;
+  }
+
+  /* A faixa de níveis pode rolar internamente, mas nunca empurra a página. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-summary {
+    width: calc(100% - 8px) !important;
+    max-width: calc(100% - 8px) !important;
+    min-width: 0 !important;
+    margin-inline: 4px !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  /* Gestores: no celular o botão vai para a linha de baixo em vez de criar uma terceira coluna larga. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin {
+    margin: 8px 4px 10px !important;
+    width: calc(100% - 8px) !important;
+    max-width: calc(100% - 8px) !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-compact-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    gap: 9px !important;
+    padding: 10px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-identity {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-identity > b,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-identity > small {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-permission-preview {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-manage-button {
+    grid-column: 2 !important;
+    justify-self: start !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 0 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header > div {
+    min-width: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header p {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Diretório e usuários também ficam contidos na largura disponível. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory {
+    width: calc(100% - 8px) !important;
+    max-width: calc(100% - 8px) !important;
+    margin-inline: 4px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-list,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-user,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-main,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-actions {
+    flex-wrap: wrap !important;
+  }
+
+  /* Auth: nenhum chip/card branco pode forçar largura maior que a tela. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation {
+    width: calc(100% - 8px) !important;
+    max-width: calc(100% - 8px) !important;
+    margin-inline: 4px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation-summary,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list article,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list dl {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main small,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main em {
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+  }
+}
