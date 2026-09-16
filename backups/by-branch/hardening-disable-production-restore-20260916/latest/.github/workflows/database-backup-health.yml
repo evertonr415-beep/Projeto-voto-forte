@@ -1,0 +1,115 @@
+name: Database backup health check
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 09:00 UTC = 06:00 America/Sao_Paulo, after the 03:30 backup window.
+    - cron: '0 9 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-backup-freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DRIVE_FOLDER_ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU
+      GOOGLE_PROJECT_ID: voto-forte-backup
+      GOOGLE_SERVICE_ACCOUNT: voto-forte-backup@voto-forte-backup.iam.gserviceaccount.com
+      GOOGLE_WIF_PROVIDER: projects/369166280632/locations/global/workloadIdentityPools/github-voto-forte/providers/github
+      MAX_BACKUP_AGE_HOURS: '30'
+
+    steps:
+      - name: Authenticate to Google Cloud with GitHub OIDC
+        id: google_auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GOOGLE_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GOOGLE_WIF_PROVIDER }}
+          service_account: ${{ env.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Check newest PostgreSQL backup
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          python3 - "$DRIVE_FOLDER_ID" "$MAX_BACKUP_AGE_HOURS" "$GOOGLE_ACCESS_TOKEN" "$GOOGLE_PROJECT_ID" <<'PY'
+          import datetime as dt
+          import json
+          import sys
+          import urllib.parse
+          import urllib.request
+
+          folder_id, max_age_hours, token, project_id = sys.argv[1], float(sys.argv[2]), sys.argv[3], sys.argv[4]
+          query = f"'{folder_id}' in parents and trashed = false and name contains 'votoforte-postgres-'"
+          params = urllib.parse.urlencode({
+              'q': query,
+              'fields': 'files(id,name,size,createdTime,md5Checksum)',
+              'pageSize': '1000',
+              'orderBy': 'createdTime desc',
+              'supportsAllDrives': 'true',
+              'includeItemsFromAllDrives': 'true',
+          })
+          headers = {
+              'Authorization': 'Bearer ' + token,
+              'X-Goog-User-Project': project_id,
+          }
+          request = urllib.request.Request('https://www.googleapis.com/drive/v3/files?' + params, headers=headers)
+          with urllib.request.urlopen(request) as response:
+              files = json.load(response).get('files', [])
+
+          dumps = [f for f in files if f.get('name', '').endswith('.dump')]
+          if not dumps:
+              raise SystemExit('CRITICAL: no PostgreSQL .dump backup found in Google Drive')
+
+          newest = dumps[0]
+          created = dt.datetime.fromisoformat(newest['createdTime'].replace('Z', '+00:00'))
+          now = dt.datetime.now(dt.timezone.utc)
+          age_hours = (now - created).total_seconds() / 3600
+          size = int(newest.get('size') or 0)
+
+          checksum_name = newest['name'] + '.sha256'
+          manifest_name = newest['name'] + '.manifest.json'
+          names = {f.get('name') for f in files}
+
+          print('Newest backup:', newest['name'])
+          print('Age hours:', round(age_hours, 2))
+          print('Size bytes:', size)
+          print('SHA sidecar:', checksum_name in names)
+          print('Manifest sidecar:', manifest_name in names)
+
+          if age_hours > max_age_hours:
+              raise SystemExit(f'CRITICAL: newest PostgreSQL backup is stale ({age_hours:.2f}h > {max_age_hours}h)')
+          if size <= 1024:
+              raise SystemExit('CRITICAL: newest PostgreSQL backup is unexpectedly small')
+          if checksum_name not in names:
+              raise SystemExit('CRITICAL: SHA-256 sidecar is missing for newest backup')
+          if manifest_name not in names:
+              raise SystemExit('CRITICAL: recovery manifest is missing for newest backup')
+
+          with open('/tmp/backup-health.txt', 'w', encoding='utf-8') as f:
+              f.write(f"backup={newest['name']}\nage_hours={age_hours:.2f}\nsize_bytes={size}\nstatus=healthy\n")
+          PY
+
+      - name: Publish health summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Voto Forte — Backup Health'
+            echo
+            if [ -f /tmp/backup-health.txt ]; then
+              echo 'Status: HEALTHY'
+              echo
+              echo '```'
+              cat /tmp/backup-health.txt
+              echo '```'
+            else
+              echo 'Status: FAILED — inspect the previous step.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
