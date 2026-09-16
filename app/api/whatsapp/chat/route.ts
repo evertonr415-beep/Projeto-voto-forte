@@ -1,4 +1,4 @@
-import { getAccount } from "../../../server-identity";
+import { getAccount, isAuthorizedForWhatsappBroadcast } from "../../../server-identity";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient, recordWhatsappEvent } from "../admin";
 import { getMetaConfig, normalizeWhatsappPhone } from "../meta";
@@ -32,7 +32,6 @@ export type ChatMessage = {
   senderName?: string;
 };
 
-// Catálogo completo de templates aprovados da Meta Cloud API
 const META_TEMPLATES_CATALOG: Record<string, string> = {
   uniao_demandas_regionais: `Olá, {{name}}! Como estão as coisas no {{district}}?
 
@@ -104,7 +103,6 @@ Responda nossa enquete — leva menos de 1 minuto.
 https://sistemavotoforte.com.br/enquete/arapongas`,
 };
 
-// Formata texto de mensagens (substituindo nomes de templates pelo texto real e JSON por texto legível)
 function formatReadableMessageText(
   rawText?: string | null,
   direction?: string,
@@ -118,7 +116,6 @@ function formatReadableMessageText(
   const trimmed = rawText.trim();
   const normalizedKey = trimmed.toLowerCase().replace(/^template:\s*/i, "").trim();
 
-  // 1. Verifica se o texto é exatamente o nome de um template da Meta
   if (META_TEMPLATES_CATALOG[normalizedKey]) {
     const rawTemplate = META_TEMPLATES_CATALOG[normalizedKey];
     const firstName = contactName && !contactName.startsWith("Contato") && !contactName.startsWith("Eleitor")
@@ -134,13 +131,11 @@ function formatReadableMessageText(
       .replace(/\{\{3\}\}/g, districtName);
   }
 
-  // 2. Trata JSON de enquete e respostas da pesquisa
   const surveyFormatted = formatReadableSurveyText(trimmed);
   if (surveyFormatted && surveyFormatted !== trimmed) {
     return surveyFormatted;
   }
 
-  // 3. Substitui placeholders genéricos
   if (trimmed === "Mensagem enviada" || trimmed === "template" || trimmed === "enquete_voto_arapongas") {
     const firstName = contactName && !contactName.startsWith("Contato") && !contactName.startsWith("Eleitor")
       ? contactName.split(" ")[0]
@@ -151,7 +146,6 @@ function formatReadableMessageText(
   return trimmed;
 }
 
-// Extrai chaves para busca flexível de telefone
 function getPhoneKeys(rawPhone: string): string[] {
   const digits = String(rawPhone || "").replace(/\D/g, "");
   if (!digits) return [];
@@ -159,14 +153,12 @@ function getPhoneKeys(rawPhone: string): string[] {
   const keys = new Set<string>();
   keys.add(digits);
 
-  // Sem 55
   if (digits.startsWith("55") && digits.length >= 12) {
     keys.add(digits.slice(2));
   } else if (digits.length >= 10) {
     keys.add(`55${digits}`);
   }
 
-  // Últimos 8 e 9 dígitos
   if (digits.length >= 8) {
     keys.add(digits.slice(-8));
     keys.add(digits.slice(-9));
@@ -190,7 +182,6 @@ export async function GET(request: Request) {
     return Response.json({ success: false, error: "Banco de dados não disponível" }, { status: 503 });
   }
 
-  // 1. Carrega todos os contatos da base vf_owned_records para lookup de nomes e bairros
   const contactMap = new Map<string, { name: string; district?: string; phone: string; notes?: string }>();
   try {
     const { data: contacts } = await supabase
@@ -219,7 +210,6 @@ export async function GET(request: Request) {
     console.warn("Erro ao buscar contatos para lookup:", err);
   }
 
-  // 2. Se solicitou histórico específico de um telefone
   if (targetPhone) {
     const phoneKeys = getPhoneKeys(targetPhone);
     const knownContact = phoneKeys.reduce<{ name?: string; district?: string; phone?: string; notes?: string } | null>(
@@ -227,7 +217,6 @@ export async function GET(request: Request) {
       null,
     );
 
-    // Busca eventos no banco
     const { data: events, error } = await supabase
       .from("vf_whatsapp_events")
       .select("id, message_id, direction, event_type, status, phone, contact_name, message_type, message_text, error_code, error_message, occurred_at, created_at, payload")
@@ -238,7 +227,6 @@ export async function GET(request: Request) {
       return Response.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Filtra eventos correspondentes a este telefone por qualquer uma das chaves
     const matchedEvents = (events || []).filter((ev) => {
       const evKeys = getPhoneKeys(ev.phone || "");
       return evKeys.some((k) => phoneKeys.includes(k));
@@ -297,7 +285,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // Se nenhuma mensagem foi registrada no log mas o contato foi selecionado, exibe o template padrão enviado
     if (messages.length === 0) {
       const fallbackTime = new Date().toISOString();
       const defaultText = formatReadableMessageText(
@@ -331,7 +318,6 @@ export async function GET(request: Request) {
     });
   }
 
-  // 3. Lista de Conversas
   const { data: events, error } = await supabase
     .from("vf_whatsapp_events")
     .select("id, message_id, direction, event_type, status, phone, contact_name, message_type, message_text, error_code, error_message, occurred_at, created_at")
@@ -353,14 +339,12 @@ export async function GET(request: Request) {
     const isInbound = ev.direction === "inbound";
     const isOutbound = ev.direction === "outbound";
 
-    // Encontra contato correspondente pelo mapa de contatos
     const phoneKeys = getPhoneKeys(phone);
     const known = phoneKeys.reduce<{ name?: string; district?: string; phone?: string } | null>(
       (acc, k) => acc || contactMap.get(k) || null,
       null,
     );
 
-    // Resolve o nome real prioritário
     let contactName = known?.name;
     if (!contactName || contactName.trim() === "" || contactName.startsWith("Eleitor (") || contactName === "Participante da enquete") {
       if (ev.contact_name && !ev.contact_name.startsWith("Eleitor") && ev.contact_name !== "Participante da enquete") {
@@ -374,15 +358,15 @@ export async function GET(request: Request) {
           : `Contato ${phone}`;
       }
     }
+    const resolvedContactName = contactName || `Contato ${phone}`;
 
     const cleanMessageText = formatReadableMessageText(
       ev.message_text,
       ev.direction,
-      contactName,
+      resolvedContactName,
       known?.district,
     );
 
-    // Agrupa por chave principal normalizada
     const groupKey = phoneKeys[0] || phone;
     const existing = conversationsMap.get(groupKey);
 
@@ -390,12 +374,12 @@ export async function GET(request: Request) {
       conversationsMap.set(groupKey, {
         id: groupKey,
         phone,
-        contactName,
+        contactName: resolvedContactName,
         district: known?.district,
         lastMessageText: cleanMessageText,
         lastMessageTime: occurredAt,
         lastDirection: isInbound ? "inbound" : isOutbound ? "outbound" : "status",
-        lastStatus: isInbound ? "received" : (ev.status as any) || "sent",
+        lastStatus: isInbound ? "received" : (ev.status as ChatConversation["lastStatus"]) || "sent",
         unreadCount: isInbound ? 1 : 0,
         totalMessages: 1,
       });
@@ -430,7 +414,6 @@ export async function GET(request: Request) {
     );
   }
 
-  // Ordena pelo horário da última mensagem (mais recente primeiro)
   list.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
 
   return Response.json({
@@ -444,6 +427,12 @@ export async function POST(request: Request) {
   const account = await getAccount();
   if (!account) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!isAuthorizedForWhatsappBroadcast(account)) {
+    return Response.json(
+      { error: "Acesso não autorizado para envio oficial pelo WhatsApp." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -460,7 +449,6 @@ export async function POST(request: Request) {
 
     let metaResult = { success: false, messageId: "", error: "" };
 
-    // Tenta envio real se credenciais estiverem configuradas
     if (accessToken && phoneNumberId) {
       const sendRes = await sendMetaText(
         { accessToken, phoneNumberId },
@@ -476,7 +464,6 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const eventId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-    // Registra evento de envio
     await recordWhatsappEvent({
       message_id: metaResult.messageId || eventId,
       direction: "outbound",
