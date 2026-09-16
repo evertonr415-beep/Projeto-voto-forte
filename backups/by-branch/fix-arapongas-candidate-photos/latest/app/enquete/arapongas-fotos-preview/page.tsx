@@ -130,6 +130,10 @@ function initialsFor(candidate: string) {
   return label.split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
 }
 
+function candidatePhotoSrc(photo: string) {
+  return `/api/enquete/candidate-photo?url=${encodeURIComponent(photo)}`;
+}
+
 function CandidateAvatar({ candidate, size = 54 }: { candidate: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   const photo = candidatePhotos[candidate];
@@ -144,7 +148,7 @@ function CandidateAvatar({ candidate, size = 54 }: { candidate: string; size?: n
   }
 
   return (
-    <img src={photo} alt={info?.name || "Candidato"} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} style={{ width: size, height: size, minWidth: size, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: "2px solid #fff", boxShadow: "0 0 0 1px #cbd5e1,0 3px 10px rgba(15,23,42,.12)", background: "#e2e8f0" }} />
+    <img src={candidatePhotoSrc(photo)} alt={info?.name || "Candidato"} loading="lazy" onError={() => setFailed(true)} style={{ width: size, height: size, minWidth: size, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: "2px solid #fff", boxShadow: "0 0 0 1px #cbd5e1,0 3px 10px rgba(15,23,42,.12)", background: "#e2e8f0" }} />
   );
 }
 
@@ -241,6 +245,7 @@ function EnqueteForm() {
     totalResponses: Number(data.totalResponses || 0),
     presidentRanking: Array.isArray(data.presidentRanking) ? data.presidentRanking : [],
     governorRanking: Array.isArray(data.governorRanking) ? data.governorRanking : [],
+    senatorRanking: Array.isArray(data.senatorRanking) ? data.senatorRanking : [],
     federalRanking: Array.isArray(data.federalRanking) ? data.federalRanking : [],
     stateRanking: Array.isArray(data.stateRanking) ? data.stateRanking : [],
   });
