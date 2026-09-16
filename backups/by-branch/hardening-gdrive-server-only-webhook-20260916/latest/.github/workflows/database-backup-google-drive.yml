@@ -1,0 +1,286 @@
+name: Database backup to Google Drive
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:30 UTC = 03:30 America/Sao_Paulo (BRT)
+    - cron: '30 6 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: voto-forte-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.GDRIVE_BACKUP_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      BACKUP_DIR: /tmp/voto-forte-db-backup
+      DRIVE_FOLDER_ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU
+      RETENTION_DAYS: '30'
+      GOOGLE_PROJECT_ID: voto-forte-backup
+      GOOGLE_SERVICE_ACCOUNT: voto-forte-backup@voto-forte-backup.iam.gserviceaccount.com
+      GOOGLE_WIF_PROVIDER: projects/369166280632/locations/global/workloadIdentityPools/github-voto-forte/providers/github
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare PostgreSQL 17 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:17-alpine
+
+      - name: Validate production database connection
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo 'Missing secret: SUPABASE_DB_URL'; exit 1; }
+          docker run --rm -e SUPABASE_DB_URL postgres:17-alpine \
+            sh -ec 'psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -Atc "select current_database();" >/dev/null'
+          echo 'Production database connection: OK'
+
+      - name: Authenticate to Google Cloud with GitHub OIDC
+        id: google_auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GOOGLE_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GOOGLE_WIF_PROVIDER }}
+          service_account: ${{ env.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive
+
+      - name: Validate Google Drive access
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$GOOGLE_ACCESS_TOKEN" || { echo 'Google access token was not generated'; exit 1; }
+          HTTP_CODE="$(curl -sS -o /tmp/drive-folder.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
+            "https://www.googleapis.com/drive/v3/files/${DRIVE_FOLDER_ID}?fields=id,name,mimeType,capabilities(canAddChildren)&supportsAllDrives=true")"
+          test "$HTTP_CODE" = '200' || { echo "Google Drive folder access failed with HTTP $HTTP_CODE"; cat /tmp/drive-folder.json; exit 1; }
+          python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/drive-folder.json', encoding='utf-8'))
+          assert data.get('id'), 'Drive folder not visible to service account'
+          assert data.get('mimeType') == 'application/vnd.google-apps.folder', 'Drive target is not a folder'
+          print('Google Drive folder access: OK ->', data.get('name'))
+          PY
+
+      - name: Capture source metrics
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$BACKUP_DIR"
+          docker run --rm -e SUPABASE_DB_URL -v "$BACKUP_DIR:/backup" postgres:17-alpine sh -ec '
+            records=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -Atc "select count(*) from public.vf_owned_records;")
+            contacts=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -Atc "select count(*) from public.vf_owned_records where kind = '\''contact'\'';")
+            tables=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -Atc "select count(*) from information_schema.tables where table_schema = '\''public'\'' and table_type = '\''BASE TABLE'\'';")
+            users=$(psql "$SUPABASE_DB_URL" -Atc "select count(*) from auth.users;" 2>/dev/null || echo unknown)
+            printf "RECORDS_COUNT=%s\nCONTACTS_COUNT=%s\nPUBLIC_TABLES_COUNT=%s\nAUTH_USERS_COUNT=%s\n" "$records" "$contacts" "$tables" "$users" > /backup/source-metrics.env
+          '
+          cat "$BACKUP_DIR/source-metrics.env" >> "$GITHUB_ENV"
+
+      - name: Create PostgreSQL 17 custom dump
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          TS="$(date -u '+%Y-%m-%dT%H-%M-%SZ')"
+          FILE="votoforte-postgres-${TS}.dump"
+          echo "BACKUP_FILE=$FILE" >> "$GITHUB_ENV"
+          docker run --rm \
+            -e SUPABASE_DB_URL \
+            -e BACKUP_FILE="$FILE" \
+            -v "$BACKUP_DIR:/backup" \
+            postgres:17-alpine \
+            sh -ec 'pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --compress=9 --no-owner --no-privileges --file="/backup/$BACKUP_FILE"'
+
+      - name: Validate dump structure and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$BACKUP_DIR/$BACKUP_FILE"
+          docker run --rm -e BACKUP_FILE="$BACKUP_FILE" -v "$BACKUP_DIR:/backup" postgres:17-alpine \
+            sh -ec 'pg_restore --list "/backup/$BACKUP_FILE" > "/backup/$BACKUP_FILE.contents.txt"'
+          test -s "$BACKUP_DIR/$BACKUP_FILE.contents.txt"
+          sha256sum "$BACKUP_DIR/$BACKUP_FILE" > "$BACKUP_DIR/$BACKUP_FILE.sha256"
+          SIZE_BYTES="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
+          ENTRY_COUNT="$(grep -vc '^;' "$BACKUP_DIR/$BACKUP_FILE.contents.txt" || true)"
+          SHA256="$(cut -d' ' -f1 "$BACKUP_DIR/$BACKUP_FILE.sha256")"
+          test "$SIZE_BYTES" -gt 1024 || { echo 'Backup unexpectedly small'; exit 1; }
+          test "$ENTRY_COUNT" -gt 0 || { echo 'Backup contains no restore entries'; exit 1; }
+          echo "BACKUP_SIZE_BYTES=$SIZE_BYTES" >> "$GITHUB_ENV"
+          echo "BACKUP_ENTRY_COUNT=$ENTRY_COUNT" >> "$GITHUB_ENV"
+          echo "BACKUP_SHA256=$SHA256" >> "$GITHUB_ENV"
+
+      - name: Write recovery manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          export BACKUP_FILE BACKUP_SIZE_BYTES BACKUP_ENTRY_COUNT BACKUP_SHA256 RECORDS_COUNT CONTACTS_COUNT PUBLIC_TABLES_COUNT AUTH_USERS_COUNT
+          python3 - <<'PY'
+          import datetime as dt, json, os
+          manifest = {
+            'format': 'voto-forte-postgresql-custom-dump',
+            'postgresMajor': 17,
+            'generatedAtUtc': dt.datetime.now(dt.timezone.utc).isoformat(),
+            'schedule': {'cronUtc': '30 6 * * *', 'localTime': '03:30', 'timezone': 'America/Sao_Paulo'},
+            'file': os.environ['BACKUP_FILE'],
+            'sizeBytes': int(os.environ['BACKUP_SIZE_BYTES']),
+            'restoreEntries': int(os.environ['BACKUP_ENTRY_COUNT']),
+            'sha256': os.environ['BACKUP_SHA256'],
+            'sourceMetrics': {
+              'ownedRecords': int(os.environ['RECORDS_COUNT']),
+              'contacts': int(os.environ['CONTACTS_COUNT']),
+              'publicTables': int(os.environ['PUBLIC_TABLES_COUNT']),
+              'authUsers': os.environ.get('AUTH_USERS_COUNT', 'unknown')
+            },
+            'validation': {'pgRestoreList': True, 'sha256Generated': True, 'isolatedRestoreTest': 'separate-workflow'}
+          }
+          path = os.path.join('/tmp/voto-forte-db-backup', os.environ['BACKUP_FILE'] + '.manifest.json')
+          with open(path, 'w', encoding='utf-8') as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+          PY
+
+      - name: Preserve secondary GitHub artifact copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: voto-forte-postgres-${{ github.run_id }}
+          path: /tmp/voto-forte-db-backup/
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload recovery package to Google Drive
+        id: drive_upload
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          drive_upload() {
+            local path="$1" content_type="$2" name size metadata header upload_url code result id
+            name="$(basename "$path")"
+            size="$(stat -c '%s' "$path")"
+            metadata="$(python3 - "$name" "$DRIVE_FOLDER_ID" <<'PY'
+          import json, sys
+          print(json.dumps({'name': sys.argv[1], 'parents': [sys.argv[2]]}))
+          PY
+            )"
+            header="/tmp/${name}.headers"
+            result="/tmp/${name}.result.json"
+            curl -sS -D "$header" -o "/tmp/${name}.init.json" -X POST \
+              -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+              -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
+              -H 'Content-Type: application/json; charset=UTF-8' \
+              -H "X-Upload-Content-Type: $content_type" \
+              -H "X-Upload-Content-Length: $size" \
+              --data "$metadata" \
+              'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true'
+            upload_url="$(awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/^[^:]*:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$header")"
+            test -n "$upload_url" || { cat "/tmp/${name}.init.json"; return 1; }
+            code="$(curl -sS -o "$result" -w '%{http_code}' -X PUT -H "Content-Type: $content_type" --data-binary "@$path" "$upload_url")"
+            case "$code" in 200|201) ;; *) cat "$result"; return 1 ;; esac
+            id="$(python3 - "$result" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8'))['id'])
+          PY
+            )"
+            printf '%s' "$id"
+          }
+
+          DUMP_ID="$(drive_upload "$BACKUP_DIR/$BACKUP_FILE" application/octet-stream)"
+          drive_upload "$BACKUP_DIR/$BACKUP_FILE.sha256" text/plain >/dev/null
+          drive_upload "$BACKUP_DIR/$BACKUP_FILE.contents.txt" text/plain >/dev/null
+          drive_upload "$BACKUP_DIR/$BACKUP_FILE.manifest.json" application/json >/dev/null
+          echo "dump_file_id=$DUMP_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Verify uploaded dump
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+          DRIVE_FILE_ID: ${{ steps.drive_upload.outputs.dump_file_id }}
+        run: |
+          set -euo pipefail
+          curl -sS \
+            -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H "X-Goog-User-Project: $GOOGLE_PROJECT_ID" \
+            "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?fields=id,name,size,md5Checksum,parents,createdTime&supportsAllDrives=true" \
+            -o /tmp/drive-file-metadata.json
+          LOCAL_SIZE="$(stat -c '%s' "$BACKUP_DIR/$BACKUP_FILE")"
+          LOCAL_MD5="$(md5sum "$BACKUP_DIR/$BACKUP_FILE" | cut -d' ' -f1)"
+          python3 - "$LOCAL_SIZE" "$LOCAL_MD5" "$DRIVE_FOLDER_ID" <<'PY'
+          import json, sys
+          expected_size, expected_md5, folder_id = sys.argv[1:]
+          data = json.load(open('/tmp/drive-file-metadata.json', encoding='utf-8'))
+          assert str(data.get('size')) == expected_size, (data.get('size'), expected_size)
+          assert data.get('md5Checksum') == expected_md5, (data.get('md5Checksum'), expected_md5)
+          assert folder_id in data.get('parents', []), 'Uploaded file is not in expected folder'
+          print('Google Drive verification: OK ->', data.get('name'), data.get('size'), 'bytes')
+          PY
+
+      - name: Apply 30-day retention
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          python3 - "$DRIVE_FOLDER_ID" "$RETENTION_DAYS" "$GOOGLE_ACCESS_TOKEN" "$GOOGLE_PROJECT_ID" <<'PY'
+          import datetime as dt, json, sys, urllib.parse, urllib.request
+          folder_id, retention_days, token, project_id = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+          cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=retention_days)
+          query = f"'{folder_id}' in parents and trashed = false and name contains 'votoforte-postgres-'"
+          params = urllib.parse.urlencode({'q': query, 'fields': 'files(id,name,createdTime)', 'pageSize': '1000', 'supportsAllDrives': 'true', 'includeItemsFromAllDrives': 'true'})
+          headers = {'Authorization': 'Bearer ' + token, 'X-Goog-User-Project': project_id}
+          req = urllib.request.Request('https://www.googleapis.com/drive/v3/files?' + params, headers=headers)
+          with urllib.request.urlopen(req) as response:
+            files = json.load(response).get('files', [])
+          deleted = 0
+          for item in files:
+            if dt.datetime.fromisoformat(item['createdTime'].replace('Z', '+00:00')) >= cutoff:
+              continue
+            delete_req = urllib.request.Request('https://www.googleapis.com/drive/v3/files/' + urllib.parse.quote(item['id']), headers=headers, method='DELETE')
+            with urllib.request.urlopen(delete_req):
+              pass
+            deleted += 1
+          print('Retention cleanup complete. Deleted:', deleted)
+          PY
+
+      - name: Write backup summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Voto Forte — PostgreSQL Disaster Recovery'
+            echo
+            echo "- Run: ${{ github.run_id }}"
+            echo "- Time (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo '- Schedule: 03:30 America/Sao_Paulo'
+            echo '- Primary copy: Google Drive / Voto Forte / Backups / PostgreSQL (30 days)'
+            echo '- Secondary copy: GitHub Actions artifact (7 days)'
+            if [ -n "${BACKUP_FILE:-}" ] && [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
+              echo "- File: $BACKUP_FILE"
+              echo "- Size: $(du -h "$BACKUP_DIR/$BACKUP_FILE" | cut -f1)"
+              echo "- Restore entries: ${BACKUP_ENTRY_COUNT:-unknown}"
+              echo "- SHA-256: ${BACKUP_SHA256:-unknown}"
+              echo "- Source records: ${RECORDS_COUNT:-unknown}"
+              echo "- Source contacts: ${CONTACTS_COUNT:-unknown}"
+              echo '- Dump structure validation: OK'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
