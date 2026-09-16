@@ -183,16 +183,50 @@ export async function GET(request: Request) {
           }
         }
 
-        const calculatedTotal = districtsList.reduce((acc, curr) => acc + curr.total, 0);
+        const [totalCountResult, eleitorCountResult, liderancaCountResult] =
+          await Promise.all([
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails),
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails)
+              .eq("payload->>kind", "Eleitor"),
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails)
+              .eq("payload->>kind", "Liderança"),
+          ]);
+
+        const countError =
+          totalCountResult.error ||
+          eleitorCountResult.error ||
+          liderancaCountResult.error;
+        if (countError) {
+          throw new Error(`Falha ao calcular o resumo real dos contatos: ${countError.message}`);
+        }
+        if (
+          totalCountResult.count == null ||
+          eleitorCountResult.count == null ||
+          liderancaCountResult.count == null
+        ) {
+          throw new Error("O banco não retornou as contagens reais do resumo de contatos.");
+        }
 
         summaryResult = {
-          total: calculatedTotal || (summaryResult?.total ?? 57683),
-          totalContacts: calculatedTotal || (summaryResult?.totalContacts ?? 57683),
-          districtsCount: districtsList.length || 151,
+          total: totalCountResult.count,
+          totalContacts: totalCountResult.count,
+          districtsCount: districtsList.length,
           districts: districtsList,
           profiles: {
-            eleitor: 57681,
-            lideranca: 2,
+            eleitor: eleitorCountResult.count,
+            lideranca: liderancaCountResult.count,
           },
         };
       }
