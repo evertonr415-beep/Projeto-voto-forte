@@ -1,0 +1,161 @@
+import { serializeCanonicalJson, sha256Checksum } from "../../backup-integrity";
+import { getAccount } from "../../server-identity";
+
+export const dynamic = "force-dynamic";
+
+const CONTACT_PAGE_SIZE = 1000;
+
+export async function GET(request: Request) {
+  const account = await getAccount();
+  if (!account || account.role !== "master") {
+    return Response.json(
+      { error: "Acesso exclusivo dos usuários Master do sistema." },
+      { status: 403 },
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const targetDate = searchParams.get("date");
+  const isScheduledDaily = searchParams.get("scheduled") === "true" || Boolean(targetDate);
+
+  try {
+    const timestamp = new Date().toISOString();
+    const dateStr = targetDate || timestamp.slice(0, 10);
+    const timeStr = isScheduledDaily ? "02h30" : timestamp.slice(11, 16).replace(":", "h");
+
+    const countResult = await account.supabase
+      .from("vf_owned_records")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "contact");
+
+    if (countResult.error) {
+      throw new Error(`Falha ao contar os contatos: ${countResult.error.message}`);
+    }
+    if (countResult.count == null) {
+      throw new Error("A contagem exata de contatos não foi retornada pelo banco.");
+    }
+
+    const expectedContactsCount = countResult.count;
+    const contacts: Array<Record<string, unknown>> = [];
+
+    for (let from = 0; from < expectedContactsCount; from += CONTACT_PAGE_SIZE) {
+      const to = Math.min(from + CONTACT_PAGE_SIZE - 1, expectedContactsCount - 1);
+      const pageResult = await account.supabase
+        .from("vf_owned_records")
+        .select("*")
+        .eq("kind", "contact")
+        .order("id", { ascending: true })
+        .range(from, to);
+
+      if (pageResult.error) {
+        throw new Error(
+          `Falha ao exportar contatos ${from + 1}-${to + 1}: ${pageResult.error.message}`,
+        );
+      }
+
+      contacts.push(...((pageResult.data ?? []) as Array<Record<string, unknown>>));
+    }
+
+    if (contacts.length !== expectedContactsCount) {
+      throw new Error(
+        `Backup interrompido: o banco informou ${expectedContactsCount} contatos, mas somente ${contacts.length} foram exportados.`,
+      );
+    }
+
+    const [usersRes, auditRes, exportsRes, backupsRes] = await Promise.all([
+      account.supabase.from("vf_users").select("id,email,name,role,status,parent_user_id,created_at"),
+      account.supabase.from("vf_audit_logs").select("*").order("created_at", { ascending: false }).limit(500),
+      account.supabase.from("vf_contact_exports").select("*").order("created_at", { ascending: false }).limit(200),
+      account.supabase.from("vf_backup_snapshots").select("id,created_at,created_by,backup_version,checksum,item_count").limit(50),
+    ]);
+
+    const systemManifest = {
+      platform: "VOTO FORTE PARANÁ",
+      version: "2.5.0-PRO",
+      generatedAt: timestamp,
+      backupTargetDate: dateStr,
+      backupSchedule: isScheduledDaily ? "Rotina Diária Automática Ininterrupta (02:30 AM)" : "Sob Demanda (Master)",
+      generatedBy: account.email,
+      environment: "production",
+      modules: [
+        { name: "Dashboard Principal", route: "/sistema-completo" },
+        { name: "Painel de Contatos", route: "/contatos" },
+        { name: "Mapa Eleitoral", route: "/mapa" },
+        { name: "Painel Eleitoral Oficial", route: "/painel-eleitoral" },
+        { name: "Agenda Inteligente", route: "/comunicacao-institucional" },
+        { name: "Central de Disparos", route: "/whaticket" },
+        { name: "Histórico de Exportações", route: "/exportacoes" },
+        { name: "VOTO FORTE Neural", route: "/inteligencia-sistema" },
+        { name: "Administração de Usuários", route: "/administracao" },
+      ],
+      databaseSummary: {
+        contactsCount: contacts.length,
+        expectedContactsCount,
+        contactsComplete: contacts.length === expectedContactsCount,
+        usersCount: usersRes.data?.length ?? 2,
+        auditLogsCount: auditRes.data?.length ?? 0,
+        exportsCount: exportsRes.data?.length ?? 0,
+      },
+    };
+
+    const fullBackupPayload = {
+      format: isScheduledDaily ? "voto-forte-automated-daily-backup" : "voto-forte-master-full-backup",
+      schemaVersion: "2.0",
+      system: systemManifest,
+      data: {
+        users: usersRes.data ?? [],
+        contacts,
+        auditLogs: auditRes.data ?? [],
+        contactExports: exportsRes.data ?? [],
+        previousSnapshots: backupsRes.data ?? [],
+      },
+    };
+
+    const serializedPayload = serializeCanonicalJson(fullBackupPayload);
+    const checksum = sha256Checksum(serializedPayload);
+
+    await account.supabase.from("vf_audit_logs").insert({
+      actor_id: account.auth_user_id,
+      actor_email: account.email,
+      action: isScheduledDaily ? "Download de Backup Diário Automático (02:30)" : "Backup Geral Master Realizado",
+      detail: `Exportação e download de segurança (${dateStr} às ${timeStr}) com ${systemManifest.databaseSummary.contactsCount} contatos e código do sistema.`,
+    });
+
+    try {
+      await account.supabase.from("vf_backup_snapshots").insert({
+        created_at: timestamp,
+        created_by: account.email,
+        backup_version: 2,
+        checksum,
+        item_count: systemManifest.databaseSummary.contactsCount,
+        data: fullBackupPayload,
+      });
+    } catch (persistErr) {
+      console.warn("Could not insert snapshot into vf_backup_snapshots:", persistErr);
+    }
+
+    const filename = isScheduledDaily
+      ? `VotoForte-Backup-Automatico-Diario-${dateStr}-02h30.json`
+      : `VotoForte-BACKUP-MESTRE-COMPLETO-${dateStr}-${timeStr}.json`;
+
+    return new Response(serializedPayload, {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "content-disposition": `attachment; filename="${filename}"`,
+        "x-backup-generator": "VOTO-FORTE-NEURAL-MASTER",
+        "x-backup-sha256": checksum,
+        "x-backup-checksum-scope": "exact-response-body",
+      },
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Falha ao gerar o backup geral do sistema.",
+      },
+      { status: 500 },
+    );
+  }
+}
