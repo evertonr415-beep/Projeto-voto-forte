@@ -97,6 +97,7 @@ import "./administration-v8.css";
 import "./administration-v9.css";
 import "./administration-v10.css";
 import "./pwa-installed-safe-area.css";
+import "./apuracao-graficos/senator-candidate-photos.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
