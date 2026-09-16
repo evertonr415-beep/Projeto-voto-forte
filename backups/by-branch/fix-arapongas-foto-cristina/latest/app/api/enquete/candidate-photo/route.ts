@@ -9,6 +9,7 @@ const ALLOWED_HOSTS = new Set([
   "upload.wikimedia.org",
   "legis.senado.leg.br",
   "media.gcmais.com.br",
+  "media.gazetadopovo.com.br",
   "static.poder360.com.br",
   "www.portalolavodutra.com.br",
   "eleicoes.patria.agr.br",
@@ -21,6 +22,13 @@ const ALLOWED_HOSTS = new Set([
   "operamundi.uol.com.br",
   "media.agoraparana.com.br",
   "images.weserv.nl",
+]);
+
+const SOURCE_OVERRIDES = new Map<string, string>([
+  [
+    "https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/foto/2/160002005080/2024/75353",
+    "https://media.gazetadopovo.com.br/2024/10/05065054/cristina-graeml.jpg",
+  ],
 ]);
 
 const IMAGE_HEADERS = {
@@ -72,10 +80,23 @@ export async function GET(request: NextRequest) {
     return new Response("Origem da foto não permitida", { status: 403 });
   }
 
-  let image = await fetchImage(parsed.toString());
+  const resolvedSource = SOURCE_OVERRIDES.get(parsed.toString()) || parsed.toString();
 
-  if (!image && parsed.hostname !== "images.weserv.nl") {
-    image = await fetchImage(weservFallback(parsed.toString()));
+  let resolved: URL;
+  try {
+    resolved = new URL(resolvedSource);
+  } catch {
+    return new Response("URL da foto inválida", { status: 400 });
+  }
+
+  if (resolved.protocol !== "https:" || !ALLOWED_HOSTS.has(resolved.hostname)) {
+    return new Response("Origem alternativa da foto não permitida", { status: 403 });
+  }
+
+  let image = await fetchImage(resolved.toString());
+
+  if (!image && resolved.hostname !== "images.weserv.nl") {
+    image = await fetchImage(weservFallback(resolved.toString()));
   }
 
   if (!image) {
