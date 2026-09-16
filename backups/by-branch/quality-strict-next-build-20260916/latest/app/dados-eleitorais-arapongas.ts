@@ -28,7 +28,7 @@ export interface DadosEleicaoArapongas {
   uf: string;
   prefeito: CandidatoPrefeito[];
   vereadoresEleitos: CandidatoVereador[];
-  vereadoresSuplentes: CandidatoVereador[];
+  vereadoresSuplentes?: CandidatoVereador[];
   deputadosFederais: {
     ranking: Deputado[];
     brancos: string;
