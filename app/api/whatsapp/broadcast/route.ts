@@ -1,4 +1,5 @@
-import { getAccount } from "../../../server-identity";
+import { getAccount, isAuthorizedForWhatsappBroadcast } from "../../../server-identity";
+import { recordWhatsappEvent } from "../admin";
 import {
   getMetaConfig,
   metaErrorMessage,
@@ -55,6 +56,15 @@ async function graphSend(accessToken: string, payload: Record<string, unknown>) 
 export async function POST(request: Request) {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!isAuthorizedForWhatsappBroadcast(account)) {
+    return Response.json(
+      {
+        error:
+          "Acesso restrito: apenas os usuários autorizados (Everton Moreira e Rafael Rodrigues) podem realizar disparos oficiais.",
+      },
+      { status: 403 },
+    );
+  }
 
   try {
     const body = (await request.json()) as BroadcastPayload;
