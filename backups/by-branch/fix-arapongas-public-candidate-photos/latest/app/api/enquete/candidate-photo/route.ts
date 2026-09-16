@@ -7,6 +7,7 @@ const ALLOWED_HOSTS = new Set([
   "divulgacandcontas.tse.jus.br",
   "www.camara.leg.br",
   "upload.wikimedia.org",
+  "live.staticflickr.com",
   "legis.senado.leg.br",
   "media.gcmais.com.br",
   "media.gazetadopovo.com.br",
