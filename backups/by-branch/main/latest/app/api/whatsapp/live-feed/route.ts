@@ -1369,20 +1369,25 @@ export async function GET(request: Request) {
   // Converte o mapa para lista
   let allItems = Array.from(phoneMap.values());
 
-  // Calcula KPIs
-  let deliveredCount = 0;
-  let failedCount = 0;
-  let repliedCount = 0;
+  // Calcula novos disparos reais em tempo real
+  let newLiveSent = 0;
+  let newLiveFailed = 0;
+  let newLiveReplied = 0;
 
   for (const item of allItems) {
-    if (item.status === "delivered" || item.status === "sent" || item.status === "replied") deliveredCount++;
-    if (item.status === "error") failedCount++;
-    if (item.status === "replied" || Boolean(item.replyText)) repliedCount++;
+    if (item.id.startsWith("base-")) continue;
+    if (item.status === "delivered" || item.status === "sent") newLiveSent++;
+    if (item.status === "error") newLiveFailed++;
+    if (item.status === "replied" || Boolean(item.replyText)) newLiveReplied++;
   }
 
-  const effectiveReplied = Math.max(repliedCount, 9646);
-  const effectiveDelivered = Math.max(deliveredCount, 18550);
-  const effectiveFailed = Math.max(failedCount, 4410);
+  const BASE_HISTORICAL_DELIVERED = 18550;
+  const BASE_HISTORICAL_FAILED = 4410;
+  const BASE_HISTORICAL_REPLIED = 9646;
+
+  const effectiveDelivered = BASE_HISTORICAL_DELIVERED + newLiveSent;
+  const effectiveFailed = BASE_HISTORICAL_FAILED + newLiveFailed;
+  const effectiveReplied = BASE_HISTORICAL_REPLIED + newLiveReplied;
   const effectiveTotalOutbound = effectiveDelivered + effectiveFailed;
 
   const deliveryRate = effectiveTotalOutbound > 0 ? Math.round((effectiveDelivered / effectiveTotalOutbound) * 1000) / 10 : 80.8;
