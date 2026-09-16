@@ -27,8 +27,8 @@ export async function GET(request: Request) {
     instructions: {
       step1: "Crie um Google Apps Script na sua conta Google vinculada à pasta criada.",
       step2: "Cole o código receptor disponível em scripts/google-drive-webhook-receiver.js.",
-      step3: "Implante como Aplicativo Web (Qualquer pessoa pode acessar).",
-      step4: "Cole a URL gerada no painel ou defina GOOGLE_DRIVE_WEBHOOK_URL no .env.",
+      step3: "Implante o receptor com acesso restrito ao necessário para a integração.",
+      step4: "Defina a URL exclusivamente como GOOGLE_DRIVE_WEBHOOK_URL no ambiente seguro do servidor.",
     },
   });
 }
@@ -41,11 +41,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { action, webhookUrl } = body;
+    const { action } = body;
 
-    // 1. Testar Conexão
+    // 1. Testar somente a conexão configurada no ambiente seguro do servidor.
     if (action === "test_connection") {
-      const testResult = await testGoogleDriveConnection(webhookUrl);
+      const testResult = await testGoogleDriveConnection();
       return Response.json(testResult);
     }
 
@@ -88,11 +88,10 @@ export async function POST(request: Request) {
         },
       };
 
-      // Disparar envio para Google Drive
+      // A URL de destino não pode vir do navegador; somente do ambiente do servidor.
       const filename = `VotoForte-Backup-${dateStr}-${timeStr}.json`;
       const driveResult = await sendBackupToGoogleDrive(backupPackage, {
         filename,
-        webhookUrl,
       });
 
       // Registrar auditoria
