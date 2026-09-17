@@ -404,7 +404,10 @@ export default function ServerBroadcastQueueBridge() {
             localStorage.setItem(ACTIVE_CAMPAIGN_KEY, next.id);
           } catch {}
           setMessage(
-            `Fila entregue ao servidor com ${next.total_count} destinatário(s). Pode fechar a aba ou desligar o computador; o servidor continuará o envio.`,
+            String(
+              data?.message ||
+                `Fila entregue ao servidor com ${next.total_count} destinatário(s). Pode fechar a aba ou desligar o computador; o servidor continuará o envio.`,
+            ),
           );
 
           // Atualiza imediatamente os detalhes; o cron assume os próximos itens.
@@ -493,6 +496,57 @@ export default function ServerBroadcastQueueBridge() {
       campaign?.status === "completed" ||
       campaign?.status === "cancelled" ||
       campaign?.status === "failed");
+
+  if (!campaign && (creating || message)) {
+    return (
+      <aside
+        role="status"
+        aria-live="polite"
+        style={{
+          position: "fixed",
+          right: 18,
+          bottom: 18,
+          zIndex: 2147483200,
+          width: "min(420px, calc(100vw - 28px))",
+          border: "1px solid rgba(56,189,248,.55)",
+          borderRadius: 14,
+          padding: 14,
+          background: "rgba(5,15,29,.98)",
+          boxShadow: "0 20px 60px rgba(0,0,0,.45)",
+          color: "#e5eef8",
+          fontFamily: "inherit",
+        }}
+      >
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ color: "#e0b45e", fontSize: 18 }}>⚡</div>
+          <div style={{ flex: 1, fontSize: 12, lineHeight: 1.45 }}>
+            <strong style={{ display: "block", color: "#fff", marginBottom: 3 }}>
+              Fila de disparos no servidor
+            </strong>
+            {creating
+              ? "Preparando e gravando a campanha no servidor…"
+              : message}
+          </div>
+          {!creating && (
+            <button
+              type="button"
+              onClick={() => setMessage("")}
+              aria-label="Fechar aviso"
+              style={{
+                border: 0,
+                background: "transparent",
+                color: "#94a3b8",
+                cursor: "pointer",
+                fontSize: 17,
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </aside>
+    );
+  }
 
   if (!visible || !campaign) return null;
 
