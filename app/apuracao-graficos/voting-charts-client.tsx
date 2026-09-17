@@ -473,19 +473,31 @@ export default function VotingChartsClient({
               : "Avaliação da Gestão Municipal";
 
   const exportCsv = () => {
-    const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
+    const totalBase = orderedList.reduce((sum, item) => sum + item.votes, 0);
+    const titleHeader =  +
+       +
+       +
+      ;
+
+    const headers = "Posição;Candidato;Partido;Votos Totais;Percentual (%)
+";
     const rows = orderedList
       .map((item, index) => {
         const party = item.party || candidatePartyMap[item.candidate] || "-";
-        const position = isSpecialCandidate(item.candidate) ? "-" : index + 1;
-        return `${position},"${item.candidate}","${party}","${item.votes}","${item.percentage}%"`;
+        const position = isSpecialCandidate(item.candidate) ? "-" : ;
+        const formattedVotes = item.votes.toLocaleString("pt-BR");
+        const formattedPct = ;
+        return ;
       })
-      .join("\n");
+      .join("
+");
 
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    // Adiciona ﻿ (BOM UTF-8) para abertura nativa em colunas perfeitas no Microsoft Excel
+    const csvContent = "﻿" + titleHeader + headers + rows;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `VotoForte-Apuracao-${activeCategory}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = ;
     link.click();
     URL.revokeObjectURL(link.href);
   };
