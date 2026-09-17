@@ -53,23 +53,6 @@ function parametersFromClaim(value: unknown) {
   return value.map((item) => String(item ?? ""));
 }
 
-async function nextDueDelayMs() {
-  const supabase = getWhatsappAdminClient();
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from("vf_whatsapp_campaigns")
-    .select("next_dispatch_at")
-    .eq("status", "running")
-    .gt("waiting_count", 0)
-    .order("next_dispatch_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data?.next_dispatch_at) return null;
-  return Math.max(0, new Date(data.next_dispatch_at).getTime() - Date.now());
-}
-
 async function finishItem(
   claim: QueueClaim,
   outcome: "sent" | "failed" | "retry" | "uncertain",
@@ -238,16 +221,8 @@ export async function processWhatsappQueue(options?: {
   while (Date.now() - started < budgetMs && result.processed < maxItems) {
     const claim = await claimNextItem();
     if (!claim) {
-      const dueIn = await nextDueDelayMs();
-      const remaining = budgetMs - (Date.now() - started);
-
-      if (dueIn == null || dueIn > remaining - 750 || remaining < 1_000) {
-        result.idle = true;
-        break;
-      }
-
-      await sleep(Math.max(250, Math.min(dueIn, 2_000)));
-      continue;
+      result.idle = true;
+      break;
     }
 
     const outcome = await deliverClaim(claim);
@@ -256,6 +231,12 @@ export async function processWhatsappQueue(options?: {
     else if (outcome === "failed") result.failed += 1;
     else if (outcome === "retry") result.retried += 1;
     else result.uncertain += 1;
+
+    const remaining = budgetMs - (Date.now() - started);
+    const waitMs = Math.max(250, Number(claim.delay_seconds || 1) * 1000);
+    if (remaining > waitMs + 750 && result.processed < maxItems) {
+      await sleep(waitMs);
+    }
   }
 
   result.durationMs = Date.now() - started;
