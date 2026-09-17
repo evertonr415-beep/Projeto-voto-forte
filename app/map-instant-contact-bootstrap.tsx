@@ -11,6 +11,11 @@ export default function MapInstantContactBootstrap() {
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = `
+        @media (max-width: 760px) {
+          html:not(.vf-mobile-map-fallback) body:has(.workspace .full-map) .workspace > .page-head {
+            display: none !important;
+          }
+        }
         html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .real-map-toolbar,
         html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .leaflet-control-zoom,
         html:not(.vf-mobile-map-fallback) .full-map:not(.vf-mobile-map-ui) .map-legend {

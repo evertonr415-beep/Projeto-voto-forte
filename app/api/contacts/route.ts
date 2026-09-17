@@ -78,15 +78,13 @@ async function resolveScope(
 
   const requested = requestedOwner?.trim().toLowerCase();
   let scope = isAdmOrGestor ? "all" : account.email;
-  if (requested === "all" && isAdmOrGestor) scope = "all";
-  else if (requested && emails.includes(requested)) scope = requested;
-  else if (requested && requested !== account.email && !isAdmOrGestor)
-    return {
-      error: Response.json(
-        { error: "Você não possui acesso a este ambiente" },
-        { status: 403 },
-      ),
-    };
+  if (requested === "all") {
+    scope = isAdmOrGestor ? "all" : account.email;
+  } else if (requested && emails.includes(requested)) {
+    scope = requested;
+  } else if (requested && requested !== account.email && !isAdmOrGestor) {
+    scope = account.email;
+  }
 
   return { scope, emails, isAdmOrGestor };
 }
@@ -108,12 +106,10 @@ export async function GET(request: Request) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
 
   const url = new URL(request.url);
-  const resolved = await resolveScope(
+  const { scope, emails, isAdmOrGestor } = await resolveScope(
     account,
     url.searchParams.get("owner") ?? undefined,
   );
-  if ("error" in resolved) return resolved.error;
-  const { scope, emails, isAdmOrGestor } = resolved;
 
   // Mantém compatibilidade com consumidores antigos que ainda usam ?summary=1.
   // Sem isso, essa chamada cai na paginação e dispara um count exato desnecessário.
@@ -187,16 +183,50 @@ export async function GET(request: Request) {
           }
         }
 
-        const calculatedTotal = districtsList.reduce((acc, curr) => acc + curr.total, 0);
+        const [totalCountResult, eleitorCountResult, liderancaCountResult] =
+          await Promise.all([
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails),
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails)
+              .eq("payload->>kind", "Eleitor"),
+            account.supabase
+              .from("vf_owned_records")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "contact")
+              .in("owner_email", ownerEmails)
+              .eq("payload->>kind", "Liderança"),
+          ]);
+
+        const countError =
+          totalCountResult.error ||
+          eleitorCountResult.error ||
+          liderancaCountResult.error;
+        if (countError) {
+          throw new Error(`Falha ao calcular o resumo real dos contatos: ${countError.message}`);
+        }
+        if (
+          totalCountResult.count == null ||
+          eleitorCountResult.count == null ||
+          liderancaCountResult.count == null
+        ) {
+          throw new Error("O banco não retornou as contagens reais do resumo de contatos.");
+        }
 
         summaryResult = {
-          total: calculatedTotal || (summaryResult?.total ?? 57683),
-          totalContacts: calculatedTotal || (summaryResult?.totalContacts ?? 57683),
-          districtsCount: districtsList.length || 151,
+          total: totalCountResult.count,
+          totalContacts: totalCountResult.count,
+          districtsCount: districtsList.length,
           districts: districtsList,
           profiles: {
-            eleitor: 57681,
-            lideranca: 2,
+            eleitor: eleitorCountResult.count,
+            lideranca: liderancaCountResult.count,
           },
         };
       }

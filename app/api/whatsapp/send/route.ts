@@ -1,8 +1,13 @@
-import { getAccount } from "../../../server-identity";
+import { getAccount, isAuthorizedForWhatsappBroadcast } from "../../../server-identity";
+import { recordWhatsappEvent } from "../admin";
+import {
+  getMetaConfig,
+  metaErrorMessage,
+  normalizeWhatsappPhone,
+  readMetaResponse,
+} from "../meta";
 
 type SendMessagePayload = {
-  apiUrl?: string;
-  apiToken?: string;
   phone?: string;
   message?: string;
   contactName?: string;
@@ -10,29 +15,55 @@ type SendMessagePayload = {
   mediaUrl?: string;
   mediaName?: string;
   mediaMimeType?: string;
+  templateName?: string;
+  templateLanguage?: string;
+  templateParameters?: string[];
 };
 
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "";
-  // If Brazilian number without country code (10 or 11 digits), prepend 55
-  if (digits.length === 10 || digits.length === 11) {
-    return `55${digits}`;
-  }
-  return digits;
+async function graphRequest(
+  accessToken: string,
+  path: string,
+  init: RequestInit,
+) {
+  const { graphVersion } = getMetaConfig();
+  const headers = new Headers(init.headers || {});
+  headers.set("Authorization", `Bearer ${accessToken}`);
+  const response = await fetch(
+    `https://graph.facebook.com/${graphVersion}/${path.replace(/^\/+/, "")}`,
+    {
+      ...init,
+      headers,
+      signal: init.signal || AbortSignal.timeout(20_000),
+    },
+  );
+  return { response, data: await readMetaResponse(response) };
+}
+
+function extractMessageId(data: unknown) {
+  if (!data || typeof data !== "object" || !("messages" in data)) return "";
+  const messages = (data as { messages?: unknown }).messages;
+  if (!Array.isArray(messages) || !messages.length) return "";
+  const first = messages[0];
+  if (!first || typeof first !== "object" || !("id" in first)) return "";
+  return String((first as { id?: unknown }).id || "");
 }
 
 export async function POST(request: Request) {
   const account = await getAccount();
-  if (!account) {
-    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (!isAuthorizedForWhatsappBroadcast(account)) {
+    return Response.json(
+      {
+        error:
+          "Acesso restrito: apenas os usuários autorizados (Everton Moreira e Rafael Rodrigues) podem realizar disparos oficiais.",
+      },
+      { status: 403 },
+    );
   }
 
   try {
     const body = (await request.json()) as SendMessagePayload;
     const {
-      apiUrl,
-      apiToken,
       phone,
       message,
       contactName,
@@ -40,130 +71,154 @@ export async function POST(request: Request) {
       mediaUrl,
       mediaName,
       mediaMimeType,
+      templateName,
+      templateLanguage,
+      templateParameters,
     } = body;
 
-    if (!apiUrl || !apiToken) {
+    const { accessToken, phoneNumberId } = getMetaConfig();
+    if (!accessToken) {
       return Response.json(
-        { error: "Configure a URL da API e o Token do Whaticket/ZapAPI." },
+        { error: "Integração Meta ainda não ativada no servidor." },
+        { status: 503 },
+      );
+    }
+
+    const cleanPhone = normalizeWhatsappPhone(phone || "");
+    if (!cleanPhone || cleanPhone.length < 12 || cleanPhone.length > 15) {
+      return Response.json(
+        { error: "Número inválido. Informe país + DDD + número." },
         { status: 400 },
       );
     }
 
-    if (!phone || (!message && !mediaBase64 && !mediaUrl)) {
-      return Response.json(
-        { error: "Telefone e conteúdo da mensagem ou imagem são obrigatórios." },
-        { status: 400 },
-      );
-    }
+    let payload: Record<string, unknown>;
+    let eventMessageType = "text";
+    let eventMessageText = message?.trim() || "";
 
-    const cleanPhone = normalizePhone(phone);
-    if (cleanPhone.length < 10) {
-      return Response.json(
-        { error: "Número de telefone inválido." },
-        { status: 400 },
-      );
-    }
-
-    const cleanApiUrl = apiUrl.replace(/\/+$/, "");
-    
-    // Try Whaticket / ZapAPI standard endpoints
-    const endpoints = [
-      `${cleanApiUrl}/api/messages/send`,
-      `${cleanApiUrl}/messages/send`,
-      `${cleanApiUrl}/api/v1/send`,
-      `${cleanApiUrl}/send-message`,
-      `${cleanApiUrl}/send-media`,
-    ];
-
-    let lastError = "";
-    let sendSuccess = false;
-    let responseData: unknown = null;
-
-    for (const endpoint of endpoints) {
-      try {
-        const payload: Record<string, unknown> = {
-          number: cleanPhone,
-          body: message || "",
-          phone: cleanPhone,
-          message: message || "",
-          caption: message || "",
-          readChat: true,
-        };
-
-        if (mediaBase64 || mediaUrl) {
-          payload.media = mediaBase64 || mediaUrl;
-          payload.mediaUrl = mediaUrl;
-          payload.mediaBase64 = mediaBase64;
-          payload.medias = [
+    if (templateName?.trim()) {
+      const components = Array.isArray(templateParameters) && templateParameters.length
+        ? [
             {
-              url: mediaUrl,
-              base64: mediaBase64,
-              filename: mediaName || "santinho.jpg",
-              mimetype: mediaMimeType || "image/jpeg",
+              type: "body",
+              parameters: templateParameters.map((text) => ({ type: "text", text: String(text) })),
             },
-          ];
-        }
+          ]
+        : undefined;
 
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiToken.trim()}`,
-            apikey: apiToken.trim(),
-            "X-Token": apiToken.trim(),
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(12_000),
-        });
-
-        if (res.ok) {
-          try {
-            responseData = await res.json();
-          } catch {
-            responseData = { ok: true };
-          }
-          sendSuccess = true;
-          break;
-        } else {
-          const errText = await res.text();
-          lastError = `Status ${res.status}: ${errText.slice(0, 150)}`;
-          // If 404, try next endpoint variant. If 401/403, stop and report auth issue.
-          if (res.status === 401 || res.status === 403) {
-            break;
-          }
-        }
-      } catch (err) {
-        lastError = err instanceof Error ? err.message : String(err);
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "template",
+        template: {
+          name: templateName.trim(),
+          language: { code: templateLanguage?.trim() || "pt_BR" },
+          ...(components ? { components } : {}),
+        },
+      };
+      eventMessageType = "template";
+      eventMessageText = templateName.trim();
+    } else if (mediaBase64) {
+      const commaIndex = mediaBase64.indexOf(",");
+      const encoded = commaIndex >= 0 ? mediaBase64.slice(commaIndex + 1) : mediaBase64;
+      const bytes = Uint8Array.from(Buffer.from(encoded, "base64"));
+      const form = new FormData();
+      form.set("messaging_product", "whatsapp");
+      form.set(
+        "file",
+        new Blob([bytes], { type: mediaMimeType || "image/jpeg" }),
+        mediaName || "imagem.jpg",
+      );
+      const upload = await graphRequest(accessToken, `${phoneNumberId}/media`, {
+        method: "POST",
+        body: form,
+      });
+      if (!upload.response.ok) {
+        return Response.json(
+          { success: false, error: metaErrorMessage(upload.data, upload.response.status) },
+          { status: 502 },
+        );
       }
+      const mediaId =
+        upload.data && typeof upload.data === "object" && "id" in upload.data
+          ? String((upload.data as { id?: unknown }).id || "")
+          : "";
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "image",
+        image: { id: mediaId, caption: message?.trim() || undefined },
+      };
+      eventMessageType = "image";
+    } else if (mediaUrl) {
+      payload = {
+        messaging_product: "whatsapp",
+        to: cleanPhone,
+        type: "image",
+        image: { link: mediaUrl, caption: message?.trim() || undefined },
+      };
+      eventMessageType = "image";
+    } else {
+      if (!message?.trim()) {
+        return Response.json({ error: "A mensagem é obrigatória." }, { status: 400 });
+      }
+      payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { preview_url: false, body: message.trim() },
+      };
     }
 
-    if (!sendSuccess) {
+    const result = await graphRequest(accessToken, `${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!result.response.ok) {
       return Response.json(
         {
           success: false,
-          phone: cleanPhone,
           contactName: contactName || "Contato",
-          error: lastError || "Falha ao conectar com o servidor Whaticket/ZapAPI.",
+          error: metaErrorMessage(result.data, result.response.status),
         },
         { status: 502 },
       );
     }
 
+    const messageId = extractMessageId(result.data);
+    try {
+      await recordWhatsappEvent({
+        message_id: messageId || null,
+        direction: "outbound",
+        event_type: "message_accepted",
+        status: "accepted",
+        phone: cleanPhone,
+        contact_name: contactName?.trim() || null,
+        message_type: eventMessageType,
+        message_text: eventMessageText || null,
+        occurred_at: new Date().toISOString(),
+        payload: messageId ? { message_id: messageId } : {},
+      });
+    } catch (error) {
+      console.error("[whatsapp-send] event persistence failed", {
+        messageId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     return Response.json({
       success: true,
-      phone: cleanPhone,
+      provider: "meta-cloud-api",
       contactName: contactName || "Contato",
       status: "enviado",
-      data: responseData,
+      messageId: messageId || null,
     });
   } catch (error) {
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro inesperado ao processar disparo.",
-      },
+      { error: error instanceof Error ? error.message : "Erro inesperado ao enviar mensagem." },
       { status: 500 },
     );
   }

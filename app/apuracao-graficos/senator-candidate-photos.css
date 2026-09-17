@@ -1,0 +1,60 @@
+/* Correção visual isolada para as fotos da aba Senador em Gráficos de votação.
+   Usa o proxy interno já existente para evitar bloqueios/hotlink e preservar fallback. */
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Alexandre Curi"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fstorage2.assembleia.pr.leg.br%2Fimg%2Fy3n1sE1n35-E4-L_2B8B_P5U3qQ%3D%2Ffull-fit-in%2F300x300%2Fdeputados%2Falexandre-curi.png") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Cristina Graeml"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fdivulgacandcontas.tse.jus.br%2Fdivulga%2Frest%2Fv1%2Fcandidatura%2Fbuscar%2Ffoto%2F2%2F160002005080%2F2024%2F75353") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Deltan Dallagnol"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fwww.camara.leg.br%2Finternet%2Fdeputado%2Fbandep%2Fpagina_do_deputado%2F220705.jpg") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Filipe Barros"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fwww.camara.leg.br%2Finternet%2Fdeputado%2Fbandep%2Fpagina_do_deputado%2F204411.jpg") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi Hoffmann"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fwww.camara.leg.br%2Finternet%2Fdeputado%2Fbandep%2Fpagina_do_deputado%2F74416.jpg") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr Rosinha"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr. Rosinha"] {
+  background-image: url("/api/enquete/candidate-photo?url=https%3A%2F%2Fwww.camara.leg.br%2Finternet%2Fdeputado%2Fbandep%2Fpagina_do_deputado%2F73459.jpg") !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Alexandre Curi"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Cristina Graeml"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Deltan Dallagnol"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Filipe Barros"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi Hoffmann"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr Rosinha"],
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr. Rosinha"] {
+  background-size: cover !important;
+  background-position: center 20% !important;
+  background-repeat: no-repeat !important;
+}
+
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Alexandre Curi"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Alexandre Curi"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Cristina Graeml"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Cristina Graeml"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Deltan Dallagnol"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Deltan Dallagnol"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Filipe Barros"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Filipe Barros"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi Hoffmann"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Gleisi Hoffmann"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr Rosinha"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr Rosinha"] > span,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr. Rosinha"] > img,
+.voting-charts-container .voting-candidate-avatar[aria-label="Foto de Dr. Rosinha"] > span {
+  opacity: 0 !important;
+}

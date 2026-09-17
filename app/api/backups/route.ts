@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   return Response.json({
     backups: data ?? [],
     automatic: true,
-    schedule: "Diariamente às 03:00 (horário de Brasília)",
+    schedule: "2 vezes ao dia: às 02:30 e às 13:00 (horário de Brasília)",
     retentionDays: 30,
   });
 }
@@ -76,17 +76,13 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "restore") {
-    const backup = body.backup as Record<string, unknown> | null;
-    if (!backup || backup.format !== "voto-forte-backup" || backup.version !== 1)
-      return Response.json(
-        { error: "Arquivo de backup inválido ou incompatível" },
-        { status: 400 },
-      );
-    const { data, error } = await account.supabase.rpc("vf_restore_backup", {
-      payload: backup,
-    });
-    if (error) return Response.json({ error: error.message }, { status: 400 });
-    return Response.json({ restored: data });
+    return Response.json(
+      {
+        error:
+          "Restauração direta no banco de produção está desabilitada por segurança. Use o procedimento de recuperação isolada e valide o backup antes de qualquer restauração controlada.",
+      },
+      { status: 409 },
+    );
   }
 
   return Response.json(

@@ -31,6 +31,28 @@ type UsersPayload = {
   municipalities?: Municipality[];
 };
 
+type PermissionScope = "selected" | "all";
+
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim();
+}
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "GE"
+  );
+}
+
 export default function GestorAccessUi() {
   const [accessRole, setAccessRole] = useState("");
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -39,6 +61,9 @@ export default function GestorAccessUi() {
   const [drafts, setDrafts] = useState<Record<number, number[]>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [selectedGestorId, setSelectedGestorId] = useState<number | null>(null);
+  const [permissionQuery, setPermissionQuery] = useState("");
+  const [permissionScope, setPermissionScope] = useState<PermissionScope>("selected");
 
   const loadAdministration = useCallback(async () => {
     if (accessRole !== "adm") return;
@@ -58,9 +83,7 @@ export default function GestorAccessUi() {
       Object.fromEntries(
         gestores.map((user) => [
           user.id,
-          Array.from(new Set((user.municipalityIds || []).map(Number))).filter(
-            Boolean,
-          ),
+          Array.from(new Set((user.municipalityIds || []).map(Number))).filter(Boolean),
         ]),
       ),
     );
@@ -161,9 +184,7 @@ export default function GestorAccessUi() {
       }
 
       if (accessRole === "adm") {
-        const panel = document.querySelector<HTMLElement>(
-          ".vf-hierarchy-panel",
-        );
+        const panel = document.querySelector<HTMLElement>(".vf-hierarchy-panel");
         if (panel) {
           let node = panel.querySelector<HTMLElement>(
             ":scope > [data-vf-gestor-municipalities-host]",
@@ -204,6 +225,46 @@ export default function GestorAccessUi() {
     [municipalities],
   );
 
+  const selectedGestor = useMemo(
+    () => users.find((user) => user.id === selectedGestorId) || null,
+    [selectedGestorId, users],
+  );
+
+  const visiblePermissionMunicipalities = useMemo(() => {
+    if (!selectedGestor) return [];
+    const selected = new Set(drafts[selectedGestor.id] || []);
+    const query = normalize(permissionQuery);
+
+    return activeMunicipalities.filter((municipality) => {
+      if (query) {
+        return normalize(`${municipality.name} ${municipality.state}`).includes(query);
+      }
+      if (permissionScope === "selected") return selected.has(municipality.id);
+      return true;
+    });
+  }, [activeMunicipalities, drafts, permissionQuery, permissionScope, selectedGestor]);
+
+  function selectedMunicipalityNames(user: GestorUser) {
+    const selected = new Set(drafts[user.id] || []);
+    return activeMunicipalities
+      .filter((municipality) => selected.has(municipality.id))
+      .map((municipality) => municipality.name);
+  }
+
+  function openPermissions(userId: number) {
+    setSelectedGestorId(userId);
+    setPermissionQuery("");
+    setPermissionScope("selected");
+    setMessage("");
+  }
+
+  function closePermissions() {
+    if (busyId !== null) return;
+    setSelectedGestorId(null);
+    setPermissionQuery("");
+    setPermissionScope("selected");
+  }
+
   function toggleMunicipality(userId: number, municipalityId: number) {
     setDrafts((current) => {
       const selected = new Set(current[userId] || []);
@@ -233,6 +294,9 @@ export default function GestorAccessUi() {
         throw new Error(data.error || "Não foi possível salvar os municípios.");
       setMessage(`Municípios de ${user.name} atualizados.`);
       await loadAdministration();
+      setSelectedGestorId(null);
+      setPermissionQuery("");
+      setPermissionScope("selected");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -246,71 +310,171 @@ export default function GestorAccessUi() {
 
   if (accessRole !== "adm" || !host) return null;
 
-  return createPortal(
-    <section
-      className="vf-gestor-municipality-admin"
-      aria-label="Gestores multimunicipais"
-    >
-      <header>
-        <div>
-          <small>GESTÃO DE CONFIANÇA</small>
-          <h4>Gestores multimunicipais</h4>
-          <p>
-            Defina exatamente quais municípios cada Gestor pode visualizar e
-            alternar. O Gestor nunca recebe acesso a contas ADM, backup ou
-            segurança global.
-          </p>
-        </div>
-        <span>{users.length}</span>
-      </header>
+  return (
+    <>
+      {createPortal(
+        <section
+          className="vf-gestor-municipality-admin"
+          aria-label="Gestores multimunicipais"
+        >
+          <header>
+            <div>
+              <small>GESTÃO DE CONFIANÇA</small>
+              <h4>Gestores multimunicipais</h4>
+              <p>
+                Controle o alcance territorial de cada Gestor sem carregar a lista
+                completa de municípios na tela principal.
+              </p>
+            </div>
+            <span>{users.length}</span>
+          </header>
 
-      {message && (
-        <div className="vf-gestor-municipality-message" role="status">
-          {message}
-        </div>
+          {message && (
+            <div className="vf-gestor-municipality-message" role="status">
+              {message}
+            </div>
+          )}
+
+          {users.length ? (
+            <div className="vf-gestor-municipality-list">
+              {users.map((user) => {
+                const names = selectedMunicipalityNames(user);
+                return (
+                  <article key={user.id} className="vf-gestor-compact-card">
+                    <div className="vf-gestor-avatar" aria-hidden="true">
+                      {initials(user.name)}
+                    </div>
+                    <div className="vf-gestor-identity">
+                      <b>{user.name}</b>
+                      <small>{user.email}</small>
+                      <div className="vf-gestor-permission-preview">
+                        {names.slice(0, 3).map((name) => (
+                          <span key={name}>{name}</span>
+                        ))}
+                        {names.length > 3 && <span>+{names.length - 3}</span>}
+                        {!names.length && <em>Nenhum município definido</em>}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="vf-gestor-manage-button"
+                      onClick={() => openPermissions(user.id)}
+                    >
+                      Gerenciar <b>{names.length}</b>
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="vf-gestor-empty">
+              Nenhum Gestor ativo. Crie o primeiro acesso usando a opção “Gestor” em
+              Cadastrar acesso.
+            </p>
+          )}
+        </section>,
+        host,
       )}
 
-      {users.length ? (
-        <div className="vf-gestor-municipality-list">
-          {users.map((user) => (
-            <article key={user.id}>
-              <div className="vf-gestor-identity">
-                <b>{user.name}</b>
-                <small>{user.email}</small>
+      {selectedGestor &&
+        createPortal(
+          <div
+            className="vf-admin-v6-modal-backdrop"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) closePermissions();
+            }}
+          >
+            <section
+              className="vf-admin-v6-modal vf-gestor-permission-modal"
+              aria-label={`Municípios de ${selectedGestor.name}`}
+            >
+              <header>
+                <div>
+                  <small>PERMISSÕES TERRITORIAIS</small>
+                  <h3>{selectedGestor.name}</h3>
+                  <p>{selectedGestor.email}</p>
+                </div>
+                <button type="button" onClick={closePermissions} aria-label="Fechar">
+                  ×
+                </button>
+              </header>
+
+              <div className="vf-gestor-permission-count">
+                <b>{(drafts[selectedGestor.id] || []).length}</b>
+                <span>municípios selecionados</span>
               </div>
-              <div className="vf-gestor-municipality-checks">
-                {activeMunicipalities.map((municipality) => (
+
+              <input
+                className="vf-gestor-permission-search"
+                value={permissionQuery}
+                onChange={(event) => setPermissionQuery(event.target.value)}
+                placeholder="Buscar município"
+                aria-label="Buscar município"
+              />
+
+              {!permissionQuery && (
+                <div className="vf-gestor-permission-scope" role="tablist">
+                  <button
+                    type="button"
+                    className={permissionScope === "selected" ? "active" : ""}
+                    onClick={() => setPermissionScope("selected")}
+                  >
+                    Selecionados ({(drafts[selectedGestor.id] || []).length})
+                  </button>
+                  <button
+                    type="button"
+                    className={permissionScope === "all" ? "active" : ""}
+                    onClick={() => setPermissionScope("all")}
+                  >
+                    Todos
+                  </button>
+                </div>
+              )}
+
+              <div className="vf-gestor-permission-list">
+                {visiblePermissionMunicipalities.map((municipality) => (
                   <label key={municipality.id}>
                     <input
                       type="checkbox"
-                      checked={(drafts[user.id] || []).includes(municipality.id)}
+                      checked={(drafts[selectedGestor.id] || []).includes(
+                        municipality.id,
+                      )}
                       onChange={() =>
-                        toggleMunicipality(user.id, municipality.id)
+                        toggleMunicipality(selectedGestor.id, municipality.id)
                       }
                     />
                     <span>
-                      {municipality.name} - {municipality.state}
+                      <b>{municipality.name}</b>
+                      <small>{municipality.state}</small>
                     </span>
                   </label>
                 ))}
+                {!visiblePermissionMunicipalities.length && (
+                  <p className="vf-gestor-permission-empty">
+                    {permissionQuery
+                      ? "Nenhum município encontrado nessa busca."
+                      : "Nenhum município selecionado. Use “Todos” ou pesquise para adicionar."}
+                  </p>
+                )}
               </div>
-              <button
-                type="button"
-                disabled={busyId === user.id}
-                onClick={() => void saveMunicipalities(user)}
-              >
-                {busyId === user.id ? "Salvando…" : "Salvar municípios"}
-              </button>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="vf-gestor-empty">
-          Nenhum Gestor ativo. Crie o primeiro acesso usando a opção “Gestor” em
-          Cadastrar acesso.
-        </p>
-      )}
-    </section>,
-    host,
+
+              <footer>
+                <button type="button" onClick={closePermissions} disabled={busyId !== null}>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={busyId === selectedGestor.id}
+                  onClick={() => void saveMunicipalities(selectedGestor)}
+                >
+                  {busyId === selectedGestor.id ? "Salvando…" : "Salvar permissões"}
+                </button>
+              </footer>
+            </section>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

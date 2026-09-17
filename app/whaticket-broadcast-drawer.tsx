@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "./supabase-client";
+import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
 
 type ContactItem = {
   id: number;
@@ -10,370 +11,564 @@ type ContactItem = {
   district?: string;
   leader?: string;
   kind?: "Eleitor" | "Liderança";
-  ownerEmail?: string;
+};
+
+type DistrictSummary = {
+  district: string;
+  total: number;
+};
+
+type MetaTemplate = {
+  id: string;
+  name: string;
+  status: string;
+  language: string;
+  category: string;
+  body: string;
+  bodyParameterCount: number;
+  unsupportedHeader: boolean;
 };
 
 type LogItem = {
   id: string;
   name: string;
   phone: string;
-  district?: string;
   status: "pending" | "sending" | "sent" | "error";
   error?: string;
   time: string;
 };
 
-const DEFAULT_API_URL = "https://zapapi.dgsis.com.br";
-const STORAGE_API_URL_KEY = "voto-forte:whaticket:apiUrl";
-const STORAGE_API_TOKEN_KEY = "voto-forte:whaticket:apiToken";
-const STORAGE_DELAY_KEY = "voto-forte:whaticket:delaySeconds";
+type LiveMessageItem = {
+  id: string;
+  phone: string;
+  contactName: string;
+  district?: string;
+  status: "sent" | "delivered" | "read" | "error" | "replied";
+  errorMessage?: string;
+  lastMessageText?: string;
+  sentAt?: string;
+  repliedAt?: string;
+  replyText?: string;
+  direction: "outbound" | "inbound";
+};
+
+type LiveFeedKpis = {
+  totalOutbound: number;
+  deliveredCount: number;
+  failedCount: number;
+  deliveryRate: number;
+  repliedCount: number;
+  responseRate: number;
+  activeContacts: number;
+};
+
+const STORAGE_DELAY_KEY = "voto-forte:meta:delaySeconds";
+const STORAGE_TEMPLATE_KEY = "voto-forte:meta:templateName";
+const STORAGE_LANGUAGE_KEY = "voto-forte:meta:templateLanguage";
+
+function normalizeWhatsappPhone(raw: string): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+  return digits.length >= 10 ? digits : "";
+}
+
+function formatPhoneDisplay(raw: string): string {
+  return formatDisplayPhone(raw);
+}
+
+function resolveTag(value: string, contact: ContactItem) {
+  const firstName = (contact.name || "").trim().split(/\s+/)[0] || "Amigo(a)";
+  return String(value || "")
+    .replace(/\{nome\}/gi, contact.name || "Amigo(a)")
+    .replace(/\{primeiro_nome\}/gi, firstName)
+    .replace(/\{bairro\}/gi, contact.district || "sua região")
+    .replace(/\{cidade\}/gi, "Arapongas")
+    .replace(/\{lideranca\}/gi, contact.leader || "Liderança");
+}
 
 export default function WhaticketBroadcastDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"disparo" | "config" | "logs">("disparo");
-
-  // API Config
-  const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
-  const [apiToken, setApiToken] = useState("");
-  const [delaySeconds, setDelaySeconds] = useState(5);
-  const [testPhone, setTestPhone] = useState("");
-  const [testStatus, setTestStatus] = useState<string>("");
-
-  // Audience & Filtering
+  const [activeTab, setActiveTab] = useState<"disparo" | "tempo-real" | "logs">("disparo");
   const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [districtList, setDistrictList] = useState<DistrictSummary[]>([]);
+  const [totalMunicipalityContacts, setTotalMunicipalityContacts] = useState(0);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState("Todos");
   const [selectedKind, setSelectedKind] = useState<"Todos" | "Eleitor" | "Liderança">("Todos");
-  const [recipientLimit, setRecipientLimit] = useState<number>(50);
+  const [recipientLimit, setRecipientLimit] = useState(50);
+  const [delaySeconds, setDelaySeconds] = useState(3);
 
-  // Message Composer & Media
-  const [messageTemplate, setMessageTemplate] = useState(
-    "Olá, {nome}! Tudo bem? Passando para te convidar para o nosso próximo encontro do VOTO FORTE no bairro {bairro}. Contamos com seu apoio!",
-  );
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaBase64, setMediaBase64] = useState<string | null>(null);
-  const [mediaName, setMediaName] = useState<string>("");
-  const [mediaUrl, setMediaUrl] = useState<string>("");
-  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<MetaTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateLanguage, setTemplateLanguage] = useState("pt_BR");
+  const [parameterMappings, setParameterMappings] = useState<string[]>([]);
+  const [templateStatus, setTemplateStatus] = useState("");
 
-  const handleSelectMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("A imagem selecionada deve ter no máximo 5MB.");
-      return;
-    }
-
-    setMediaFile(file);
-    setMediaName(file.name);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setMediaBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearMedia = () => {
-    setMediaFile(null);
-    setMediaBase64(null);
-    setMediaName("");
-    setMediaUrl("");
-    if (mediaInputRef.current) mediaInputRef.current.value = "";
-  };
-
-  // Execution State
   const [isExecuting, setIsExecuting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const abortRef = useRef(false);
+  const pausedRef = useRef(false);
 
-  const abortControllerRef = useRef<boolean>(false);
-  const pausedRef = useRef<boolean>(false);
+  // Live Feed State
+  const [liveItems, setLiveItems] = useState<LiveMessageItem[]>([]);
+  const [liveKpis, setLiveKpis] = useState<LiveFeedKpis>({
+    totalOutbound: 0,
+    deliveredCount: 0,
+    failedCount: 0,
+    deliveryRate: 0,
+    repliedCount: 0,
+    responseRate: 0,
+    activeContacts: 0,
+  });
+  const [liveFilter, setLiveFilter] = useState<"all" | "errors" | "replies" | "no_reply">("all");
+  const [liveSearch, setLiveSearch] = useState("");
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [failedNumbers, setFailedNumbers] = useState<{ phone: string; name: string; error: string }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string } | null>(null);
 
-  // Load saved credentials and register open event
   useEffect(() => {
-    try {
-      const savedUrl = localStorage.getItem(STORAGE_API_URL_KEY);
-      const savedToken = localStorage.getItem(STORAGE_API_TOKEN_KEY);
-      const savedDelay = localStorage.getItem(STORAGE_DELAY_KEY);
-      if (savedUrl) setApiUrl(savedUrl);
-      if (savedToken) setApiToken(savedToken);
-      if (savedDelay) setDelaySeconds(Number(savedDelay) || 5);
-    } catch {
-      // LocalStorage access fallback
-    }
-
-    const handleOpenDrawer = () => {
-      setIsOpen(true);
-    };
-
-    window.addEventListener("voto-forte:open-whaticket-drawer", handleOpenDrawer);
-    return () => {
-      window.removeEventListener("voto-forte:open-whaticket-drawer", handleOpenDrawer);
-    };
+    void apiFetch("/api/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user || d?.account) {
+          setCurrentUser(d.user || d.account);
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // Ensure sidebar navigation button is mounted under WhatsApp
+  const isAuthorized = useMemo(() => {
+    if (!currentUser) return true;
+    const email = String(currentUser.email || "").trim().toLowerCase();
+    const name = String(currentUser.name || "").trim().toLowerCase();
+    return (
+      email === "evertonr415@gmail.com" ||
+      name.includes("everton") ||
+      name.includes("rafael rodrigues") ||
+      name.includes("rafael alessandro") ||
+      name.includes("rafael") ||
+      email.includes("rafael")
+    );
+  }, [currentUser]);
+
+  // Carrega feed de mensagens em tempo real
+  const loadLiveFeed = useCallback(async (silent = false) => {
+    if (!silent) setLiveLoading(true);
+    try {
+      const url = `/api/whatsapp/live-feed?filter=${liveFilter}&search=${encodeURIComponent(liveSearch)}`;
+      const res = await apiFetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveItems(data.items || []);
+        if (data.kpis) setLiveKpis(data.kpis);
+        if (Array.isArray(data.failedNumbers)) setFailedNumbers(data.failedNumbers);
+      }
+    } catch {
+      // Silencia
+    } finally {
+      if (!silent) setLiveLoading(false);
+    }
+  }, [liveFilter, liveSearch]);
+
+  // Polling em tempo real quando o drawer e a aba estiverem abertos
   useEffect(() => {
-    let frameId = 0;
+    if (!isOpen) return;
+    void loadLiveFeed();
+
+    const interval = setInterval(() => {
+      void loadLiveFeed(true);
+    }, 4000);
+
+    const handleSync = () => void loadLiveFeed(true);
+    window.addEventListener("voto-forte:survey-updated", handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("voto-forte:survey-updated", handleSync);
+    };
+  }, [isOpen, loadLiveFeed]);
+
+  useEffect(() => {
+    try {
+      const savedDelay = Number(localStorage.getItem(STORAGE_DELAY_KEY) || 3);
+      const savedTemplate = localStorage.getItem(STORAGE_TEMPLATE_KEY) || "";
+      const savedLanguage = localStorage.getItem(STORAGE_LANGUAGE_KEY) || "pt_BR";
+      setDelaySeconds(Number.isFinite(savedDelay) ? savedDelay : 3);
+      setTemplateName(savedTemplate);
+      setTemplateLanguage(savedLanguage);
+    } catch {}
+
+    const open = () => setIsOpen(true);
+    window.addEventListener("voto-forte:open-whaticket-drawer", open);
+    return () => window.removeEventListener("voto-forte:open-whaticket-drawer", open);
+  }, []);
+
+  useEffect(() => {
+    let frame = 0;
     const ensureSidebarItem = () => {
       const nav = document.querySelector<HTMLElement>(".sidebar nav");
       if (!nav || nav.querySelector(".whaticket-broadcast-sidebar-btn")) return;
-
-      const allButtons = Array.from(nav.querySelectorAll("button"));
-      const waButton = allButtons.find((btn) => btn.textContent?.includes("WhatsApp"));
-      const targetAnchor = waButton?.nextSibling || nav.querySelector(".administration-nav-item") || null;
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "whaticket-broadcast-sidebar-btn";
-      btn.title = "Disparo em Massa";
-
+      const buttons = Array.from(nav.querySelectorAll("button"));
+      const waButton = buttons.find((button) => button.textContent?.includes("WhatsApp"));
+      const anchor = waButton?.nextSibling || nav.querySelector(".administration-nav-item") || null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "whaticket-broadcast-sidebar-btn";
+      button.title = "Disparo em Massa";
       const icon = document.createElement("span");
       icon.className = "nav-icon";
       icon.style.color = "#2ddd7f";
       icon.textContent = "⚡";
-
-      const name = document.createElement("span");
-      name.className = "nav-name";
-      name.textContent = "Disparo em Massa";
-
-      btn.append(icon, name);
-      btn.addEventListener("click", () => {
-        setIsOpen(true);
-      });
-
-      if (targetAnchor) {
-        nav.insertBefore(btn, targetAnchor);
-      } else {
-        nav.appendChild(btn);
-      }
+      const label = document.createElement("span");
+      label.className = "nav-name";
+      label.textContent = "Disparo em Massa";
+      button.append(icon, label);
+      button.addEventListener("click", () => setIsOpen(true));
+      if (anchor) nav.insertBefore(button, anchor);
+      else nav.appendChild(button);
     };
-
     ensureSidebarItem();
     const observer = new MutationObserver(() => {
-      if (frameId) return;
-      frameId = window.requestAnimationFrame(() => {
-        frameId = 0;
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
         ensureSidebarItem();
       });
     });
     observer.observe(document.body, { childList: true, subtree: true });
-
     return () => {
-      if (frameId) window.cancelAnimationFrame(frameId);
+      if (frame) window.cancelAnimationFrame(frame);
       observer.disconnect();
     };
   }, []);
 
-  // Save credentials on change
-  const saveConfig = (url: string, token: string, delay: number) => {
-    setApiUrl(url);
-    setApiToken(token);
-    setDelaySeconds(delay);
+  // Carrega sumário de bairros completo
+  const loadDistrictsSummary = useCallback(async () => {
     try {
-      localStorage.setItem(STORAGE_API_URL_KEY, url);
-      localStorage.setItem(STORAGE_API_TOKEN_KEY, token);
-      localStorage.setItem(STORAGE_DELAY_KEY, String(delay));
-    } catch {
-      // LocalStorage access fallback
-    }
-  };
-
-  // Fetch contacts when drawer opens
-  const fetchAudienceContacts = useCallback(async () => {
-    setLoadingContacts(true);
-    try {
-      const res = await apiFetch("/api/contacts?pageSize=200&owner=all");
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.contacts)) {
-          setContacts(data.contacts);
+      const response = await apiFetch("/api/contacts?mode=summary", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok && data) {
+        if (Array.isArray(data.districts)) {
+          setDistrictList(
+            data.districts.map((d: { district?: string; total?: number }) => ({
+              district: String(d.district || "").trim(),
+              total: Number(d.total || 0),
+            })).filter((d: DistrictSummary) => Boolean(d.district)),
+          );
+        }
+        if (Number.isFinite(data.total)) {
+          setTotalMunicipalityContacts(Number(data.total));
         }
       }
     } catch {
-      // Ignora erro de requisição em segundo plano
+      // Silencia
+    }
+  }, []);
+
+  // Carrega contatos com filtro no servidor (rápido e preciso)
+  const fetchFilteredContacts = useCallback(async (
+    district: string,
+    kind: "Todos" | "Eleitor" | "Liderança",
+    limit: number,
+  ) => {
+    setLoadingContacts(true);
+    try {
+      const maxToFetch = limit === 99999 ? 500 : limit;
+      const params = new URLSearchParams({
+        page: "1",
+        pageSize: String(Math.min(200, maxToFetch)),
+      });
+
+      if (district && district !== "Todos") {
+        params.set("district", district);
+      }
+      if (kind && kind !== "Todos") {
+        params.set("profile", kind);
+      }
+
+      const response = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data.contacts)) {
+        const loaded: ContactItem[] = data.contacts.map((c: any) => ({
+          id: c.id,
+          name: c.name || "Contato",
+          phone: c.phone || "",
+          district: c.district || district || "Arapongas",
+          leader: c.leader || "",
+          kind: c.kind || "Eleitor",
+        }));
+
+        // Se o usuário pediu mais do que 200 (ex: 250, 500), busca páginas seguintes
+        if (maxToFetch > 200 && data.totalPages > 1) {
+          const remainingPages = Math.min(Math.ceil(maxToFetch / 200), data.totalPages);
+          for (let p = 2; p <= remainingPages; p++) {
+            params.set("page", String(p));
+            try {
+              const nextRes = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+              const nextData = await nextRes.json();
+              if (nextRes.ok && Array.isArray(nextData.contacts)) {
+                loaded.push(
+                  ...nextData.contacts.map((c: any) => ({
+                    id: c.id,
+                    name: c.name || "Contato",
+                    phone: c.phone || "",
+                    district: c.district || district || "Arapongas",
+                    leader: c.leader || "",
+                    kind: c.kind || "Eleitor",
+                  })),
+                );
+              }
+            } catch {
+              break;
+            }
+          }
+        }
+
+        setContacts(loaded);
+      } else {
+        setContacts([]);
+      }
+    } catch {
+      setContacts([]);
     } finally {
       setLoadingContacts(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (isOpen && contacts.length === 0) {
-      void fetchAudienceContacts();
+  const syncParameterMappings = useCallback((count: number) => {
+    const defaults = ["{primeiro_nome}", "{bairro}", "{cidade}", "{lideranca}"];
+    setParameterMappings((current) =>
+      Array.from({ length: count }, (_, index) => current[index] || defaults[index] || "{nome}"),
+    );
+  }, []);
+
+  const loadTemplates = useCallback(async () => {
+    setTemplatesLoading(true);
+    setTemplateStatus("Atualizando modelos aprovados...");
+    try {
+      const response = await apiFetch("/api/whatsapp/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível carregar os modelos.");
+
+      const approved: MetaTemplate[] = Array.isArray(data.templates) ? data.templates : [];
+      setTemplates(approved);
+
+      let next = approved.find(
+        (item) => item.name === templateName && item.language === templateLanguage,
+      );
+      if (!next && approved.length) next = approved[0];
+
+      if (next) {
+        setTemplateName(next.name);
+        setTemplateLanguage(next.language || "pt_BR");
+        syncParameterMappings(Number(next.bodyParameterCount || 0));
+        try {
+          localStorage.setItem(STORAGE_TEMPLATE_KEY, next.name);
+          localStorage.setItem(STORAGE_LANGUAGE_KEY, next.language || "pt_BR");
+        } catch {}
+        setTemplateStatus(`✓ ${approved.length} modelo(s) aprovado(s) disponível(is)`);
+      } else {
+        setTemplateName("");
+        setTemplateStatus("Aguardando aprovação de um modelo pela Meta.");
+      }
+    } catch (error) {
+      setTemplateStatus(
+        error instanceof Error
+          ? error.message
+          : "Integração de envio ainda não está disponível no servidor.",
+      );
+    } finally {
+      setTemplatesLoading(false);
     }
-  }, [isOpen, contacts.length, fetchAudienceContacts]);
+  }, [syncParameterMappings, templateLanguage, templateName]);
 
-  // Distinct districts
-  const distinctDistricts = useMemo(() => {
-    const set = new Set<string>();
-    contacts.forEach((c) => {
-      if (c.district && c.district.trim()) set.add(c.district.trim());
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [contacts]);
+  // Ao abrir o drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    void loadDistrictsSummary();
+    void loadTemplates();
+    void fetchFilteredContacts(selectedDistrict, selectedKind, recipientLimit);
+  }, [isOpen]);
 
-  // Filtered recipient list
-  const targetedRecipients = useMemo(() => {
+  // Ao alterar qualquer filtro
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+    void fetchFilteredContacts(district, selectedKind, recipientLimit);
+  };
+
+  const handleKindChange = (kind: "Todos" | "Eleitor" | "Liderança") => {
+    setSelectedKind(kind);
+    void fetchFilteredContacts(selectedDistrict, kind, recipientLimit);
+  };
+
+  const handleLimitChange = (limit: number) => {
+    setRecipientLimit(limit);
+    void fetchFilteredContacts(selectedDistrict, selectedKind, limit);
+  };
+
+  const recipients = useMemo(() => {
+    const seen = new Set<string>();
     return contacts
-      .filter((c) => {
-        if (!c.phone || c.phone.replace(/\D/g, "").length < 10) return false;
-        if (selectedDistrict !== "Todos" && c.district !== selectedDistrict) return false;
-        if (selectedKind !== "Todos" && c.kind !== selectedKind) return false;
+      .filter((contact) => {
+        const normalized = normalizeWhatsappPhone(contact.phone || "");
+        if (!normalized || normalized.length < 10 || seen.has(normalized)) return false;
+        seen.add(normalized);
         return true;
       })
       .slice(0, recipientLimit > 0 ? recipientLimit : undefined);
-  }, [contacts, selectedDistrict, selectedKind, recipientLimit]);
+  }, [contacts, recipientLimit]);
 
-  // Preview replacement text
-  const previewMessage = useMemo(() => {
-    const sample = targetedRecipients[0] || {
-      name: "João da Silva",
-      district: "Centro",
-      leader: "Coordenação Geral",
-    };
-    const firstName = (sample.name || "").split(" ")[0] || "Eleitor(a)";
-    return messageTemplate
-      .replace(/{nome}/gi, sample.name || "Amigo(a)")
-      .replace(/{primeiro_nome}/gi, firstName)
-      .replace(/{bairro}/gi, sample.district || "sua região")
-      .replace(/{lideranca}/gi, sample.leader || "Liderança");
-  }, [messageTemplate, targetedRecipients]);
+  const selectedTemplate = useMemo(
+    () => templates.find((template) => template.name === templateName && template.language === templateLanguage) || null,
+    [templateLanguage, templateName, templates],
+  );
 
-  const insertTag = (tag: string) => {
-    setMessageTemplate((prev) => `${prev} ${tag}`);
-  };
-
-  // Test single send via API
-  const handleTestSend = async () => {
-    if (!apiUrl || !apiToken) {
-      setTestStatus("❌ Configure a URL da API e o Token primeiro.");
-      return;
-    }
-    if (!testPhone) {
-      setTestStatus("❌ Informe um número de telefone com DDD para teste.");
-      return;
-    }
-    setTestStatus("⏳ Enviando mensagem de teste...");
+  const handleTemplateChange = (value: string) => {
+    const [name, language] = value.split("::");
+    const template = templates.find((item) => item.name === name && item.language === language);
+    setTemplateName(name || "");
+    setTemplateLanguage(language || "pt_BR");
+    syncParameterMappings(Number(template?.bodyParameterCount || 0));
     try {
-      const res = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apiUrl,
-          apiToken,
-          phone: testPhone,
-          message: "Teste de conexão do VOTO FORTE com Whaticket/ZapAPI realizado com sucesso! ✅",
-          contactName: "Teste",
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setTestStatus("✅ Mensagem de teste enviada com sucesso no WhatsApp!");
-      } else {
-        setTestStatus(`❌ Falha: ${data.error || "Erro no envio"}`);
-      }
-    } catch (err) {
-      setTestStatus(`❌ Erro de rede: ${err instanceof Error ? err.message : String(err)}`);
+      localStorage.setItem(STORAGE_TEMPLATE_KEY, name || "");
+      localStorage.setItem(STORAGE_LANGUAGE_KEY, language || "pt_BR");
+    } catch {}
+  };
+
+  const resolveParameters = (contact: ContactItem) =>
+    parameterMappings.map((mapping) => resolveTag(mapping, contact));
+
+  // Reenviar para quem deu erro
+  const handleRetryFailed = () => {
+    if (!failedNumbers.length) return;
+    const failedPhones = new Set(failedNumbers.map((f) => normalizeWhatsappPhone(f.phone)));
+    const retryContacts = contacts.filter((c) => failedPhones.has(normalizeWhatsappPhone(c.phone)));
+    if (retryContacts.length > 0) {
+      setContacts(retryContacts);
+      setActiveTab("disparo");
     }
   };
 
-  // Broadcast Execution Loop
+  // Exportar relatório em CSV
+  const handleExportCsv = () => {
+    if (!liveItems.length) {
+      alert("Nenhum dado para exportar no momento.");
+      return;
+    }
+
+    const headers = ["Nome", "Telefone", "Status", "Motivo do Erro", "Texto da Resposta", "Data de Envio", "Data da Resposta"];
+    const rows = liveItems.map((item) => [
+      `"${item.contactName.replace(/"/g, '""')}"`,
+      `"${item.phone}"`,
+      `"${item.status === "error" ? "Falha no Envio" : item.status === "replied" ? "Respondeu" : item.status === "delivered" ? "Entregue" : "Enviado"}"`,
+      `"${(item.errorMessage || "").replace(/"/g, '""')}"`,
+      `"${(item.replyText || "").replace(/"/g, '""')}"`,
+      `"${item.sentAt ? new Date(item.sentAt).toLocaleString("pt-BR") : ""}"`,
+      `"${item.repliedAt ? new Date(item.repliedAt).toLocaleString("pt-BR") : ""}"`,
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio-whatsapp-voto-forte-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const startBroadcast = async () => {
-    if (!apiUrl || !apiToken) {
-      setActiveTab("config");
-      alert("Por favor, configure o Token da ZapAPI / Whaticket antes de iniciar.");
+    if (!selectedTemplate) {
+      alert("Aguarde a aprovação de um modelo da Meta e selecione-o antes de iniciar o disparo.");
       return;
     }
-    if (targetedRecipients.length === 0) {
-      alert("Nenhum contato encontrado com os filtros selecionados.");
+    if (selectedTemplate.unsupportedHeader) {
+      alert("O modelo selecionado exige mídia no cabeçalho e ainda não é compatível com este disparador.");
       return;
     }
+    if (!recipients.length) return;
 
-    const initialLogs: LogItem[] = targetedRecipients.map((c, i) => ({
-      id: `${c.id || i}-${c.phone}`,
-      name: c.name || "Contato",
-      phone: c.phone,
-      district: c.district,
-      status: "pending",
-      time: "",
-    }));
-
-    setLogs(initialLogs);
+    setLogs(
+      recipients.map((contact, index) => ({
+        id: `${contact.id || index}-${contact.phone}`,
+        name: contact.name || "Contato",
+        phone: contact.phone,
+        status: "pending",
+        time: "",
+      })),
+    );
     setIsExecuting(true);
     setIsPaused(false);
     setActiveTab("logs");
-    abortControllerRef.current = false;
+    abortRef.current = false;
     pausedRef.current = false;
 
-    for (let i = 0; i < targetedRecipients.length; i++) {
-      if (abortControllerRef.current) break;
-
-      while (pausedRef.current) {
-        await new Promise((r) => setTimeout(r, 500));
-        if (abortControllerRef.current) break;
+    for (let index = 0; index < recipients.length; index++) {
+      if (abortRef.current) break;
+      while (pausedRef.current && !abortRef.current) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
+      if (abortRef.current) break;
 
-      if (abortControllerRef.current) break;
-
-      setCurrentIndex(i);
-      const recipient = targetedRecipients[i];
-      const firstName = (recipient.name || "").split(" ")[0] || "Amigo(a)";
-      const customizedText = messageTemplate
-        .replace(/{nome}/gi, recipient.name || "Amigo(a)")
-        .replace(/{primeiro_nome}/gi, firstName)
-        .replace(/{bairro}/gi, recipient.district || "sua região")
-        .replace(/{lideranca}/gi, recipient.leader || "Liderança");
-
-      // Mark sending
-      setLogs((prev) =>
-        prev.map((log, idx) =>
-          idx === i ? { ...log, status: "sending", time: new Date().toLocaleTimeString("pt-BR") } : log,
+      const contact = recipients[index];
+      setCurrentIndex(index);
+      setLogs((current) =>
+        current.map((log, logIndex) =>
+          logIndex === index
+            ? { ...log, status: "sending", time: new Date().toLocaleTimeString("pt-BR") }
+            : log,
         ),
       );
 
       try {
-        const response = await fetch("/api/whatsapp/send", {
+        const response = await apiFetch("/api/whatsapp/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            apiUrl,
-            apiToken,
-            phone: recipient.phone,
-            message: customizedText,
-            contactName: recipient.name,
-            mediaBase64: mediaBase64 || undefined,
-            mediaUrl: mediaUrl || undefined,
-            mediaName: mediaName || "santinho.jpg",
-            mediaMimeType: mediaFile?.type || "image/jpeg",
+            phone: contact.phone,
+            contactName: contact.name,
+            templateName: selectedTemplate.name,
+            templateLanguage: selectedTemplate.language,
+            templateParameters: resolveParameters(contact),
           }),
         });
-
-        const result = await response.json();
-        const success = response.ok && result.success;
-
-        setLogs((prev) =>
-          prev.map((log, idx) =>
-            idx === i
+        const data = await response.json();
+        const success = response.ok && data.success;
+        setLogs((current) =>
+          current.map((log, logIndex) =>
+            logIndex === index
               ? {
                   ...log,
                   status: success ? "sent" : "error",
-                  error: success ? undefined : result.error || "Falha no envio",
+                  error: success ? undefined : data.error || "Falha no envio",
                   time: new Date().toLocaleTimeString("pt-BR"),
                 }
               : log,
           ),
         );
-      } catch (err) {
-        setLogs((prev) =>
-          prev.map((log, idx) =>
-            idx === i
+      } catch (error) {
+        setLogs((current) =>
+          current.map((log, logIndex) =>
+            logIndex === index
               ? {
                   ...log,
                   status: "error",
-                  error: err instanceof Error ? err.message : "Erro de conexão",
+                  error: error instanceof Error ? error.message : "Erro de conexão",
                   time: new Date().toLocaleTimeString("pt-BR"),
                 }
               : log,
@@ -381,500 +576,547 @@ export default function WhaticketBroadcastDrawer() {
         );
       }
 
-      // Anti-ban delay between dispatches
-      if (i < targetedRecipients.length - 1 && !abortControllerRef.current) {
-        await new Promise((r) => setTimeout(r, Math.max(2, delaySeconds) * 1000));
+      if (index < recipients.length - 1 && !abortRef.current) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max(1, delaySeconds) * 1000),
+        );
       }
     }
-
     setIsExecuting(false);
+    // Atualiza o feed em tempo real e sincroniza a apuração analítica
+    void loadLiveFeed();
+    window.dispatchEvent(new CustomEvent("voto-forte:survey-updated"));
   };
 
-  const togglePause = () => {
-    const next = !isPaused;
-    setIsPaused(next);
-    pausedRef.current = next;
-  };
-
-  const cancelBroadcast = () => {
-    abortControllerRef.current = true;
-    setIsExecuting(false);
-    setIsPaused(false);
-  };
-
-  // Stats Counters
-  const sentCount = logs.filter((l) => l.status === "sent").length;
-  const errorCount = logs.filter((l) => l.status === "error").length;
-  const totalCount = logs.length || targetedRecipients.length;
-  const progressPercent = totalCount > 0 ? Math.round((logs.filter((l) => l.status === "sent" || l.status === "error").length / totalCount) * 100) : 0;
+  const sentCount = logs.filter((item) => item.status === "sent").length;
+  const errorCount = logs.filter((item) => item.status === "error").length;
+  const processed = logs.filter((item) => item.status === "sent" || item.status === "error").length;
+  const progress = logs.length ? Math.round((processed / logs.length) * 100) : 0;
 
   return (
     <>
-      {/* Backdrop Overlay */}
       <div
         className={`wt-drawer-overlay ${isOpen ? "is-open" : ""}`}
         onClick={() => !isExecuting && setIsOpen(false)}
       />
-
-      {/* Right Slide-over Drawer */}
       <aside className={`wt-drawer ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
-        {/* Header */}
         <header className="wt-drawer-header">
           <div className="wt-drawer-title-group">
             <div className="wt-header-logo">
               <img
                 src="/voto-forte-bandeira-icon.jpg"
                 alt="VOTO FORTE"
-                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
               />
             </div>
             <div>
-              <h2>
-                Central de Disparos <span>⚡</span>
-              </h2>
-              <p>Integração Whaticket & ZapAPI em tempo real</p>
+              <h2>Central de Disparos <span>⚡</span></h2>
+              <p>Envio oficial pelo WhatsApp (Meta Cloud API)</p>
             </div>
           </div>
-          <button
-            type="button"
-            className="wt-close-btn"
-            onClick={() => setIsOpen(false)}
-            title="Fechar painel"
-          >
-            ✕
-          </button>
+          <button type="button" className="wt-close-btn" onClick={() => setIsOpen(false)}>✕</button>
         </header>
 
-        {/* Navigation Tabs */}
         <nav className="wt-tabs">
           <button
             type="button"
             className={`wt-tab-btn ${activeTab === "disparo" ? "is-active" : ""}`}
             onClick={() => setActiveTab("disparo")}
           >
-            Campanha & Mensagem
+            Campanha
+          </button>
+          <button
+            type="button"
+            className={`wt-tab-btn ${activeTab === "tempo-real" ? "is-active" : ""}`}
+            onClick={() => {
+              setActiveTab("tempo-real");
+              void loadLiveFeed();
+            }}
+          >
+            ⚡ Monitor Ao Vivo
+            {liveKpis.responseRate > 0 && (
+              <span style={{ marginLeft: 4, fontSize: 10, color: "#fbbf24", fontWeight: 800 }}>
+                {liveKpis.responseRate}%
+              </span>
+            )}
           </button>
           <button
             type="button"
             className={`wt-tab-btn ${activeTab === "logs" ? "is-active" : ""}`}
             onClick={() => setActiveTab("logs")}
           >
-            Progresso ao Vivo {isExecuting && "●"}
+            Fila {isExecuting ? "●" : ""}
           </button>
           <button
             type="button"
-            className={`wt-tab-btn ${activeTab === "config" ? "is-active" : ""}`}
-            onClick={() => setActiveTab("config")}
+            className="wt-tab-btn"
+            style={{ marginLeft: "auto", background: "rgba(56,189,248,0.15)", color: "#0284c7", fontWeight: 700 }}
+            onClick={() => {
+              setIsOpen(false);
+              window.dispatchEvent(new CustomEvent("voto-forte:open-survey-intelligence"));
+            }}
           >
-            Configurar API
+            📊 Apuração
           </button>
         </nav>
 
-        {/* Body Content */}
         <div className="wt-drawer-body">
           {activeTab === "disparo" && (
             <>
-              {/* Audience Selection Card */}
               <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>👥</span> 1. Destinatários da Campanha
-                </div>
-
+                <div className="wt-card-title"><span>👥</span> 1. Destinatários</div>
                 <div className="wt-form-group">
-                  <label>Filtrar por Bairro</label>
+                  <label>Bairro</label>
                   <select
                     className="wt-select"
                     value={selectedDistrict}
-                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    onChange={(event) => handleDistrictChange(event.target.value)}
                   >
-                    <option value="Todos">Todos os Bairros ({contacts.length} contatos)</option>
-                    {distinctDistricts.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
+                    <option value="Todos">
+                      Todos os Bairros ({totalMunicipalityContacts > 0 ? `${totalMunicipalityContacts.toLocaleString("pt-BR")} contatos` : "Total"})
+                    </option>
+                    {districtList.map((d) => (
+                      <option key={d.district} value={d.district}>
+                        {d.district} ({d.total.toLocaleString("pt-BR")})
                       </option>
                     ))}
                   </select>
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div className="wt-form-group">
                     <label>Perfil</label>
                     <select
                       className="wt-select"
                       value={selectedKind}
-                      onChange={(e) => setSelectedKind(e.target.value as any)}
+                      onChange={(event) => handleKindChange(event.target.value as "Todos" | "Eleitor" | "Liderança")}
                     >
-                      <option value="Todos">Todos os Tipos</option>
-                      <option value="Eleitor">Apenas Eleitores</option>
-                      <option value="Liderança">Apenas Lideranças</option>
+                      <option value="Todos">Todos</option>
+                      <option value="Eleitor">Eleitores</option>
+                      <option value="Liderança">Lideranças</option>
                     </select>
                   </div>
-
                   <div className="wt-form-group">
-                    <label>Limite de Envios</label>
+                    <label>Limite</label>
                     <select
                       className="wt-select"
                       value={recipientLimit}
-                      onChange={(e) => setRecipientLimit(Number(e.target.value))}
+                      onChange={(event) => handleLimitChange(Number(event.target.value))}
                     >
                       <option value={20}>20 contatos</option>
                       <option value={50}>50 contatos</option>
                       <option value={100}>100 contatos</option>
-                      <option value={300}>300 contatos</option>
-                      <option value={9999}>Todos os contatos</option>
+                      <option value={250}>250 contatos</option>
+                      <option value={500}>500 contatos</option>
+                      <option value={1000}>1.000 contatos</option>
+                      <option value={99999}>Todos os contatos</option>
                     </select>
                   </div>
                 </div>
-
-                <div style={{ fontSize: "12px", color: "var(--wt-primary)", marginTop: "8px", fontWeight: 600 }}>
-                  ✓ {targetedRecipients.length} contato(s) elegível(is) com WhatsApp válido
-                </div>
+                <small style={{ color: loadingContacts ? "#38bdf8" : recipients.length > 0 ? "#4ade80" : "#f87171" }}>
+                  {loadingContacts
+                    ? `⏳ Carregando contatos de ${selectedDistrict}...`
+                    : `✓ ${recipients.length} contato(s) elegível(is) carregado(s)`}
+                </small>
               </section>
 
-              {/* Message Composer Card */}
               <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>✍️</span> 2. Conteúdo da Mensagem
-                </div>
-
+                <div className="wt-card-title"><span>💬</span> 2. Modelo aprovado</div>
                 <div className="wt-form-group">
-                  <label>Tags Dinâmicas (Clique para inserir)</label>
-                  <div className="wt-tags-bar">
-                    <button type="button" className="wt-tag-pill" onClick={() => insertTag("{nome}")}>
-                      + &#123;nome&#125;
-                    </button>
-                    <button type="button" className="wt-tag-pill" onClick={() => insertTag("{primeiro_nome}")}>
-                      + &#123;primeiro_nome&#125;
-                    </button>
-                    <button type="button" className="wt-tag-pill" onClick={() => insertTag("{bairro}")}>
-                      + &#123;bairro&#125;
-                    </button>
-                    <button type="button" className="wt-tag-pill" onClick={() => insertTag("{lideranca}")}>
-                      + &#123;lideranca&#125;
-                    </button>
-                  </div>
-
-                  <textarea
-                    className="wt-textarea"
-                    value={messageTemplate}
-                    onChange={(e) => setMessageTemplate(e.target.value)}
-                    placeholder="Digite a mensagem ou legenda da imagem do disparo..."
-                  />
+                  <label>Mensagem</label>
+                  <select
+                    className="wt-select"
+                    value={templateName ? `${templateName}::${templateLanguage}` : ""}
+                    onChange={(event) => handleTemplateChange(event.target.value)}
+                    disabled={templatesLoading || templates.length === 0}
+                  >
+                    <option value="">
+                      {templatesLoading ? "Atualizando modelos..." : templates.length ? "Selecione..." : "Nenhum modelo aprovado"}
+                    </option>
+                    {templates.map((template) => (
+                      <option key={`${template.id}-${template.language}`} value={`${template.name}::${template.language}`}>
+                        {template.name} · {template.language}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* ANEXO DE IMAGEM / SANTINHO DIGITAL */}
-                <div className="wt-form-group" style={{ marginTop: "12px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                    <label style={{ margin: 0, fontWeight: 700, fontSize: "12px", color: "var(--wt-text)" }}>
-                      🖼️ Anexar Santinho / Panfleto (Opcional)
-                    </label>
-                    {mediaBase64 && (
-                      <button
-                        type="button"
-                        onClick={clearMedia}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#ef4444",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        ✕ Remover foto
-                      </button>
-                    )}
-                  </div>
-
-                  {!mediaBase64 ? (
-                    <div
-                      className="wt-upload-zone"
-                      onClick={() => mediaInputRef.current?.click()}
-                    >
-                      <span style={{ fontSize: "24px" }}>📸</span>
-                      <strong style={{ fontSize: "13px", color: "var(--wt-primary)" }}>
-                        Clique para anexar foto ou panfleto
-                      </strong>
-                      <small style={{ color: "var(--wt-text-muted)", fontSize: "11px" }}>
-                        Formatos JPG, PNG ou WebP (máx. 5MB)
+                {selectedTemplate ? (
+                  <>
+                    <div className="wt-preview-box">
+                      <div style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
+                        {selectedTemplate.body || "Modelo sem corpo de texto exibido."}
+                      </div>
+                      <small style={{ color: "#4ade80", fontWeight: 700 }}>
+                        {selectedTemplate.category} · APROVADO PELA META ✅
                       </small>
                     </div>
-                  ) : (
-                    <div className="wt-media-attached-bar">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={mediaBase64}
-                        alt="Santinho"
-                        className="wt-media-thumb"
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <b style={{ fontSize: "12px", display: "block", color: "var(--wt-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {mediaName || "santinho.jpg"}
-                        </b>
-                        <small style={{ color: "#16a34a", fontWeight: 700, fontSize: "11px" }}>
-                          ✓ Imagem anexada com sucesso
-                        </small>
+                    {parameterMappings.map((mapping, index) => (
+                      <div className="wt-form-group" key={index}>
+                        <label>Variável {`{{${index + 1}}}`}</label>
+                        <input
+                          className="wt-input"
+                          value={mapping}
+                          onChange={(event) =>
+                            setParameterMappings((current) =>
+                              current.map((item, itemIndex) => itemIndex === index ? event.target.value : item),
+                            )
+                          }
+                        />
+                        <small>Tags: {"{primeiro_nome}, {nome}, {bairro}, {cidade}, {lideranca}"}</small>
                       </div>
-                      <button
-                        type="button"
-                        className="wt-btn-replace-img"
-                        onClick={() => mediaInputRef.current?.click()}
-                      >
-                        Trocar
-                      </button>
-                    </div>
-                  )}
-
-                  <input
-                    ref={mediaInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    style={{ display: "none" }}
-                    onChange={handleSelectMedia}
-                  />
-                </div>
-
-                <div className="wt-form-group" style={{ marginTop: "12px" }}>
-                  <label>Pré-Visualização no WhatsApp</label>
-                  <div className="wt-preview-box">
-                    <div className="wt-wa-bubble">
-                      {mediaBase64 && (
-                        <div className="wt-wa-bubble-img-wrap">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={mediaBase64} alt="Santinho Preview" className="wt-wa-bubble-img" />
-                        </div>
-                      )}
-                      <div className="wt-wa-bubble-text">{previewMessage}</div>
-                      <span className="wt-wa-time">
-                        {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ✓✓
-                      </span>
-                    </div>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13 }}>
+                    {templateStatus || "Aguardando um modelo aprovado para liberar o envio."}
                   </div>
-                </div>
-              </section>
-
-              {/* Anti-Ban & Dispatch Trigger */}
-              <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>🛡️</span> 3. Proteção Anti-Bloqueio & Envio
-                </div>
-
-                <div className="wt-form-group">
-                  <label>
-                    Intervalo entre mensagens: <strong>{delaySeconds}s</strong>
-                  </label>
-                  <input
-                    type="range"
-                    min="3"
-                    max="20"
-                    step="1"
-                    value={delaySeconds}
-                    onChange={(e) => saveConfig(apiUrl, apiToken, Number(e.target.value))}
-                    style={{ width: "100%", accentColor: "var(--wt-primary)" }}
-                  />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--wt-text-muted)", marginTop: "4px" }}>
-                    <span>Mais rápido (3s)</span>
-                    <span>Recomendado (5-10s)</span>
-                    <span>Mais seguro (20s)</span>
-                  </div>
-                </div>
+                )}
 
                 <button
                   type="button"
-                  className="wt-primary-btn"
-                  onClick={startBroadcast}
-                  disabled={isExecuting || targetedRecipients.length === 0}
+                  className="wt-secondary-btn"
+                  style={{ width: "100%", marginTop: 10 }}
+                  onClick={() => void loadTemplates()}
+                  disabled={templatesLoading}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                  <span>Iniciar Disparo para {targetedRecipients.length} Contato(s)</span>
+                  {templatesLoading ? "Atualizando..." : "Atualizar modelos aprovados"}
                 </button>
+              </section>
+
+              <section className="wt-card">
+                <div className="wt-card-title"><span>🚀</span> 3. Enviar</div>
+                <div className="wt-form-group">
+                  <label>Intervalo entre mensagens: <strong>{delaySeconds}s</strong></label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={delaySeconds}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      setDelaySeconds(value);
+                      try { localStorage.setItem(STORAGE_DELAY_KEY, String(value)); } catch {}
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </div>
+                {!isAuthorized && Boolean(currentUser) && (
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid #ef4444",
+                      borderRadius: 8,
+                      color: "#fca5a5",
+                      fontSize: 12,
+                      marginBottom: 10,
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    🔒 Disparos restritos aos usuários autorizados: <strong>Everton Moreira</strong> e <strong>Rafael Rodrigues</strong>.
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="wt-primary-btn"
+                  disabled={isExecuting || !recipients.length || !selectedTemplate || (!isAuthorized && Boolean(currentUser))}
+                  onClick={startBroadcast}
+                >
+                  {isExecuting ? "Enviando campanha..." : `Enviar para ${recipients.length} contato(s)`}
+                </button>
+              </section>
+            </>
+          )}
+
+          {activeTab === "tempo-real" && (
+            <>
+              {/* Header com Indicador Ao Vivo */}
+              <section className="wt-card">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="wt-live-indicator">
+                    <span className="wt-live-pulse-dot" />
+                    <span>Transmissão Ao Vivo</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="wt-secondary-btn"
+                    style={{ padding: "4px 10px", fontSize: 11 }}
+                    onClick={() => void loadLiveFeed()}
+                    disabled={liveLoading}
+                  >
+                    {liveLoading ? "Atualizando..." : "🔄 Atualizar"}
+                  </button>
+                </div>
+
+                {/* 5 Cards de KPIs em Tempo Real (CLICÁVEIS) */}
+                <div className="wt-kpi-grid-5">
+                  <div
+                    className={`wt-kpi-card is-primary ${liveFilter === "all" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                    title="Clique para ver todos os disparos"
+                  >
+                    <strong>{(liveKpis.totalOutbound || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Total Disparos</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-success ${liveFilter === "sent" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                    title="Clique para ver apenas mensagens entregues"
+                  >
+                    <strong>{(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Entregues ({liveKpis.deliveryRate}%)</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-error ${liveFilter === "errors" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                    title="Clique para ver apenas erros/falhas"
+                  >
+                    <strong>{(liveKpis.failedCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Falhas / Erros</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-reply ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas recebidas"
+                  >
+                    <strong>{(liveKpis.repliedCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Respostas</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-rate ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas"
+                    style={{ background: liveFilter === "replies" ? "rgba(251, 191, 36, 0.25)" : "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}
+                  >
+                    <strong style={{ color: "#fbbf24" }}>{liveKpis.responseRate}%</strong>
+                    <span style={{ color: "#fef08a" }}>Taxa de Resposta</span>
+                  </div>
+                </div>
+
+                {/* Busca rápida */}
+                <div className="wt-search-input-wrap">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por telefone, nome ou mensagem..."
+                    value={liveSearch}
+                    onChange={(e) => setLiveSearch(e.target.value)}
+                  />
+                </div>
+
+                {/* Filtros rápidos */}
+                <div className="wt-filter-bar">
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                  >
+                    Todos ({(liveKpis.totalOutbound || liveItems.length).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                  >
+                    ✓ Entregues ({(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                  >
+                    ❌ Falhas / Erros ({(liveKpis.failedCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                  >
+                    💬 Respostas ({(liveKpis.repliedCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "no_reply" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("no_reply")}
+                  >
+                    ⏳ Sem Resposta
+                  </button>
+                </div>
+              </section>
+
+              {/* Feed de Mensagens */}
+              <section className="wt-card">
+                <div className="wt-card-title">
+                  <span>📱</span> Mensagens ({liveItems.length})
+                </div>
+
+                <div className="wt-live-feed-list">
+                  {liveItems.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 13 }}>
+                      {liveLoading ? "Carregando monitor ao vivo..." : "Nenhuma mensagem encontrada neste filtro."}
+                    </div>
+                  ) : (
+                    liveItems.map((item) => {
+                      const isError = item.status === "error";
+                      const isReplied = item.status === "replied";
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`wt-live-item ${isError ? "is-error" : isReplied ? "is-replied" : "is-delivered"}`}
+                        >
+                          <div className="wt-live-item-header">
+                            <div className="wt-live-contact-info">
+                              <strong style={{ fontSize: "14px" }}>{item.contactName}</strong>
+                              <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 600 }}>{formatPhoneDisplay(item.phone)}</span>
+                            </div>
+
+                            <div>
+                              {isError && (
+                                <span className="wt-status-badge badge-error">
+                                  ✕ Falha no Envio
+                                </span>
+                              )}
+                              {isReplied && (
+                                <span className="wt-status-badge badge-replied">
+                                  💬 Respondeu
+                                </span>
+                              )}
+                              {!isError && !isReplied && (
+                                <span className="wt-status-badge badge-delivered">
+                                  ✓ Entregue
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Se for erro, mostra o motivo exato */}
+                          {isError && (
+                            <div className="wt-error-detail">
+                              <span>⚠️</span>
+                              <div>
+                                <strong>Motivo da falha:</strong> {item.errorMessage || "Número não recebeu a mensagem (inválido ou sem WhatsApp)."}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Se respondeu, mostra a mensagem de resposta */}
+                          {isReplied && item.replyText && (
+                            <div className="wt-reply-detail" style={{ borderLeft: "3px solid #c084fc", background: "rgba(168, 85, 247, 0.15)", padding: "8px 12px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                <strong style={{ color: "#d8b4fe", fontSize: "11px" }}>
+                                  💬 Resposta de {item.contactName}:
+                                </strong>
+                                {item.repliedAt && (
+                                  <span style={{ fontSize: "10px", color: "#c084fc" }}>
+                                    {new Date(item.repliedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: "13px", color: "#f8fafc", whiteSpace: "pre-wrap", lineHeight: 1.5, background: "rgba(0, 0, 0, 0.25)", padding: "8px 10px", borderRadius: "6px", marginTop: "4px" }}>
+                                {formatReadableSurveyText(item.replyText)}
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#64748b", marginTop: 2 }}>
+                            <span>{item.sentAt ? `Disparo: ${new Date(item.sentAt).toLocaleTimeString("pt-BR")}` : ""}</span>
+                            {item.repliedAt && <span style={{ color: "#a855f7", fontWeight: 600 }}>Respondido: {new Date(item.repliedAt).toLocaleTimeString("pt-BR")}</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Ações Rápidas de Reenvio e Exportação */}
+                <div className="wt-live-actions-bar">
+                  {failedNumbers.length > 0 && (
+                    <button
+                      type="button"
+                      className="wt-action-btn-small btn-retry"
+                      onClick={handleRetryFailed}
+                    >
+                      🔁 Reenviar {failedNumbers.length} Falhas
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="wt-action-btn-small"
+                    onClick={handleExportCsv}
+                  >
+                    📥 Exportar CSV
+                  </button>
+                </div>
               </section>
             </>
           )}
 
           {activeTab === "logs" && (
             <>
-              {/* Real-time Status Card */}
               <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>📊</span> Status do Disparo em Tempo Real
-                </div>
-
+                <div className="wt-card-title"><span>📊</span> Progresso da Sessão</div>
                 <div className="wt-stats-grid">
-                  <div className="wt-stat-card">
-                    <strong>{totalCount}</strong>
-                    <span>Total</span>
-                  </div>
-                  <div className="wt-stat-card is-success">
-                    <strong>{sentCount}</strong>
-                    <span>Enviados</span>
-                  </div>
-                  <div className="wt-stat-card is-error">
-                    <strong>{errorCount}</strong>
-                    <span>Falhas</span>
-                  </div>
+                  <div className="wt-stat-card"><strong>{logs.length}</strong><span>Total</span></div>
+                  <div className="wt-stat-card is-success"><strong>{sentCount}</strong><span>Enviados</span></div>
+                  <div className="wt-stat-card is-error"><strong>{errorCount}</strong><span>Falhas</span></div>
                 </div>
-
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: 600 }}>
-                    <span>Progresso do Envio</span>
-                    <span>{progressPercent}%</span>
-                  </div>
-                  <div className="wt-progress-bar-bg">
-                    <div className="wt-progress-fill" style={{ width: `${progressPercent}%` }} />
-                  </div>
-                </div>
-
+                <div className="wt-progress-bar-bg"><div className="wt-progress-fill" style={{ width: `${progress}%` }} /></div>
                 {isExecuting && (
-                  <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                    <button type="button" className="wt-secondary-btn" style={{ flex: 1 }} onClick={togglePause}>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="wt-secondary-btn"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        pausedRef.current = !pausedRef.current;
+                        setIsPaused(pausedRef.current);
+                      }}
+                    >
                       {isPaused ? "▶ Retomar" : "⏸ Pausar"}
                     </button>
-                    <button type="button" className="wt-danger-btn" style={{ flex: 1 }} onClick={cancelBroadcast}>
-                      ⏹ Cancelar Disparo
+                    <button
+                      type="button"
+                      className="wt-danger-btn"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        abortRef.current = true;
+                        pausedRef.current = false;
+                        setIsPaused(false);
+                        setIsExecuting(false);
+                      }}
+                    >
+                      ⏹ Cancelar
                     </button>
                   </div>
                 )}
               </section>
 
-              {/* Logs List */}
-              <section className="wt-card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <div className="wt-card-title">
-                  <span>📜</span> Fila e Registro de Envios
-                </div>
-
-                <div className="wt-logs-list" style={{ flex: 1 }}>
+              <section className="wt-card">
+                <div className="wt-card-title"><span>📜</span> Registro</div>
+                <div className="wt-logs-list">
                   {logs.length === 0 ? (
-                    <div style={{ textAlign: "center", color: "var(--wt-text-muted)", padding: "20px", fontSize: "13px" }}>
-                      Nenhum disparo em andamento. Clique na aba &quot;Campanha & Mensagem&quot; para iniciar.
-                    </div>
+                    <div style={{ fontSize: 13 }}>Nenhum disparo iniciado nesta sessão.</div>
                   ) : (
                     logs.map((log, index) => (
                       <div
                         key={log.id}
                         className={`wt-log-row status-${log.status}`}
-                        style={{
-                          background: index === currentIndex && isExecuting ? "rgba(45, 221, 127, 0.1)" : undefined,
-                        }}
+                        style={{ background: index === currentIndex && isExecuting ? "rgba(45,221,127,.1)" : undefined }}
                       >
                         <div>
                           <strong>{log.name}</strong>
-                          <div style={{ fontSize: "11px", color: "var(--wt-text-muted)" }}>
-                            {log.phone} {log.district ? `· ${log.district}` : ""}
-                          </div>
-                          {log.error && (
-                            <div style={{ fontSize: "11px", color: "#f87171", marginTop: "2px" }}>
-                              {log.error}
-                            </div>
-                          )}
+                          {log.error && <div style={{ fontSize: 11, color: "#f87171" }}>{log.error}</div>}
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              color:
-                                log.status === "sent"
-                                  ? "var(--wt-primary)"
-                                  : log.status === "error"
-                                  ? "#f87171"
-                                  : log.status === "sending"
-                                  ? "#38bdf8"
-                                  : "var(--wt-text-muted)",
-                            }}
-                          >
-                            {log.status === "sent" && "✓ Enviado"}
-                            {log.status === "sending" && "⏳ Enviando..."}
-                            {log.status === "error" && "✕ Erro"}
-                            {log.status === "pending" && "Fila"}
-                          </span>
-                          {log.time && (
-                            <div style={{ fontSize: "10px", color: "var(--wt-text-muted)" }}>{log.time}</div>
-                          )}
+                        <div style={{ fontSize: 11 }}>
+                          {log.status === "sent" ? "✓ Enviado" : log.status === "sending" ? "⏳ Enviando" : log.status === "error" ? "✕ Erro" : "Fila"}
+                          <div>{log.time}</div>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
-              </section>
-            </>
-          )}
-
-          {activeTab === "config" && (
-            <>
-              {/* API Configuration Form */}
-              <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>⚙️</span> Configurações da API Whaticket / ZapAPI
-                </div>
-
-                <div className="wt-form-group">
-                  <label>URL do Servidor / API</label>
-                  <input
-                    type="url"
-                    className="wt-input"
-                    value={apiUrl}
-                    onChange={(e) => saveConfig(e.target.value, apiToken, delaySeconds)}
-                    placeholder="https://zapapi.dgsis.com.br"
-                  />
-                  <small style={{ fontSize: "11px", color: "var(--wt-text-muted)", marginTop: "4px", display: "block" }}>
-                    URL base da sua instância Whaticket ou ZapAPI.
-                  </small>
-                </div>
-
-                <div className="wt-form-group">
-                  <label>Token / Chave de API (Bearer Token)</label>
-                  <input
-                    type="password"
-                    className="wt-input"
-                    value={apiToken}
-                    onChange={(e) => saveConfig(apiUrl, e.target.value, delaySeconds)}
-                    placeholder="Insira o token de autenticação gerado na ZapAPI"
-                  />
-                  <small style={{ fontSize: "11px", color: "var(--wt-text-muted)", marginTop: "4px", display: "block" }}>
-                    Chave gerada no painel de conexões do Whaticket/ZapAPI.
-                  </small>
-                </div>
-              </section>
-
-              {/* Test Connection Card */}
-              <section className="wt-card">
-                <div className="wt-card-title">
-                  <span>🧪</span> Teste de Conexão Rápido
-                </div>
-
-                <div className="wt-form-group">
-                  <label>Número para Teste (com DDD)</label>
-                  <input
-                    type="tel"
-                    className="wt-input"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    placeholder="Ex: 43999998888"
-                  />
-                </div>
-
-                <button type="button" className="wt-secondary-btn" style={{ width: "100%" }} onClick={handleTestSend}>
-                  Disparar Mensagem de Teste
-                </button>
-
-                {testStatus && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      background: testStatus.includes("✅") ? "rgba(45, 221, 127, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                      color: testStatus.includes("✅") ? "var(--wt-primary)" : "#f87171",
-                    }}
-                  >
-                    {testStatus}
-                  </div>
-                )}
               </section>
             </>
           )}

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import MunicipalityFieldEnhancer from "./municipality-field-enhancer";
 import MunicipalityContextEnhancer from "./municipality-context-enhancer";
+import MunicipalElectoralMapIbgeAuthority from "./municipal-electoral-map-ibge-authority";
 import MunicipalElectoralMapContext from "./municipal-electoral-map-context";
+import MapMultimunicipalityDistrictOverlay from "./map-multimunicipality-district-overlay";
 import CepFallbackEnhancer from "./cep-fallback-enhancer";
 import MapInstantContactBootstrap from "./map-instant-contact-bootstrap";
 import MapToolsGate from "./map-tools-gate";
@@ -21,14 +23,32 @@ import NetworkScopeLabelNormalizer from "./network-scope-label-normalizer";
 import RuntimeVersionGuard from "./runtime-version-guard";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
+import AdministrationActivityEnhancer from "./administration-activity-enhancer";
+import GestorAdministrationIdentityNormalizer from "./gestor-administration-identity-normalizer";
+import AdministrationKpiRoleSync from "./administration-kpi-role-sync";
 import WhaticketBroadcastDrawer from "./whaticket-broadcast-drawer";
 import BroadcastNeighborhoodOptionsEnhancer from "./broadcast-neighborhood-options-enhancer";
 import TseSidebarEnhancer from "./tse-sidebar-enhancer";
 import ComunicacaoSidebarEnhancer from "./comunicacao-sidebar-enhancer";
+import OverviewAgendaOfficialBridge from "./overview-agenda-official-bridge";
+import OverviewRegistrationModalEnhancer from "./overview-registration-modal-enhancer";
 import SystemNotificationsDrawer from "./system-notifications-drawer";
 import StandardBackNavigationEnhancer from "./standard-back-navigation-enhancer";
 import AgendaMobileCompactEnhancer from "./agenda-mobile-compact-enhancer";
+import AgendaDesktopNewEventFallback from "./agenda-desktop-new-event-fallback";
 import ElectoralMobileTopbarIdentity from "./electoral-mobile-topbar-identity";
+import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity";
+import WhatsappSurveyIntelligence from "./whatsapp-survey-intelligence";
+import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enhancer";
+import IndividualWhatsappMenuEnhancer from "./individual-whatsapp-menu-enhancer";
+import VotingChartsEntryPolish from "./voting-charts-entry-polish";
+import VotingRecentMobilePolish from "./voting-recent-mobile-polish";
+import WhatsappChatMobilePolish from "./whatsapp-chat-mobile-polish";
+import WhatsappSearchLightFix from "./whatsapp-search-light-fix";
+import WhatsappMonitorMobilePolish from "./whatsapp-monitor-mobile-polish";
+import WhaticketBroadcastMobilePolish from "./whaticket-broadcast-mobile-polish";
+import SurveyInitialLoadingPolish from "./survey-initial-loading-polish";
+import SurveyHeaderMobilePolish from "./survey-header-mobile-polish";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -61,7 +81,9 @@ export default function DashboardRuntimeEnhancers() {
         <>
           <MunicipalityContextEnhancer />
           <MunicipalityFieldEnhancer />
+          <MunicipalElectoralMapIbgeAuthority />
           <MunicipalElectoralMapContext />
+          <MapMultimunicipalityDistrictOverlay />
           <CepFallbackEnhancer />
           <MapInstantContactBootstrap />
           <MapToolsGate />
@@ -69,8 +91,19 @@ export default function DashboardRuntimeEnhancers() {
           <NeighborhoodInfoDrawer />
           <GestorAccessGate />
           <CompactOverviewScopeEnhancer />
+          <VotingChartsEntryPolish />
+          <VotingRecentMobilePolish />
+          <WhatsappChatMobilePolish />
+          <WhatsappSearchLightFix />
+          <WhatsappMonitorMobilePolish />
+          <WhaticketBroadcastMobilePolish />
+          <SurveyInitialLoadingPolish />
+          <SurveyHeaderMobilePolish />
+          <OverviewAgendaOfficialBridge />
+          <OverviewRegistrationModalEnhancer />
           <ContactsOfficialShellBridge />
           <ElectoralMobileTopbarIdentity />
+          <ElectoralDesktopTopbarIdentity />
           <AccountSettingsEnhancer />
           <ContactNavigationInterceptor />
           <ImportCompletionEnhancer />
@@ -78,6 +111,9 @@ export default function DashboardRuntimeEnhancers() {
           <IntelligenceNavigation />
           <AuthReconciliationEnhancer />
           <TeamPerformanceAdminEnhancer />
+          <AdministrationActivityEnhancer />
+          <GestorAdministrationIdentityNormalizer />
+          <AdministrationKpiRoleSync />
           <RuntimeVersionGuard />
           <WhaticketBroadcastDrawer />
           <BroadcastNeighborhoodOptionsEnhancer />
@@ -85,7 +121,11 @@ export default function DashboardRuntimeEnhancers() {
           <ComunicacaoSidebarEnhancer />
           <StandardBackNavigationEnhancer />
           <AgendaMobileCompactEnhancer />
+          <AgendaDesktopNewEventFallback />
           <SystemNotificationsDrawer />
+          <WhatsappSurveyIntelligence />
+          <SurveyIntelligenceSidebarEnhancer />
+          <IndividualWhatsappMenuEnhancer />
         </>
       ) : null}
     </>

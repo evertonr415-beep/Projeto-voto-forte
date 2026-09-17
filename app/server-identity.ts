@@ -9,6 +9,8 @@ export const GESTOR_EMAILS = [
   "williammarquesmachado@gmail.com",
 ];
 
+const WHATSAPP_BROADCAST_USER_IDS = new Set([1, 70]);
+
 export function isAdminEmail(email: string): boolean {
   const clean = String(email || "").trim().toLowerCase();
   return ADMIN_EMAILS.some((e) => e.toLowerCase() === clean);
@@ -17,6 +19,26 @@ export function isAdminEmail(email: string): boolean {
 export function isGestorEmail(email: string): boolean {
   const clean = String(email || "").trim().toLowerCase();
   return GESTOR_EMAILS.some((e) => e.toLowerCase() === clean);
+}
+
+export function isAuthorizedForWhatsappBroadcast(
+  account:
+    | {
+        id?: number | string | null;
+        role?: string | null;
+        status?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!account) return false;
+  const id = Number(account.id);
+  return (
+    Number.isInteger(id) &&
+    WHATSAPP_BROADCAST_USER_IDS.has(id) &&
+    account.role === "master" &&
+    account.status === "active"
+  );
 }
 
 export type UserRole = "master" | "gestor" | "lider" | "liderado";

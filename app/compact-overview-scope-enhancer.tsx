@@ -17,6 +17,8 @@ const PRIMARY_MOBILE_TABS = new Set([
   "agenda inteligente",
   "mapa eleitoral",
   "painel eleitoral",
+  "gráficos de votação",
+  "graficos de votacao",
   "whatsapp",
   "administração",
   "administracao",
@@ -24,9 +26,13 @@ const PRIMARY_MOBILE_TABS = new Set([
   "comunicacao institucional",
 ]);
 
-// O Painel Eleitoral usa filtros próprios de município/ano/cargo e não deve
-// expor o seletor de escopo de usuários no cabeçalho.
-const MOBILE_TABS_WITHOUT_SCOPE = new Set(["painel eleitoral"]);
+// Áreas com filtros próprios não devem expor o seletor global de escopo
+// de usuários no cabeçalho. Gráficos usa Bairro/Cargo dentro da própria tela.
+const MOBILE_TABS_WITHOUT_SCOPE = new Set([
+  "painel eleitoral",
+  "gráficos de votação",
+  "graficos de votacao",
+]);
 
 function optionSignature(select: HTMLSelectElement) {
   return Array.from(select.options)

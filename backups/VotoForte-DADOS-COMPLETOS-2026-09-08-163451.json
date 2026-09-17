@@ -1,0 +1,3659 @@
+{
+  "format": "voto-forte-master-full-backup",
+  "version": "2.5.0-PRO",
+  "platform": "VOTO FORTE PARANÁ",
+  "generatedAt": "2026-09-08T16:34:51.644867",
+  "environment": "production",
+  "stats": {
+    "totalContacts": 0,
+    "totalUsers": 0,
+    "totalMunicipalities": 399,
+    "totalAuditLogs": 0,
+    "totalExports": 0
+  },
+  "modules": [
+    {
+      "name": "Dashboard Principal",
+      "route": "/sistema-completo"
+    },
+    {
+      "name": "Painel de Contatos",
+      "route": "/contatos"
+    },
+    {
+      "name": "Mapa Eleitoral",
+      "route": "/mapa"
+    },
+    {
+      "name": "Painel Eleitoral Oficial",
+      "route": "/painel-eleitoral"
+    },
+    {
+      "name": "Agenda Inteligente",
+      "route": "/comunicacao-institucional"
+    },
+    {
+      "name": "Central de Disparos",
+      "route": "/whaticket"
+    },
+    {
+      "name": "Histórico de Exportações",
+      "route": "/exportacoes"
+    },
+    {
+      "name": "VOTO FORTE Neural",
+      "route": "/inteligencia-sistema"
+    },
+    {
+      "name": "Administração de Usuários",
+      "route": "/administracao"
+    }
+  ],
+  "restorationGuide": {
+    "summary": "Este backup contém a totalidade dos dados cadastrais, eleitorais e operacionais para reconstrução integral do VOTO FORTE.",
+    "steps": [
+      "1. Extraia o arquivo ZIP do código-fonte em um novo servidor.",
+      "2. Configure o banco de dados Supabase com os arquivos em supabase/migrations/.",
+      "3. Restaure os dados importando o arquivo database-records.json no painel de administração ou via script de migração."
+    ]
+  },
+  "data": {
+    "contacts": [],
+    "users": [],
+    "municipalities": [
+      {
+        "id": 1,
+        "name": "Arapongas",
+        "state": "PR",
+        "ibge_code": "4101507",
+        "status": "active",
+        "created_at": "2026-08-16T23:25:31.100657+00:00",
+        "created_by": null
+      },
+      {
+        "id": 7,
+        "name": "Abatiá",
+        "state": "PR",
+        "ibge_code": "4100103",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 8,
+        "name": "Adrianópolis",
+        "state": "PR",
+        "ibge_code": "4100202",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 9,
+        "name": "Agudos do Sul",
+        "state": "PR",
+        "ibge_code": "4100301",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 10,
+        "name": "Almirante Tamandaré",
+        "state": "PR",
+        "ibge_code": "4100400",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 11,
+        "name": "Altamira do Paraná",
+        "state": "PR",
+        "ibge_code": "4100459",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 12,
+        "name": "Alto Paraíso",
+        "state": "PR",
+        "ibge_code": "4128625",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 13,
+        "name": "Alto Paraná",
+        "state": "PR",
+        "ibge_code": "4100608",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 14,
+        "name": "Alto Piquiri",
+        "state": "PR",
+        "ibge_code": "4100707",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 15,
+        "name": "Altônia",
+        "state": "PR",
+        "ibge_code": "4100509",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 16,
+        "name": "Alvorada do Sul",
+        "state": "PR",
+        "ibge_code": "4100806",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 3,
+        "name": "Bandeirantes",
+        "state": "PR",
+        "ibge_code": "4102406",
+        "status": "active",
+        "created_at": "2026-08-17T00:44:19.470842+00:00",
+        "created_by": null
+      },
+      {
+        "id": 5,
+        "name": "Cambará",
+        "state": "PR",
+        "ibge_code": "4103602",
+        "status": "active",
+        "created_at": "2026-08-17T00:44:19.470842+00:00",
+        "created_by": null
+      },
+      {
+        "id": 4,
+        "name": "Carlópolis",
+        "state": "PR",
+        "ibge_code": "4104709",
+        "status": "active",
+        "created_at": "2026-08-17T00:44:19.470842+00:00",
+        "created_by": null
+      },
+      {
+        "id": 2,
+        "name": "Prudentópolis",
+        "state": "PR",
+        "ibge_code": "4120606",
+        "status": "active",
+        "created_at": "2026-08-17T00:44:19.470842+00:00",
+        "created_by": null
+      },
+      {
+        "id": 6,
+        "name": "Siqueira Campos",
+        "state": "PR",
+        "ibge_code": "4126603",
+        "status": "active",
+        "created_at": "2026-08-17T00:44:19.470842+00:00",
+        "created_by": null
+      },
+      {
+        "id": 105,
+        "name": "Diamante D'Oeste",
+        "state": "PR",
+        "ibge_code": "4107157",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 234,
+        "name": "Munhoz de Melo",
+        "state": "PR",
+        "ibge_code": "4116307",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 305,
+        "name": "Rancho Alegre D'Oeste",
+        "state": "PR",
+        "ibge_code": "4121356",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 17,
+        "name": "Amaporã",
+        "state": "PR",
+        "ibge_code": "4100905",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 18,
+        "name": "Ampére",
+        "state": "PR",
+        "ibge_code": "4101002",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 19,
+        "name": "Anahy",
+        "state": "PR",
+        "ibge_code": "4101051",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 20,
+        "name": "Andirá",
+        "state": "PR",
+        "ibge_code": "4101101",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 21,
+        "name": "Ângulo",
+        "state": "PR",
+        "ibge_code": "4101150",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 22,
+        "name": "Antonina",
+        "state": "PR",
+        "ibge_code": "4101200",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 43,
+        "name": "Boa Esperança",
+        "state": "PR",
+        "ibge_code": "4103008",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 44,
+        "name": "Boa Esperança do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4103024",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 45,
+        "name": "Boa Ventura de São Roque",
+        "state": "PR",
+        "ibge_code": "4103040",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 46,
+        "name": "Boa Vista da Aparecida",
+        "state": "PR",
+        "ibge_code": "4103057",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 47,
+        "name": "Bocaiúva do Sul",
+        "state": "PR",
+        "ibge_code": "4103107",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 48,
+        "name": "Bom Jesus do Sul",
+        "state": "PR",
+        "ibge_code": "4103156",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 49,
+        "name": "Bom Sucesso",
+        "state": "PR",
+        "ibge_code": "4103206",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 50,
+        "name": "Bom Sucesso do Sul",
+        "state": "PR",
+        "ibge_code": "4103222",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 51,
+        "name": "Borrazópolis",
+        "state": "PR",
+        "ibge_code": "4103305",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 52,
+        "name": "Braganey",
+        "state": "PR",
+        "ibge_code": "4103354",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 53,
+        "name": "Brasilândia do Sul",
+        "state": "PR",
+        "ibge_code": "4103370",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 54,
+        "name": "Cafeara",
+        "state": "PR",
+        "ibge_code": "4103404",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 55,
+        "name": "Cafelândia",
+        "state": "PR",
+        "ibge_code": "4103453",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 56,
+        "name": "Cafezal do Sul",
+        "state": "PR",
+        "ibge_code": "4103479",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 57,
+        "name": "Califórnia",
+        "state": "PR",
+        "ibge_code": "4103503",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 59,
+        "name": "Cambé",
+        "state": "PR",
+        "ibge_code": "4103701",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 60,
+        "name": "Cambira",
+        "state": "PR",
+        "ibge_code": "4103800",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 61,
+        "name": "Campina da Lagoa",
+        "state": "PR",
+        "ibge_code": "4103909",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 62,
+        "name": "Campina do Simão",
+        "state": "PR",
+        "ibge_code": "4103958",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 63,
+        "name": "Campina Grande do Sul",
+        "state": "PR",
+        "ibge_code": "4104006",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 64,
+        "name": "Campo Bonito",
+        "state": "PR",
+        "ibge_code": "4104055",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 65,
+        "name": "Campo do Tenente",
+        "state": "PR",
+        "ibge_code": "4104105",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 66,
+        "name": "Campo Largo",
+        "state": "PR",
+        "ibge_code": "4104204",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 67,
+        "name": "Campo Magro",
+        "state": "PR",
+        "ibge_code": "4104253",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 68,
+        "name": "Campo Mourão",
+        "state": "PR",
+        "ibge_code": "4104303",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 69,
+        "name": "Cândido de Abreu",
+        "state": "PR",
+        "ibge_code": "4104402",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 70,
+        "name": "Candói",
+        "state": "PR",
+        "ibge_code": "4104428",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 71,
+        "name": "Cantagalo",
+        "state": "PR",
+        "ibge_code": "4104451",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 72,
+        "name": "Capanema",
+        "state": "PR",
+        "ibge_code": "4104501",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 73,
+        "name": "Capitão Leônidas Marques",
+        "state": "PR",
+        "ibge_code": "4104600",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 74,
+        "name": "Carambeí",
+        "state": "PR",
+        "ibge_code": "4104659",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 76,
+        "name": "Cascavel",
+        "state": "PR",
+        "ibge_code": "4104808",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 77,
+        "name": "Castro",
+        "state": "PR",
+        "ibge_code": "4104907",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 78,
+        "name": "Catanduvas",
+        "state": "PR",
+        "ibge_code": "4105003",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 79,
+        "name": "Centenário do Sul",
+        "state": "PR",
+        "ibge_code": "4105102",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 80,
+        "name": "Cerro Azul",
+        "state": "PR",
+        "ibge_code": "4105201",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 81,
+        "name": "Céu Azul",
+        "state": "PR",
+        "ibge_code": "4105300",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 82,
+        "name": "Chopinzinho",
+        "state": "PR",
+        "ibge_code": "4105409",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 83,
+        "name": "Cianorte",
+        "state": "PR",
+        "ibge_code": "4105508",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 84,
+        "name": "Cidade Gaúcha",
+        "state": "PR",
+        "ibge_code": "4105607",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 85,
+        "name": "Clevelândia",
+        "state": "PR",
+        "ibge_code": "4105706",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 86,
+        "name": "Colombo",
+        "state": "PR",
+        "ibge_code": "4105805",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 87,
+        "name": "Colorado",
+        "state": "PR",
+        "ibge_code": "4105904",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 88,
+        "name": "Congonhinhas",
+        "state": "PR",
+        "ibge_code": "4106001",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 89,
+        "name": "Conselheiro Mairinck",
+        "state": "PR",
+        "ibge_code": "4106100",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 90,
+        "name": "Contenda",
+        "state": "PR",
+        "ibge_code": "4106209",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 91,
+        "name": "Corbélia",
+        "state": "PR",
+        "ibge_code": "4106308",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 92,
+        "name": "Cornélio Procópio",
+        "state": "PR",
+        "ibge_code": "4106407",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 93,
+        "name": "Coronel Domingos Soares",
+        "state": "PR",
+        "ibge_code": "4106456",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 94,
+        "name": "Coronel Vivida",
+        "state": "PR",
+        "ibge_code": "4106506",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 95,
+        "name": "Corumbataí do Sul",
+        "state": "PR",
+        "ibge_code": "4106555",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 96,
+        "name": "Cruz Machado",
+        "state": "PR",
+        "ibge_code": "4106803",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 97,
+        "name": "Cruzeiro do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4106571",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 98,
+        "name": "Cruzeiro do Oeste",
+        "state": "PR",
+        "ibge_code": "4106605",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 99,
+        "name": "Cruzeiro do Sul",
+        "state": "PR",
+        "ibge_code": "4106704",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 100,
+        "name": "Cruzmaltina",
+        "state": "PR",
+        "ibge_code": "4106852",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 101,
+        "name": "Curitiba",
+        "state": "PR",
+        "ibge_code": "4106902",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 102,
+        "name": "Curiúva",
+        "state": "PR",
+        "ibge_code": "4107009",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 103,
+        "name": "Diamante do Norte",
+        "state": "PR",
+        "ibge_code": "4107108",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 104,
+        "name": "Diamante do Sul",
+        "state": "PR",
+        "ibge_code": "4107124",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 106,
+        "name": "Dois Vizinhos",
+        "state": "PR",
+        "ibge_code": "4107207",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 107,
+        "name": "Douradina",
+        "state": "PR",
+        "ibge_code": "4107256",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 108,
+        "name": "Doutor Camargo",
+        "state": "PR",
+        "ibge_code": "4107306",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 109,
+        "name": "Doutor Ulysses",
+        "state": "PR",
+        "ibge_code": "4128633",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 110,
+        "name": "Enéas Marques",
+        "state": "PR",
+        "ibge_code": "4107405",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 111,
+        "name": "Engenheiro Beltrão",
+        "state": "PR",
+        "ibge_code": "4107504",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 112,
+        "name": "Entre Rios do Oeste",
+        "state": "PR",
+        "ibge_code": "4107538",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 113,
+        "name": "Esperança Nova",
+        "state": "PR",
+        "ibge_code": "4107520",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 114,
+        "name": "Espigão Alto do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4107546",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 115,
+        "name": "Farol",
+        "state": "PR",
+        "ibge_code": "4107553",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 116,
+        "name": "Faxinal",
+        "state": "PR",
+        "ibge_code": "4107603",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 117,
+        "name": "Fazenda Rio Grande",
+        "state": "PR",
+        "ibge_code": "4107652",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 118,
+        "name": "Fênix",
+        "state": "PR",
+        "ibge_code": "4107702",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 119,
+        "name": "Fernandes Pinheiro",
+        "state": "PR",
+        "ibge_code": "4107736",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 120,
+        "name": "Figueira",
+        "state": "PR",
+        "ibge_code": "4107751",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 121,
+        "name": "Flor da Serra do Sul",
+        "state": "PR",
+        "ibge_code": "4107850",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 122,
+        "name": "Floraí",
+        "state": "PR",
+        "ibge_code": "4107801",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 123,
+        "name": "Floresta",
+        "state": "PR",
+        "ibge_code": "4107900",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 124,
+        "name": "Florestópolis",
+        "state": "PR",
+        "ibge_code": "4108007",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 125,
+        "name": "Flórida",
+        "state": "PR",
+        "ibge_code": "4108106",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 126,
+        "name": "Formosa do Oeste",
+        "state": "PR",
+        "ibge_code": "4108205",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 127,
+        "name": "Foz do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4108304",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 128,
+        "name": "Foz do Jordão",
+        "state": "PR",
+        "ibge_code": "4108452",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 129,
+        "name": "Francisco Alves",
+        "state": "PR",
+        "ibge_code": "4108320",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 130,
+        "name": "Francisco Beltrão",
+        "state": "PR",
+        "ibge_code": "4108403",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 131,
+        "name": "General Carneiro",
+        "state": "PR",
+        "ibge_code": "4108502",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 132,
+        "name": "Godoy Moreira",
+        "state": "PR",
+        "ibge_code": "4108551",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 133,
+        "name": "Goioerê",
+        "state": "PR",
+        "ibge_code": "4108601",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 134,
+        "name": "Goioxim",
+        "state": "PR",
+        "ibge_code": "4108650",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 135,
+        "name": "Grandes Rios",
+        "state": "PR",
+        "ibge_code": "4108700",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 136,
+        "name": "Guaíra",
+        "state": "PR",
+        "ibge_code": "4108809",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 137,
+        "name": "Guairaçá",
+        "state": "PR",
+        "ibge_code": "4108908",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 138,
+        "name": "Guamiranga",
+        "state": "PR",
+        "ibge_code": "4108957",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 139,
+        "name": "Guapirama",
+        "state": "PR",
+        "ibge_code": "4109005",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 140,
+        "name": "Guaporema",
+        "state": "PR",
+        "ibge_code": "4109104",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 141,
+        "name": "Guaraci",
+        "state": "PR",
+        "ibge_code": "4109203",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 142,
+        "name": "Guaraniaçu",
+        "state": "PR",
+        "ibge_code": "4109302",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 143,
+        "name": "Guarapuava",
+        "state": "PR",
+        "ibge_code": "4109401",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 144,
+        "name": "Guaraqueçaba",
+        "state": "PR",
+        "ibge_code": "4109500",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 145,
+        "name": "Guaratuba",
+        "state": "PR",
+        "ibge_code": "4109609",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 146,
+        "name": "Honório Serpa",
+        "state": "PR",
+        "ibge_code": "4109658",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 147,
+        "name": "Ibaiti",
+        "state": "PR",
+        "ibge_code": "4109708",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 148,
+        "name": "Ibema",
+        "state": "PR",
+        "ibge_code": "4109757",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 149,
+        "name": "Ibiporã",
+        "state": "PR",
+        "ibge_code": "4109807",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 150,
+        "name": "Icaraíma",
+        "state": "PR",
+        "ibge_code": "4109906",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 151,
+        "name": "Iguaraçu",
+        "state": "PR",
+        "ibge_code": "4110003",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 152,
+        "name": "Iguatu",
+        "state": "PR",
+        "ibge_code": "4110052",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 153,
+        "name": "Imbaú",
+        "state": "PR",
+        "ibge_code": "4110078",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 154,
+        "name": "Imbituva",
+        "state": "PR",
+        "ibge_code": "4110102",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 155,
+        "name": "Inácio Martins",
+        "state": "PR",
+        "ibge_code": "4110201",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 156,
+        "name": "Inajá",
+        "state": "PR",
+        "ibge_code": "4110300",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 157,
+        "name": "Indianópolis",
+        "state": "PR",
+        "ibge_code": "4110409",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 158,
+        "name": "Ipiranga",
+        "state": "PR",
+        "ibge_code": "4110508",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 159,
+        "name": "Iporã",
+        "state": "PR",
+        "ibge_code": "4110607",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 160,
+        "name": "Iracema do Oeste",
+        "state": "PR",
+        "ibge_code": "4110656",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 161,
+        "name": "Irati",
+        "state": "PR",
+        "ibge_code": "4110706",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 162,
+        "name": "Iretama",
+        "state": "PR",
+        "ibge_code": "4110805",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 163,
+        "name": "Itaguajé",
+        "state": "PR",
+        "ibge_code": "4110904",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 164,
+        "name": "Itaipulândia",
+        "state": "PR",
+        "ibge_code": "4110953",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 165,
+        "name": "Itambaracá",
+        "state": "PR",
+        "ibge_code": "4111001",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 166,
+        "name": "Itambé",
+        "state": "PR",
+        "ibge_code": "4111100",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 167,
+        "name": "Itapejara d'Oeste",
+        "state": "PR",
+        "ibge_code": "4111209",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 168,
+        "name": "Itaperuçu",
+        "state": "PR",
+        "ibge_code": "4111258",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 169,
+        "name": "Itaúna do Sul",
+        "state": "PR",
+        "ibge_code": "4111308",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 170,
+        "name": "Ivaí",
+        "state": "PR",
+        "ibge_code": "4111407",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 171,
+        "name": "Ivaiporã",
+        "state": "PR",
+        "ibge_code": "4111506",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 172,
+        "name": "Ivaté",
+        "state": "PR",
+        "ibge_code": "4111555",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 173,
+        "name": "Ivatuba",
+        "state": "PR",
+        "ibge_code": "4111605",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 174,
+        "name": "Jaboti",
+        "state": "PR",
+        "ibge_code": "4111704",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 175,
+        "name": "Jacarezinho",
+        "state": "PR",
+        "ibge_code": "4111803",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 176,
+        "name": "Jaguapitã",
+        "state": "PR",
+        "ibge_code": "4111902",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 177,
+        "name": "Jaguariaíva",
+        "state": "PR",
+        "ibge_code": "4112009",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 178,
+        "name": "Jandaia do Sul",
+        "state": "PR",
+        "ibge_code": "4112108",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 179,
+        "name": "Janiópolis",
+        "state": "PR",
+        "ibge_code": "4112207",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 180,
+        "name": "Japira",
+        "state": "PR",
+        "ibge_code": "4112306",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 181,
+        "name": "Japurá",
+        "state": "PR",
+        "ibge_code": "4112405",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 182,
+        "name": "Jardim Alegre",
+        "state": "PR",
+        "ibge_code": "4112504",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 183,
+        "name": "Jardim Olinda",
+        "state": "PR",
+        "ibge_code": "4112603",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 184,
+        "name": "Jataizinho",
+        "state": "PR",
+        "ibge_code": "4112702",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 185,
+        "name": "Jesuítas",
+        "state": "PR",
+        "ibge_code": "4112751",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 186,
+        "name": "Joaquim Távora",
+        "state": "PR",
+        "ibge_code": "4112801",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 187,
+        "name": "Jundiaí do Sul",
+        "state": "PR",
+        "ibge_code": "4112900",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 188,
+        "name": "Juranda",
+        "state": "PR",
+        "ibge_code": "4112959",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 189,
+        "name": "Jussara",
+        "state": "PR",
+        "ibge_code": "4113007",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 190,
+        "name": "Kaloré",
+        "state": "PR",
+        "ibge_code": "4113106",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 191,
+        "name": "Lapa",
+        "state": "PR",
+        "ibge_code": "4113205",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 192,
+        "name": "Laranjal",
+        "state": "PR",
+        "ibge_code": "4113254",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 193,
+        "name": "Laranjeiras do Sul",
+        "state": "PR",
+        "ibge_code": "4113304",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 194,
+        "name": "Leópolis",
+        "state": "PR",
+        "ibge_code": "4113403",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 195,
+        "name": "Lidianópolis",
+        "state": "PR",
+        "ibge_code": "4113429",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 196,
+        "name": "Lindoeste",
+        "state": "PR",
+        "ibge_code": "4113452",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 197,
+        "name": "Loanda",
+        "state": "PR",
+        "ibge_code": "4113502",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 198,
+        "name": "Lobato",
+        "state": "PR",
+        "ibge_code": "4113601",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 199,
+        "name": "Londrina",
+        "state": "PR",
+        "ibge_code": "4113700",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 200,
+        "name": "Luiziana",
+        "state": "PR",
+        "ibge_code": "4113734",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 201,
+        "name": "Lunardelli",
+        "state": "PR",
+        "ibge_code": "4113759",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 202,
+        "name": "Lupionópolis",
+        "state": "PR",
+        "ibge_code": "4113809",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 203,
+        "name": "Mallet",
+        "state": "PR",
+        "ibge_code": "4113908",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 42,
+        "name": "Bituruna",
+        "state": "PR",
+        "ibge_code": "4102901",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 204,
+        "name": "Mamborê",
+        "state": "PR",
+        "ibge_code": "4114005",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 205,
+        "name": "Mandaguaçu",
+        "state": "PR",
+        "ibge_code": "4114104",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 206,
+        "name": "Mandaguari",
+        "state": "PR",
+        "ibge_code": "4114203",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 207,
+        "name": "Mandirituba",
+        "state": "PR",
+        "ibge_code": "4114302",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 208,
+        "name": "Manfrinópolis",
+        "state": "PR",
+        "ibge_code": "4114351",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 209,
+        "name": "Mangueirinha",
+        "state": "PR",
+        "ibge_code": "4114401",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 210,
+        "name": "Manoel Ribas",
+        "state": "PR",
+        "ibge_code": "4114500",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 211,
+        "name": "Marechal Cândido Rondon",
+        "state": "PR",
+        "ibge_code": "4114609",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 212,
+        "name": "Maria Helena",
+        "state": "PR",
+        "ibge_code": "4114708",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 213,
+        "name": "Marialva",
+        "state": "PR",
+        "ibge_code": "4114807",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 214,
+        "name": "Marilândia do Sul",
+        "state": "PR",
+        "ibge_code": "4114906",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 215,
+        "name": "Marilena",
+        "state": "PR",
+        "ibge_code": "4115002",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 216,
+        "name": "Mariluz",
+        "state": "PR",
+        "ibge_code": "4115101",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 217,
+        "name": "Maringá",
+        "state": "PR",
+        "ibge_code": "4115200",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 218,
+        "name": "Mariópolis",
+        "state": "PR",
+        "ibge_code": "4115309",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 219,
+        "name": "Maripá",
+        "state": "PR",
+        "ibge_code": "4115358",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 220,
+        "name": "Marmeleiro",
+        "state": "PR",
+        "ibge_code": "4115408",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 221,
+        "name": "Marquinho",
+        "state": "PR",
+        "ibge_code": "4115457",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 222,
+        "name": "Marumbi",
+        "state": "PR",
+        "ibge_code": "4115507",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 223,
+        "name": "Matelândia",
+        "state": "PR",
+        "ibge_code": "4115606",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 224,
+        "name": "Matinhos",
+        "state": "PR",
+        "ibge_code": "4115705",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 225,
+        "name": "Mato Rico",
+        "state": "PR",
+        "ibge_code": "4115739",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 226,
+        "name": "Mauá da Serra",
+        "state": "PR",
+        "ibge_code": "4115754",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 227,
+        "name": "Medianeira",
+        "state": "PR",
+        "ibge_code": "4115804",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 228,
+        "name": "Mercedes",
+        "state": "PR",
+        "ibge_code": "4115853",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 229,
+        "name": "Mirador",
+        "state": "PR",
+        "ibge_code": "4115903",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 230,
+        "name": "Miraselva",
+        "state": "PR",
+        "ibge_code": "4116000",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 231,
+        "name": "Missal",
+        "state": "PR",
+        "ibge_code": "4116059",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 232,
+        "name": "Moreira Sales",
+        "state": "PR",
+        "ibge_code": "4116109",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 233,
+        "name": "Morretes",
+        "state": "PR",
+        "ibge_code": "4116208",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 235,
+        "name": "Nossa Senhora das Graças",
+        "state": "PR",
+        "ibge_code": "4116406",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 236,
+        "name": "Nova Aliança do Ivaí",
+        "state": "PR",
+        "ibge_code": "4116505",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 237,
+        "name": "Nova América da Colina",
+        "state": "PR",
+        "ibge_code": "4116604",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 238,
+        "name": "Nova Aurora",
+        "state": "PR",
+        "ibge_code": "4116703",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 239,
+        "name": "Nova Cantu",
+        "state": "PR",
+        "ibge_code": "4116802",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 240,
+        "name": "Nova Esperança do Sudoeste",
+        "state": "PR",
+        "ibge_code": "4116950",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 241,
+        "name": "Nova Esperança",
+        "state": "PR",
+        "ibge_code": "4116901",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 242,
+        "name": "Nova Fátima",
+        "state": "PR",
+        "ibge_code": "4117008",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 243,
+        "name": "Nova Laranjeiras",
+        "state": "PR",
+        "ibge_code": "4117057",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 244,
+        "name": "Nova Londrina",
+        "state": "PR",
+        "ibge_code": "4117107",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 245,
+        "name": "Nova Olímpia",
+        "state": "PR",
+        "ibge_code": "4117206",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 246,
+        "name": "Nova Prata do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4117255",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 247,
+        "name": "Nova Santa Bárbara",
+        "state": "PR",
+        "ibge_code": "4117214",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 248,
+        "name": "Nova Santa Rosa",
+        "state": "PR",
+        "ibge_code": "4117222",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 249,
+        "name": "Nova Tebas",
+        "state": "PR",
+        "ibge_code": "4117271",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 250,
+        "name": "Novo Itacolomi",
+        "state": "PR",
+        "ibge_code": "4117297",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 251,
+        "name": "Ortigueira",
+        "state": "PR",
+        "ibge_code": "4117305",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 252,
+        "name": "Ourizona",
+        "state": "PR",
+        "ibge_code": "4117404",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 253,
+        "name": "Ouro Verde do Oeste",
+        "state": "PR",
+        "ibge_code": "4117453",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 254,
+        "name": "Paiçandu",
+        "state": "PR",
+        "ibge_code": "4117503",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 255,
+        "name": "Palmas",
+        "state": "PR",
+        "ibge_code": "4117602",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 256,
+        "name": "Palmeira",
+        "state": "PR",
+        "ibge_code": "4117701",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 257,
+        "name": "Palmital",
+        "state": "PR",
+        "ibge_code": "4117800",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 258,
+        "name": "Palotina",
+        "state": "PR",
+        "ibge_code": "4117909",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 259,
+        "name": "Paraíso do Norte",
+        "state": "PR",
+        "ibge_code": "4118006",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 260,
+        "name": "Paranacity",
+        "state": "PR",
+        "ibge_code": "4118105",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 261,
+        "name": "Paranaguá",
+        "state": "PR",
+        "ibge_code": "4118204",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 262,
+        "name": "Paranapoema",
+        "state": "PR",
+        "ibge_code": "4118303",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 263,
+        "name": "Paranavaí",
+        "state": "PR",
+        "ibge_code": "4118402",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 264,
+        "name": "Pato Bragado",
+        "state": "PR",
+        "ibge_code": "4118451",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 265,
+        "name": "Pato Branco",
+        "state": "PR",
+        "ibge_code": "4118501",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 266,
+        "name": "Paula Freitas",
+        "state": "PR",
+        "ibge_code": "4118600",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 267,
+        "name": "Paulo Frontin",
+        "state": "PR",
+        "ibge_code": "4118709",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 268,
+        "name": "Peabiru",
+        "state": "PR",
+        "ibge_code": "4118808",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 269,
+        "name": "Perobal",
+        "state": "PR",
+        "ibge_code": "4118857",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 270,
+        "name": "Pérola",
+        "state": "PR",
+        "ibge_code": "4118907",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 271,
+        "name": "Pérola d'Oeste",
+        "state": "PR",
+        "ibge_code": "4119004",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 272,
+        "name": "Piên",
+        "state": "PR",
+        "ibge_code": "4119103",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 273,
+        "name": "Pinhais",
+        "state": "PR",
+        "ibge_code": "4119152",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 274,
+        "name": "Pinhal de São Bento",
+        "state": "PR",
+        "ibge_code": "4119251",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 275,
+        "name": "Pinhalão",
+        "state": "PR",
+        "ibge_code": "4119202",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 276,
+        "name": "Pinhão",
+        "state": "PR",
+        "ibge_code": "4119301",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 277,
+        "name": "Piraí do Sul",
+        "state": "PR",
+        "ibge_code": "4119400",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 278,
+        "name": "Piraquara",
+        "state": "PR",
+        "ibge_code": "4119509",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 279,
+        "name": "Pitanga",
+        "state": "PR",
+        "ibge_code": "4119608",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 280,
+        "name": "Pitangueiras",
+        "state": "PR",
+        "ibge_code": "4119657",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 281,
+        "name": "Planaltina do Paraná",
+        "state": "PR",
+        "ibge_code": "4119707",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 282,
+        "name": "Planalto",
+        "state": "PR",
+        "ibge_code": "4119806",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 283,
+        "name": "Ponta Grossa",
+        "state": "PR",
+        "ibge_code": "4119905",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 284,
+        "name": "Pontal do Paraná",
+        "state": "PR",
+        "ibge_code": "4119954",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 285,
+        "name": "Porecatu",
+        "state": "PR",
+        "ibge_code": "4120002",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 286,
+        "name": "Porto Amazonas",
+        "state": "PR",
+        "ibge_code": "4120101",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 287,
+        "name": "Porto Barreiro",
+        "state": "PR",
+        "ibge_code": "4120150",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 288,
+        "name": "Porto Rico",
+        "state": "PR",
+        "ibge_code": "4120200",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 289,
+        "name": "Porto Vitória",
+        "state": "PR",
+        "ibge_code": "4120309",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 290,
+        "name": "Prado Ferreira",
+        "state": "PR",
+        "ibge_code": "4120333",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 291,
+        "name": "Pranchita",
+        "state": "PR",
+        "ibge_code": "4120358",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 292,
+        "name": "Presidente Castelo Branco",
+        "state": "PR",
+        "ibge_code": "4120408",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 293,
+        "name": "Primeiro de Maio",
+        "state": "PR",
+        "ibge_code": "4120507",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 295,
+        "name": "Quarto Centenário",
+        "state": "PR",
+        "ibge_code": "4120655",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 296,
+        "name": "Quatiguá",
+        "state": "PR",
+        "ibge_code": "4120705",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 297,
+        "name": "Quatro Barras",
+        "state": "PR",
+        "ibge_code": "4120804",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 298,
+        "name": "Quatro Pontes",
+        "state": "PR",
+        "ibge_code": "4120853",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 299,
+        "name": "Quedas do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4120903",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 300,
+        "name": "Querência do Norte",
+        "state": "PR",
+        "ibge_code": "4121000",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 301,
+        "name": "Quinta do Sol",
+        "state": "PR",
+        "ibge_code": "4121109",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 302,
+        "name": "Quitandinha",
+        "state": "PR",
+        "ibge_code": "4121208",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 303,
+        "name": "Ramilândia",
+        "state": "PR",
+        "ibge_code": "4121257",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 304,
+        "name": "Rancho Alegre",
+        "state": "PR",
+        "ibge_code": "4121307",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 306,
+        "name": "Realeza",
+        "state": "PR",
+        "ibge_code": "4121406",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 307,
+        "name": "Rebouças",
+        "state": "PR",
+        "ibge_code": "4121505",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 23,
+        "name": "Antônio Olinto",
+        "state": "PR",
+        "ibge_code": "4101309",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 24,
+        "name": "Apucarana",
+        "state": "PR",
+        "ibge_code": "4101408",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 26,
+        "name": "Arapoti",
+        "state": "PR",
+        "ibge_code": "4101606",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 27,
+        "name": "Arapuã",
+        "state": "PR",
+        "ibge_code": "4101655",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 28,
+        "name": "Araruna",
+        "state": "PR",
+        "ibge_code": "4101705",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 29,
+        "name": "Araucária",
+        "state": "PR",
+        "ibge_code": "4101804",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 30,
+        "name": "Ariranha do Ivaí",
+        "state": "PR",
+        "ibge_code": "4101853",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 31,
+        "name": "Assaí",
+        "state": "PR",
+        "ibge_code": "4101903",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 32,
+        "name": "Assis Chateaubriand",
+        "state": "PR",
+        "ibge_code": "4102000",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 33,
+        "name": "Astorga",
+        "state": "PR",
+        "ibge_code": "4102109",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 34,
+        "name": "Atalaia",
+        "state": "PR",
+        "ibge_code": "4102208",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 35,
+        "name": "Balsa Nova",
+        "state": "PR",
+        "ibge_code": "4102307",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 37,
+        "name": "Barbosa Ferraz",
+        "state": "PR",
+        "ibge_code": "4102505",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 38,
+        "name": "Barra do Jacaré",
+        "state": "PR",
+        "ibge_code": "4102703",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 39,
+        "name": "Barracão",
+        "state": "PR",
+        "ibge_code": "4102604",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 40,
+        "name": "Bela Vista da Caroba",
+        "state": "PR",
+        "ibge_code": "4102752",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 41,
+        "name": "Bela Vista do Paraíso",
+        "state": "PR",
+        "ibge_code": "4102802",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 308,
+        "name": "Renascença",
+        "state": "PR",
+        "ibge_code": "4121604",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 309,
+        "name": "Reserva",
+        "state": "PR",
+        "ibge_code": "4121703",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 310,
+        "name": "Reserva do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4121752",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 311,
+        "name": "Ribeirão Claro",
+        "state": "PR",
+        "ibge_code": "4121802",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 312,
+        "name": "Ribeirão do Pinhal",
+        "state": "PR",
+        "ibge_code": "4121901",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 313,
+        "name": "Rio Azul",
+        "state": "PR",
+        "ibge_code": "4122008",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 314,
+        "name": "Rio Bom",
+        "state": "PR",
+        "ibge_code": "4122107",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 315,
+        "name": "Rio Bonito do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4122156",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 316,
+        "name": "Rio Branco do Ivaí",
+        "state": "PR",
+        "ibge_code": "4122172",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 317,
+        "name": "Rio Branco do Sul",
+        "state": "PR",
+        "ibge_code": "4122206",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 318,
+        "name": "Rio Negro",
+        "state": "PR",
+        "ibge_code": "4122305",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 319,
+        "name": "Rolândia",
+        "state": "PR",
+        "ibge_code": "4122404",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 320,
+        "name": "Roncador",
+        "state": "PR",
+        "ibge_code": "4122503",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 321,
+        "name": "Rondon",
+        "state": "PR",
+        "ibge_code": "4122602",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 322,
+        "name": "Rosário do Ivaí",
+        "state": "PR",
+        "ibge_code": "4122651",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 323,
+        "name": "Sabáudia",
+        "state": "PR",
+        "ibge_code": "4122701",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 324,
+        "name": "Salgado Filho",
+        "state": "PR",
+        "ibge_code": "4122800",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 325,
+        "name": "Salto do Itararé",
+        "state": "PR",
+        "ibge_code": "4122909",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 326,
+        "name": "Salto do Lontra",
+        "state": "PR",
+        "ibge_code": "4123006",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 327,
+        "name": "Santa Amélia",
+        "state": "PR",
+        "ibge_code": "4123105",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 328,
+        "name": "Santa Cecília do Pavão",
+        "state": "PR",
+        "ibge_code": "4123204",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 329,
+        "name": "Santa Cruz de Monte Castelo",
+        "state": "PR",
+        "ibge_code": "4123303",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 330,
+        "name": "Santa Fé",
+        "state": "PR",
+        "ibge_code": "4123402",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 331,
+        "name": "Santa Helena",
+        "state": "PR",
+        "ibge_code": "4123501",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 332,
+        "name": "Santa Inês",
+        "state": "PR",
+        "ibge_code": "4123600",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 333,
+        "name": "Santa Isabel do Ivaí",
+        "state": "PR",
+        "ibge_code": "4123709",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 334,
+        "name": "Santa Izabel do Oeste",
+        "state": "PR",
+        "ibge_code": "4123808",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 335,
+        "name": "Santa Lúcia",
+        "state": "PR",
+        "ibge_code": "4123824",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 336,
+        "name": "Santa Maria do Oeste",
+        "state": "PR",
+        "ibge_code": "4123857",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 337,
+        "name": "Santa Mariana",
+        "state": "PR",
+        "ibge_code": "4123907",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 338,
+        "name": "Santa Mônica",
+        "state": "PR",
+        "ibge_code": "4123956",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 339,
+        "name": "Santa Tereza do Oeste",
+        "state": "PR",
+        "ibge_code": "4124020",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 340,
+        "name": "Santa Terezinha de Itaipu",
+        "state": "PR",
+        "ibge_code": "4124053",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 341,
+        "name": "Santana do Itararé",
+        "state": "PR",
+        "ibge_code": "4124004",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 342,
+        "name": "Santo Antônio da Platina",
+        "state": "PR",
+        "ibge_code": "4124103",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 343,
+        "name": "Santo Antônio do Caiuá",
+        "state": "PR",
+        "ibge_code": "4124202",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 344,
+        "name": "Santo Antônio do Paraíso",
+        "state": "PR",
+        "ibge_code": "4124301",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 345,
+        "name": "Santo Antônio do Sudoeste",
+        "state": "PR",
+        "ibge_code": "4124400",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 346,
+        "name": "Santo Inácio",
+        "state": "PR",
+        "ibge_code": "4124509",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 347,
+        "name": "São Carlos do Ivaí",
+        "state": "PR",
+        "ibge_code": "4124608",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 348,
+        "name": "São Jerônimo da Serra",
+        "state": "PR",
+        "ibge_code": "4124707",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 349,
+        "name": "São João",
+        "state": "PR",
+        "ibge_code": "4124806",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 350,
+        "name": "São João do Caiuá",
+        "state": "PR",
+        "ibge_code": "4124905",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 351,
+        "name": "São João do Ivaí",
+        "state": "PR",
+        "ibge_code": "4125001",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 352,
+        "name": "São João do Triunfo",
+        "state": "PR",
+        "ibge_code": "4125100",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 353,
+        "name": "São Jorge do Ivaí",
+        "state": "PR",
+        "ibge_code": "4125308",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 354,
+        "name": "São Jorge do Patrocínio",
+        "state": "PR",
+        "ibge_code": "4125357",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 355,
+        "name": "São Jorge d'Oeste",
+        "state": "PR",
+        "ibge_code": "4125209",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 356,
+        "name": "São José da Boa Vista",
+        "state": "PR",
+        "ibge_code": "4125407",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 357,
+        "name": "São José das Palmeiras",
+        "state": "PR",
+        "ibge_code": "4125456",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 358,
+        "name": "São José dos Pinhais",
+        "state": "PR",
+        "ibge_code": "4125506",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 359,
+        "name": "São Manoel do Paraná",
+        "state": "PR",
+        "ibge_code": "4125555",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 360,
+        "name": "São Mateus do Sul",
+        "state": "PR",
+        "ibge_code": "4125605",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 361,
+        "name": "São Miguel do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4125704",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 362,
+        "name": "São Pedro do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4125753",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 363,
+        "name": "São Pedro do Ivaí",
+        "state": "PR",
+        "ibge_code": "4125803",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 364,
+        "name": "São Pedro do Paraná",
+        "state": "PR",
+        "ibge_code": "4125902",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 365,
+        "name": "São Sebastião da Amoreira",
+        "state": "PR",
+        "ibge_code": "4126009",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 366,
+        "name": "São Tomé",
+        "state": "PR",
+        "ibge_code": "4126108",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 367,
+        "name": "Sapopema",
+        "state": "PR",
+        "ibge_code": "4126207",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 368,
+        "name": "Sarandi",
+        "state": "PR",
+        "ibge_code": "4126256",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 369,
+        "name": "Saudade do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4126272",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 370,
+        "name": "Sengés",
+        "state": "PR",
+        "ibge_code": "4126306",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 371,
+        "name": "Serranópolis do Iguaçu",
+        "state": "PR",
+        "ibge_code": "4126355",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 372,
+        "name": "Sertaneja",
+        "state": "PR",
+        "ibge_code": "4126405",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 373,
+        "name": "Sertanópolis",
+        "state": "PR",
+        "ibge_code": "4126504",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 375,
+        "name": "Sulina",
+        "state": "PR",
+        "ibge_code": "4126652",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 376,
+        "name": "Tamarana",
+        "state": "PR",
+        "ibge_code": "4126678",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 377,
+        "name": "Tamboara",
+        "state": "PR",
+        "ibge_code": "4126702",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 378,
+        "name": "Tapejara",
+        "state": "PR",
+        "ibge_code": "4126801",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 379,
+        "name": "Tapira",
+        "state": "PR",
+        "ibge_code": "4126900",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 380,
+        "name": "Teixeira Soares",
+        "state": "PR",
+        "ibge_code": "4127007",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 381,
+        "name": "Telêmaco Borba",
+        "state": "PR",
+        "ibge_code": "4127106",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 382,
+        "name": "Terra Boa",
+        "state": "PR",
+        "ibge_code": "4127205",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 383,
+        "name": "Terra Rica",
+        "state": "PR",
+        "ibge_code": "4127304",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 384,
+        "name": "Terra Roxa",
+        "state": "PR",
+        "ibge_code": "4127403",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 385,
+        "name": "Tibagi",
+        "state": "PR",
+        "ibge_code": "4127502",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 386,
+        "name": "Tijucas do Sul",
+        "state": "PR",
+        "ibge_code": "4127601",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 387,
+        "name": "Toledo",
+        "state": "PR",
+        "ibge_code": "4127700",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 388,
+        "name": "Tomazina",
+        "state": "PR",
+        "ibge_code": "4127809",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 389,
+        "name": "Três Barras do Paraná",
+        "state": "PR",
+        "ibge_code": "4127858",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 390,
+        "name": "Tunas do Paraná",
+        "state": "PR",
+        "ibge_code": "4127882",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 391,
+        "name": "Tuneiras do Oeste",
+        "state": "PR",
+        "ibge_code": "4127908",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 392,
+        "name": "Tupãssi",
+        "state": "PR",
+        "ibge_code": "4127957",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 393,
+        "name": "Turvo",
+        "state": "PR",
+        "ibge_code": "4127965",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 394,
+        "name": "Ubiratã",
+        "state": "PR",
+        "ibge_code": "4128005",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 395,
+        "name": "Umuarama",
+        "state": "PR",
+        "ibge_code": "4128104",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 396,
+        "name": "União da Vitória",
+        "state": "PR",
+        "ibge_code": "4128203",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 397,
+        "name": "Uniflor",
+        "state": "PR",
+        "ibge_code": "4128302",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 398,
+        "name": "Uraí",
+        "state": "PR",
+        "ibge_code": "4128401",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 399,
+        "name": "Ventania",
+        "state": "PR",
+        "ibge_code": "4128534",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 400,
+        "name": "Vera Cruz do Oeste",
+        "state": "PR",
+        "ibge_code": "4128559",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 401,
+        "name": "Verê",
+        "state": "PR",
+        "ibge_code": "4128609",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 402,
+        "name": "Virmond",
+        "state": "PR",
+        "ibge_code": "4128658",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 403,
+        "name": "Vitorino",
+        "state": "PR",
+        "ibge_code": "4128708",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 404,
+        "name": "Wenceslau Braz",
+        "state": "PR",
+        "ibge_code": "4128500",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      },
+      {
+        "id": 405,
+        "name": "Xambrê",
+        "state": "PR",
+        "ibge_code": "4128807",
+        "status": "active",
+        "created_at": "2026-08-24T18:39:54.045302+00:00",
+        "created_by": null
+      }
+    ],
+    "auditLogs": [],
+    "contactExports": []
+  }
+}
