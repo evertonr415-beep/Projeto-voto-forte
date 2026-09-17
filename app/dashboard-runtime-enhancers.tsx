@@ -41,6 +41,7 @@ import ElectoralDesktopTopbarIdentity from "./electoral-desktop-topbar-identity"
 import WhatsappSurveyIntelligence from "./whatsapp-survey-intelligence";
 import SurveyIntelligenceSidebarEnhancer from "./survey-intelligence-sidebar-enhancer";
 import IndividualWhatsappMenuEnhancer from "./individual-whatsapp-menu-enhancer";
+import SidebarGoldIconNormalizer from "./sidebar-gold-icon-normalizer";
 import VotingChartsEntryPolish from "./voting-charts-entry-polish";
 import VotingRecentMobilePolish from "./voting-recent-mobile-polish";
 import WhatsappChatMobilePolish from "./whatsapp-chat-mobile-polish";
@@ -126,6 +127,7 @@ export default function DashboardRuntimeEnhancers() {
           <WhatsappSurveyIntelligence />
           <SurveyIntelligenceSidebarEnhancer />
           <IndividualWhatsappMenuEnhancer />
+          <SidebarGoldIconNormalizer />
         </>
       ) : null}
     </>
