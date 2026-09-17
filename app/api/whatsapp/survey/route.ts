@@ -226,33 +226,33 @@ export async function GET(request: Request) {
     }
 
     const stateCounts: Record<string, number> = {
-      "Sérgio Onofre": 4630,
-      "Pedro Paulo Bazana": 1543,
+      "Sérgio Onofre": 4652,
+      "Pedro Paulo Bazana": 1551,
       "Indeciso / Não sabe": 1275,
       "Branco / Nulo": 1043,
-      "Cobra Repórter": 578,
-      "Delegado Jacovós": 385,
-      "Aline Franzon": 192,
+      "Cobra Repórter": 582,
+      "Delegado Jacovós": 391,
+      "Aline Franzon": 197,
     };
     const federalCounts: Record<string, number> = {
-      "Pedro Lupion": 2990,
+      "Pedro Lupion": 3011,
       "Indeciso / Não sabe": 2425,
       "Branco / Nulo": 1983,
-      "Beto Preto": 771,
-      "Luciano Ducci": 482,
-      "Marco Brasil": 341,
-      "Neto Santos": 318,
-      "Ricardo Barros": 192,
+      "Beto Preto": 778,
+      "Luciano Ducci": 486,
+      "Marco Brasil": 342,
+      "Neto Santos": 330,
+      "Ricardo Barros": 197,
       "Santin Roveda": 96,
-      "Bonin": 48,
+      "Bonin": 50,
     };
     const governorCounts: Record<string, number> = {
-      "Sandro Alex": 3357,
-      "Sergio Moro": 3048,
-      "Luiz França": 936,
+      "Sandro Alex": 3371,
+      "Sergio Moro": 3082,
+      "Luiz França": 940,
       "Indeciso / Não sabe": 868,
       "Outros": 733,
-      "Requião Filho": 704,
+      "Requião Filho": 713,
     };
     const senatorCounts: Record<string, number> = {
       "Alexandre Curi": 2894,
@@ -263,13 +263,13 @@ export async function GET(request: Request) {
       "Dr Rosinha": 482,
     };
     const presidentCounts: Record<string, number> = {
-      "Flávio Bolsonaro": 4534,
-      "Lula": 1910,
+      "Flávio Bolsonaro": 4570,
+      "Lula": 1922,
       "Renan Santos": 1051,
-      "Augusto Cury": 820,
-      "Ronaldo Caiado": 617,
+      "Augusto Cury": 826,
+      "Ronaldo Caiado": 622,
       "Indeciso / Não sabe": 395,
-      "Romeu Zema": 164,
+      "Romeu Zema": 167,
       "Outro candidato": 77,
     };
     const districtCounts: Record<string, number> = {
