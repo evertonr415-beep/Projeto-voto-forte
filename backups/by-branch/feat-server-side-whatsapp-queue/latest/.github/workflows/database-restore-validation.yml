@@ -1,0 +1,170 @@
+name: PostgreSQL isolated restore validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type RESTORE-ISOLATED-ONLY to confirm the target is disposable and not production.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: voto-forte-restore-validation
+  cancel-in-progress: false
+
+jobs:
+  restore-test:
+    if: ${{ vars.RESTORE_TEST_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DRIVE_FOLDER_ID: 1LePlbjMOWjjiNG7EWFLYfZrDmRAWONkU
+      GOOGLE_PROJECT_ID: voto-forte-backup
+      GOOGLE_SERVICE_ACCOUNT: voto-forte-backup@voto-forte-backup.iam.gserviceaccount.com
+      GOOGLE_WIF_PROVIDER: projects/369166280632/locations/global/workloadIdentityPools/github-voto-forte/providers/github
+      PRODUCTION_PROJECT_REF: dtcvudwmosxhbgpwphsx
+      RESTORE_DIR: /tmp/voto-forte-restore-test
+
+    steps:
+      - name: Safety gate
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          RESTORE_TEST_DB_URL: ${{ secrets.SUPABASE_RESTORE_TEST_DB_URL }}
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = 'RESTORE-ISOLATED-ONLY' || { echo 'Confirmation phrase does not match'; exit 1; }
+          test -n "$RESTORE_TEST_DB_URL" || { echo 'Missing secret: SUPABASE_RESTORE_TEST_DB_URL'; exit 1; }
+          test -n "$PRODUCTION_DB_URL" || { echo 'Missing secret: SUPABASE_DB_URL'; exit 1; }
+          test "$RESTORE_TEST_DB_URL" != "$PRODUCTION_DB_URL" || { echo 'SECURITY STOP: restore URL equals production URL'; exit 1; }
+          case "$RESTORE_TEST_DB_URL" in
+            *"$PRODUCTION_PROJECT_REF"*) echo 'SECURITY STOP: restore URL contains production project reference'; exit 1 ;;
+          esac
+          echo 'Safety gate passed. Target is not the configured production URL.'
+
+      - name: Prepare PostgreSQL 17 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RESTORE_DIR"
+          docker pull postgres:17-alpine
+
+      - name: Authenticate to Google Cloud with GitHub OIDC
+        id: google_auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GOOGLE_PROJECT_ID }}
+          workload_identity_provider: ${{ env.GOOGLE_WIF_PROVIDER }}
+          service_account: ${{ env.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Download latest verified recovery package
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          python3 - "$DRIVE_FOLDER_ID" "$GOOGLE_ACCESS_TOKEN" "$GOOGLE_PROJECT_ID" "$RESTORE_DIR" <<'PY'
+          import json, os, sys, urllib.parse, urllib.request
+          folder_id, token, project_id, restore_dir = sys.argv[1:]
+          query = f"'{folder_id}' in parents and trashed = false and name contains 'votoforte-postgres-'"
+          params = urllib.parse.urlencode({
+              'q': query,
+              'fields': 'files(id,name,size,createdTime)',
+              'pageSize': '1000',
+              'orderBy': 'createdTime desc',
+              'supportsAllDrives': 'true',
+              'includeItemsFromAllDrives': 'true',
+          })
+          headers = {'Authorization': 'Bearer ' + token, 'X-Goog-User-Project': project_id}
+          with urllib.request.urlopen(urllib.request.Request('https://www.googleapis.com/drive/v3/files?' + params, headers=headers)) as response:
+              files = json.load(response).get('files', [])
+          by_name = {f['name']: f for f in files}
+          dumps = [f for f in files if f['name'].endswith('.dump')]
+          if not dumps:
+              raise SystemExit('No PostgreSQL dump found')
+          dump = dumps[0]
+          required = [dump['name'], dump['name'] + '.sha256', dump['name'] + '.manifest.json']
+          for name in required:
+              item = by_name.get(name)
+              if not item:
+                  raise SystemExit('Missing recovery package file: ' + name)
+              url = 'https://www.googleapis.com/drive/v3/files/' + urllib.parse.quote(item['id']) + '?alt=media&supportsAllDrives=true'
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req) as response, open(os.path.join(restore_dir, name), 'wb') as out:
+                  out.write(response.read())
+          with open(os.path.join(restore_dir, 'selected-name.txt'), 'w', encoding='utf-8') as f:
+              f.write(dump['name'])
+          print('Downloaded recovery package:', dump['name'])
+          PY
+          BACKUP_FILE="$(cat "$RESTORE_DIR/selected-name.txt")"
+          echo "BACKUP_FILE=$BACKUP_FILE" >> "$GITHUB_ENV"
+          cd "$RESTORE_DIR"
+          sha256sum -c "$BACKUP_FILE.sha256"
+
+      - name: Restore into isolated target
+        shell: bash
+        env:
+          RESTORE_TEST_DB_URL: ${{ secrets.SUPABASE_RESTORE_TEST_DB_URL }}
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e RESTORE_TEST_DB_URL \
+            -e BACKUP_FILE \
+            -v "$RESTORE_DIR:/restore" \
+            postgres:17-alpine \
+            sh -ec 'pg_restore --dbname="$RESTORE_TEST_DB_URL" --clean --if-exists --no-owner --no-privileges --exit-on-error "/restore/$BACKUP_FILE"'
+
+      - name: Validate restored data against manifest
+        shell: bash
+        env:
+          RESTORE_TEST_DB_URL: ${{ secrets.SUPABASE_RESTORE_TEST_DB_URL }}
+        run: |
+          set -euo pipefail
+          EXPECTED_RECORDS="$(python3 - "$RESTORE_DIR/$BACKUP_FILE.manifest.json" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8'))['sourceMetrics']['ownedRecords'])
+          PY
+          )"
+          EXPECTED_CONTACTS="$(python3 - "$RESTORE_DIR/$BACKUP_FILE.manifest.json" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8'))['sourceMetrics']['contacts'])
+          PY
+          )"
+          docker run --rm \
+            -e RESTORE_TEST_DB_URL \
+            -e EXPECTED_RECORDS \
+            -e EXPECTED_CONTACTS \
+            postgres:17-alpine sh -ec '
+              records=$(psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -Atc "select count(*) from public.vf_owned_records;")
+              contacts=$(psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -Atc "select count(*) from public.vf_owned_records where kind = '\''contact'\'';")
+              test "$records" = "$EXPECTED_RECORDS" || { echo "Record count mismatch: $records != $EXPECTED_RECORDS"; exit 1; }
+              test "$contacts" = "$EXPECTED_CONTACTS" || { echo "Contact count mismatch: $contacts != $EXPECTED_CONTACTS"; exit 1; }
+              echo "Restore validation passed: $records records / $contacts contacts"
+            '
+
+      - name: Write restore certification summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Voto Forte — Isolated Restore Validation'
+            echo
+            echo "- Run: ${{ github.run_id }}"
+            echo "- Backup: ${BACKUP_FILE:-not-selected}"
+            if [ "${{ job.status }}" = 'success' ]; then
+              echo '- Result: PASSED'
+              echo '- Production database modified: NO'
+              echo '- SHA-256 verified: YES'
+              echo '- Row-count validation: YES'
+            else
+              echo '- Result: FAILED'
+              echo '- Production database modified: NO (safety gate prevents production target)'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
