@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { apiFetch } from "./supabase-client";
 
 type AccessRole = "adm" | "gestor" | "master" | "lideranca" | "liderado" | "eleitor";
+type DirectoryRole = Exclude<AccessRole, "eleitor">;
 type Status = "active" | "blocked";
 type SectionKey = "users" | "create" | "invitations" | "audit";
 
@@ -16,6 +17,18 @@ type User = {
   status: Status;
   parentUserId: number | null;
   lastSeenAt: string | null;
+};
+
+type LeadershipContact = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  district: string;
+  city: string;
+  ownerEmail: string;
+  createdAt: string;
+  payload: Record<string, unknown>;
 };
 
 type RoleOption = {
@@ -61,6 +74,11 @@ type AuditLog = {
   createdAt: string;
 };
 
+type EditTarget =
+  | { type: "user"; user: User }
+  | { type: "contact"; contact: LeadershipContact }
+  | null;
+
 const labels: Record<AccessRole, string> = {
   adm: "ADM",
   gestor: "Gestor",
@@ -70,7 +88,7 @@ const labels: Record<AccessRole, string> = {
   eleitor: "Eleitor",
 };
 
-const roleOrder: AccessRole[] = ["adm", "gestor", "master", "lideranca", "liderado", "eleitor"];
+const directoryRoleOrder: DirectoryRole[] = ["adm", "gestor", "master", "lideranca", "liderado"];
 
 function initials(name: string) {
   return name
@@ -88,16 +106,29 @@ function dateTime(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("pt-BR");
 }
 
+function phoneLabel(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "Sem telefone";
+  return value;
+}
+
 export default function UserHierarchyPanel() {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [leadershipContacts, setLeadershipContacts] = useState<LeadershipContact[]>([]);
+  const [leadershipTotal, setLeadershipTotal] = useState(0);
   const [options, setOptions] = useState<AdministrationOptions | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [activeSection, setActiveSection] = useState<SectionKey>("users");
+  const [selectedDirectoryRole, setSelectedDirectoryRole] = useState<DirectoryRole>("gestor");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [editTarget, setEditTarget] = useState<EditTarget>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editDistrict, setEditDistrict] = useState("");
   const [form, setForm] = useState<{
     name: string;
     email: string;
@@ -108,13 +139,27 @@ export default function UserHierarchyPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiFetch("/api/users");
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Falha ao carregar Administração");
-      setUsers(data.users || []);
-      setOptions(data.administrationOptions || null);
-      setInvitations(data.invitations || []);
-      setLogs(data.logs || []);
+      const [usersResponse, leadershipResponse] = await Promise.all([
+        apiFetch("/api/users", { cache: "no-store" }),
+        apiFetch("/api/administration/role-directory?role=lideranca&limit=250", { cache: "no-store" }),
+      ]);
+
+      const usersData = await usersResponse.json();
+      if (!usersResponse.ok) throw new Error(usersData.error || "Falha ao carregar Administração");
+
+      setUsers(usersData.users || []);
+      setOptions(usersData.administrationOptions || null);
+      setInvitations(usersData.invitations || []);
+      setLogs(usersData.logs || []);
+
+      if (leadershipResponse.ok) {
+        const leadershipData = await leadershipResponse.json();
+        setLeadershipContacts(Array.isArray(leadershipData.items) ? leadershipData.items : []);
+        setLeadershipTotal(Number(leadershipData.total || 0));
+      } else {
+        setLeadershipContacts([]);
+        setLeadershipTotal(0);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar a Administração.");
     } finally {
@@ -154,23 +199,50 @@ export default function UserHierarchyPanel() {
     }));
   }, [options, form.accessRole]);
 
-  const userIds = useMemo(() => new Set(users.map((user) => user.id)), [users]);
-  const roots = useMemo(
-    () => users.filter((user) => user.parentUserId == null || !userIds.has(user.parentUserId)),
-    [users, userIds],
+  const visibleRoleOrder = useMemo<DirectoryRole[]>(
+    () =>
+      options?.currentUser.accessRole === "gestor"
+        ? directoryRoleOrder.filter((role) => role !== "adm")
+        : directoryRoleOrder,
+    [options?.currentUser.accessRole],
   );
-  const childrenByParent = useMemo(() => {
-    const map = new Map<number, User[]>();
-    for (const user of users) {
-      if (user.parentUserId == null) continue;
-      map.set(user.parentUserId, [...(map.get(user.parentUserId) || []), user]);
+
+  useEffect(() => {
+    if (!visibleRoleOrder.includes(selectedDirectoryRole)) {
+      setSelectedDirectoryRole("gestor");
     }
-    for (const list of map.values()) list.sort((a, b) => a.name.localeCompare(b.name));
-    return map;
-  }, [users]);
+  }, [visibleRoleOrder, selectedDirectoryRole]);
+
+  const directoryUsers = useMemo(
+    () =>
+      users
+        .filter((user) => user.accessRole === selectedDirectoryRole)
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    [users, selectedDirectoryRole],
+  );
+
+  const leadershipAccessUsers = useMemo(
+    () => users.filter((user) => user.accessRole === "lideranca"),
+    [users],
+  );
 
   const selectedRole = options?.roleOptions.find((role) => role.value === form.accessRole);
   const validParents = options?.parentOptions.filter((parent) => parent.forRole === form.accessRole) || [];
+
+  function roleTotal(role: DirectoryRole) {
+    if (role === "lideranca") return leadershipAccessUsers.length + leadershipTotal;
+    return users.filter((user) => user.accessRole === role).length;
+  }
+
+  function canManageDirectoryUser(user: User) {
+    if (!options?.canOpenAdministration) return false;
+    const actor = options.currentUser;
+    if (actor.accessRole === "adm") return actor.id !== user.id;
+    if (actor.accessRole === "gestor") {
+      return !["adm", "gestor"].includes(user.accessRole) && actor.id !== user.id;
+    }
+    return false;
+  }
 
   function selectRole(value: AccessRole) {
     const role = options?.roleOptions.find((item) => item.value === value);
@@ -236,185 +308,386 @@ export default function UserHierarchyPanel() {
     }
   }
 
-  function renderUser(user: User, depth = 0): React.ReactNode {
-    const children = childrenByParent.get(user.id) || [];
-    const canChangeStatus =
-      Boolean(options?.canOpenAdministration) &&
-      options?.currentUser.id !== user.id &&
-      user.accessRole !== "adm" &&
-      !(options?.currentUser.accessRole === "gestor" && user.accessRole === "gestor");
+  function startUserEdit(user: User) {
+    setEditTarget({ type: "user", user });
+    setEditName(user.name);
+    setEditPhone("");
+    setEditDistrict("");
+  }
+
+  function startContactEdit(contact: LeadershipContact) {
+    setEditTarget({ type: "contact", contact });
+    setEditName(contact.name);
+    setEditPhone(contact.phone);
+    setEditDistrict(contact.district);
+  }
+
+  async function saveEdit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editTarget || !editName.trim()) return;
+    setSaving(true);
+    setMessage("");
+    try {
+      if (editTarget.type === "user") {
+        const response = await apiFetch("/api/users", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: editTarget.user.id, action: "edit", name: editName.trim() }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Não foi possível editar o usuário.");
+        setMessage("Usuário atualizado com sucesso.");
+      } else {
+        const contact = editTarget.contact;
+        const payload = {
+          ...contact.payload,
+          name: editName.trim(),
+          phone: editPhone.trim(),
+          district: editDistrict.trim(),
+          kind: "Liderança",
+        };
+        const response = await apiFetch("/api/records", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: contact.id, payload }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Não foi possível editar a liderança.");
+        setMessage("Liderança atualizada com sucesso.");
+      }
+      setEditTarget(null);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível salvar a alteração.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeUser(user: User) {
+    if (!window.confirm(`Excluir o acesso de ${user.name}? O histórico será preservado.`)) return;
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await apiFetch("/api/users", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: user.id, action: "remove" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível excluir o acesso.");
+      setMessage("Acesso removido. O histórico foi preservado na auditoria.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível excluir o acesso.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeLeadershipContact(contact: LeadershipContact) {
+    if (!window.confirm(`Excluir a liderança ${contact.name} da base de contatos?`)) return;
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await apiFetch(`/api/records?id=${contact.id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível excluir a liderança.");
+      setMessage("Liderança excluída da base de contatos.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível excluir a liderança.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function renderDirectoryUser(user: User) {
+    const canManage = canManageDirectoryUser(user);
+    const canChangeStatus = canManage && user.accessRole !== "adm";
+
     return (
-      <div className="vf-hierarchy-branch" key={user.id} style={{ "--depth": depth } as React.CSSProperties}>
-        <article className={`vf-hierarchy-user role-${user.accessRole}`}>
-          <div className="vf-hierarchy-avatar">{initials(user.name)}</div>
-          <div className="vf-hierarchy-main">
-            <strong>{user.name}</strong>
-            <small>{user.email}</small>
-            <div className="vf-hierarchy-tags">
-              <span>{labels[user.accessRole]}</span>
-              <i className={user.status === "active" ? "active" : "blocked"}>
-                {user.status === "active" ? "Ativo" : "Bloqueado"}
-              </i>
-              {user.lastSeenAt && <em>Último acesso: {dateTime(user.lastSeenAt)}</em>}
-            </div>
+      <article className={`vf-hierarchy-user role-${user.accessRole}`} key={`user-${user.id}`}>
+        <div className="vf-hierarchy-avatar">{initials(user.name)}</div>
+        <div className="vf-hierarchy-main">
+          <strong>{user.name}</strong>
+          <small>{user.email}</small>
+          <div className="vf-hierarchy-tags">
+            <span>{labels[user.accessRole]}</span>
+            <i className={user.status === "active" ? "active" : "blocked"}>
+              {user.status === "active" ? "Ativo" : "Bloqueado"}
+            </i>
+            {user.lastSeenAt && <em>Último acesso: {dateTime(user.lastSeenAt)}</em>}
           </div>
-          {canChangeStatus && (
-            <button
-              className="vf-access-status-button"
-              type="button"
-              disabled={saving}
-              onClick={() => void setStatus(user)}
-            >
-              {user.status === "active" ? "Bloquear" : "Reativar"}
+        </div>
+        {canManage && (
+          <div className="vf-directory-actions">
+            <button type="button" className="vf-directory-edit" disabled={saving} onClick={() => startUserEdit(user)} aria-label={`Editar ${user.name}`} title="Editar">
+              ✏️ <span>Editar</span>
             </button>
-          )}
-        </article>
-        {children.map((child) => renderUser(child, depth + 1))}
-      </div>
+            <button type="button" className="vf-directory-delete" disabled={saving} onClick={() => void removeUser(user)} aria-label={`Excluir ${user.name}`} title="Excluir">
+              🗑️
+            </button>
+            {canChangeStatus && (
+              <button className="vf-access-status-button vf-directory-status" type="button" disabled={saving} onClick={() => void setStatus(user)}>
+                {user.status === "active" ? "Bloquear" : "Reativar"}
+              </button>
+            )}
+          </div>
+        )}
+      </article>
+    );
+  }
+
+  function renderLeadershipContact(contact: LeadershipContact) {
+    return (
+      <article className="vf-hierarchy-user role-lideranca vf-leadership-contact" key={`contact-${contact.id}`}>
+        <div className="vf-hierarchy-avatar">{initials(contact.name)}</div>
+        <div className="vf-hierarchy-main">
+          <strong>{contact.name}</strong>
+          <small>{phoneLabel(contact.phone)}{contact.district ? ` · ${contact.district}` : ""}</small>
+          <div className="vf-hierarchy-tags">
+            <span>Liderança</span>
+            <i className="active">Cadastrada</i>
+            {contact.ownerEmail && <em>Responsável: {contact.ownerEmail}</em>}
+          </div>
+        </div>
+        <div className="vf-directory-actions">
+          <button type="button" className="vf-directory-edit" disabled={saving} onClick={() => startContactEdit(contact)} aria-label={`Editar ${contact.name}`} title="Editar">
+            ✏️ <span>Editar</span>
+          </button>
+          <button type="button" className="vf-directory-delete" disabled={saving} onClick={() => void removeLeadershipContact(contact)} aria-label={`Excluir ${contact.name}`} title="Excluir">
+            🗑️
+          </button>
+        </div>
+      </article>
     );
   }
 
   if (!target) return null;
 
+  const isGestorView = options?.currentUser.accessRole === "gestor";
+  const selectedTotal = roleTotal(selectedDirectoryRole);
+
   return createPortal(
-    <section className="vf-hierarchy-panel">
-      <header>
-        <div>
-          <small>ADMINISTRAÇÃO DE ACESSOS</small>
-          <h3>Usuários, convites e hierarquia</h3>
-          <p>ADM → Gestor → Master → Liderança → Liderado → Eleitor.</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading}>
-          {loading ? "Atualizando..." : "Atualizar"}
-        </button>
-      </header>
-
-      {options?.sections?.length ? (
-        <nav className="vf-access-tabs" aria-label="Opções de Administração">
-          {options.sections.map((section) => (
-            <button
-              type="button"
-              key={section.key}
-              className={activeSection === section.key ? "active" : ""}
-              onClick={() => setActiveSection(section.key)}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
-      ) : null}
-
-      {message && <div className="vf-hierarchy-message" role="status">{message}</div>}
-
-      {activeSection === "users" && (
-        <>
-          <div className="vf-hierarchy-summary">
-            {roleOrder.map((role) => (
-              <article key={role} data-vf-gestor-summary={role === "gestor" ? "true" : undefined}>
-                <small>{labels[role].toUpperCase()}</small>
-                <b>{users.filter((user) => user.accessRole === role && user.status === "active").length}</b>
-              </article>
-            ))}
-          </div>
-          <div className="vf-hierarchy-help">
-            <b>Hierarquia protegida:</b> cada usuário visualiza somente o escopo permitido pelo seu nível. O ADM mantém a visão administrativa completa.
-          </div>
-          <div className="vf-hierarchy-tree">
-            {roots.length ? roots.map((user) => renderUser(user)) : !loading && <p>Nenhum usuário encontrado.</p>}
-          </div>
-        </>
-      )}
-
-      {activeSection === "create" && (
-        <article className="vf-access-create-card">
+    <>
+      <section className="vf-hierarchy-panel">
+        <header>
           <div>
-            <small>NOVO ACESSO</small>
-            <h4>Cadastrar acesso</h4>
-            <p>Escolha o nível correto. O vínculo com o superior imediato será validado também pelo banco de dados.</p>
+            <small>ADMINISTRAÇÃO DE ACESSOS</small>
+            <h3>Usuários, convites e hierarquia</h3>
+            <p>
+              {isGestorView
+                ? "Gestor → Master → Liderança → Liderado."
+                : "ADM → Gestor → Master → Liderança → Liderado."}
+            </p>
           </div>
-          {options?.canCreateAccess && options.roleOptions.length ? (
-            <form onSubmit={createAccess}>
-              <label>
-                Nome completo
-                <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-              </label>
-              <label>
-                E-mail de acesso
-                <input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-              </label>
-              <label>
-                Nível de acesso
-                <select required value={form.accessRole} onChange={(event) => selectRole(event.target.value as AccessRole)}>
-                  {options.roleOptions.map((role) => <option value={role.value} key={role.value}>{role.label}</option>)}
-                </select>
-              </label>
-              {selectedRole?.parentRequired ? (
+          <button type="button" onClick={() => void load()} disabled={loading}>
+            {loading ? "Atualizando..." : "Atualizar"}
+          </button>
+        </header>
+
+        {options?.sections?.length ? (
+          <nav className="vf-access-tabs" aria-label="Opções de Administração">
+            {options.sections.map((section) => (
+              <button
+                type="button"
+                key={section.key}
+                className={activeSection === section.key ? "active" : ""}
+                onClick={() => setActiveSection(section.key)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
+        ) : null}
+
+        {message && <div className="vf-hierarchy-message" role="status">{message}</div>}
+
+        {activeSection === "users" && (
+          <>
+            <div className="vf-hierarchy-summary" role="tablist" aria-label="Níveis de acesso">
+              {visibleRoleOrder.map((role) => {
+                const total = roleTotal(role);
+                const active = selectedDirectoryRole === role;
+                return (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`vf-hierarchy-role-tab${active ? " active" : ""}`}
+                    key={role}
+                    onClick={() => setSelectedDirectoryRole(role)}
+                  >
+                    <small>{labels[role].toUpperCase()}</small>
+                    <b>{total}</b>
+                    <span>{role === "lideranca" ? (total === 1 ? "cadastro" : "cadastros") : (total === 1 ? "usuário" : "usuários")}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="vf-role-directory">
+              <header className="vf-role-directory-header">
+                <div>
+                  <small>NÍVEL SELECIONADO</small>
+                  <h4>{labels[selectedDirectoryRole]}</h4>
+                </div>
+                <span>{selectedTotal}</span>
+              </header>
+
+              <div className="vf-hierarchy-help">
+                {selectedDirectoryRole === "lideranca" ? (
+                  <><b>Lideranças:</b> reúne as contas com acesso de Liderança e as pessoas cadastradas como Liderança na base de Contatos.</>
+                ) : (
+                  <><b>{labels[selectedDirectoryRole]}:</b> toque nos cards acima para alternar entre os níveis e visualizar quem está em cada grupo.</>
+                )}
+              </div>
+
+              <div className="vf-role-directory-list">
+                {selectedDirectoryRole === "lideranca" ? (
+                  <>
+                    {leadershipAccessUsers.map((user) => renderDirectoryUser(user))}
+                    {leadershipContacts.map((contact) => renderLeadershipContact(contact))}
+                    {!selectedTotal && !loading && <p>Nenhuma liderança encontrada.</p>}
+                  </>
+                ) : directoryUsers.length ? (
+                  directoryUsers.map((user) => renderDirectoryUser(user))
+                ) : !loading ? (
+                  <p>Nenhum usuário encontrado neste nível.</p>
+                ) : null}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeSection === "create" && (
+          <article className="vf-access-create-card">
+            <div>
+              <small>NOVO ACESSO</small>
+              <h4>Cadastrar acesso</h4>
+              <p>Escolha o nível correto. O vínculo com o superior imediato será validado também pelo banco de dados.</p>
+            </div>
+            {options?.canCreateAccess && options.roleOptions.length ? (
+              <form onSubmit={createAccess}>
                 <label>
-                  Superior imediato
-                  <select required value={form.parentUserId} onChange={(event) => setForm({ ...form, parentUserId: Number(event.target.value) || "" })}>
-                    <option value="">Selecione</option>
-                    {validParents.map((parent) => (
-                      <option value={parent.id} key={parent.id}>{parent.name} — {labels[parent.accessRole]}</option>
-                    ))}
+                  Nome completo
+                  <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+                </label>
+                <label>
+                  E-mail de acesso
+                  <input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+                </label>
+                <label>
+                  Nível de acesso
+                  <select required value={form.accessRole} onChange={(event) => selectRole(event.target.value as AccessRole)}>
+                    {options.roleOptions.map((role) => <option value={role.value} key={role.value}>{role.label}</option>)}
                   </select>
                 </label>
-              ) : (
-                <div className="vf-access-parent-note">
-                  <span>Superior imediato</span>
-                  <b>{validParents[0]?.name || options.currentUser.name} — {labels[validParents[0]?.accessRole || options.currentUser.accessRole]}</b>
-                </div>
-              )}
-              <button type="submit" disabled={saving || (selectedRole?.parentRequired && !validParents.length)}>
-                {saving ? "Salvando..." : "Criar convite de acesso"}
-              </button>
-              {selectedRole?.parentRequired && !validParents.length && (
-                <p className="vf-access-warning">Cadastre primeiro o nível superior necessário para poder criar este acesso.</p>
-              )}
-            </form>
-          ) : (
-            <p>Seu perfil não possui permissão para cadastrar novos acessos.</p>
-          )}
-          <div className="vf-access-onboarding-note">
-            Depois do convite, a pessoa usa <b>exatamente o e-mail informado</b> em “Criar conta”, confirma o e-mail e o vínculo hierárquico é ativado automaticamente.
-          </div>
-        </article>
-      )}
-
-      {activeSection === "invitations" && (
-        <article className="vf-access-list-card">
-          <header><div><small>CONVITES</small><h4>Acessos preparados</h4></div><span>{invitations.length}</span></header>
-          {invitations.length ? (
-            <div className="vf-access-invitations">
-              {invitations.map((invitation) => (
-                <div key={invitation.id}>
-                  <div><strong>{invitation.name}</strong><small>{invitation.email}</small></div>
-                  <span>{labels[invitation.accessRole]}</span>
-                  <i className={`status-${invitation.status}`}>{invitation.status === "pending" ? "Pendente" : invitation.status === "claimed" ? "Ativado" : invitation.status === "expired" ? "Expirado" : "Revogado"}</i>
-                  <time>{invitation.status === "pending" ? `Expira: ${dateTime(invitation.expiresAt)}` : dateTime(invitation.createdAt)}</time>
-                </div>
-              ))}
+                {selectedRole?.parentRequired ? (
+                  <label>
+                    Superior imediato
+                    <select required value={form.parentUserId} onChange={(event) => setForm({ ...form, parentUserId: Number(event.target.value) || "" })}>
+                      <option value="">Selecione</option>
+                      {validParents.map((parent) => (
+                        <option value={parent.id} key={parent.id}>{parent.name} — {labels[parent.accessRole]}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <div className="vf-access-parent-note">
+                    <span>Superior imediato</span>
+                    <b>{validParents[0]?.name || options.currentUser.name} — {labels[validParents[0]?.accessRole || options.currentUser.accessRole]}</b>
+                  </div>
+                )}
+                <button type="submit" disabled={saving || (selectedRole?.parentRequired && !validParents.length)}>
+                  {saving ? "Salvando..." : "Criar convite de acesso"}
+                </button>
+                {selectedRole?.parentRequired && !validParents.length && (
+                  <p className="vf-access-warning">Cadastre primeiro o nível superior necessário para poder criar este acesso.</p>
+                )}
+              </form>
+            ) : (
+              <p>Seu perfil não possui permissão para cadastrar novos acessos.</p>
+            )}
+            <div className="vf-access-onboarding-note">
+              Depois do convite, a pessoa usa <b>exatamente o e-mail informado</b> em “Criar conta”, confirma o e-mail e o vínculo hierárquico é ativado automaticamente.
             </div>
-          ) : <p>Nenhum convite cadastrado.</p>}
-        </article>
-      )}
+          </article>
+        )}
 
-      {activeSection === "audit" && (
-        <article className="vf-access-list-card">
-          <header><div><small>AUDITORIA</small><h4>Atividades recentes</h4></div><span>{logs.length}</span></header>
-          {logs.length ? (
-            <div className="vf-access-audit-list">
-              {logs.slice(0, 30).map((log) => (
-                <div key={log.id}>
-                  <strong>{log.action}</strong>
-                  <small>{log.actorEmail} · {log.detail}</small>
-                  <time>{dateTime(log.createdAt)}</time>
-                </div>
-              ))}
-            </div>
-          ) : <p>Nenhuma atividade disponível.</p>}
-        </article>
+        {activeSection === "invitations" && (
+          <article className="vf-access-list-card">
+            <header><div><small>CONVITES</small><h4>Acessos preparados</h4></div><span>{invitations.length}</span></header>
+            {invitations.length ? (
+              <div className="vf-access-invitations">
+                {invitations.map((invitation) => (
+                  <div key={invitation.id}>
+                    <div><strong>{invitation.name}</strong><small>{invitation.email}</small></div>
+                    <span>{labels[invitation.accessRole]}</span>
+                    <i className={`status-${invitation.status}`}>{invitation.status === "pending" ? "Pendente" : invitation.status === "claimed" ? "Ativado" : invitation.status === "expired" ? "Expirado" : "Revogado"}</i>
+                    <time>{invitation.status === "pending" ? `Expira: ${dateTime(invitation.expiresAt)}` : dateTime(invitation.createdAt)}</time>
+                  </div>
+                ))}
+              </div>
+            ) : <p>Nenhum convite cadastrado.</p>}
+          </article>
+        )}
+
+        {activeSection === "audit" && (
+          <article className="vf-access-list-card">
+            <header><div><small>AUDITORIA</small><h4>Atividades recentes</h4></div><span>{logs.length}</span></header>
+            {logs.length ? (
+              <div className="vf-access-audit-list">
+                {logs.slice(0, 30).map((log) => (
+                  <div key={log.id}>
+                    <strong>{log.action}</strong>
+                    <small>{log.actorEmail} · {log.detail}</small>
+                    <time>{dateTime(log.createdAt)}</time>
+                  </div>
+                ))}
+              </div>
+            ) : <p>Nenhuma atividade disponível.</p>}
+          </article>
+        )}
+      </section>
+
+      {editTarget && createPortal(
+        <div className="vf-admin-edit-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditTarget(null); }}>
+          <form className="vf-admin-edit-modal" onSubmit={saveEdit}>
+            <header>
+              <div>
+                <small>EDITAR</small>
+                <h3>{editTarget.type === "user" ? "Usuário" : "Liderança"}</h3>
+              </div>
+              <button type="button" onClick={() => setEditTarget(null)} disabled={saving}>×</button>
+            </header>
+            <label>
+              Nome
+              <input required value={editName} onChange={(event) => setEditName(event.target.value)} autoFocus />
+            </label>
+            {editTarget.type === "contact" && (
+              <>
+                <label>
+                  Telefone / WhatsApp
+                  <input value={editPhone} onChange={(event) => setEditPhone(event.target.value)} />
+                </label>
+                <label>
+                  Bairro
+                  <input value={editDistrict} onChange={(event) => setEditDistrict(event.target.value)} />
+                </label>
+              </>
+            )}
+            {editTarget.type === "user" && <p>O e-mail e o nível de acesso permanecem protegidos nesta edição.</p>}
+            <footer>
+              <button type="button" onClick={() => setEditTarget(null)} disabled={saving}>Cancelar</button>
+              <button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</button>
+            </footer>
+          </form>
+        </div>,
+        document.body,
       )}
-    </section>,
+    </>,
     target,
   );
 }

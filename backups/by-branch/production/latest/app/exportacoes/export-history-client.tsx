@@ -66,7 +66,7 @@ export default function ExportHistoryClient() {
         version: "1.0",
         generatedAt: new Date().toISOString(),
         totalContacts: contacts.length,
-        contacts: contacts,
+        contacts,
         exportsHistory: items,
       };
 
@@ -84,7 +84,9 @@ export default function ExportHistoryClient() {
       anchor.remove();
       URL.revokeObjectURL(url);
 
-      setBackupMessage(`✅ Backup realizado com sucesso! (${contacts.length} contatos salvos no arquivo baixado)`);
+      setBackupMessage(
+        `✅ Backup realizado com sucesso! (${contacts.length} contatos salvos no arquivo baixado)`,
+      );
       setTimeout(() => setBackupMessage(""), 6000);
     } catch {
       setBackupMessage("❌ Erro ao gerar o arquivo de backup.");
@@ -100,21 +102,14 @@ export default function ExportHistoryClient() {
   return (
     <main className="vf-export-page">
       <header className="vf-export-page-head">
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <img
-            src="/voto-forte-bandeira-icon.jpg"
-            alt="VOTO FORTE PARANÁ"
-            style={{ width: "54px", height: "42px", objectFit: "cover", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", flexShrink: 0 }}
-          />
-          <div>
-            <small>CONTROLE DE EXPORTAÇÕES</small>
-            <h1>Histórico de exportações</h1>
-            <p>
-              Abra um lote para consultar exatamente quais contatos participaram da
-              exportação e executar ações individuais com segurança.
-            </p>
-          </div>
+        <div>
+          <small>CONTROLE DE EXPORTAÇÕES</small>
+          <p>
+            Consulte os lotes exportados, veja quais contatos participaram e mantenha
+            uma cópia segura dos seus dados.
+          </p>
         </div>
+
         <div className="vf-export-page-actions">
           <button
             type="button"
@@ -124,15 +119,6 @@ export default function ExportHistoryClient() {
             title="Realizar backup dos seus dados e baixar arquivo"
           >
             {backingUp ? "⏳ Gerando backup…" : "💾 Realizar backup"}
-          </button>
-          <button
-            type="button"
-            className="vf-back-dashboard-btn"
-            onClick={() => router.push("/sistema-completo")}
-            title="Voltar ao Dashboard Principal"
-          >
-            <span className="vf-back-arrow" aria-hidden="true">←</span>
-            <span>Voltar ao Sistema</span>
           </button>
           <button type="button" onClick={() => void load()} disabled={loading}>
             {loading ? "Atualizando…" : "Atualizar"}

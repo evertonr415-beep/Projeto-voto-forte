@@ -18,8 +18,15 @@
 *.pem
 *.zip
 
-# Local env files
-.env*.local
+# Environment files - never commit secrets
+.env
+.env.*
+!.env.example
+
+# Sensitive contact exports/seeds - never serve or commit
+/public/contatos-parana-higienizado.csv
+/public/seed-contacts.json
+/public/contatos-*.csv
 
 # Vercel
 .vercel

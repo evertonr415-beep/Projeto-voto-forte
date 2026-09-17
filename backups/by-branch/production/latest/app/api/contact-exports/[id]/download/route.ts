@@ -44,8 +44,15 @@ function rowsFromItems(items: ExportItemRow[]) {
   });
 }
 
+function neutralizeSpreadsheetFormula(value: string) {
+  // CSV é aberto com frequência em Excel/LibreOffice. Campos controlados por
+  // dados do contato não podem ser interpretados como fórmulas executáveis.
+  return /^(?:\s*[=+\-@]|[\t\r\n])/.test(value) ? `'${value}` : value;
+}
+
 function csvCell(value: string) {
-  return `"${value.replace(/"/g, '""')}"`;
+  const safeValue = neutralizeSpreadsheetFormula(value);
+  return `"${safeValue.replace(/"/g, '""')}"`;
 }
 
 export async function GET(

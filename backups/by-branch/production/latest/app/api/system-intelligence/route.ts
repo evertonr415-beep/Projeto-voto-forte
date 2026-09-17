@@ -10,10 +10,14 @@ type UserSignalRow = {
   last_seen_at: string | null;
 };
 
-type BackupSignalRow = {
+type BackupCatalogRow = {
+  id: number;
   created_at: string;
   created_by: string | null;
   item_count: number | null;
+  checksum: string | null;
+  backup_version: number | null;
+  format: string | null;
 };
 
 type ContactMetricRow = {
@@ -49,6 +53,10 @@ function backupAgeHours(createdAt: string | null) {
   return Math.max(0, (Date.now() - new Date(createdAt).getTime()) / 3_600_000);
 }
 
+function isRecoverableSnapshotFormat(format: string | null) {
+  return format === "voto-forte-backup" || format === "voto-forte-master-full-backup";
+}
+
 export async function GET() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -66,7 +74,7 @@ export async function GET() {
       contactMetricsResult,
       userMetricsResult,
       usersResult,
-      backupResult,
+      backupCatalogResult,
       auditMetricsResult,
     ] = await Promise.all([
       account.supabase.rpc("vf_intelligence_contact_metrics"),
@@ -76,10 +84,9 @@ export async function GET() {
         .select("id,role,status,last_seen_at"),
       account.supabase
         .from("vf_backup_snapshots")
-        .select("created_at,created_by,item_count")
+        .select("id,created_at,created_by,item_count,checksum,backup_version,format:data->>format")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .limit(100),
       account.supabase.rpc("vf_system_audit_metrics", {
         p_since: thirtyDaysAgo,
       }),
@@ -89,7 +96,7 @@ export async function GET() {
       contactMetricsResult,
       userMetricsResult,
       usersResult,
-      backupResult,
+      backupCatalogResult,
       auditMetricsResult,
     ]) {
       if (result.error) throw new Error(result.error.message);
@@ -141,34 +148,23 @@ export async function GET() {
       })
       .filter((item) => item.count > 0);
 
-    let backup = (backupResult.data ?? null) as BackupSignalRow | null;
+    const backupSnapshots = ((backupCatalogResult.data ?? []) as BackupCatalogRow[]).map((row) => {
+      const format = row.format ?? null;
+      const recoverable = isRecoverableSnapshotFormat(format);
+      return {
+        id: Number(row.id),
+        createdAt: row.created_at,
+        createdBy: row.created_by,
+        itemCount: Number(row.item_count ?? 0),
+        checksum: row.checksum,
+        backupVersion: row.backup_version,
+        format,
+        recoverable,
+        status: recoverable ? "recoverable" : "metadata_only",
+      };
+    });
 
-    // Se o backup não existir ou tiver mais de 24h, a inteligência neural atualiza e registra o snapshot automaticamente
-    if (!backup || (backupAgeHours(backup.created_at) ?? 999) > 24) {
-      const nowIso = new Date().toISOString();
-      const autoChecksum = `SHA256-${nowIso.slice(0, 10)}-NEURAL-AUTO`;
-      try {
-        await account.supabase.from("vf_backup_snapshots").insert({
-          created_at: nowIso,
-          created_by: "Rotina Automática VOTO FORTE Neural (02:30 AM)",
-          backup_version: 2,
-          checksum: autoChecksum,
-          item_count: totalContacts || 57683,
-          data: {
-            format: "voto-forte-automated-daily-backup",
-            executedAt: nowIso,
-            totalContacts: totalContacts || 57683,
-          },
-        });
-        backup = {
-          created_at: nowIso,
-          created_by: "Rotina Automática VOTO FORTE Neural (02:30 AM)",
-          item_count: totalContacts || 57683,
-        };
-      } catch (err) {
-        console.warn("Auto-backup insert fallback:", err);
-      }
-    }
+    const latestRecoverableBackup = backupSnapshots.find((snapshot) => snapshot.recoverable) ?? null;
 
     const signals: SystemSignals = {
       generatedAt: new Date().toISOString(),
@@ -191,11 +187,13 @@ export async function GET() {
         invalid: Number(auditMetric?.invalid ?? 0),
       },
       backup: {
-        exists: Boolean(backup),
-        createdAt: backup?.created_at ?? new Date().toISOString(),
-        createdBy: backup?.created_by ?? "Rotina Automática VOTO FORTE Neural (02:30 AM)",
-        itemCount: Number(backup?.item_count ?? totalContacts ?? 57683),
-        ageHours: backup?.created_at ? backupAgeHours(backup.created_at) : 0,
+        exists: Boolean(latestRecoverableBackup),
+        createdAt: latestRecoverableBackup?.createdAt ?? null,
+        createdBy: latestRecoverableBackup?.createdBy ?? null,
+        itemCount: Number(latestRecoverableBackup?.itemCount ?? 0),
+        ageHours: latestRecoverableBackup?.createdAt
+          ? backupAgeHours(latestRecoverableBackup.createdAt)
+          : null,
       },
       navigation,
     };
@@ -204,6 +202,21 @@ export async function GET() {
       {
         generatedAt: signals.generatedAt,
         signals,
+        backupSnapshots,
+        backupPolicy: {
+          snapshotHealthSource: "latest_recoverable_snapshot",
+          acceptedRecoverableFormats: [
+            "voto-forte-backup",
+            "voto-forte-master-full-backup",
+          ],
+          databaseBackupSchedule: {
+            configuredCronUtc: "30 6 * * *",
+            configuredLocalTime: "03:30",
+            timeZone: "America/Sao_Paulo",
+            mechanism: "GitHub Actions + pg_dump PostgreSQL 17",
+            executionStatusSource: "GitHub Actions workflow result",
+          },
+        },
         ...analyzeSystemSignals(signals),
       },
       {
