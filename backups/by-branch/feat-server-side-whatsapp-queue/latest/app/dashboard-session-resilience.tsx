@@ -415,6 +415,7 @@ export default function DashboardSessionResilience() {
 
   useEffect(() => {
     const handleStartOrCancel = (event: Event) => {
+      if (document.documentElement.dataset.vfServerQueue === "true") return;
       const target = event.target;
       if (!(target instanceof Element)) return;
 
