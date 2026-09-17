@@ -473,27 +473,34 @@ export default function VotingChartsClient({
               : "Avaliação da Gestão Municipal";
 
   const exportCsv = () => {
-    const totalBase = orderedList.reduce((sum, item) => sum + item.votes, 0);
-    const titleHeader =  +
-       +
-       +
-      ;
+    const formatSection = (title: string, list: CandidateItem[]) => {
+      if (!list || list.length === 0) return "";
+      const items = list
+        .map((item, index) => {
+          const party = item.party || candidatePartyMap[item.candidate] || "-";
+          const position = isSpecialCandidate(item.candidate) ? "-" : ;
+          const formattedVotes = item.votes.toLocaleString("pt-BR");
+          const formattedPct = ;
+          return ;
+        })
+        .join("
+");
+      return items;
+    };
 
-    const headers = "Posição;Candidato;Partido;Votos Totais;Percentual (%)
+    const header = "﻿" + "Cargo;Posição;Candidato;Partido;Votos Totais;Percentual (%)
 ";
-    const rows = orderedList
-      .map((item, index) => {
-        const party = item.party || candidatePartyMap[item.candidate] || "-";
-        const position = isSpecialCandidate(item.candidate) ? "-" : ;
-        const formattedVotes = item.votes.toLocaleString("pt-BR");
-        const formattedPct = ;
-        return ;
-      })
-      .join("
+    const sections = [
+      formatSection("Deputado Estadual", stateRanking),
+      formatSection("Deputado Federal", federalRanking),
+      formatSection("Governador", governorRanking),
+      formatSection("Senador", senatorRanking),
+      formatSection("Presidente", presidentRanking),
+    ].filter(Boolean).join("
+
 ");
 
-    // Adiciona ﻿ (BOM UTF-8) para abertura nativa em colunas perfeitas no Microsoft Excel
-    const csvContent = "﻿" + titleHeader + headers + rows;
+    const csvContent = header + sections;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
