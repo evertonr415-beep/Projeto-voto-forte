@@ -21,6 +21,7 @@ import GestorAccessGate from "./gestor-access-gate";
 import CompactOverviewScopeEnhancer from "./compact-overview-scope-enhancer";
 import NetworkScopeLabelNormalizer from "./network-scope-label-normalizer";
 import RuntimeVersionGuard from "./runtime-version-guard";
+import DashboardSessionResilience from "./dashboard-session-resilience";
 import AuthReconciliationEnhancer from "./auth-reconciliation-enhancer";
 import TeamPerformanceAdminEnhancer from "./team-performance-admin-enhancer";
 import AdministrationActivityEnhancer from "./administration-activity-enhancer";
@@ -116,6 +117,7 @@ export default function DashboardRuntimeEnhancers() {
           <GestorAdministrationIdentityNormalizer />
           <AdministrationKpiRoleSync />
           <RuntimeVersionGuard />
+          <DashboardSessionResilience />
           <WhaticketBroadcastDrawer />
           <BroadcastNeighborhoodOptionsEnhancer />
           <TseSidebarEnhancer />
