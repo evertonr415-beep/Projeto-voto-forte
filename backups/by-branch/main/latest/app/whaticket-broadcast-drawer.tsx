@@ -67,13 +67,17 @@ const STORAGE_TEMPLATE_KEY = "voto-forte:meta:templateName";
 const STORAGE_LANGUAGE_KEY = "voto-forte:meta:templateLanguage";
 
 function normalizeWhatsappPhone(raw: string): string {
-  const digits = String(raw || "").replace(/\D/g, "");
+  let digits = String(raw || "").replace(/\D/g, "");
   if (!digits) return "";
+  digits = digits.replace(/^0+/, "");
   if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
     return digits;
   }
   if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
+  }
+  if (digits.length === 8 || digits.length === 9) {
+    return `5543${digits}`;
   }
   return digits.length >= 10 ? digits : "";
 }
@@ -254,7 +258,7 @@ export default function WhaticketBroadcastDrawer() {
   // Carrega sumário de bairros completo
   const loadDistrictsSummary = useCallback(async () => {
     try {
-      const response = await apiFetch("/api/contacts?mode=summary", { cache: "no-store" });
+      const response = await apiFetch("/api/contacts?mode=summary&owner=all", { cache: "no-store" });
       const data = await response.json();
       if (response.ok && data) {
         if (Array.isArray(data.districts)) {
@@ -286,9 +290,10 @@ export default function WhaticketBroadcastDrawer() {
       const params = new URLSearchParams({
         page: "1",
         pageSize: String(Math.min(200, maxToFetch)),
+        owner: "all",
       });
 
-      if (district && district !== "Todos") {
+      if (district && district !== "Todos" && district !== "Todos os Bairros") {
         params.set("district", district);
       }
       if (kind && kind !== "Todos") {
@@ -301,10 +306,10 @@ export default function WhaticketBroadcastDrawer() {
       if (response.ok && Array.isArray(data.contacts)) {
         const loaded: ContactItem[] = data.contacts.map((c: any) => ({
           id: c.id,
-          name: c.name || "Contato",
-          phone: c.phone || "",
-          district: c.district || district || "Arapongas",
-          leader: c.leader || "",
+          name: c.name || c.nome || "Contato",
+          phone: c.phone || c.phoneNormalized || c.telefone || c.celular || "",
+          district: c.district || c.bairro || (district && district !== "Todos" && district !== "Todos os Bairros" ? district : "Arapongas"),
+          leader: c.leader || c.lideranca || "",
           kind: c.kind || "Eleitor",
         }));
 
@@ -320,10 +325,10 @@ export default function WhaticketBroadcastDrawer() {
                 loaded.push(
                   ...nextData.contacts.map((c: any) => ({
                     id: c.id,
-                    name: c.name || "Contato",
-                    phone: c.phone || "",
-                    district: c.district || district || "Arapongas",
-                    leader: c.leader || "",
+                    name: c.name || c.nome || "Contato",
+                    phone: c.phone || c.phoneNormalized || c.telefone || c.celular || "",
+                    district: c.district || c.bairro || (district && district !== "Todos" && district !== "Todos os Bairros" ? district : "Arapongas"),
+                    leader: c.leader || c.lideranca || "",
                     kind: c.kind || "Eleitor",
                   })),
                 );
