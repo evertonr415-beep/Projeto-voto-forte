@@ -15,9 +15,21 @@ const INTEGRATION_CSS = `
   .topbar{padding-right:10px!important}
   .brand-info h1{font-size:clamp(12px,1.35vw,18px)!important}
   .brand-info p{font-size:clamp(9px,.85vw,12px)!important}
+
   @media(max-width:900px){
+    html,body,#app-root{width:100%!important;max-width:none!important;height:100%!important;min-height:100%!important;margin:0!important;border-radius:0!important}
+    .topbar{height:auto!important;min-height:50px!important;padding:5px 6px!important;border-radius:0!important;gap:0!important}
+    .brand-section{display:none!important}
     .topbar-user-section{display:none!important}
+    .topbar-nav-section{width:100%!important;max-width:none!important;display:block!important;overflow-x:auto!important;overflow-y:hidden!important;padding:0!important;margin:0!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important}
+    .topbar-nav-section::-webkit-scrollbar{display:none!important}
+    .view-tabs{display:flex!important;width:max-content!important;min-width:100%!important;gap:4px!important;padding:2px 4px!important;margin:0!important;background:#111b2d!important;border:0!important;border-radius:0!important}
+    .tab-btn{flex:0 0 auto!important;min-height:42px!important;padding:8px 12px!important;border-radius:8px!important;font-size:13px!important;white-space:nowrap!important}
+    .tab-btn svg{width:15px!important;height:15px!important}
+    .layers-box-compact,.select-filter,.btn-topbar{display:none!important}
     #modal-auth-flow,#modal-force-change-password,#modal-switch-user,#modal-change-password{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+    .workspace-main{height:calc(100% - 50px)!important;min-height:0!important;margin:0!important;padding:0!important;border-radius:0!important}
+    #view-map-container,#map{height:100%!important;min-height:0!important;border-radius:0!important}
   }
 </style>`;
 
@@ -55,100 +67,75 @@ html,body{margin:0;width:100%;height:100%;background:#080d17;color:#dbeafe;font-
 </html>`;
 }
 
-export default function ElectoralPanelClient({
-  onBackToDashboard,
-}: {
-  onBackToDashboard?: () => void;
-} = {}) {
+export default function ElectoralPanelClient() {
   const [loading, setLoading] = useState(true);
   const srcDoc = useMemo(() => buildIntegratedMapHtml(), []);
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "calc(100dvh - 88px)",
-        height: "calc(100dvh - 88px)",
-        background: "#080d17",
-        borderRadius: 16,
-        overflow: "hidden",
-        border: "1px solid rgba(56,189,248,.18)",
-        boxShadow: "0 14px 42px rgba(0,0,0,.28)",
-        position: "relative",
-      }}
-    >
-      <div
-        style={{
-          minHeight: 48,
-          padding: "8px 12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          background: "#071524",
-          borderBottom: "1px solid rgba(56,189,248,.16)",
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <div style={{ color: "#38bdf8", fontSize: 10, fontWeight: 900, letterSpacing: ".08em" }}>
-            PAINEL ELEITORAL · ARAPONGAS / PR
-          </div>
-          <div style={{ color: "#e5edf8", fontSize: 13, fontWeight: 800, marginTop: 2 }}>
-            Mapa Eleitoral integrado ao Voto Forte Paraná
-          </div>
-        </div>
-        {onBackToDashboard && (
-          <button
-            type="button"
-            onClick={onBackToDashboard}
+    <>
+      <style>{`
+        .vf-electoral-integrated-host {
+          width: 100%;
+          height: calc(100dvh - 96px);
+          min-height: 620px;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          position: relative;
+          background: #080d17;
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .vf-electoral-integrated-frame {
+          display: block;
+          width: 100%;
+          height: 100%;
+          border: 0;
+          margin: 0;
+          padding: 0;
+          background: #080d17;
+        }
+        @media (max-width: 900px) {
+          .vf-electoral-integrated-host {
+            width: 100vw;
+            max-width: 100vw;
+            height: calc(100dvh - 72px);
+            min-height: 0;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+            margin-top: -1px;
+          }
+        }
+      `}</style>
+
+      <div className="vf-electoral-integrated-host">
+        {loading && (
+          <div
             style={{
-              border: "1px solid rgba(125,211,252,.28)",
-              background: "rgba(8,47,73,.55)",
-              color: "#bae6fd",
-              borderRadius: 9,
-              padding: "7px 10px",
-              fontSize: 11,
-              fontWeight: 800,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
+              position: "absolute",
+              inset: 0,
+              zIndex: 4,
+              display: "grid",
+              placeItems: "center",
+              background: "#080d17",
+              color: "#94a3b8",
+              fontSize: 13,
             }}
           >
-            ← Voltar
-          </button>
+            Carregando Mapa Eleitoral de Arapongas…
+          </div>
         )}
+
+        <iframe
+          className="vf-electoral-integrated-frame"
+          title="Mapa Eleitoral de Arapongas integrado"
+          srcDoc={srcDoc}
+          onLoad={() => setLoading(false)}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
       </div>
-
-      {loading && (
-        <div
-          style={{
-            position: "absolute",
-            inset: "49px 0 0",
-            zIndex: 4,
-            display: "grid",
-            placeItems: "center",
-            background: "#080d17",
-            color: "#94a3b8",
-            fontSize: 13,
-          }}
-        >
-          Carregando projeto VotoForte Arapongas…
-        </div>
-      )}
-
-      <iframe
-        title="Mapa Eleitoral de Arapongas integrado"
-        srcDoc={srcDoc}
-        onLoad={() => setLoading(false)}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"
-        referrerPolicy="strict-origin-when-cross-origin"
-        style={{
-          width: "100%",
-          height: "calc(100% - 49px)",
-          display: "block",
-          border: 0,
-          background: "#080d17",
-        }}
-      />
-    </div>
+    </>
   );
 }
