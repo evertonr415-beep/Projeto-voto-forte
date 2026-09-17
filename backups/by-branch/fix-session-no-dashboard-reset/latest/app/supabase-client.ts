@@ -87,14 +87,39 @@ function getBrowserAuth() {
   browserAuthProxy = new Proxy(auth, {
     get(target, property) {
       if (property === "onAuthStateChange") {
-        return (callback: Parameters<typeof auth.onAuthStateChange>[0]) =>
-          auth.onAuthStateChange((event, session) => {
-            // A renovação automática troca apenas o token. Não desmontamos a
-            // interface inteira nesse evento, evitando revalidações em cascata
-            // que pesam principalmente em navegadores móveis.
+        return (callback: Parameters<typeof auth.onAuthStateChange>[0]) => {
+          let lastForwardedUserId: string | null | undefined = undefined;
+
+          return auth.onAuthStateChange((event, session) => {
+            const nextUserId = session?.user?.id || null;
+
+            // Renovação automática troca apenas o token. A sessão nova já fica
+            // disponível em auth.getSession(), usada pelo apiFetch, então não
+            // há motivo para desmontar a interface inteira nesse evento.
             if (event === "TOKEN_REFRESHED") return;
+
+            // O Supabase pode emitir SIGNED_IN novamente para a mesma sessão
+            // (por exemplo ao reestabelecer/reconfirmar a sessão ou ao voltar
+            // para uma aba). O AuthClient tratava isso como login novo, zerava
+            // account/accessStatus e desmontava o Dashboard, fazendo o usuário
+            // voltar para a Visão Geral e interrompendo operações em andamento.
+            if (
+              event === "SIGNED_IN" &&
+              lastForwardedUserId !== undefined &&
+              nextUserId === lastForwardedUserId
+            ) {
+              return;
+            }
+
+            if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+              lastForwardedUserId = nextUserId;
+            } else if (event === "SIGNED_OUT") {
+              lastForwardedUserId = null;
+            }
+
             callback(event, session);
           });
+        };
       }
 
       if (property === "signOut") {
