@@ -143,6 +143,18 @@ export async function POST(request: Request) {
 
     if (createError) throw createError;
 
+    const previewMode = process.env.VERCEL_ENV === "preview";
+    if (previewMode) {
+      const { error: pauseError } = await admin.rpc(
+        "vf_whatsapp_queue_campaign_action",
+        {
+          p_campaign_id: campaignId,
+          p_action: "pause",
+        },
+      );
+      if (pauseError) throw pauseError;
+    }
+
     const { data: campaign, error: readError } = await admin
       .from("vf_whatsapp_campaigns")
       .select("*")
@@ -162,8 +174,9 @@ export async function POST(request: Request) {
       {
         success: true,
         campaign,
-        message:
-          "Campanha entregue ao servidor. O envio continuará mesmo que o navegador ou o computador sejam fechados.",
+        message: previewMode
+          ? "Preview seguro: campanha criada e mantida pausada. Nenhuma mensagem será enviada nesta versão de teste."
+          : "Campanha entregue ao servidor. O envio continuará mesmo que o navegador ou o computador sejam fechados.",
       },
       { status: 201 },
     );

@@ -81,6 +81,16 @@ export async function PATCH(
       return Response.json({ error: "Ação inválida." }, { status: 400 });
     }
 
+    if (process.env.VERCEL_ENV === "preview" && action === "resume") {
+      return Response.json(
+        {
+          error:
+            "Preview seguro: a retomada real está bloqueada nesta versão para impedir envios acidentais.",
+        },
+        { status: 409 },
+      );
+    }
+
     const { data: changed, error } = await admin.rpc(
       "vf_whatsapp_queue_campaign_action",
       {
