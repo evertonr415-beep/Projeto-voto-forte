@@ -473,38 +473,19 @@ export default function VotingChartsClient({
               : "Avaliação da Gestão Municipal";
 
   const exportCsv = () => {
-    const formatSection = (title: string, list: CandidateItem[]) => {
-      if (!list || list.length === 0) return "";
-      const items = list
-        .map((item, index) => {
-          const party = item.party || candidatePartyMap[item.candidate] || "-";
-          const position = isSpecialCandidate(item.candidate) ? "-" : ;
-          const formattedVotes = item.votes.toLocaleString("pt-BR");
-          const formattedPct = ;
-          return ;
-        })
-        .join("
-");
-      return items;
-    };
+    const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
+    const rows = orderedList
+      .map((item, index) => {
+        const party = item.party || candidatePartyMap[item.candidate] || "-";
+        const position = isSpecialCandidate(item.candidate) ? "-" : index + 1;
+        return `${position},"${item.candidate}","${party}","${item.votes}","${item.percentage}%"`;
+      })
+      .join("\n");
 
-    const header = "﻿" + "Cargo;Posição;Candidato;Partido;Votos Totais;Percentual (%)
-";
-    const sections = [
-      formatSection("Deputado Estadual", stateRanking),
-      formatSection("Deputado Federal", federalRanking),
-      formatSection("Governador", governorRanking),
-      formatSection("Senador", senatorRanking),
-      formatSection("Presidente", presidentRanking),
-    ].filter(Boolean).join("
-
-");
-
-    const csvContent = header + sections;
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = ;
+    link.download = `VotoForte-Apuracao-${activeCategory}-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
