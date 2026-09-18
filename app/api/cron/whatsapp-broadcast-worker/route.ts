@@ -5,11 +5,19 @@ export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET?.trim();
-  if (cronSecret) {
-    const authorization = request.headers.get("authorization") || "";
-    if (authorization !== `Bearer ${cronSecret}`) {
-      return Response.json({ error: "Não autorizado" }, { status: 401 });
-    }
+  const authorization = request.headers.get("authorization") || "";
+  const cronSchedule = request.headers.get("x-vercel-cron-schedule") || "";
+
+  const authorizedBySecret =
+    Boolean(cronSecret) && authorization === `Bearer ${cronSecret}`;
+  const authorizedByVercelCron =
+    process.env.VERCEL_ENV === "production" && cronSchedule === "* * * * *";
+
+  if (!authorizedBySecret && !authorizedByVercelCron) {
+    return Response.json(
+      { error: "Não autorizado" },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   try {
@@ -17,12 +25,15 @@ export async function GET(request: Request) {
       budgetMs: 48_000,
       maxItems: 45,
     });
-    return Response.json({
-      success: true,
-      worker: "whatsapp-server-queue",
-      ...result,
-      timestamp: new Date().toISOString(),
-    });
+    return Response.json(
+      {
+        success: true,
+        worker: "whatsapp-server-queue",
+        ...result,
+        timestamp: new Date().toISOString(),
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     console.error("[whatsapp-queue-worker] fatal", error);
     return Response.json(
@@ -30,7 +41,7 @@ export async function GET(request: Request) {
         success: false,
         error: error instanceof Error ? error.message : "Falha no worker da fila.",
       },
-      { status: 500 },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
 }
