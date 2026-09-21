@@ -291,6 +291,25 @@ export default function DashboardSessionResilience() {
         completed = true;
         return true;
       }
+
+      // A entrada normal do sistema deve sempre começar na Visão Geral.
+      // Só restauramos uma tela automaticamente quando existe uma fila real
+      // de disparos em andamento, pois nesse caso a retomada protege o estado
+      // operacional e evita reenvios acidentais.
+      const recovery = readCheckpoint();
+      const canRestoreBroadcast =
+        label === "Disparo em Massa" &&
+        recovery?.status === "running" &&
+        recovery.recipients.some((recipient) => !isTerminal(recipient.status));
+
+      if (!canRestoreBroadcast) {
+        try {
+          localStorage.removeItem(LAST_VIEW_KEY);
+        } catch {}
+        completed = true;
+        return true;
+      }
+
       const target = findSidebarButton(label);
       if (!target) return false;
       completed = true;
