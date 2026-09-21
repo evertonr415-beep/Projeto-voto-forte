@@ -221,7 +221,10 @@ export async function apiFetch(
   const headers = await authorizedHeaders(input, init);
 
   const method = requestMethod(input, init);
-  if (method !== "GET" || init.body) {
+  if (method !== "GET" || init.body || init.signal) {
+    // Requests with an explicit AbortSignal must stay isolated. Reusing them
+    // through the in-flight GET cache can make a later caller inherit an
+    // already-aborted fetch when a React effect is remounted.
     return fetch(input, { ...init, headers });
   }
 

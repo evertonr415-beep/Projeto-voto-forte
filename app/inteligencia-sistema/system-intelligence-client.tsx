@@ -111,6 +111,7 @@ export default function SystemIntelligenceClient() {
   const [downloadingMasterBackup, setDownloadingMasterBackup] = useState(false);
   const [downloadingSnapshotId, setDownloadingSnapshotId] = useState<number | null>(null);
   const [masterBackupMessage, setMasterBackupMessage] = useState("");
+  const sessionUserId = session?.user.id ?? null;
 
   const handleMasterFullBackup = async () => {
     setDownloadingMasterBackup(true);
@@ -193,7 +194,7 @@ export default function SystemIntelligenceClient() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!sessionUserId) return;
     const controller = new AbortController();
     setBusy(true);
     setError("");
@@ -204,15 +205,18 @@ export default function SystemIntelligenceClient() {
         setData(payload as IntelligenceData);
       })
       .catch((reason) => {
-        if (!controller.signal.aborted) {
-          setError(reason instanceof Error ? reason.message : "Falha ao analisar o sistema");
+        if (controller.signal.aborted) return;
+        if (reason instanceof DOMException && reason.name === "AbortError") {
+          setError("A conexão da análise foi interrompida antes de concluir.");
+          return;
         }
+        setError(reason instanceof Error ? reason.message : "Falha ao analisar o sistema");
       })
       .finally(() => {
         if (!controller.signal.aborted) setBusy(false);
       });
     return () => controller.abort();
-  }, [session]);
+  }, [sessionUserId]);
 
   const visibleFindings = useMemo(
     () =>
