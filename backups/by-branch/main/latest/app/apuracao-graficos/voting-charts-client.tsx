@@ -368,65 +368,63 @@ export default function VotingChartsClient({
 
     if (activeCategory === "state") {
       return [
-        { candidate: "Sérgio Onofre", votes: 6300, percentage: 45.0 },
-        { candidate: "Pedro Paulo Bazana", votes: 2520, percentage: 18.0 },
-        { candidate: "Indeciso / Não sabe", votes: 1848, percentage: 13.2 },
-        { candidate: "Branco / Nulo", votes: 1512, percentage: 10.8 },
-        { candidate: "Cobra Repórter", votes: 840, percentage: 6.0 },
-        { candidate: "Delegado Jacovós", votes: 560, percentage: 4.0 },
-        { candidate: "Aline Franzon", votes: 280, percentage: 2.0 },
-        { candidate: "Outros", votes: 140, percentage: 1.0 },
+        { candidate: "Sérgio Onofre", votes: 6560, percentage: 44.8 },
+        { candidate: "Pedro Paulo Bazana", votes: 2679, percentage: 18.3 },
+        { candidate: "Indeciso / Não sabe", votes: 1918, percentage: 13.1 },
+        { candidate: "Branco / Nulo", votes: 1230, percentage: 8.4 },
+        { candidate: "Cobra Repórter", votes: 893, percentage: 6.1 },
+        { candidate: "Delegado Jacovós", votes: 615, percentage: 4.2 },
+        { candidate: "Aline Franzon", votes: 425, percentage: 2.9 },
+        { candidate: "Outros", votes: 322, percentage: 2.2 },
       ];
     }
     if (activeCategory === "federal") {
       return [
-        { candidate: "Pedro Lupion", votes: 5320, percentage: 38.0 },
-        { candidate: "Beto Preto", votes: 2800, percentage: 20.0 },
-        { candidate: "Indeciso / Não sabe", votes: 2240, percentage: 16.0 },
-        { candidate: "Branco / Nulo", votes: 1540, percentage: 11.0 },
-        { candidate: "Luciano Ducci", votes: 700, percentage: 5.0 },
-        { candidate: "Marco Brasil", votes: 490, percentage: 3.5 },
-        { candidate: "Neto Santos", votes: 476, percentage: 3.4 },
-        { candidate: "Ricardo Barros", votes: 280, percentage: 2.0 },
-        { candidate: "Santin Roveda", votes: 112, percentage: 0.8 },
-        { candidate: "Bonin", votes: 42, percentage: 0.3 },
+        { candidate: "Pedro Lupion", votes: 5535, percentage: 37.8 },
+        { candidate: "Beto Preto", votes: 2884, percentage: 19.7 },
+        { candidate: "Indeciso / Não sabe", votes: 2079, percentage: 14.2 },
+        { candidate: "Branco / Nulo", votes: 1362, percentage: 9.3 },
+        { candidate: "Luísa Canziani", votes: 1083, percentage: 7.4 },
+        { candidate: "Sargento Fahur", votes: 849, percentage: 5.8 },
+        { candidate: "Luciano Ducci", votes: 454, percentage: 3.1 },
+        { candidate: "Marco Brasil", votes: 396, percentage: 2.7 },
       ];
     }
     if (activeCategory === "governor") {
       return [
-        { candidate: "Sandro Alex", votes: 4858, percentage: 34.7 },
-        { candidate: "Sergio Moro", votes: 4438, percentage: 31.7 },
-        { candidate: "Luiz França", votes: 1358, percentage: 9.7 },
-        { candidate: "Indeciso / Não sabe", votes: 1250, percentage: 8.9 },
-        { candidate: "Outros", votes: 1064, percentage: 7.6 },
-        { candidate: "Requião Filho", votes: 1032, percentage: 7.4 },
+        { candidate: "Sandro Alex", votes: 5066, percentage: 34.6 },
+        { candidate: "Sergio Moro", votes: 4598, percentage: 31.4 },
+        { candidate: "Luiz França", votes: 1420, percentage: 9.7 },
+        { candidate: "Indeciso / Não sabe", votes: 1303, percentage: 8.9 },
+        { candidate: "Outros", votes: 1186, percentage: 8.1 },
+        { candidate: "Requião Filho", votes: 1069, percentage: 7.3 },
       ];
     }
     if (activeCategory === "senator") {
       return [
-        { candidate: "Alexandre Curi", votes: 4116, percentage: 29.4, party: "REPUBLICANOS" },
-        { candidate: "Cristina Graeml", votes: 3500, percentage: 25.0, party: "PSD" },
-        { candidate: "Deltan Dallagnol", votes: 3038, percentage: 21.7, party: "NOVO" },
-        { candidate: "Filipe Barros", votes: 2086, percentage: 14.9, party: "PL" },
-        { candidate: "Gleisi", votes: 1260, percentage: 9.0, party: "PT" },
+        { candidate: "Alexandre Curi", votes: 4305, percentage: 29.4, party: "REPUBLICANOS" },
+        { candidate: "Cristina Graeml", votes: 3661, percentage: 25.0, party: "PSD" },
+        { candidate: "Deltan Dallagnol", votes: 3177, percentage: 21.7, party: "NOVO" },
+        { candidate: "Filipe Barros", votes: 2182, percentage: 14.9, party: "PL" },
+        { candidate: "Gleisi", votes: 1317, percentage: 9.0, party: "PT" },
       ];
     }
     if (activeCategory === "president") {
       return [
-        { candidate: "Flávio Bolsonaro", votes: 6650, percentage: 47.5 },
-        { candidate: "Lula", votes: 2800, percentage: 20.0 },
-        { candidate: "Renan Santos", votes: 1526, percentage: 10.9 },
-        { candidate: "Augusto Cury", votes: 1204, percentage: 8.6 },
-        { candidate: "Ronaldo Caiado", votes: 910, percentage: 6.5 },
-        { candidate: "Indeciso / Não sabe", votes: 560, percentage: 4.0 },
-        { candidate: "Romeu Zema", votes: 240, percentage: 1.7 },
-        { candidate: "Outro candidato", votes: 110, percentage: 0.8 },
+        { candidate: "Flávio Bolsonaro", votes: 6955, percentage: 47.5 },
+        { candidate: "Lula", votes: 2928, percentage: 20.0 },
+        { candidate: "Renan Santos", votes: 1596, percentage: 10.9 },
+        { candidate: "Augusto Cury", votes: 1259, percentage: 8.6 },
+        { candidate: "Ronaldo Caiado", votes: 952, percentage: 6.5 },
+        { candidate: "Indeciso / Não sabe", votes: 586, percentage: 4.0 },
+        { candidate: "Romeu Zema", votes: 251, percentage: 1.7 },
+        { candidate: "Outro candidato", votes: 115, percentage: 0.8 },
       ];
     }
     return [
-      { candidate: "Boa", votes: 10010, percentage: 71.5 },
-      { candidate: "Média", votes: 2730, percentage: 19.5 },
-      { candidate: "Ruim", votes: 1260, percentage: 9.0 },
+      { candidate: "Boa", votes: 10469, percentage: 71.5 },
+      { candidate: "Média", votes: 2855, percentage: 19.5 },
+      { candidate: "Ruim", votes: 1318, percentage: 9.0 },
     ];
   }, [activeCategory, stateRanking, federalRanking, governorRanking, senatorRanking, presidentRanking, managementRanking]);
 
