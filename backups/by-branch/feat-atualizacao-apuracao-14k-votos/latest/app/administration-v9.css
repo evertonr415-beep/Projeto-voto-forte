@@ -1,0 +1,365 @@
+/* Administração V9 — limpeza focada da aba Acessos no mobile. */
+
+@media (max-width: 760px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel {
+    padding: 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    align-items: start !important;
+    margin-bottom: 4px !important;
+    padding: 10px 10px 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header h3 {
+    font-size: 17px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header p {
+    font-size: 8.5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-panel > header > button {
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 9px !important;
+  }
+
+  /* Subabas em uma única linha. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin: 7px 6px 9px !important;
+    padding: 4px !important;
+    overflow: hidden !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-access-tabs > button:nth-child(3) {
+    grid-column: auto !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    padding: 4px 2px !important;
+  }
+
+  /* Níveis: faixa horizontal compacta para não criar buraco 3 + 2. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-summary {
+    display: flex !important;
+    gap: 5px !important;
+    overflow-x: auto !important;
+    padding: 0 2px 4px !important;
+    margin: 7px 4px 8px !important;
+    scrollbar-width: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-summary::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-role-tab {
+    flex: 0 0 92px !important;
+    min-width: 92px !important;
+    min-height: 66px !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-role-tab small {
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-role-tab b {
+    margin-top: 3px !important;
+    font-size: 18px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-role-tab span {
+    font-size: 7px !important;
+  }
+
+  /* Diretório selecionado mais curto. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory {
+    margin: 0 4px 10px !important;
+    border-radius: 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-header {
+    padding: 9px 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-header small {
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-header h4 {
+    margin: 2px 0 0 !important;
+    font-size: 17px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-header > span {
+    min-width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-help {
+    margin: 0 8px 7px !important;
+    padding: 7px 8px !important;
+    font-size: 8px !important;
+    line-height: 1.35 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-role-directory-list {
+    padding: 0 8px 8px !important;
+    gap: 6px !important;
+  }
+
+  /* Cards de usuário. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-user {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+    padding: 9px !important;
+    border-left-width: 3px !important;
+    border-radius: 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 9px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-main strong {
+    font-size: 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-main small {
+    font-size: 8px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-tags {
+    gap: 4px !important;
+    margin-top: 5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-tags span,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-tags i,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-tags em {
+    padding: 3px 6px !important;
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-hierarchy-tags em {
+    flex-basis: 100% !important;
+    padding-left: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-actions {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 5px !important;
+    margin-top: 1px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-actions > button {
+    min-height: 31px !important;
+    padding: 0 9px !important;
+    border-radius: 8px !important;
+    font-size: 8px !important;
+  }
+
+  /* Remove aparência provisória dos emojis sem alterar as ações. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-edit,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-delete {
+    width: auto !important;
+    min-width: 0 !important;
+    font-size: 0 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-edit > span {
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-edit::after {
+    content: "Editar";
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-directory-delete::after {
+    content: "Excluir";
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  /* Gestores multimunicipais: territorial, compacto. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin {
+    margin: 8px 4px 10px !important;
+    border-radius: 11px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header {
+    padding: 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header h4 {
+    margin: 2px 0 !important;
+    font-size: 16px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-municipality-admin > header p {
+    font-size: 8px !important;
+    line-height: 1.35 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-gestor-compact-card {
+    padding: 8px !important;
+    border-radius: 9px !important;
+  }
+
+  /* CONTAS AUTH: remove ruptura branca e limita altura da fila. */
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation {
+    margin: 10px 4px 0 !important;
+    padding: 10px !important;
+    border: 1px solid rgba(56, 189, 248, .14) !important;
+    border-radius: 11px !important;
+    background: #081d34 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation > header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 7px !important;
+    align-items: center !important;
+    margin-bottom: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation > header small {
+    color: #e4b746 !important;
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation > header h4 {
+    margin: 2px 0 0 !important;
+    color: #f6fbff !important;
+    font-size: 14px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation > header p {
+    display: none !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation > header button {
+    min-height: 32px !important;
+    padding: 0 9px !important;
+    font-size: 8px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation-summary {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    margin: 0 0 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation-summary span {
+    padding: 7px 6px !important;
+    border: 1px solid rgba(56, 189, 248, .12) !important;
+    border-radius: 8px !important;
+    background: #0b2947 !important;
+    color: #a9bed1 !important;
+    font-size: 7px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconciliation-summary b {
+    display: block !important;
+    margin-bottom: 2px !important;
+    color: #fff !important;
+    font-size: 15px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list {
+    gap: 6px !important;
+    max-height: 430px !important;
+    overflow-y: auto !important;
+    padding-right: 2px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list article {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 7px !important;
+    padding: 9px !important;
+    border: 1px solid rgba(56, 189, 248, .12) !important;
+    border-radius: 9px !important;
+    background: #0a223d !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main strong {
+    color: #fff !important;
+    font-size: 10px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main small {
+    color: #9cb0c4 !important;
+    font-size: 8px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main > div {
+    gap: 4px !important;
+    margin-top: 5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main span,
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-main em {
+    padding: 3px 5px !important;
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list dl {
+    grid-column: 1 / -1 !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list dl div {
+    padding: 6px 5px !important;
+    border-radius: 7px !important;
+    background: #071a30 !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list dt {
+    color: #819ab2 !important;
+    font-size: 6.5px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list dd {
+    color: #fff !important;
+    font-size: 13px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-account-list article > button {
+    align-self: start !important;
+    min-height: 30px !important;
+    padding: 0 8px !important;
+    border-radius: 7px !important;
+    font-size: 7px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]) .vf-auth-reconcile-form {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+    padding: 10px !important;
+    border-color: rgba(228, 183, 70, .35) !important;
+    background: #0a223d !important;
+  }
+}
