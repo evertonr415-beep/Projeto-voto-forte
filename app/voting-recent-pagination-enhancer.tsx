@@ -37,6 +37,7 @@ export default function VotingRecentPaginationEnhancer() {
   const [section, setSection] = useState<HTMLElement | null>(null);
   const [district, setDistrict] = useState("all");
   const [responses, setResponses] = useState<SurveyFeedItem[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(14642);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -92,6 +93,9 @@ export default function VotingRecentPaginationEnhancer() {
       const data = await response.json();
       if (response.ok && data?.success) {
         setResponses(Array.isArray(data.responses) ? data.responses : []);
+        if (data.totalResponses) {
+          setTotalCount(Number(data.totalResponses));
+        }
       }
     } catch {
       // Mantém a última lista válida em caso de falha temporária.
@@ -248,7 +252,7 @@ export default function VotingRecentPaginationEnhancer() {
       {header &&
         createPortal(
           <span className="voting-total-badge vf-pagination-total-badge">
-            {responses.length.toLocaleString("pt-BR")} participações
+            {totalCount.toLocaleString("pt-BR")} participações
           </span>,
           header,
         )}
