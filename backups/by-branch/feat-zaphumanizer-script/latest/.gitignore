@@ -1,0 +1,36 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Next.js build output
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+*.zip
+
+# Environment files - never commit secrets
+.env
+.env.*
+!.env.example
+
+# Sensitive contact exports/seeds - never serve or commit
+/public/contatos-parana-higienizado.csv
+/public/seed-contacts.json
+/public/contatos-*.csv
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
