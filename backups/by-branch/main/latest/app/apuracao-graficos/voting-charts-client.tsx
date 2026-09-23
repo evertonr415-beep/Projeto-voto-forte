@@ -467,25 +467,421 @@ export default function VotingChartsClient({
           : activeCategory === "senator"
             ? "Senador pelo Paraná"
             : activeCategory === "president"
-              ? "Presidente da República"
-              : "Avaliação da Gestão Municipal";
+  const printPdfReport = () => {
+    const activeTabLabel =
+      activeCategory === "state"
+        ? "Estadual"
+        : activeCategory === "federal"
+          ? "Federal"
+          : activeCategory === "governor"
+            ? "Governador"
+            : activeCategory === "senator"
+              ? "Senador"
+              : activeCategory === "president"
+                ? "Presidente"
+                : "Gestão";
 
-  const exportCsv = () => {
-    const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
-    const rows = orderedList
+    const tabsHtml = [
+      { id: "state", label: "🏛️ Estadual" },
+      { id: "federal", label: "🇧🇷 Federal" },
+      { id: "governor", label: "🗳️ Governador" },
+      { id: "senator", label: "🏛️ Senador" },
+      { id: "president", label: "🇧🇷 Presidente" },
+      { id: "management", label: "📈 Gestão" },
+    ]
+      .map(
+        (t) =>
+          `<span class="tab-btn ${t.id === activeCategory ? "active" : ""}">${t.label}</span>`,
+      )
+      .join("");
+
+    const candidatesHtml = orderedList
       .map((item, index) => {
-        const party = item.party || candidatePartyMap[item.candidate] || "-";
-        const position = isSpecialCandidate(item.candidate) ? "-" : index + 1;
-        return `${position},"${item.candidate}","${party}","${item.votes}","${item.percentage}%"`;
-      })
-      .join("\n");
+        const photo = candidatePhotos[normalizeCandidate(item.candidate)] || "";
+        const isSpecial = isSpecialCandidate(item.candidate);
+        const party = item.party || candidatePartyMap[item.candidate] || "";
+        const rankBadge = !isSpecial
+          ? `<span class="rank-badge rank-${index + 1}">${index + 1}º</span>`
+          : `<span class="rank-badge rank-other">?</span>`;
+        const avatarHtml = photo
+          ? `<img src="${photo}" class="avatar-img" alt="${item.candidate}" onerror="this.style.display='none'" />`
+          : `<div class="avatar-fallback">${candidateInitials(item.candidate)}</div>`;
 
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `VotoForte-Apuracao-${activeCategory}-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+        return `
+        <div class="candidate-card">
+          <div class="card-main-row">
+            <div class="avatar-wrap ${index === 0 ? "avatar-first" : ""}">${avatarHtml}</div>
+            ${rankBadge}
+            <div class="candidate-info">
+              <strong class="candidate-name">${item.candidate}</strong>
+              ${party ? `<span class="party-tag">${party}</span>` : ""}
+            </div>
+            <div class="stats-box">
+              <div class="pct-num ${index === 0 ? "pct-first" : "pct-other"}">${item.percentage.toFixed(1)}%</div>
+              <div class="votes-num">${item.votes.toLocaleString("pt-BR")} votos</div>
+            </div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill ${index === 0 ? "bar-first" : "bar-second"}" style="width: ${Math.max(item.percentage, 2)}%;"></div>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    const topDistrictsHtml = districtRanking
+      .slice(0, 8)
+      .map(
+        (d) => `
+      <div class="district-row">
+        <span class="district-name">${d.district}</span>
+        <span class="district-pill">${d.total.toLocaleString("pt-BR")} votos</span>
+      </div>`,
+      )
+      .join("");
+
+    const printHtml = `<!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>Voto Forte Paraná — ${categoryTitle}</title>
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 6mm;
+        }
+        * {
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        body {
+          margin: 0;
+          padding: 12px;
+          background: #060e1a;
+          color: #f8fafc;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        .header-brand {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+          margin-bottom: 14px;
+        }
+        .brand-title {
+          font-size: 1.15rem;
+          font-weight: 800;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .brand-sub {
+          font-size: 0.75rem;
+          color: #94a3b8;
+        }
+        .tabs-bar {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .tab-btn {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 14px;
+          border-radius: 999px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #94a3b8;
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .tab-btn.active {
+          background: #0284c7;
+          color: #fff;
+          border-color: #38bdf8;
+          box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
+        }
+        .main-layout {
+          display: grid;
+          grid-template-columns: 2.3fr 1fr;
+          gap: 14px;
+          align-items: start;
+        }
+        .ranking-card {
+          background: linear-gradient(135deg, rgba(13, 27, 44, 0.95), rgba(15, 32, 54, 0.9));
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          border-radius: 16px;
+          padding: 16px;
+        }
+        .ranking-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+          margin-bottom: 12px;
+        }
+        .ranking-header h2 {
+          margin: 0;
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .base-pill {
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(148, 163, 184, 0.25);
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 0.72rem;
+          color: #94a3b8;
+          font-weight: 700;
+        }
+        .candidate-card {
+          background: rgba(10, 20, 34, 0.75);
+          border: 1px solid rgba(148, 163, 184, 0.15);
+          border-radius: 14px;
+          padding: 10px 12px;
+          margin-bottom: 9px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        .card-main-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .avatar-wrap {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: #1e293b;
+          border: 2px solid rgba(56, 189, 248, 0.4);
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .avatar-first {
+          border: 2px solid #34d399 !important;
+          box-shadow: 0 0 10px rgba(52, 211, 153, 0.35);
+        }
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .avatar-fallback {
+          font-size: 0.85rem;
+          font-weight: 800;
+          color: #38bdf8;
+        }
+        .rank-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          font-size: 0.68rem;
+          font-weight: 900;
+          flex-shrink: 0;
+        }
+        .rank-1 { background: #eab308; color: #000; }
+        .rank-2 { background: #64748b; color: #fff; }
+        .rank-3 { background: #475569; color: #cbd5e1; }
+        .rank-4, .rank-5, .rank-6, .rank-7, .rank-8 { background: #334155; color: #94a3b8; }
+        .rank-other { background: rgba(51, 65, 85, 0.6); color: #94a3b8; }
+        .candidate-info {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
+        }
+        .candidate-name {
+          font-size: 0.95rem;
+          color: #fff;
+          font-weight: 750;
+        }
+        .party-tag {
+          font-size: 0.62rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(148, 163, 184, 0.16);
+          color: #94a3b8;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        .stats-box {
+          text-align: right;
+          flex-shrink: 0;
+        }
+        .pct-num {
+          font-size: 1.18rem;
+          font-weight: 900;
+          line-height: 1;
+        }
+        .pct-first {
+          color: #34d399;
+        }
+        .pct-other {
+          color: #38bdf8;
+        }
+        .votes-num {
+          font-size: 0.72rem;
+          color: #94a3b8;
+          margin-top: 3px;
+        }
+        .bar-track {
+          margin-top: 8px;
+          height: 6px;
+          background: rgba(148, 163, 184, 0.15);
+          border-radius: 999px;
+          overflow: hidden;
+        }
+        .bar-fill {
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #0284c7, #38bdf8);
+        }
+        .bar-first {
+          background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .bar-second {
+          background: linear-gradient(90deg, #0284c7, #38bdf8);
+        }
+        .side-card {
+          background: linear-gradient(135deg, rgba(13, 27, 44, 0.95), rgba(15, 32, 54, 0.9));
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          border-radius: 16px;
+          padding: 16px;
+        }
+        .side-card h3 {
+          margin: 0 0 12px;
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #fff;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+        .side-card h3 small {
+          font-size: 0.7rem;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+        .district-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 7px 0;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+          font-size: 0.78rem;
+        }
+        .district-name {
+          color: #e2e8f0;
+          font-weight: 600;
+        }
+        .district-pill {
+          background: rgba(2, 132, 199, 0.15);
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          color: #38bdf8;
+          padding: 2px 7px;
+          border-radius: 6px;
+          font-size: 0.7rem;
+          font-weight: 700;
+        }
+        .report-footer {
+          margin-top: 14px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(148, 163, 184, 0.12);
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.68rem;
+          color: #64748b;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header-brand">
+        <div>
+          <div class="brand-title">🏛️ VOTO FORTE PARANÁ</div>
+          <div class="brand-sub">Sistema de Inteligência e Apuração Eleitoral · Arapongas-PR</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #34d399; font-weight: 800;">● APURAÇÃO EM TEMPO REAL</div>
+          <div class="brand-sub">${new Date().toLocaleString("pt-BR")}</div>
+        </div>
+      </div>
+
+      <div class="tabs-bar">
+        ${tabsHtml}
+      </div>
+
+      <div class="main-layout">
+        <div class="ranking-card">
+          <div class="ranking-header">
+            <h2>📊 Ranking — ${categoryTitle}</h2>
+            <span class="base-pill">Base: ${displayedTotalVotes.toLocaleString("pt-BR")} votos</span>
+          </div>
+          <div class="candidates-list">
+            ${candidatesHtml}
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h3><span>📍 Top bairros</span><small>Arapongas</small></h3>
+          <div class="districts-list">
+            ${topDistrictsHtml}
+          </div>
+        </div>
+      </div>
+
+      <div class="report-footer">
+        <span>Voto Forte Paraná · Relatório Oficial de Apuração</span>
+        <span>Amostragem Consolidada: ${displayedTotalVotes.toLocaleString("pt-BR")} votos</span>
+      </div>
+
+      <script>
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            window.print();
+          }, 300);
+        });
+      </script>
+    </body>
+    </html>`;
+
+    const printFrame = document.createElement("iframe");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "0";
+    printFrame.id = "vf-pdf-print-frame";
+
+    document.body.appendChild(printFrame);
+    const frameDoc = printFrame.contentWindow?.document;
+    if (frameDoc) {
+      frameDoc.open();
+      frameDoc.write(printHtml);
+      frameDoc.close();
+    }
+
+    setTimeout(() => {
+      printFrame.remove();
+    }, 60000);
   };
 
   return (
@@ -525,8 +921,8 @@ export default function VotingChartsClient({
           <button className="voting-btn" onClick={() => void loadData()} disabled={loading} title="Atualizar dados agora">
             <Icons.Clock size={16} /> <span>{loading ? "Atualizando…" : "Atualizar"}</span>
           </button>
-          <button className="voting-btn" onClick={() => window.print()} title="Imprimir relatório">
-            <Icons.Printer size={16} /> <span>Imprimir</span>
+          <button className="voting-btn" onClick={printPdfReport} title="Salvar relatório em PDF">
+            <Icons.Printer size={16} /> <span>Imprimir / Salvar PDF</span>
           </button>
           <button className="voting-btn" onClick={exportCsv} title="Baixar CSV">
             <Icons.Download size={16} /> <span>CSV</span>
