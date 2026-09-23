@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "./supabase-client";
 import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
+import WhatsappHumanizedBroadcaster from "./whatsapp-humanized-broadcaster";
 
 type ContactItem = {
   id: number;
@@ -152,7 +153,7 @@ function findNearestDistrict(lat: number, lng: number): { name: string; distKm: 
 
 export default function WhaticketBroadcastDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"disparo" | "tempo-real" | "logs">("disparo");
+  const [activeTab, setActiveTab] = useState<"humanizado" | "disparo" | "tempo-real" | "logs">("humanizado");
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [districtList, setDistrictList] = useState<DistrictSummary[]>([]);
   const [totalMunicipalityContacts, setTotalMunicipalityContacts] = useState(0);
@@ -695,10 +696,18 @@ export default function WhaticketBroadcastDrawer() {
         <nav className="wt-tabs">
           <button
             type="button"
+            className={`wt-tab-btn ${activeTab === "humanizado" ? "is-active" : ""}`}
+            style={{ background: activeTab === "humanizado" ? "rgba(16,185,129,0.25)" : undefined, color: activeTab === "humanizado" ? "#34d399" : undefined, borderColor: activeTab === "humanizado" ? "#10b981" : undefined }}
+            onClick={() => setActiveTab("humanizado")}
+          >
+            🤖 Humanizado (QR Code)
+          </button>
+          <button
+            type="button"
             className={`wt-tab-btn ${activeTab === "disparo" ? "is-active" : ""}`}
             onClick={() => setActiveTab("disparo")}
           >
-            Campanha
+            Meta Cloud
           </button>
           <button
             type="button"
@@ -736,6 +745,13 @@ export default function WhaticketBroadcastDrawer() {
         </nav>
 
         <div className="wt-drawer-body">
+          {activeTab === "humanizado" && (
+            <WhatsappHumanizedBroadcaster
+              initialContacts={recipients}
+              onClose={() => setIsOpen(false)}
+            />
+          )}
+
           {activeTab === "disparo" && (
             <>
               <section className="wt-card">
