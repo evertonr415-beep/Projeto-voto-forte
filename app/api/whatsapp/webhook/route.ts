@@ -97,7 +97,18 @@ function parseEvents(payload: Record<string, unknown>): WhatsappEventInsert[] {
         const message = asRecord(rawMessage);
         const type = String(message.type || "unknown");
         const from = String(message.from || "");
-        const text = type === "text" ? String(asRecord(message.text).body || "") : "";
+        let text = "";
+        if (type === "text") {
+          text = String(asRecord(message.text).body || "");
+        } else if (type === "button") {
+          text = String(asRecord(message.button).text || "");
+        } else if (type === "interactive") {
+          const interactive = asRecord(message.interactive);
+          const btnReply = asRecord(interactive.button_reply);
+          const listReply = asRecord(interactive.list_reply);
+          text = String(btnReply.title || listReply.title || btnReply.id || listReply.id || "");
+        }
+
         events.push({
           message_id: String(message.id || "") || null,
           direction: "inbound",
