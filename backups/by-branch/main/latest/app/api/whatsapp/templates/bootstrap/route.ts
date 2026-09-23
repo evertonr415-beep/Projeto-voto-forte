@@ -1,11 +1,11 @@
 import { getAccount } from "../../../../server-identity";
 import { getMetaConfig, metaErrorMessage, readMetaResponse } from "../../meta";
 
-const TEMPLATE_NAME = "voto_forte_contato_oficial";
+const TEMPLATE_NAME = "enquete_candidato_frente_cidade";
 const TEMPLATE_LANGUAGE = "pt_BR";
 const TEMPLATE_CATEGORY = "MARKETING";
 const TEMPLATE_BODY =
-  "Olá! Este é o canal oficial do Sistema Voto Forte. Estamos entrando em contato pelo WhatsApp para comunicação e atendimento. Se não quiser receber novas mensagens, responda SAIR.";
+  "Será que o candidato que todo mundo pensa está na frente? 👀\n\nParticipe da nossa enquete e descubra quem está sendo mais lembrado na sua cidade.\n\n📊 Resultado em tempo real*\n⏱️ Menos de 1 minuto.\n\n👉 Clique e participe.";
 
 type MetaTemplate = {
   id?: string;

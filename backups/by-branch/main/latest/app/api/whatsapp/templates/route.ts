@@ -33,6 +33,19 @@ const OFFICIAL_FALLBACK_TEMPLATE = {
   unsupportedHeader: false,
 };
 
+const CANDIDATE_SURVEY_TEMPLATE = {
+  id: "1452520050058743",
+  name: "enquete_candidato_frente_cidade",
+  status: "APPROVED",
+  language: "pt_BR",
+  category: "MARKETING",
+  body: "Será que o candidato que todo mundo pensa está na frente? 👀\n\nParticipe da nossa enquete e descubra quem está sendo mais lembrado na sua cidade.\n\n📊 Resultado em tempo real*\n⏱️ Menos de 1 minuto.\n\n👉 Clique e participe.",
+  bodyParameterCount: 0,
+  unsupportedHeader: false,
+};
+
+const DEFAULT_TEMPLATES = [CANDIDATE_SURVEY_TEMPLATE, OFFICIAL_FALLBACK_TEMPLATE];
+
 async function handleTemplatesRequest() {
   const account = await getAccount();
   if (!account) return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -50,7 +63,7 @@ async function handleTemplatesRequest() {
       return Response.json({
         success: true,
         provider: "meta-cloud-api",
-        templates: [OFFICIAL_FALLBACK_TEMPLATE],
+        templates: DEFAULT_TEMPLATES,
         productionReady: true,
         fallback: true,
         metaError: metaErrorMessage(data, status),
@@ -85,8 +98,11 @@ async function handleTemplatesRequest() {
       })
       .filter((template) => template.name);
 
-    if (templates.length === 0) {
-      templates.push(OFFICIAL_FALLBACK_TEMPLATE);
+    // Adiciona os templates padrão se não estiverem já na lista
+    for (const def of DEFAULT_TEMPLATES) {
+      if (!templates.some((t) => t.name === def.name && t.language === def.language)) {
+        templates.unshift(def);
+      }
     }
 
     return Response.json({
@@ -99,7 +115,7 @@ async function handleTemplatesRequest() {
     return Response.json({
       success: true,
       provider: "meta-cloud-api",
-      templates: [OFFICIAL_FALLBACK_TEMPLATE],
+      templates: DEFAULT_TEMPLATES,
       productionReady: true,
       fallback: true,
       error: error instanceof Error ? error.message : "Erro ao carregar modelos da Meta.",

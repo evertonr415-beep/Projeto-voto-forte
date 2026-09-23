@@ -93,7 +93,7 @@ export async function POST() {
       metaGet(
         graphVersion,
         phoneNumberId,
-        "id,display_phone_number,verified_name,quality_rating,code_verification_status",
+        "id,display_phone_number,verified_name,quality_rating,code_verification_status,status",
         accessToken,
       ),
       wabaId
@@ -171,6 +171,9 @@ export async function POST() {
 
     const accountReviewStatus = String(wabaObject?.account_review_status || "").toUpperCase();
     const phoneApiReachable = phoneResult.response.ok;
+    // Status real do número retornado diretamente pela Graph API (CONNECTED, BANNED, etc.)
+    const phoneNumberStatus = String(phoneObject?.status || "").toUpperCase();
+    const isPhoneConnected = phoneNumberStatus === "CONNECTED";
 
     let metaState = "online";
     let metaStateLabel = "Ativa / conectada";
@@ -179,13 +182,21 @@ export async function POST() {
     let metaStateAt = new Date().toISOString();
     let metaStateDetail = "A API oficial da Meta respondeu normalmente para este número.";
 
-    if (["DISABLE", "DISABLED", "BANNED"].includes(latestBanState) && banAt >= deliveredAt) {
+    // ── Prioridade 1: status REAL do número (CONNECTED > tudo)
+    if (isPhoneConnected) {
+      // Número está CONNECTED na Meta — pode enviar mensagens independentemente do review da WABA
+      metaState = "online";
+      metaStateLabel = "Ativa / conectada";
+      metaStateTone = "success";
+      metaStateSource = "graph_api";
+      metaStateDetail = "Número confirmado como CONNECTED na API da Meta. Disparos disponíveis.";
+    } else if (phoneNumberStatus === "BANNED" || ["DISABLE", "DISABLED", "BANNED"].includes(latestBanState) && banAt >= deliveredAt) {
       metaState = "banned";
       metaStateLabel = "Banida / desativada";
       metaStateTone = "danger";
-      metaStateSource = "meta_webhook";
-      metaStateAt = latestBanStateAt;
-      metaStateDetail = "A Meta registrou estado de banimento/desativação para esta conta.";
+      metaStateSource = phoneNumberStatus === "BANNED" ? "graph_api" : "meta_webhook";
+      metaStateAt = phoneNumberStatus === "BANNED" ? new Date().toISOString() : latestBanStateAt;
+      metaStateDetail = "O número está com status BANNED na Meta. Disparos bloqueados.";
     } else if (latestBanState === "FLAGGED" && banAt >= deliveredAt) {
       metaState = "flagged";
       metaStateLabel = "Sinalizada pela Meta";
@@ -214,12 +225,6 @@ export async function POST() {
       metaStateSource = "message_status";
       metaStateAt = eventTime(latestPayment);
       metaStateDetail = "A Meta devolveu o erro 131042, indicando pendência de pagamento na conta do WhatsApp Business.";
-    } else if (accountReviewStatus === "REJECTED") {
-      metaState = "review_rejected";
-      metaStateLabel = "Revisão rejeitada";
-      metaStateTone = "danger";
-      metaStateSource = "graph_api";
-      metaStateDetail = "O status de revisão da WABA retornado pela Meta está como REJECTED.";
     } else if (accountReviewStatus === "PENDING") {
       metaState = "review_pending";
       metaStateLabel = "Em análise pela Meta";

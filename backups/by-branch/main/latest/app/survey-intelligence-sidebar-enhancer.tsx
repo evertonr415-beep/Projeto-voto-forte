@@ -21,8 +21,8 @@ export default function SurveyIntelligenceSidebarEnhancer() {
 
       const icon = document.createElement("span");
       icon.className = "nav-icon";
-      icon.style.color = "#38bdf8";
-      icon.textContent = "📊";
+      icon.style.cssText = "color:#C9A84C;display:inline-flex;align-items:center;";
+      icon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`;
 
       const label = document.createElement("span");
       label.className = "nav-name";
