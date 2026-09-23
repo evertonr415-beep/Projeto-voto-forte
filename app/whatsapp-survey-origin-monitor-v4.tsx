@@ -30,6 +30,8 @@ type ViewState = {
   search: string;
   district: string;
   candidate: string;
+  dateFrom: string;
+  dateTo: string;
   page: number;
 };
 
@@ -263,10 +265,19 @@ function createStyles() {
     .vf-origin-filter{border:1px solid rgba(148,163,184,.18);background:rgba(30,41,59,.58);color:#aebbd0;border-radius:999px;padding:8px 14px;font-size:11.5px;font-weight:750;cursor:pointer;transition:all .15s ease}
     .vf-origin-filter:hover{background:rgba(51,65,85,.7);color:#fff}
     .vf-origin-filter.is-active{border-color:rgba(56,189,248,.54);background:rgba(14,116,144,.25);color:#e0f2fe;box-shadow:0 0 10px rgba(56,189,248,.15)}
+    .vf-origin-filter.is-active-broadcast{border-color:rgba(52,211,153,.54)!important;background:rgba(6,78,59,.35)!important;color:#6ee7b7!important;box-shadow:0 0 10px rgba(52,211,153,.2)!important}
     
     .vf-origin-dropdowns{display:flex;gap:8px;flex-wrap:wrap;flex:1;max-width:560px}
     .vf-origin-select{border:1px solid rgba(148,163,184,.2);background:#07172c;color:#e2e8f0;border-radius:10px;padding:8px 12px;font-size:11.5px;outline:none;font-weight:600;min-width:140px;flex:1}
     .vf-origin-search{min-width:220px;flex:1.5;border:1px solid rgba(148,163,184,.2);background:#07172c;color:#e2e8f0;border-radius:10px;padding:8px 12px;font-size:12px;outline:none}
+    .vf-date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px 14px;border:1px solid rgba(52,211,153,.2);border-radius:12px;background:rgba(6,78,59,.15)}
+    .vf-date-row label{color:#6ee7b7;font-size:11px;font-weight:700;white-space:nowrap}
+    .vf-date-input{border:1px solid rgba(52,211,153,.3);background:#07172c;color:#e2e8f0;border-radius:8px;padding:6px 10px;font-size:11.5px;outline:none;cursor:pointer}
+    .vf-date-input::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(2) hue-rotate(80deg);cursor:pointer}
+    .vf-date-clear{border:1px solid rgba(148,163,184,.2);background:transparent;color:#94a3b8;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;transition:all .15s}
+    .vf-date-clear:hover{color:#fff;border-color:#fff}
+    .vf-kpi-period{grid-column:1/-1}
+    .vf-origin-kpi.period strong{color:#fbbf24}
 
     .vf-origin-list{display:grid;gap:12px}
     .vf-origin-card{padding:16px;border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(15,23,42,.7);box-shadow:0 4px 20px rgba(0,0,0,.2)}
@@ -565,10 +576,25 @@ function renderPanel(
   const candidateNeedle = normalize(state.candidate);
   const districtNeedle = normalize(state.district);
 
+  // Filtro de período
+  const fromTs = state.dateFrom ? new Date(state.dateFrom + "T00:00:00").getTime() : 0;
+  const toTs = state.dateTo ? new Date(state.dateTo + "T23:59:59").getTime() : Infinity;
+
+  // Votos via disparo no período selecionado
+  const broadcastInPeriod = identified.filter((item) => {
+    const ts = item.timestamp ? new Date(item.timestamp).getTime() : 0;
+    return ts >= fromTs && ts <= toTs;
+  });
+
   const filtered = items.filter((item) => {
     if (state.filter !== "all" && item.origin !== state.filter) return false;
     if (districtNeedle && normalize(item.district || "") !== districtNeedle) return false;
     if (candidateNeedle && !normalize(item.messageText || "").includes(candidateNeedle)) return false;
+    // Filtro de data
+    if (state.dateFrom || state.dateTo) {
+      const ts = item.timestamp ? new Date(item.timestamp).getTime() : 0;
+      if (ts < fromTs || ts > toTs) return false;
+    }
     if (!needle) return true;
     return normalize(
       `${item.contactName || ""} ${item.phone || ""} ${item.district || ""} ${item.messageText || ""}`,
@@ -599,7 +625,7 @@ function renderPanel(
     <div class="vf-origin-kpis">
       <div class="vf-origin-kpi">
         <strong>${items.length}</strong>
-        <span>Respostas nesta visão</span>
+        <span>Total de respostas</span>
       </div>
       <div class="vf-origin-kpi link">
         <strong>${linked.length}</strong>
@@ -607,8 +633,13 @@ function renderPanel(
       </div>
       <div class="vf-origin-kpi broadcast">
         <strong>${identified.length}</strong>
-        <span>Via disparo com nome reconhecido</span>
+        <span>Via disparo (total geral)</span>
       </div>
+      ${(state.dateFrom || state.dateTo) ? `
+      <div class="vf-origin-kpi period vf-kpi-period">
+        <strong>${broadcastInPeriod.length}</strong>
+        <span>📲 Disparos no período ${state.dateFrom ? `de ${state.dateFrom.split("-").reverse().join("/")}` : ""} ${state.dateTo ? `até ${state.dateTo.split("-").reverse().join("/")}` : ""}</span>
+      </div>` : ""}
     </div>
 
     <div class="vf-origin-tools">
@@ -616,6 +647,15 @@ function renderPanel(
         <button type="button" data-origin-filter="all" class="vf-origin-filter ${state.filter === "all" ? "is-active" : ""}">Todos (${items.length})</button>
         <button type="button" data-origin-filter="link" class="vf-origin-filter ${state.filter === "link" ? "is-active" : ""}">🔗 Via link (${linked.length})</button>
         <button type="button" data-origin-filter="broadcast" class="vf-origin-filter ${state.filter === "broadcast" ? "is-active" : ""}">📲 Via disparo (${identified.length})</button>
+        ${(state.dateFrom || state.dateTo) ? `<button type="button" data-origin-filter="broadcast" class="vf-origin-filter ${state.filter === "broadcast" && (state.dateFrom || state.dateTo) ? "is-active-broadcast" : ""} vf-btn-period-broadcast">⚡ Disparos do Período (${broadcastInPeriod.length})</button>` : ""}
+      </div>
+
+      <div class="vf-date-row">
+        <label>📅 Período:</label>
+        <input type="date" class="vf-date-input vf-date-from" value="${escapeHtml(state.dateFrom)}" title="Data inicial" />
+        <label style="color:#94a3b8">até</label>
+        <input type="date" class="vf-date-input vf-date-to" value="${escapeHtml(state.dateTo)}" title="Data final" />
+        ${(state.dateFrom || state.dateTo) ? `<button type="button" class="vf-date-clear vf-date-clear-btn">✕ Limpar datas</button>` : ""}
       </div>
 
       <div class="vf-origin-dropdowns">
@@ -709,6 +749,8 @@ export default function WhatsappSurveyOriginMonitorV4() {
       search: "",
       district: "",
       candidate: "",
+      dateFrom: "",
+      dateTo: "",
       page: 1,
     };
     let loading = false;
@@ -850,11 +892,17 @@ export default function WhatsappSurveyOriginMonitorV4() {
         const needle = normalize(state.search);
         const candidateNeedle = normalize(state.candidate);
         const districtNeedle = normalize(state.district);
+        const fromTs = state.dateFrom ? new Date(state.dateFrom + "T00:00:00").getTime() : 0;
+        const toTs = state.dateTo ? new Date(state.dateTo + "T23:59:59").getTime() : Infinity;
 
         const filtered = items.filter((item) => {
           if (state.filter !== "all" && item.origin !== state.filter) return false;
           if (districtNeedle && normalize(item.district || "") !== districtNeedle) return false;
           if (candidateNeedle && !normalize(item.messageText || "").includes(candidateNeedle)) return false;
+          if (state.dateFrom || state.dateTo) {
+            const ts = item.timestamp ? new Date(item.timestamp).getTime() : 0;
+            if (ts < fromTs || ts > toTs) return false;
+          }
           if (!needle) return true;
           return normalize(
             `${item.contactName || ""} ${item.phone || ""} ${item.district || ""} ${item.messageText || ""}`,
@@ -871,11 +919,17 @@ export default function WhatsappSurveyOriginMonitorV4() {
         const needle = normalize(state.search);
         const candidateNeedle = normalize(state.candidate);
         const districtNeedle = normalize(state.district);
+        const fromTs = state.dateFrom ? new Date(state.dateFrom + "T00:00:00").getTime() : 0;
+        const toTs = state.dateTo ? new Date(state.dateTo + "T23:59:59").getTime() : Infinity;
 
         const filtered = items.filter((item) => {
           if (state.filter !== "all" && item.origin !== state.filter) return false;
           if (districtNeedle && normalize(item.district || "") !== districtNeedle) return false;
           if (candidateNeedle && !normalize(item.messageText || "").includes(candidateNeedle)) return false;
+          if (state.dateFrom || state.dateTo) {
+            const ts = item.timestamp ? new Date(item.timestamp).getTime() : 0;
+            if (ts < fromTs || ts > toTs) return false;
+          }
           if (!needle) return true;
           return normalize(
             `${item.contactName || ""} ${item.phone || ""} ${item.district || ""} ${item.messageText || ""}`,
@@ -905,6 +959,21 @@ export default function WhatsappSurveyOriginMonitorV4() {
 
     const onChange = (event: Event) => {
       const target = event.target;
+
+      // Campos de data
+      if (target instanceof HTMLInputElement && target.classList.contains("vf-date-from")) {
+        state.dateFrom = target.value;
+        state.page = 1;
+        draw();
+        return;
+      }
+      if (target instanceof HTMLInputElement && target.classList.contains("vf-date-to")) {
+        state.dateTo = target.value;
+        state.page = 1;
+        draw();
+        return;
+      }
+
       if (!(target instanceof HTMLSelectElement)) return;
 
       if (target.classList.contains("vf-origin-filter-district")) {
@@ -918,6 +987,18 @@ export default function WhatsappSurveyOriginMonitorV4() {
       }
     };
 
+    const onClickDateClear = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".vf-date-clear-btn")) {
+        state.dateFrom = "";
+        state.dateTo = "";
+        state.page = 1;
+        draw();
+      }
+    };
+    document.addEventListener("click", onClickDateClear, true);
+
     document.addEventListener("click", onClick, true);
     document.addEventListener("input", onInput, true);
     document.addEventListener("change", onChange, true);
@@ -928,6 +1009,7 @@ export default function WhatsappSurveyOriginMonitorV4() {
     return () => {
       observer.disconnect();
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("click", onClickDateClear, true);
       document.removeEventListener("input", onInput, true);
       document.removeEventListener("change", onChange, true);
       if (currentBar?.parentElement) restoreNativeContent(currentBar.parentElement);

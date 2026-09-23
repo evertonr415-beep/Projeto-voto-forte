@@ -9,6 +9,15 @@ import VotingChartsClient from "./apuracao-graficos/voting-charts-client";
 import WhatsAppChatClient from "./whatsapp-inbox/whatsapp-chat-client";
 import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
 import { Icons } from "./ui-icons";
+import "./local-database.css";
+import LocalDatabaseModal from "./local-database-modal";
+import {
+  LocalDatabaseMeta,
+  getActiveLocalDatabaseId,
+  setActiveLocalDatabaseId,
+  getLocalDatabaseMeta,
+  getLocalDatabaseRecords,
+} from "./local-database-service";
 
 type View =
   | "Visão Geral"
@@ -738,8 +747,8 @@ export default function DashboardClient({
                   }}
                   title="Disparo em Massa"
                 >
-                  <span className="nav-icon" style={{ color: "#2ddd7f", display: "inline-flex", alignItems: "center" }}>
-                    <Icons.Lightning size={17} color="#2ddd7f" />
+                  <span className="nav-icon" style={{ color: "#C9A84C", display: "inline-flex", alignItems: "center" }}>
+                    <Icons.Lightning size={17} color="#C9A84C" />
                   </span>
                   <span className="nav-name">Disparo em Massa</span>
                 </button>
@@ -1780,14 +1789,67 @@ function ContactManager({
   const [districtTotalPages, setDistrictTotalPages] = useState(1);
   const [districtLoading, setDistrictLoading] = useState(false);
 
+  // Estados do Banco de Dados Local
+  const [activeLocalDbId, setActiveLocalDbId] = useState<string | null>(null);
+  const [activeLocalDbMeta, setActiveLocalDbMeta] = useState<LocalDatabaseMeta | null>(null);
+  const [localDbRecords, setLocalDbRecords] = useState<(Contact & { id: number; ownerEmail: string })[]>([]);
+  const [isLocalDbModalOpen, setIsLocalDbModalOpen] = useState(false);
+  const [localDbReloadCount, setLocalDbReloadCount] = useState(0);
+
+  useEffect(() => {
+    const currentId = getActiveLocalDatabaseId();
+    setActiveLocalDbId(currentId);
+  }, []);
+
+  useEffect(() => {
+    if (!activeLocalDbId) {
+      setActiveLocalDbMeta(null);
+      setLocalDbRecords([]);
+      return;
+    }
+    let cancelled = false;
+    void Promise.all([
+      getLocalDatabaseMeta(activeLocalDbId),
+      getLocalDatabaseRecords(activeLocalDbId),
+    ]).then(([meta, recs]) => {
+      if (cancelled) return;
+      setActiveLocalDbMeta(meta);
+      const mapped: (Contact & { id: number; ownerEmail: string })[] = recs.map((r, i) => ({
+        id: r.id || i + 1,
+        name: r.name,
+        phone: r.phone,
+        kind: (r.kind === "Liderança" ? "Liderança" : "Eleitor") as Contact["kind"],
+        district: r.district || "",
+        cep: r.cep || "",
+        street: r.street || "",
+        number: r.number || "",
+        leader: r.leader || "",
+        ownerEmail: r.ownerEmail || `local-db:${meta?.name || "base"}`,
+      }));
+      setLocalDbRecords(mapped);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeLocalDbId, localDbReloadCount]);
+
   useEffect(() => {
     setDistrictPage(1);
-  }, [districtFilter, filter, scope]);
+  }, [districtFilter, filter, scope, activeLocalDbId]);
 
   useEffect(() => {
     if (!districtFilter) {
       setDistrictContacts([]);
       setDistrictTotal(0);
+      setDistrictTotalPages(1);
+      setDistrictLoading(false);
+      return;
+    }
+    if (activeLocalDbId) {
+      // Filtragem local por bairro quando base local estiver ativa
+      const filtered = localDbRecords.filter((c) => c.district.toLowerCase() === districtFilter.toLowerCase());
+      setDistrictContacts(filtered);
+      setDistrictTotal(filtered.length);
       setDistrictTotalPages(1);
       setDistrictLoading(false);
       return;
@@ -1829,11 +1891,13 @@ function ContactManager({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [districtFilter, filter, scope, query, districtPage, tell]);
+  }, [districtFilter, filter, scope, query, districtPage, tell, activeLocalDbId, localDbRecords]);
+
+  const activeContactsList = activeLocalDbId ? localDbRecords : contacts;
 
   const profileContacts = useMemo(
-    () => (filter === "Todos" ? contacts : contacts.filter((c) => c.kind === filter)),
-    [contacts, filter],
+    () => (filter === "Todos" ? activeContactsList : activeContactsList.filter((c) => c.kind === filter)),
+    [activeContactsList, filter],
   );
   const filteredContacts = districtFilter ? districtContacts : profileContacts;
   const list = useMemo(() => {
@@ -1851,13 +1915,13 @@ function ContactManager({
     let vCount = 0;
     let lCount = 0;
     const districtSet = new Set<string>();
-    for (const c of contacts) {
+    for (const c of activeContactsList) {
       if (c.kind === "Eleitor") vCount++;
       else if (c.kind === "Liderança") lCount++;
       if (c.district) districtSet.add(c.district);
     }
     return { voters: vCount, leaders: lCount, districts: districtSet.size };
-  }, [contacts]);
+  }, [activeContactsList]);
   async function pick(file?: File) {
     if (!file) return;
     const parsed = file.name.toLowerCase().endsWith(".vcf")
@@ -1886,7 +1950,7 @@ function ContactManager({
     tell(`${saved} contato(s) importado(s); duplicados ignorados.`);
   }
   const rows = () =>
-    contacts.map((c) => [
+    activeContactsList.map((c) => [
       c.name,
       c.phone,
       c.kind,
@@ -1898,8 +1962,11 @@ function ContactManager({
       c.ownerEmail,
     ]);
   function csv() {
+    const fileName = activeLocalDbMeta
+      ? `contatos-${activeLocalDbMeta.name.toLowerCase().replace(/\s+/g, "-")}.csv`
+      : "contatos-voto-forte.csv";
     downloadFile(
-      "contatos-voto-forte.csv",
+      fileName,
       "\ufeff" +
         [
           [
@@ -1923,6 +1990,10 @@ function ContactManager({
   async function excel() {
     const X = await import("xlsx");
     const b = X.utils.book_new();
+    const sheetName = activeLocalDbMeta ? activeLocalDbMeta.name.slice(0, 30) : "Contatos";
+    const fileName = activeLocalDbMeta
+      ? `contatos-${activeLocalDbMeta.name.toLowerCase().replace(/\s+/g, "-")}.xlsx`
+      : "contatos-voto-forte.xlsx";
     X.utils.book_append_sheet(
       b,
       X.utils.aoa_to_sheet([
@@ -1939,23 +2010,30 @@ function ContactManager({
         ],
         ...rows(),
       ]),
-      "Contatos",
+      sheetName,
     );
-    X.writeFile(b, "contatos-voto-forte.xlsx");
+    X.writeFile(b, fileName);
   }
   function vcf() {
+    const fileName = activeLocalDbMeta
+      ? `contatos-${activeLocalDbMeta.name.toLowerCase().replace(/\s+/g, "-")}.vcf`
+      : "contatos-voto-forte.vcf";
     downloadFile(
-      "contatos-voto-forte.vcf",
-      contacts
+      fileName,
+      activeContactsList
         .map(
           (c) =>
-            `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${c.name}\r\nTEL;TYPE=CELL:${c.phone}\r\nNOTE:${c.kind} - Voto Forte Paraná\r\nEND:VCARD`,
+            `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${c.name}\r\nTEL;TYPE=CELL:${c.phone}\r\nNOTE:${c.kind} - ${activeLocalDbMeta?.name || "Voto Forte"}\r\nEND:VCARD`,
         )
         .join("\r\n"),
       "text/vcard;charset=utf-8",
     );
   }
   async function confirmDelete(contact: Contact & { id: number }) {
+    if (activeLocalDbId) {
+      tell("Esta base é gerenciada localmente. Para gerenciá-la, abra o Gerenciador de Bases Locais.");
+      return;
+    }
     if (window.confirm(`Excluir o contato ${contact.name}?`))
       await deleteContact(contact.id);
   }
@@ -1963,43 +2041,123 @@ function ContactManager({
     <>
       <PageHead
         eyebrow={
-          isAdmin
+          activeLocalDbMeta
+            ? `BASE LOCAL: ${activeLocalDbMeta.name.toUpperCase()}`
+            : isAdmin
             ? "CONTROLE ADMINISTRATIVO DE CONTATOS"
             : "MINHA BASE PRIVATIVA"
         }
-        title="Gerenciamento de contatos"
+        title={
+          activeLocalDbMeta
+            ? `Contatos: ${activeLocalDbMeta.name}`
+            : "Gerenciamento de contatos"
+        }
         text={
-          isAdmin
+          activeLocalDbMeta
+            ? `Visualizando apenas os registros da base local "${activeLocalDbMeta.name}". A base principal permanece intacta.`
+            : isAdmin
             ? "Consulte e gerencie contatos de todos os usuários no ambiente selecionado."
             : "Importe, edite e exporte somente os seus próprios contatos."
         }
-        action="+ Novo cadastro"
-        onClick={() => open("cadastro")}
+        action={activeLocalDbId ? "🗄️ Alternar / Nova Base" : "+ Novo cadastro"}
+        onClick={() => (activeLocalDbId ? setIsLocalDbModalOpen(true) : open("cadastro"))}
       />
+
+      {/* Faixa de Base Ativa */}
+      {activeLocalDbMeta ? (
+        <div className="local-db-badge-strip">
+          <div className="local-db-badge-info">
+            <span>🗄️</span>
+            <div>
+              Exibindo registros da Base Local: <b>{activeLocalDbMeta.name}</b> ({activeContactsList.length} registros)
+            </div>
+          </div>
+          <div className="local-db-badge-actions">
+            <button
+              className="btn-switch-db"
+              onClick={() => setIsLocalDbModalOpen(true)}
+            >
+              Trocar Base
+            </button>
+            <button
+              className="btn-reset-db"
+              onClick={() => {
+                setActiveLocalDbId(null);
+                setActiveLocalDatabaseId(null);
+              }}
+            >
+              Voltar à Base Principal
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div
-        className="management-filter"
-        role="group"
-        aria-label="Filtrar contatos"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "14px",
+        }}
       >
-        <button
-          className={filter === "Todos" ? "active" : ""}
-          onClick={() => setFilter("Todos")}
+        <div
+          className="management-filter"
+          role="group"
+          aria-label="Filtrar contatos"
+          style={{ margin: 0 }}
         >
-          Todos
-        </button>
+          <button
+            className={filter === "Todos" ? "active" : ""}
+            onClick={() => setFilter("Todos")}
+          >
+            Todos
+          </button>
+          <button
+            className={filter === "Eleitor" ? "active" : ""}
+            onClick={() => setFilter("Eleitor")}
+          >
+            Eleitores
+          </button>
+          <button
+            className={filter === "Liderança" ? "active" : ""}
+            onClick={() => setFilter("Liderança")}
+          >
+            Lideranças
+          </button>
+        </div>
+
+        {/* Balão / Seletor de Banco de Dados Local */}
         <button
-          className={filter === "Eleitor" ? "active" : ""}
-          onClick={() => setFilter("Eleitor")}
+          type="button"
+          onClick={() => setIsLocalDbModalOpen(true)}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: activeLocalDbId ? "#0284c7" : "#ffffff",
+            color: activeLocalDbId ? "#ffffff" : "#1e40af",
+            border: activeLocalDbId ? "1.5px solid #0284c7" : "1.5px solid #bfdbfe",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            fontWeight: 700,
+            fontSize: "13px",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            transition: "all 0.15s ease",
+          }}
         >
-          Eleitores
-        </button>
-        <button
-          className={filter === "Liderança" ? "active" : ""}
-          onClick={() => setFilter("Liderança")}
-        >
-          Lideranças
+          <span>🗄️</span>
+          <span>
+            {activeLocalDbMeta
+              ? `Base: ${activeLocalDbMeta.name}`
+              : "Banco de Dados Local"}
+          </span>
+          <span style={{ fontSize: "10px", opacity: 0.8 }}>▼</span>
         </button>
       </div>
+
       {districtFilter && (
         <div className="district-contact-filter" role="status">
           <span>
@@ -2012,7 +2170,7 @@ function ContactManager({
       )}
       <div className="summary-strip">
         <span>
-          <b>{contacts.length}</b>Total de contatos
+          <b>{activeContactsList.length}</b>Total de contatos
         </span>
         <span>
           <b>{voters}</b>Eleitores
@@ -2028,7 +2186,7 @@ function ContactManager({
         <article className="panel import-contacts">
           <span className="feature-icon">⇧</span>
           <h3>Importar contatos</h3>
-          <p>Selecione CSV ou VCF e confira antes de salvar.</p>
+          <p>Selecione CSV ou VCF para a base principal.</p>
           <label className="file-picker">
             Selecionar arquivo
             <input
@@ -2039,16 +2197,61 @@ function ContactManager({
           </label>
           <footer>Duplicados são ignorados.</footer>
         </article>
+
         <article className="panel export-contacts">
           <span className="feature-icon">⇩</span>
           <h3>
-            {isAdmin ? "Exportar contatos exibidos" : "Exportar meus contatos"}
+            {activeLocalDbMeta
+              ? `Exportar "${activeLocalDbMeta.name}"`
+              : isAdmin
+              ? "Exportar contatos exibidos"
+              : "Exportar meus contatos"}
           </h3>
-          <p>{contacts.length} contato(s) neste ambiente.</p>
+          <p>{activeContactsList.length} contato(s) {activeLocalDbMeta ? "nesta base local" : "neste ambiente"}.</p>
           <div className="export-buttons">
             <button onClick={csv}>CSV</button>
             <button onClick={() => void excel()}>Excel</button>
             <button onClick={vcf}>VCF</button>
+          </div>
+        </article>
+
+        <article
+          className="panel local-db-action-card"
+          onClick={() => setIsLocalDbModalOpen(true)}
+        >
+          <span className="feature-icon">🗄️</span>
+          <h3>
+            Banco de Dados Local
+            {activeLocalDbMeta && (
+              <span className="active-db-indicator">● {activeLocalDbMeta.name}</span>
+            )}
+          </h3>
+          <p>
+            {activeLocalDbMeta
+              ? `Base "${activeLocalDbMeta.name}" ativa. Alterne ou suba novas bases.`
+              : "Suba novas bases isoladas (ex: dados carrim) sem alterar a base principal."}
+          </p>
+          <div className="local-db-quick-buttons">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLocalDbModalOpen(true);
+              }}
+            >
+              Gerenciar Bases
+            </button>
+            {activeLocalDbId && (
+              <button
+                className="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveLocalDbId(null);
+                  setActiveLocalDatabaseId(null);
+                }}
+              >
+                Base Principal
+              </button>
+            )}
           </div>
         </article>
       </div>
@@ -2269,6 +2472,18 @@ function ContactManager({
           </div>
         </div>
       )}
+      {/* Modal do Gerenciador de Bases de Dados Locais */}
+      <LocalDatabaseModal
+        isOpen={isLocalDbModalOpen}
+        onClose={() => setIsLocalDbModalOpen(false)}
+        activeDbId={activeLocalDbId}
+        onSelectDatabase={(id) => {
+          setActiveLocalDbId(id);
+          setActiveLocalDatabaseId(id);
+        }}
+        onDatabaseChanged={() => setLocalDbReloadCount((c) => c + 1)}
+        tell={tell}
+      />
     </>
   );
 }

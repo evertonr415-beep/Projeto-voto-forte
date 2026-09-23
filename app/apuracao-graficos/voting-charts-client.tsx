@@ -368,65 +368,65 @@ export default function VotingChartsClient({
 
     if (activeCategory === "state") {
       return [
-        { candidate: "Sérgio Onofre", votes: 4630, percentage: 48.0 },
-        { candidate: "Pedro Paulo Bazana", votes: 1543, percentage: 16.0 },
-        { candidate: "Indeciso / Não sabe", votes: 1275, percentage: 13.2 },
-        { candidate: "Branco / Nulo", votes: 1043, percentage: 10.8 },
-        { candidate: "Cobra Repórter", votes: 578, percentage: 6.0 },
-        { candidate: "Delegado Jacovós", votes: 385, percentage: 4.0 },
-        { candidate: "Aline Franzon", votes: 192, percentage: 2.0 },
+        { candidate: "Sérgio Onofre", votes: 6300, percentage: 45.0 },
+        { candidate: "Pedro Paulo Bazana", votes: 2520, percentage: 18.0 },
+        { candidate: "Indeciso / Não sabe", votes: 1848, percentage: 13.2 },
+        { candidate: "Branco / Nulo", votes: 1512, percentage: 10.8 },
+        { candidate: "Cobra Repórter", votes: 840, percentage: 6.0 },
+        { candidate: "Delegado Jacovós", votes: 560, percentage: 4.0 },
+        { candidate: "Aline Franzon", votes: 280, percentage: 2.0 },
+        { candidate: "Outros", votes: 140, percentage: 1.0 },
       ];
     }
     if (activeCategory === "federal") {
       return [
-        { candidate: "Pedro Lupion", votes: 2990, percentage: 31.0 },
-        { candidate: "Indeciso / Não sabe", votes: 2425, percentage: 25.1 },
-        { candidate: "Branco / Nulo", votes: 1983, percentage: 20.6 },
-        { candidate: "Beto Preto", votes: 771, percentage: 8.0 },
-        { candidate: "Luciano Ducci", votes: 482, percentage: 5.0 },
-        { candidate: "Marco Brasil", votes: 341, percentage: 3.5 },
-        { candidate: "Neto Santos", votes: 318, percentage: 3.3 },
-        { candidate: "Ricardo Barros", votes: 192, percentage: 2.0 },
-        { candidate: "Santin Roveda", votes: 96, percentage: 1.0 },
-        { candidate: "Bonin", votes: 48, percentage: 0.5 },
+        { candidate: "Pedro Lupion", votes: 5320, percentage: 38.0 },
+        { candidate: "Beto Preto", votes: 2800, percentage: 20.0 },
+        { candidate: "Indeciso / Não sabe", votes: 2240, percentage: 16.0 },
+        { candidate: "Branco / Nulo", votes: 1540, percentage: 11.0 },
+        { candidate: "Luciano Ducci", votes: 700, percentage: 5.0 },
+        { candidate: "Marco Brasil", votes: 490, percentage: 3.5 },
+        { candidate: "Neto Santos", votes: 476, percentage: 3.4 },
+        { candidate: "Ricardo Barros", votes: 280, percentage: 2.0 },
+        { candidate: "Santin Roveda", votes: 112, percentage: 0.8 },
+        { candidate: "Bonin", votes: 42, percentage: 0.3 },
       ];
     }
     if (activeCategory === "governor") {
       return [
-        { candidate: "Sandro Alex", votes: 3357, percentage: 34.8 },
-        { candidate: "Sergio Moro", votes: 3048, percentage: 31.6 },
-        { candidate: "Luiz França", votes: 936, percentage: 9.7 },
-        { candidate: "Indeciso / Não sabe", votes: 868, percentage: 9.0 },
-        { candidate: "Outros", votes: 733, percentage: 7.6 },
-        { candidate: "Requião Filho", votes: 704, percentage: 7.3 },
+        { candidate: "Sandro Alex", votes: 4858, percentage: 34.7 },
+        { candidate: "Sergio Moro", votes: 4438, percentage: 31.7 },
+        { candidate: "Luiz França", votes: 1358, percentage: 9.7 },
+        { candidate: "Indeciso / Não sabe", votes: 1250, percentage: 8.9 },
+        { candidate: "Outros", votes: 1064, percentage: 7.6 },
+        { candidate: "Requião Filho", votes: 1032, percentage: 7.4 },
       ];
     }
     if (activeCategory === "senator") {
       return [
-        { candidate: "Alexandre Curi", votes: 8, percentage: 24.2, party: "REPUBLICANOS" },
-        { candidate: "Cristina Graeml", votes: 7, percentage: 21.2, party: "PSD" },
-        { candidate: "Deltan Dallagnol", votes: 7, percentage: 21.2, party: "NOVO" },
-        { candidate: "Filipe Barros", votes: 5, percentage: 15.2, party: "PL" },
-        { candidate: "Gleisi", votes: 4, percentage: 12.1, party: "PT" },
-        { candidate: "Dr Rosinha", votes: 2, percentage: 6.1, party: "PT" },
+        { candidate: "Alexandre Curi", votes: 4116, percentage: 29.4, party: "REPUBLICANOS" },
+        { candidate: "Cristina Graeml", votes: 3500, percentage: 25.0, party: "PSD" },
+        { candidate: "Deltan Dallagnol", votes: 3038, percentage: 21.7, party: "NOVO" },
+        { candidate: "Filipe Barros", votes: 2086, percentage: 14.9, party: "PL" },
+        { candidate: "Gleisi", votes: 1260, percentage: 9.0, party: "PT" },
       ];
     }
     if (activeCategory === "president") {
       return [
-        { candidate: "Flávio Bolsonaro", votes: 4534, percentage: 47.0 },
-        { candidate: "Lula", votes: 1910, percentage: 19.8 },
-        { candidate: "Renan Santos", votes: 1051, percentage: 10.9 },
-        { candidate: "Augusto Cury", votes: 820, percentage: 8.5 },
-        { candidate: "Ronaldo Caiado", votes: 617, percentage: 6.4 },
-        { candidate: "Indeciso / Não sabe", votes: 395, percentage: 4.1 },
-        { candidate: "Romeu Zema", votes: 164, percentage: 1.7 },
-        { candidate: "Outro candidato", votes: 77, percentage: 0.8 },
+        { candidate: "Flávio Bolsonaro", votes: 6650, percentage: 47.5 },
+        { candidate: "Lula", votes: 2800, percentage: 20.0 },
+        { candidate: "Renan Santos", votes: 1526, percentage: 10.9 },
+        { candidate: "Augusto Cury", votes: 1204, percentage: 8.6 },
+        { candidate: "Ronaldo Caiado", votes: 910, percentage: 6.5 },
+        { candidate: "Indeciso / Não sabe", votes: 560, percentage: 4.0 },
+        { candidate: "Romeu Zema", votes: 240, percentage: 1.7 },
+        { candidate: "Outro candidato", votes: 110, percentage: 0.8 },
       ];
     }
     return [
-      { candidate: "Boa", votes: 5282, percentage: 54.8 },
-      { candidate: "Ruim", votes: 2331, percentage: 24.2 },
-      { candidate: "Média", votes: 2033, percentage: 21.0 },
+      { candidate: "Boa", votes: 10010, percentage: 71.5 },
+      { candidate: "Média", votes: 2730, percentage: 19.5 },
+      { candidate: "Ruim", votes: 1260, percentage: 9.0 },
     ];
   }, [activeCategory, stateRanking, federalRanking, governorRanking, senatorRanking, presidentRanking, managementRanking]);
 

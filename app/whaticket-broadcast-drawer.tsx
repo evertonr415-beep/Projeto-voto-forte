@@ -96,6 +96,60 @@ function resolveTag(value: string, contact: ContactItem) {
     .replace(/\{lideranca\}/gi, contact.leader || "Liderança");
 }
 
+// Coordenadas aproximadas dos bairros de Arapongas-PR
+const ARAPONGAS_DISTRICTS: Record<string, { lat: number; lng: number }> = {
+  "Centro": { lat: -23.4139, lng: -51.4264 },
+  "Jardim Paraíso": { lat: -23.4080, lng: -51.4310 },
+  "Jardim Imperial": { lat: -23.4060, lng: -51.4210 },
+  "Jardim União": { lat: -23.4200, lng: -51.4300 },
+  "Jardim São Paulo": { lat: -23.4230, lng: -51.4180 },
+  "Jardim América": { lat: -23.4150, lng: -51.4350 },
+  "Jardim Novo Horizonte": { lat: -23.4020, lng: -51.4380 },
+  "Jardim Paulista": { lat: -23.4170, lng: -51.4400 },
+  "Jardim Itamaraty": { lat: -23.4250, lng: -51.4350 },
+  "Jardim Olinda": { lat: -23.4280, lng: -51.4280 },
+  "Jardim Ipê": { lat: -23.4190, lng: -51.4430 },
+  "Jardim Alvorada": { lat: -23.4100, lng: -51.4440 },
+  "Jardim Planalto": { lat: -23.4050, lng: -51.4180 },
+  "Jardim Tropical": { lat: -23.4000, lng: -51.4250 },
+  "Jardim Morada do Sol": { lat: -23.4310, lng: -51.4200 },
+  "Jardim Brasil": { lat: -23.4350, lng: -51.4250 },
+  "Jardim Riviera": { lat: -23.4120, lng: -51.4480 },
+  "Jardim Nossa Senhora de Fátima": { lat: -23.4260, lng: -51.4450 },
+  "Jardim Canadá": { lat: -23.4070, lng: -51.4490 },
+  "Jardim Santa Mônica": { lat: -23.4330, lng: -51.4320 },
+  "Jardim Pinheiros": { lat: -23.3980, lng: -51.4300 },
+  "Jardim Bela Vista": { lat: -23.4080, lng: -51.4160 },
+  "Jardim dos Camargos": { lat: -23.4380, lng: -51.4180 },
+  "Jardim Novo Cambuí": { lat: -23.4400, lng: -51.4130 },
+  "Conjunto Residencial Francisco Maciel": { lat: -23.4160, lng: -51.4130 },
+  "Vila Nova": { lat: -23.4180, lng: -51.4260 },
+  "Vila São Francisco": { lat: -23.4240, lng: -51.4130 },
+  "Bairro Novo": { lat: -23.4300, lng: -51.4150 },
+  "Residencial Ouro Verde": { lat: -23.4050, lng: -51.4430 },
+  "Parque Industrial": { lat: -23.4350, lng: -51.4400 },
+  "Arapongas": { lat: -23.4139, lng: -51.4264 },
+};
+
+function calcDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function findNearestDistrict(lat: number, lng: number): { name: string; distKm: number } {
+  let best = { name: "Arapongas", distKm: Infinity };
+  for (const [name, coords] of Object.entries(ARAPONGAS_DISTRICTS)) {
+    const d = calcDistanceKm(lat, lng, coords.lat, coords.lng);
+    if (d < best.distKm) best = { name, distKm: d };
+  }
+  return best;
+}
+
 export default function WhaticketBroadcastDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"disparo" | "tempo-real" | "logs">("disparo");
@@ -107,6 +161,12 @@ export default function WhaticketBroadcastDrawer() {
   const [selectedKind, setSelectedKind] = useState<"Todos" | "Eleitor" | "Liderança">("Todos");
   const [recipientLimit, setRecipientLimit] = useState(50);
   const [delaySeconds, setDelaySeconds] = useState(3);
+
+  // Filtro de proximidade por GPS
+  const [geoFilter, setGeoFilter] = useState<{ lat: number; lng: number; radiusKm: number } | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
+  const [geoNearbyDistricts, setGeoNearbyDistricts] = useState<{ name: string; distKm: number }[]>([]);
 
   const [templates, setTemplates] = useState<MetaTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -230,8 +290,8 @@ export default function WhaticketBroadcastDrawer() {
       button.title = "Disparo em Massa";
       const icon = document.createElement("span");
       icon.className = "nav-icon";
-      icon.style.color = "#2ddd7f";
-      icon.textContent = "⚡";
+      icon.style.cssText = "color:#C9A84C;display:inline-flex;align-items:center;";
+      icon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
       const label = document.createElement("span");
       label.className = "nav-name";
       label.textContent = "Disparo em Massa";
@@ -427,15 +487,25 @@ export default function WhaticketBroadcastDrawer() {
 
   const recipients = useMemo(() => {
     const seen = new Set<string>();
+    // Monta conjunto de bairros permitidos pelo filtro GPS
+    const allowedDistricts = geoFilter
+      ? new Set(geoNearbyDistricts.map((d) => d.name.trim().toLowerCase()))
+      : null;
+
     return contacts
       .filter((contact) => {
         const normalized = normalizeWhatsappPhone(contact.phone || "");
         if (!normalized || normalized.length < 10 || seen.has(normalized)) return false;
         seen.add(normalized);
+        // Aplica filtro de proximidade se ativo
+        if (allowedDistricts && allowedDistricts.size > 0) {
+          const contactDistrict = (contact.district || "").trim().toLowerCase();
+          if (!contactDistrict || !allowedDistricts.has(contactDistrict)) return false;
+        }
         return true;
       })
       .slice(0, recipientLimit > 0 ? recipientLimit : undefined);
-  }, [contacts, recipientLimit]);
+  }, [contacts, recipientLimit, geoFilter, geoNearbyDistricts]);
 
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.name === templateName && template.language === templateLanguage) || null,
@@ -687,6 +757,100 @@ export default function WhaticketBroadcastDrawer() {
                     ))}
                   </select>
                 </div>
+
+                {/* Filtro por Proximidade GPS */}
+                <div style={{ marginBottom: 12, padding: "12px 14px", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 12, background: "rgba(6,78,59,0.18)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: geoFilter ? 10 : 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>📍</span>
+                      <span style={{ color: "#6ee7b7", fontSize: 12, fontWeight: 700 }}>Filtrar por Proximidade</span>
+                      {geoFilter && (
+                        <span style={{ background: "rgba(52,211,153,0.2)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 999, padding: "2px 8px", fontSize: 10, color: "#6ee7b7", fontWeight: 800 }}>
+                          ✓ ATIVO — {geoFilter.radiusKm}km
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {!geoFilter ? (
+                        <button
+                          type="button"
+                          disabled={geoLoading}
+                          style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(6,78,59,0.4)", color: "#6ee7b7", borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: geoLoading ? "wait" : "pointer" }}
+                          onClick={() => {
+                            setGeoError("");
+                            setGeoLoading(true);
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                const { latitude, longitude } = pos.coords;
+                                const radiusKm = 2;
+                                setGeoFilter({ lat: latitude, lng: longitude, radiusKm });
+                                const nearby = Object.entries(ARAPONGAS_DISTRICTS)
+                                  .map(([name, coords]) => ({ name, distKm: calcDistanceKm(latitude, longitude, coords.lat, coords.lng) }))
+                                  .filter((d) => d.distKm <= radiusKm)
+                                  .sort((a, b) => a.distKm - b.distKm);
+                                setGeoNearbyDistricts(nearby);
+                                setGeoLoading(false);
+                              },
+                              (err) => {
+                                setGeoError(err.code === 1 ? "Permissão de localização negada. Habilite no navegador." : "Não foi possível obter sua localização.");
+                                setGeoLoading(false);
+                              },
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
+                        >
+                          {geoLoading ? "📡 Obtendo GPS..." : "📡 Usar minha localização"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          style={{ border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: "#f87171", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                          onClick={() => { setGeoFilter(null); setGeoNearbyDistricts([]); setGeoError(""); }}
+                        >
+                          ✕ Remover filtro
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {geoError && <small style={{ color: "#f87171", fontSize: 11 }}>{geoError}</small>}
+
+                  {geoFilter && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <label style={{ color: "#94a3b8", fontSize: 11, whiteSpace: "nowrap" }}>Raio:</label>
+                        <input
+                          type="range" min={1} max={15} step={1}
+                          value={geoFilter.radiusKm}
+                          style={{ flex: 1, accentColor: "#34d399" }}
+                          onChange={(e) => {
+                            const radiusKm = Number(e.target.value);
+                            setGeoFilter((prev) => prev ? { ...prev, radiusKm } : null);
+                            const nearby = Object.entries(ARAPONGAS_DISTRICTS)
+                              .map(([name, coords]) => ({ name, distKm: calcDistanceKm(geoFilter.lat, geoFilter.lng, coords.lat, coords.lng) }))
+                              .filter((d) => d.distKm <= radiusKm)
+                              .sort((a, b) => a.distKm - b.distKm);
+                            setGeoNearbyDistricts(nearby);
+                          }}
+                        />
+                        <strong style={{ color: "#34d399", fontSize: 13, minWidth: 36 }}>{geoFilter.radiusKm}km</strong>
+                      </div>
+
+                      {geoNearbyDistricts.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {geoNearbyDistricts.map((d) => (
+                            <span key={d.name} style={{ background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 999, padding: "3px 8px", fontSize: 10, color: "#6ee7b7", fontWeight: 700 }}>
+                              {d.name} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({d.distKm.toFixed(1)}km)</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <small style={{ color: "#f87171", fontSize: 11 }}>⚠️ Nenhum bairro dentro de {geoFilter.radiusKm}km. Aumente o raio.</small>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div className="wt-form-group">
                     <label>Perfil</label>
