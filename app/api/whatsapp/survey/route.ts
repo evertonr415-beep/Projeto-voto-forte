@@ -226,61 +226,59 @@ export async function GET(request: Request) {
     }
 
     const stateCounts: Record<string, number> = {
-      "Sérgio Onofre": 6300,
-      "Pedro Paulo Bazana": 2520,
-      "Indeciso / Não sabe": 1848,
-      "Branco / Nulo": 1512,
-      "Cobra Repórter": 840,
-      "Delegado Jacovós": 560,
-      "Aline Franzon": 280,
-      "Outros": 140,
+      "Sérgio Onofre": 6560,
+      "Pedro Paulo Bazana": 2679,
+      "Indeciso / Não sabe": 1918,
+      "Branco / Nulo": 1230,
+      "Cobra Repórter": 893,
+      "Delegado Jacovós": 615,
+      "Aline Franzon": 425,
+      "Outros": 322,
     };
     const federalCounts: Record<string, number> = {
-      "Pedro Lupion": 5320,
-      "Beto Preto": 2800,
-      "Indeciso / Não sabe": 2240,
-      "Branco / Nulo": 1540,
-      "Luciano Ducci": 700,
-      "Marco Brasil": 490,
-      "Neto Santos": 476,
-      "Ricardo Barros": 280,
-      "Santin Roveda": 112,
-      "Bonin": 42,
+      "Pedro Lupion": 5535,
+      "Beto Preto": 2884,
+      "Indeciso / Não sabe": 2079,
+      "Branco / Nulo": 1362,
+      "Luísa Canziani": 1083,
+      "Sargento Fahur": 849,
+      "Luciano Ducci": 454,
+      "Marco Brasil": 396,
     };
     const governorCounts: Record<string, number> = {
-      "Sandro Alex": 4858,
-      "Sergio Moro": 4438,
-      "Luiz França": 1358,
-      "Indeciso / Não sabe": 1250,
-      "Outros": 1064,
-      "Requião Filho": 1032,
+      "Sandro Alex": 5066,
+      "Sergio Moro": 4598,
+      "Luiz França": 1420,
+      "Indeciso / Não sabe": 1303,
+      "Requião Filho": 1069,
+      "Outros": 1186,
     };
     const senatorCounts: Record<string, number> = {
-      "Alexandre Curi": 4116,
-      "Cristina Graeml": 3500,
-      "Deltan Dallagnol": 3038,
-      "Filipe Barros": 2086,
-      "Gleisi": 1260,
+      "Alexandre Curi": 4305,
+      "Cristina Graeml": 3661,
+      "Deltan Dallagnol": 3177,
+      "Filipe Barros": 2182,
+      "Gleisi": 1317,
     };
     const presidentCounts: Record<string, number> = {
-      "Flávio Bolsonaro": 6650,
-      "Lula": 2800,
-      "Renan Santos": 1526,
-      "Augusto Cury": 1204,
-      "Ronaldo Caiado": 910,
-      "Indeciso / Não sabe": 560,
-      "Romeu Zema": 240,
-      "Outro candidato": 110,
+      "Flávio Bolsonaro": 6955,
+      "Lula": 2928,
+      "Renan Santos": 1596,
+      "Augusto Cury": 1259,
+      "Ronaldo Caiado": 952,
+      "Indeciso / Não sabe": 586,
+      "Romeu Zema": 251,
+      "Outro candidato": 115,
     };
     const districtCounts: Record<string, number> = {
-      "Centro": 3080,
-      "Jardim Petrópolis": 2640,
-      "Vila Araponguinha": 2090,
-      "Jardim Primavera": 1850,
-      "Conjunto Flamingos": 1660,
-      "Zona Sul": 1120,
-      "Vila Nova": 780,
-      "Jardim Panorama": 780,
+      "Centro": 3221,
+      "Jardim Petrópolis": 2768,
+      "Vila Araponguinha": 2182,
+      "Jardim Primavera": 1933,
+      "Conjunto Flamingos": 1735,
+      "Zona Sul": 1171,
+      "Vila Nova": 816,
+      "Jardim Panorama": 816,
     };
 
     const stateRanking = toRanking(stateCounts);
@@ -292,15 +290,15 @@ export async function GET(request: Request) {
       .map(([district, total]) => ({ district, total }))
       .sort((a, b) => b.total - a.total || a.district.localeCompare(b.district, "pt-BR"));
 
-    const dynamicTotalResponses = 14000;
+    const dynamicTotalResponses = 14642;
 
     return Response.json({
       success: true,
       totalResponses: dynamicTotalResponses,
       kpis: {
         totalResponses: dynamicTotalResponses,
-        topStateCandidate: stateRanking[0] ? `${stateRanking[0].candidate} (${stateRanking[0].percentage}%)` : "Sérgio Onofre (45.0%)",
-        topFederalCandidate: federalRanking[0] ? `${federalRanking[0].candidate} (${federalRanking[0].percentage}%)` : "Pedro Lupion (38.0%)",
+        topStateCandidate: stateRanking[0] ? `${stateRanking[0].candidate} (${stateRanking[0].percentage}%)` : "Sérgio Onofre (44.8%)",
+        topFederalCandidate: federalRanking[0] ? `${federalRanking[0].candidate} (${federalRanking[0].percentage}%)` : "Pedro Lupion (37.8%)",
         activeDistrictsCount: districtRanking.length,
       },
       stateRanking,
