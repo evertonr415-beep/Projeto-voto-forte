@@ -1,0 +1,1312 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "./supabase-client";
+import { formatDisplayPhone, formatReadableSurveyText } from "./api/whatsapp/survey-formatter";
+import WhatsappHumanizedBroadcaster from "./whatsapp-humanized-broadcaster";
+
+type ContactItem = {
+  id: number;
+  name: string;
+  phone: string;
+  district?: string;
+  leader?: string;
+  kind?: "Eleitor" | "Liderança";
+};
+
+type DistrictSummary = {
+  district: string;
+  total: number;
+};
+
+type MetaTemplate = {
+  id: string;
+  name: string;
+  status: string;
+  language: string;
+  category: string;
+  body: string;
+  bodyParameterCount: number;
+  unsupportedHeader: boolean;
+};
+
+type LogItem = {
+  id: string;
+  name: string;
+  phone: string;
+  status: "pending" | "sending" | "sent" | "error";
+  error?: string;
+  time: string;
+};
+
+type LiveMessageItem = {
+  id: string;
+  phone: string;
+  contactName: string;
+  district?: string;
+  status: "sent" | "delivered" | "read" | "error" | "replied";
+  errorMessage?: string;
+  lastMessageText?: string;
+  sentAt?: string;
+  repliedAt?: string;
+  replyText?: string;
+  direction: "outbound" | "inbound";
+};
+
+type LiveFeedKpis = {
+  totalOutbound: number;
+  deliveredCount: number;
+  failedCount: number;
+  deliveryRate: number;
+  repliedCount: number;
+  responseRate: number;
+  activeContacts: number;
+};
+
+const STORAGE_DELAY_KEY = "voto-forte:meta:delaySeconds";
+const STORAGE_TEMPLATE_KEY = "voto-forte:meta:templateName";
+const STORAGE_LANGUAGE_KEY = "voto-forte:meta:templateLanguage";
+
+function normalizeWhatsappPhone(raw: string): string {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+  digits = digits.replace(/^0+/, "");
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+  if (digits.length === 8 || digits.length === 9) {
+    return `5543${digits}`;
+  }
+  return digits.length >= 10 ? digits : "";
+}
+
+function formatPhoneDisplay(raw: string): string {
+  return formatDisplayPhone(raw);
+}
+
+function resolveTag(value: string, contact: ContactItem) {
+  const firstName = (contact.name || "").trim().split(/\s+/)[0] || "Amigo(a)";
+  return String(value || "")
+    .replace(/\{nome\}/gi, contact.name || "Amigo(a)")
+    .replace(/\{primeiro_nome\}/gi, firstName)
+    .replace(/\{bairro\}/gi, contact.district || "sua região")
+    .replace(/\{cidade\}/gi, "Arapongas")
+    .replace(/\{lideranca\}/gi, contact.leader || "Liderança");
+}
+
+// Coordenadas aproximadas dos bairros de Arapongas-PR
+const ARAPONGAS_DISTRICTS: Record<string, { lat: number; lng: number }> = {
+  "Centro": { lat: -23.4139, lng: -51.4264 },
+  "Jardim Paraíso": { lat: -23.4080, lng: -51.4310 },
+  "Jardim Imperial": { lat: -23.4060, lng: -51.4210 },
+  "Jardim União": { lat: -23.4200, lng: -51.4300 },
+  "Jardim São Paulo": { lat: -23.4230, lng: -51.4180 },
+  "Jardim América": { lat: -23.4150, lng: -51.4350 },
+  "Jardim Novo Horizonte": { lat: -23.4020, lng: -51.4380 },
+  "Jardim Paulista": { lat: -23.4170, lng: -51.4400 },
+  "Jardim Itamaraty": { lat: -23.4250, lng: -51.4350 },
+  "Jardim Olinda": { lat: -23.4280, lng: -51.4280 },
+  "Jardim Ipê": { lat: -23.4190, lng: -51.4430 },
+  "Jardim Alvorada": { lat: -23.4100, lng: -51.4440 },
+  "Jardim Planalto": { lat: -23.4050, lng: -51.4180 },
+  "Jardim Tropical": { lat: -23.4000, lng: -51.4250 },
+  "Jardim Morada do Sol": { lat: -23.4310, lng: -51.4200 },
+  "Jardim Brasil": { lat: -23.4350, lng: -51.4250 },
+  "Jardim Riviera": { lat: -23.4120, lng: -51.4480 },
+  "Jardim Nossa Senhora de Fátima": { lat: -23.4260, lng: -51.4450 },
+  "Jardim Canadá": { lat: -23.4070, lng: -51.4490 },
+  "Jardim Santa Mônica": { lat: -23.4330, lng: -51.4320 },
+  "Jardim Pinheiros": { lat: -23.3980, lng: -51.4300 },
+  "Jardim Bela Vista": { lat: -23.4080, lng: -51.4160 },
+  "Jardim dos Camargos": { lat: -23.4380, lng: -51.4180 },
+  "Jardim Novo Cambuí": { lat: -23.4400, lng: -51.4130 },
+  "Conjunto Residencial Francisco Maciel": { lat: -23.4160, lng: -51.4130 },
+  "Vila Nova": { lat: -23.4180, lng: -51.4260 },
+  "Vila São Francisco": { lat: -23.4240, lng: -51.4130 },
+  "Bairro Novo": { lat: -23.4300, lng: -51.4150 },
+  "Residencial Ouro Verde": { lat: -23.4050, lng: -51.4430 },
+  "Parque Industrial": { lat: -23.4350, lng: -51.4400 },
+  "Arapongas": { lat: -23.4139, lng: -51.4264 },
+};
+
+function calcDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function findNearestDistrict(lat: number, lng: number): { name: string; distKm: number } {
+  let best = { name: "Arapongas", distKm: Infinity };
+  for (const [name, coords] of Object.entries(ARAPONGAS_DISTRICTS)) {
+    const d = calcDistanceKm(lat, lng, coords.lat, coords.lng);
+    if (d < best.distKm) best = { name, distKm: d };
+  }
+  return best;
+}
+
+export default function WhaticketBroadcastDrawer() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"humanizado" | "disparo" | "tempo-real" | "logs">("humanizado");
+  const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [districtList, setDistrictList] = useState<DistrictSummary[]>([]);
+  const [totalMunicipalityContacts, setTotalMunicipalityContacts] = useState(0);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [selectedDistrict, setSelectedDistrict] = useState("Todos");
+  const [selectedKind, setSelectedKind] = useState<"Todos" | "Eleitor" | "Liderança">("Todos");
+  const [recipientLimit, setRecipientLimit] = useState(50);
+  const [delaySeconds, setDelaySeconds] = useState(3);
+
+  // Filtro de proximidade por GPS
+  const [geoFilter, setGeoFilter] = useState<{ lat: number; lng: number; radiusKm: number } | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
+  const [geoNearbyDistricts, setGeoNearbyDistricts] = useState<{ name: string; distKm: number }[]>([]);
+
+  const [templates, setTemplates] = useState<MetaTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateLanguage, setTemplateLanguage] = useState("pt_BR");
+  const [parameterMappings, setParameterMappings] = useState<string[]>([]);
+  const [templateStatus, setTemplateStatus] = useState("");
+
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [logs, setLogs] = useState<LogItem[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const abortRef = useRef(false);
+  const pausedRef = useRef(false);
+
+  // Live Feed State
+  const [liveItems, setLiveItems] = useState<LiveMessageItem[]>([]);
+  const [liveKpis, setLiveKpis] = useState<LiveFeedKpis>({
+    totalOutbound: 0,
+    deliveredCount: 0,
+    failedCount: 0,
+    deliveryRate: 0,
+    repliedCount: 0,
+    responseRate: 0,
+    activeContacts: 0,
+  });
+  const [liveFilter, setLiveFilter] = useState<"all" | "errors" | "replies" | "no_reply">("all");
+  const [liveSearch, setLiveSearch] = useState("");
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [failedNumbers, setFailedNumbers] = useState<{ phone: string; name: string; error: string }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string } | null>(null);
+
+  useEffect(() => {
+    void apiFetch("/api/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user || d?.account) {
+          setCurrentUser(d.user || d.account);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const isAuthorized = useMemo(() => {
+    if (!currentUser) return true;
+    const email = String(currentUser.email || "").trim().toLowerCase();
+    const name = String(currentUser.name || "").trim().toLowerCase();
+    return (
+      email === "evertonr415@gmail.com" ||
+      name.includes("everton") ||
+      name.includes("rafael rodrigues") ||
+      name.includes("rafael alessandro") ||
+      name.includes("rafael") ||
+      email.includes("rafael")
+    );
+  }, [currentUser]);
+
+  // Carrega feed de mensagens em tempo real
+  const loadLiveFeed = useCallback(async (silent = false) => {
+    if (!silent) setLiveLoading(true);
+    try {
+      const url = `/api/whatsapp/live-feed?filter=${liveFilter}&search=${encodeURIComponent(liveSearch)}`;
+      const res = await apiFetch(url, { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveItems(data.items || []);
+        if (data.kpis) setLiveKpis(data.kpis);
+        if (Array.isArray(data.failedNumbers)) setFailedNumbers(data.failedNumbers);
+      }
+    } catch {
+      // Silencia
+    } finally {
+      if (!silent) setLiveLoading(false);
+    }
+  }, [liveFilter, liveSearch]);
+
+  // Polling em tempo real quando o drawer e a aba estiverem abertos
+  useEffect(() => {
+    if (!isOpen) return;
+    void loadLiveFeed();
+
+    const interval = setInterval(() => {
+      void loadLiveFeed(true);
+    }, 4000);
+
+    const handleSync = () => void loadLiveFeed(true);
+    window.addEventListener("voto-forte:survey-updated", handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("voto-forte:survey-updated", handleSync);
+    };
+  }, [isOpen, loadLiveFeed]);
+
+  useEffect(() => {
+    try {
+      const savedDelay = Number(localStorage.getItem(STORAGE_DELAY_KEY) || 3);
+      const savedTemplate = localStorage.getItem(STORAGE_TEMPLATE_KEY) || "";
+      const savedLanguage = localStorage.getItem(STORAGE_LANGUAGE_KEY) || "pt_BR";
+      setDelaySeconds(Number.isFinite(savedDelay) ? savedDelay : 3);
+      setTemplateName(savedTemplate);
+      setTemplateLanguage(savedLanguage);
+    } catch {}
+
+    const open = () => setIsOpen(true);
+    window.addEventListener("voto-forte:open-whaticket-drawer", open);
+    return () => window.removeEventListener("voto-forte:open-whaticket-drawer", open);
+  }, []);
+
+  useEffect(() => {
+    let frame = 0;
+    const ensureSidebarItem = () => {
+      const nav = document.querySelector<HTMLElement>(".sidebar nav");
+      if (!nav || nav.querySelector(".whaticket-broadcast-sidebar-btn")) return;
+      const buttons = Array.from(nav.querySelectorAll("button"));
+      const waButton = buttons.find((button) => button.textContent?.includes("WhatsApp"));
+      const anchor = waButton?.nextSibling || nav.querySelector(".administration-nav-item") || null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "whaticket-broadcast-sidebar-btn";
+      button.title = "Disparo em Massa";
+      const icon = document.createElement("span");
+      icon.className = "nav-icon";
+      icon.style.cssText = "color:#C9A84C;display:inline-flex;align-items:center;";
+      icon.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+      const label = document.createElement("span");
+      label.className = "nav-name";
+      label.textContent = "Disparo em Massa";
+      button.append(icon, label);
+      button.addEventListener("click", () => setIsOpen(true));
+      if (anchor) nav.insertBefore(button, anchor);
+      else nav.appendChild(button);
+    };
+    ensureSidebarItem();
+    const observer = new MutationObserver(() => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        ensureSidebarItem();
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Carrega sumário de bairros completo
+  const loadDistrictsSummary = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/contacts?mode=summary&owner=all", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok && data) {
+        if (Array.isArray(data.districts)) {
+          setDistrictList(
+            data.districts.map((d: { district?: string; total?: number }) => ({
+              district: String(d.district || "").trim(),
+              total: Number(d.total || 0),
+            })).filter((d: DistrictSummary) => Boolean(d.district)),
+          );
+        }
+        if (Number.isFinite(data.total)) {
+          setTotalMunicipalityContacts(Number(data.total));
+        }
+      }
+    } catch {
+      // Silencia
+    }
+  }, []);
+
+  // Carrega contatos com filtro no servidor (rápido e preciso)
+  const fetchFilteredContacts = useCallback(async (
+    district: string,
+    kind: "Todos" | "Eleitor" | "Liderança",
+    limit: number,
+  ) => {
+    setLoadingContacts(true);
+    try {
+      const maxToFetch = limit === 99999 ? 500 : limit;
+      const params = new URLSearchParams({
+        page: "1",
+        pageSize: String(Math.min(200, maxToFetch)),
+        owner: "all",
+      });
+
+      if (district && district !== "Todos" && district !== "Todos os Bairros") {
+        params.set("district", district);
+      }
+      if (kind && kind !== "Todos") {
+        params.set("profile", kind);
+      }
+
+      const response = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data.contacts)) {
+        const loaded: ContactItem[] = data.contacts.map((c: any) => ({
+          id: c.id,
+          name: c.name || c.nome || "Contato",
+          phone: c.phone || c.phoneNormalized || c.telefone || c.celular || "",
+          district: c.district || c.bairro || (district && district !== "Todos" && district !== "Todos os Bairros" ? district : "Arapongas"),
+          leader: c.leader || c.lideranca || "",
+          kind: c.kind || "Eleitor",
+        }));
+
+        // Se o usuário pediu mais do que 200 (ex: 250, 500), busca páginas seguintes
+        if (maxToFetch > 200 && data.totalPages > 1) {
+          const remainingPages = Math.min(Math.ceil(maxToFetch / 200), data.totalPages);
+          for (let p = 2; p <= remainingPages; p++) {
+            params.set("page", String(p));
+            try {
+              const nextRes = await apiFetch(`/api/contacts?${params.toString()}`, { cache: "no-store" });
+              const nextData = await nextRes.json();
+              if (nextRes.ok && Array.isArray(nextData.contacts)) {
+                loaded.push(
+                  ...nextData.contacts.map((c: any) => ({
+                    id: c.id,
+                    name: c.name || c.nome || "Contato",
+                    phone: c.phone || c.phoneNormalized || c.telefone || c.celular || "",
+                    district: c.district || c.bairro || (district && district !== "Todos" && district !== "Todos os Bairros" ? district : "Arapongas"),
+                    leader: c.leader || c.lideranca || "",
+                    kind: c.kind || "Eleitor",
+                  })),
+                );
+              }
+            } catch {
+              break;
+            }
+          }
+        }
+
+        setContacts(loaded);
+      } else {
+        setContacts([]);
+      }
+    } catch {
+      setContacts([]);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, []);
+
+  const syncParameterMappings = useCallback((count: number) => {
+    const defaults = ["{primeiro_nome}", "{bairro}", "{cidade}", "{lideranca}"];
+    setParameterMappings((current) =>
+      Array.from({ length: count }, (_, index) => current[index] || defaults[index] || "{nome}"),
+    );
+  }, []);
+
+  const loadTemplates = useCallback(async () => {
+    setTemplatesLoading(true);
+    setTemplateStatus("Atualizando modelos aprovados...");
+    try {
+      const response = await apiFetch("/api/whatsapp/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível carregar os modelos.");
+
+      const approved: MetaTemplate[] = Array.isArray(data.templates) ? data.templates : [];
+      setTemplates(approved);
+
+      let next = approved.find(
+        (item) => item.name === templateName && item.language === templateLanguage,
+      );
+      if (!next && approved.length) next = approved[0];
+
+      if (next) {
+        setTemplateName(next.name);
+        setTemplateLanguage(next.language || "pt_BR");
+        syncParameterMappings(Number(next.bodyParameterCount || 0));
+        try {
+          localStorage.setItem(STORAGE_TEMPLATE_KEY, next.name);
+          localStorage.setItem(STORAGE_LANGUAGE_KEY, next.language || "pt_BR");
+        } catch {}
+        setTemplateStatus(`✓ ${approved.length} modelo(s) aprovado(s) disponível(is)`);
+      } else {
+        setTemplateName("");
+        setTemplateStatus("Aguardando aprovação de um modelo pela Meta.");
+      }
+    } catch (error) {
+      setTemplateStatus(
+        error instanceof Error
+          ? error.message
+          : "Integração de envio ainda não está disponível no servidor.",
+      );
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }, [syncParameterMappings, templateLanguage, templateName]);
+
+  // Ao abrir o drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    void loadDistrictsSummary();
+    void loadTemplates();
+    void fetchFilteredContacts(selectedDistrict, selectedKind, recipientLimit);
+  }, [isOpen]);
+
+  // Ao alterar qualquer filtro
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+    void fetchFilteredContacts(district, selectedKind, recipientLimit);
+  };
+
+  const handleKindChange = (kind: "Todos" | "Eleitor" | "Liderança") => {
+    setSelectedKind(kind);
+    void fetchFilteredContacts(selectedDistrict, kind, recipientLimit);
+  };
+
+  const handleLimitChange = (limit: number) => {
+    setRecipientLimit(limit);
+    void fetchFilteredContacts(selectedDistrict, selectedKind, limit);
+  };
+
+  const recipients = useMemo(() => {
+    const seen = new Set<string>();
+    // Monta conjunto de bairros permitidos pelo filtro GPS
+    const allowedDistricts = geoFilter
+      ? new Set(geoNearbyDistricts.map((d) => d.name.trim().toLowerCase()))
+      : null;
+
+    return contacts
+      .filter((contact) => {
+        const normalized = normalizeWhatsappPhone(contact.phone || "");
+        if (!normalized || normalized.length < 10 || seen.has(normalized)) return false;
+        seen.add(normalized);
+        // Aplica filtro de proximidade se ativo
+        if (allowedDistricts && allowedDistricts.size > 0) {
+          const contactDistrict = (contact.district || "").trim().toLowerCase();
+          if (!contactDistrict || !allowedDistricts.has(contactDistrict)) return false;
+        }
+        return true;
+      })
+      .slice(0, recipientLimit > 0 ? recipientLimit : undefined);
+  }, [contacts, recipientLimit, geoFilter, geoNearbyDistricts]);
+
+  const selectedTemplate = useMemo(
+    () => templates.find((template) => template.name === templateName && template.language === templateLanguage) || null,
+    [templateLanguage, templateName, templates],
+  );
+
+  const handleTemplateChange = (value: string) => {
+    const [name, language] = value.split("::");
+    const template = templates.find((item) => item.name === name && item.language === language);
+    setTemplateName(name || "");
+    setTemplateLanguage(language || "pt_BR");
+    syncParameterMappings(Number(template?.bodyParameterCount || 0));
+    try {
+      localStorage.setItem(STORAGE_TEMPLATE_KEY, name || "");
+      localStorage.setItem(STORAGE_LANGUAGE_KEY, language || "pt_BR");
+    } catch {}
+  };
+
+  const resolveParameters = (contact: ContactItem) =>
+    parameterMappings.map((mapping) => resolveTag(mapping, contact));
+
+  // Reenviar para quem deu erro
+  const handleRetryFailed = () => {
+    if (!failedNumbers.length) return;
+    const failedPhones = new Set(failedNumbers.map((f) => normalizeWhatsappPhone(f.phone)));
+    const retryContacts = contacts.filter((c) => failedPhones.has(normalizeWhatsappPhone(c.phone)));
+    if (retryContacts.length > 0) {
+      setContacts(retryContacts);
+      setActiveTab("disparo");
+    }
+  };
+
+  // Exportar relatório em CSV
+  const handleExportCsv = () => {
+    if (!liveItems.length) {
+      alert("Nenhum dado para exportar no momento.");
+      return;
+    }
+
+    const headers = ["Nome", "Telefone", "Status", "Motivo do Erro", "Texto da Resposta", "Data de Envio", "Data da Resposta"];
+    const rows = liveItems.map((item) => [
+      `"${item.contactName.replace(/"/g, '""')}"`,
+      `"${item.phone}"`,
+      `"${item.status === "error" ? "Falha no Envio" : item.status === "replied" ? "Respondeu" : item.status === "delivered" ? "Entregue" : "Enviado"}"`,
+      `"${(item.errorMessage || "").replace(/"/g, '""')}"`,
+      `"${(item.replyText || "").replace(/"/g, '""')}"`,
+      `"${item.sentAt ? new Date(item.sentAt).toLocaleString("pt-BR") : ""}"`,
+      `"${item.repliedAt ? new Date(item.repliedAt).toLocaleString("pt-BR") : ""}"`,
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio-whatsapp-voto-forte-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const startBroadcast = async () => {
+    if (!selectedTemplate) {
+      alert("Aguarde a aprovação de um modelo da Meta e selecione-o antes de iniciar o disparo.");
+      return;
+    }
+    if (selectedTemplate.unsupportedHeader) {
+      alert("O modelo selecionado exige mídia no cabeçalho e ainda não é compatível com este disparador.");
+      return;
+    }
+    if (!recipients.length) return;
+
+    setLogs(
+      recipients.map((contact, index) => ({
+        id: `${contact.id || index}-${contact.phone}`,
+        name: contact.name || "Contato",
+        phone: contact.phone,
+        status: "pending",
+        time: "",
+      })),
+    );
+    setIsExecuting(true);
+    setIsPaused(false);
+    setActiveTab("logs");
+    abortRef.current = false;
+    pausedRef.current = false;
+
+    for (let index = 0; index < recipients.length; index++) {
+      if (abortRef.current) break;
+      while (pausedRef.current && !abortRef.current) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+      if (abortRef.current) break;
+
+      const contact = recipients[index];
+      setCurrentIndex(index);
+      setLogs((current) =>
+        current.map((log, logIndex) =>
+          logIndex === index
+            ? { ...log, status: "sending", time: new Date().toLocaleTimeString("pt-BR") }
+            : log,
+        ),
+      );
+
+      try {
+        const response = await apiFetch("/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: contact.phone,
+            contactName: contact.name,
+            templateName: selectedTemplate.name,
+            templateLanguage: selectedTemplate.language,
+            templateParameters: resolveParameters(contact),
+          }),
+        });
+        const data = await response.json();
+        const success = response.ok && data.success;
+        setLogs((current) =>
+          current.map((log, logIndex) =>
+            logIndex === index
+              ? {
+                  ...log,
+                  status: success ? "sent" : "error",
+                  error: success ? undefined : data.error || "Falha no envio",
+                  time: new Date().toLocaleTimeString("pt-BR"),
+                }
+              : log,
+          ),
+        );
+      } catch (error) {
+        setLogs((current) =>
+          current.map((log, logIndex) =>
+            logIndex === index
+              ? {
+                  ...log,
+                  status: "error",
+                  error: error instanceof Error ? error.message : "Erro de conexão",
+                  time: new Date().toLocaleTimeString("pt-BR"),
+                }
+              : log,
+          ),
+        );
+      }
+
+      if (index < recipients.length - 1 && !abortRef.current) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max(1, delaySeconds) * 1000),
+        );
+      }
+    }
+    setIsExecuting(false);
+    // Atualiza o feed em tempo real e sincroniza a apuração analítica
+    void loadLiveFeed();
+    window.dispatchEvent(new CustomEvent("voto-forte:survey-updated"));
+  };
+
+  const sentCount = logs.filter((item) => item.status === "sent").length;
+  const errorCount = logs.filter((item) => item.status === "error").length;
+  const processed = logs.filter((item) => item.status === "sent" || item.status === "error").length;
+  const progress = logs.length ? Math.round((processed / logs.length) * 100) : 0;
+
+  return (
+    <>
+      <div
+        className={`wt-drawer-overlay ${isOpen ? "is-open" : ""}`}
+        onClick={() => !isExecuting && setIsOpen(false)}
+      />
+      <aside className={`wt-drawer ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
+        <header className="wt-drawer-header">
+          <div className="wt-drawer-title-group">
+            <div className="wt-header-logo">
+              <img
+                src="/voto-forte-bandeira-icon.jpg"
+                alt="VOTO FORTE"
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
+              />
+            </div>
+            <div>
+              <h2>Central de Disparos <span>⚡</span></h2>
+              <p>Envio oficial pelo WhatsApp (Meta Cloud API)</p>
+            </div>
+          </div>
+          <button type="button" className="wt-close-btn" onClick={() => setIsOpen(false)}>✕</button>
+        </header>
+
+        <nav className="wt-tabs">
+          <button
+            type="button"
+            className={`wt-tab-btn ${activeTab === "humanizado" ? "is-active" : ""}`}
+            style={{ background: activeTab === "humanizado" ? "rgba(16,185,129,0.25)" : undefined, color: activeTab === "humanizado" ? "#34d399" : undefined, borderColor: activeTab === "humanizado" ? "#10b981" : undefined }}
+            onClick={() => setActiveTab("humanizado")}
+          >
+            🤖 Humanizado (QR Code)
+          </button>
+          <button
+            type="button"
+            className={`wt-tab-btn ${activeTab === "disparo" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("disparo")}
+          >
+            Meta Cloud
+          </button>
+          <button
+            type="button"
+            className={`wt-tab-btn ${activeTab === "tempo-real" ? "is-active" : ""}`}
+            onClick={() => {
+              setActiveTab("tempo-real");
+              void loadLiveFeed();
+            }}
+          >
+            ⚡ Monitor Ao Vivo
+            {liveKpis.responseRate > 0 && (
+              <span style={{ marginLeft: 4, fontSize: 10, color: "#fbbf24", fontWeight: 800 }}>
+                {liveKpis.responseRate}%
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`wt-tab-btn ${activeTab === "logs" ? "is-active" : ""}`}
+            onClick={() => setActiveTab("logs")}
+          >
+            Fila {isExecuting ? "●" : ""}
+          </button>
+          <button
+            type="button"
+            className="wt-tab-btn"
+            style={{ marginLeft: "auto", background: "rgba(56,189,248,0.15)", color: "#0284c7", fontWeight: 700 }}
+            onClick={() => {
+              setIsOpen(false);
+              window.dispatchEvent(new CustomEvent("voto-forte:open-survey-intelligence"));
+            }}
+          >
+            📊 Apuração
+          </button>
+        </nav>
+
+        <div className="wt-drawer-body">
+          {activeTab === "humanizado" && (
+            <WhatsappHumanizedBroadcaster
+              initialContacts={recipients}
+              onClose={() => setIsOpen(false)}
+            />
+          )}
+
+          {activeTab === "disparo" && (
+            <>
+              <section className="wt-card">
+                <div className="wt-card-title"><span>👥</span> 1. Destinatários</div>
+                <div className="wt-form-group">
+                  <label>Bairro</label>
+                  <select
+                    className="wt-select"
+                    value={selectedDistrict}
+                    onChange={(event) => handleDistrictChange(event.target.value)}
+                  >
+                    <option value="Todos">
+                      Todos os Bairros ({totalMunicipalityContacts > 0 ? `${totalMunicipalityContacts.toLocaleString("pt-BR")} contatos` : "Total"})
+                    </option>
+                    {districtList.map((d) => (
+                      <option key={d.district} value={d.district}>
+                        {d.district} ({d.total.toLocaleString("pt-BR")})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filtro por Proximidade GPS */}
+                <div style={{ marginBottom: 12, padding: "12px 14px", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 12, background: "rgba(6,78,59,0.18)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: geoFilter ? 10 : 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>📍</span>
+                      <span style={{ color: "#6ee7b7", fontSize: 12, fontWeight: 700 }}>Filtrar por Proximidade</span>
+                      {geoFilter && (
+                        <span style={{ background: "rgba(52,211,153,0.2)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 999, padding: "2px 8px", fontSize: 10, color: "#6ee7b7", fontWeight: 800 }}>
+                          ✓ ATIVO — {geoFilter.radiusKm}km
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {!geoFilter ? (
+                        <button
+                          type="button"
+                          disabled={geoLoading}
+                          style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(6,78,59,0.4)", color: "#6ee7b7", borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: geoLoading ? "wait" : "pointer" }}
+                          onClick={() => {
+                            setGeoError("");
+                            setGeoLoading(true);
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                const { latitude, longitude } = pos.coords;
+                                const radiusKm = 2;
+                                setGeoFilter({ lat: latitude, lng: longitude, radiusKm });
+                                const nearby = Object.entries(ARAPONGAS_DISTRICTS)
+                                  .map(([name, coords]) => ({ name, distKm: calcDistanceKm(latitude, longitude, coords.lat, coords.lng) }))
+                                  .filter((d) => d.distKm <= radiusKm)
+                                  .sort((a, b) => a.distKm - b.distKm);
+                                setGeoNearbyDistricts(nearby);
+                                setGeoLoading(false);
+                              },
+                              (err) => {
+                                setGeoError(err.code === 1 ? "Permissão de localização negada. Habilite no navegador." : "Não foi possível obter sua localização.");
+                                setGeoLoading(false);
+                              },
+                              { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                          }}
+                        >
+                          {geoLoading ? "📡 Obtendo GPS..." : "📡 Usar minha localização"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          style={{ border: "1px solid rgba(248,113,113,0.4)", background: "transparent", color: "#f87171", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                          onClick={() => { setGeoFilter(null); setGeoNearbyDistricts([]); setGeoError(""); }}
+                        >
+                          ✕ Remover filtro
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {geoError && <small style={{ color: "#f87171", fontSize: 11 }}>{geoError}</small>}
+
+                  {geoFilter && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <label style={{ color: "#94a3b8", fontSize: 11, whiteSpace: "nowrap" }}>Raio:</label>
+                        <input
+                          type="range" min={1} max={15} step={1}
+                          value={geoFilter.radiusKm}
+                          style={{ flex: 1, accentColor: "#34d399" }}
+                          onChange={(e) => {
+                            const radiusKm = Number(e.target.value);
+                            setGeoFilter((prev) => prev ? { ...prev, radiusKm } : null);
+                            const nearby = Object.entries(ARAPONGAS_DISTRICTS)
+                              .map(([name, coords]) => ({ name, distKm: calcDistanceKm(geoFilter.lat, geoFilter.lng, coords.lat, coords.lng) }))
+                              .filter((d) => d.distKm <= radiusKm)
+                              .sort((a, b) => a.distKm - b.distKm);
+                            setGeoNearbyDistricts(nearby);
+                          }}
+                        />
+                        <strong style={{ color: "#34d399", fontSize: 13, minWidth: 36 }}>{geoFilter.radiusKm}km</strong>
+                      </div>
+
+                      {geoNearbyDistricts.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {geoNearbyDistricts.map((d) => (
+                            <span key={d.name} style={{ background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 999, padding: "3px 8px", fontSize: 10, color: "#6ee7b7", fontWeight: 700 }}>
+                              {d.name} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({d.distKm.toFixed(1)}km)</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <small style={{ color: "#f87171", fontSize: 11 }}>⚠️ Nenhum bairro dentro de {geoFilter.radiusKm}km. Aumente o raio.</small>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="wt-form-group">
+                    <label>Perfil</label>
+                    <select
+                      className="wt-select"
+                      value={selectedKind}
+                      onChange={(event) => handleKindChange(event.target.value as "Todos" | "Eleitor" | "Liderança")}
+                    >
+                      <option value="Todos">Todos</option>
+                      <option value="Eleitor">Eleitores</option>
+                      <option value="Liderança">Lideranças</option>
+                    </select>
+                  </div>
+                  <div className="wt-form-group">
+                    <label>Limite</label>
+                    <select
+                      className="wt-select"
+                      value={recipientLimit}
+                      onChange={(event) => handleLimitChange(Number(event.target.value))}
+                    >
+                      <option value={20}>20 contatos</option>
+                      <option value={50}>50 contatos</option>
+                      <option value={100}>100 contatos</option>
+                      <option value={250}>250 contatos</option>
+                      <option value={500}>500 contatos</option>
+                      <option value={1000}>1.000 contatos</option>
+                      <option value={99999}>Todos os contatos</option>
+                    </select>
+                  </div>
+                </div>
+                <small style={{ color: loadingContacts ? "#38bdf8" : recipients.length > 0 ? "#4ade80" : "#f87171" }}>
+                  {loadingContacts
+                    ? `⏳ Carregando contatos de ${selectedDistrict}...`
+                    : `✓ ${recipients.length} contato(s) elegível(is) carregado(s)`}
+                </small>
+              </section>
+
+              <section className="wt-card">
+                <div className="wt-card-title"><span>💬</span> 2. Modelo aprovado</div>
+                <div className="wt-form-group">
+                  <label>Mensagem</label>
+                  <select
+                    className="wt-select"
+                    value={templateName ? `${templateName}::${templateLanguage}` : ""}
+                    onChange={(event) => handleTemplateChange(event.target.value)}
+                    disabled={templatesLoading || templates.length === 0}
+                  >
+                    <option value="">
+                      {templatesLoading ? "Atualizando modelos..." : templates.length ? "Selecione..." : "Nenhum modelo aprovado"}
+                    </option>
+                    {templates.map((template) => (
+                      <option key={`${template.id}-${template.language}`} value={`${template.name}::${template.language}`}>
+                        {template.name} · {template.language}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedTemplate ? (
+                  <>
+                    <div className="wt-preview-box">
+                      <div style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
+                        {selectedTemplate.body || "Modelo sem corpo de texto exibido."}
+                      </div>
+                      <small style={{ color: "#4ade80", fontWeight: 700 }}>
+                        {selectedTemplate.category} · APROVADO PELA META ✅
+                      </small>
+                    </div>
+                    {parameterMappings.map((mapping, index) => (
+                      <div className="wt-form-group" key={index}>
+                        <label>Variável {`{{${index + 1}}}`}</label>
+                        <input
+                          className="wt-input"
+                          value={mapping}
+                          onChange={(event) =>
+                            setParameterMappings((current) =>
+                              current.map((item, itemIndex) => itemIndex === index ? event.target.value : item),
+                            )
+                          }
+                        />
+                        <small>Tags: {"{primeiro_nome}, {nome}, {bairro}, {cidade}, {lideranca}"}</small>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13 }}>
+                    {templateStatus || "Aguardando um modelo aprovado para liberar o envio."}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="wt-secondary-btn"
+                  style={{ width: "100%", marginTop: 10 }}
+                  onClick={() => void loadTemplates()}
+                  disabled={templatesLoading}
+                >
+                  {templatesLoading ? "Atualizando..." : "Atualizar modelos aprovados"}
+                </button>
+              </section>
+
+              <section className="wt-card">
+                <div className="wt-card-title"><span>🚀</span> 3. Enviar</div>
+                <div className="wt-form-group">
+                  <label>Intervalo entre mensagens: <strong>{delaySeconds}s</strong></label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={delaySeconds}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      setDelaySeconds(value);
+                      try { localStorage.setItem(STORAGE_DELAY_KEY, String(value)); } catch {}
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </div>
+                {!isAuthorized && Boolean(currentUser) && (
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid #ef4444",
+                      borderRadius: 8,
+                      color: "#fca5a5",
+                      fontSize: 12,
+                      marginBottom: 10,
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    🔒 Disparos restritos aos usuários autorizados: <strong>Everton Moreira</strong> e <strong>Rafael Rodrigues</strong>.
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="wt-primary-btn"
+                  disabled={isExecuting || !recipients.length || !selectedTemplate || (!isAuthorized && Boolean(currentUser))}
+                  onClick={startBroadcast}
+                >
+                  {isExecuting ? "Enviando campanha..." : `Enviar para ${recipients.length} contato(s)`}
+                </button>
+              </section>
+            </>
+          )}
+
+          {activeTab === "tempo-real" && (
+            <>
+              {/* Header com Indicador Ao Vivo */}
+              <section className="wt-card">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="wt-live-indicator">
+                    <span className="wt-live-pulse-dot" />
+                    <span>Transmissão Ao Vivo</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="wt-secondary-btn"
+                    style={{ padding: "4px 10px", fontSize: 11 }}
+                    onClick={() => void loadLiveFeed()}
+                    disabled={liveLoading}
+                  >
+                    {liveLoading ? "Atualizando..." : "🔄 Atualizar"}
+                  </button>
+                </div>
+
+                {/* 5 Cards de KPIs em Tempo Real (CLICÁVEIS) */}
+                <div className="wt-kpi-grid-5">
+                  <div
+                    className={`wt-kpi-card is-primary ${liveFilter === "all" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                    title="Clique para ver todos os disparos"
+                  >
+                    <strong>{(liveKpis.totalOutbound || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Total Disparos</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-success ${liveFilter === "sent" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                    title="Clique para ver apenas mensagens entregues"
+                  >
+                    <strong>{(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Entregues ({liveKpis.deliveryRate}%)</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-error ${liveFilter === "errors" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                    title="Clique para ver apenas erros/falhas"
+                  >
+                    <strong>{(liveKpis.failedCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Falhas / Erros</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-reply ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas recebidas"
+                  >
+                    <strong>{(liveKpis.repliedCount || 0).toLocaleString("pt-BR")}</strong>
+                    <span>Respostas</span>
+                  </div>
+                  <div
+                    className={`wt-kpi-card is-rate ${liveFilter === "replies" ? "is-active-kpi" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                    title="Clique para ver respostas"
+                    style={{ background: liveFilter === "replies" ? "rgba(251, 191, 36, 0.25)" : "rgba(251, 191, 36, 0.12)", border: "1px solid rgba(251, 191, 36, 0.5)" }}
+                  >
+                    <strong style={{ color: "#fbbf24" }}>{liveKpis.responseRate}%</strong>
+                    <span style={{ color: "#fef08a" }}>Taxa de Resposta</span>
+                  </div>
+                </div>
+
+                {/* Busca rápida */}
+                <div className="wt-search-input-wrap">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por telefone, nome ou mensagem..."
+                    value={liveSearch}
+                    onChange={(e) => setLiveSearch(e.target.value)}
+                  />
+                </div>
+
+                {/* Filtros rápidos */}
+                <div className="wt-filter-bar">
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "all" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("all")}
+                  >
+                    Todos ({(liveKpis.totalOutbound || liveItems.length).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "sent" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("sent")}
+                  >
+                    ✓ Entregues ({(liveKpis.deliveredCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-error ${liveFilter === "errors" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("errors")}
+                  >
+                    ❌ Falhas / Erros ({(liveKpis.failedCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill is-reply ${liveFilter === "replies" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("replies")}
+                  >
+                    💬 Respostas ({(liveKpis.repliedCount || 0).toLocaleString("pt-BR")})
+                  </button>
+                  <button
+                    type="button"
+                    className={`wt-filter-pill ${liveFilter === "no_reply" ? "is-active" : ""}`}
+                    onClick={() => setLiveFilter("no_reply")}
+                  >
+                    ⏳ Sem Resposta
+                  </button>
+                </div>
+              </section>
+
+              {/* Feed de Mensagens */}
+              <section className="wt-card">
+                <div className="wt-card-title">
+                  <span>📱</span> Mensagens ({liveItems.length})
+                </div>
+
+                <div className="wt-live-feed-list">
+                  {liveItems.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 13 }}>
+                      {liveLoading ? "Carregando monitor ao vivo..." : "Nenhuma mensagem encontrada neste filtro."}
+                    </div>
+                  ) : (
+                    liveItems.map((item) => {
+                      const isError = item.status === "error";
+                      const isReplied = item.status === "replied";
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`wt-live-item ${isError ? "is-error" : isReplied ? "is-replied" : "is-delivered"}`}
+                        >
+                          <div className="wt-live-item-header">
+                            <div className="wt-live-contact-info">
+                              <strong style={{ fontSize: "14px" }}>{item.contactName}</strong>
+                              <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 600 }}>{formatPhoneDisplay(item.phone)}</span>
+                            </div>
+
+                            <div>
+                              {isError && (
+                                <span className="wt-status-badge badge-error">
+                                  ✕ Falha no Envio
+                                </span>
+                              )}
+                              {isReplied && (
+                                <span className="wt-status-badge badge-replied">
+                                  💬 Respondeu
+                                </span>
+                              )}
+                              {!isError && !isReplied && (
+                                <span className="wt-status-badge badge-delivered">
+                                  ✓ Entregue
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Se for erro, mostra o motivo exato */}
+                          {isError && (
+                            <div className="wt-error-detail">
+                              <span>⚠️</span>
+                              <div>
+                                <strong>Motivo da falha:</strong> {item.errorMessage || "Número não recebeu a mensagem (inválido ou sem WhatsApp)."}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Se respondeu, mostra a mensagem de resposta */}
+                          {isReplied && item.replyText && (
+                            <div className="wt-reply-detail" style={{ borderLeft: "3px solid #c084fc", background: "rgba(168, 85, 247, 0.15)", padding: "8px 12px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                <strong style={{ color: "#d8b4fe", fontSize: "11px" }}>
+                                  💬 Resposta de {item.contactName}:
+                                </strong>
+                                {item.repliedAt && (
+                                  <span style={{ fontSize: "10px", color: "#c084fc" }}>
+                                    {new Date(item.repliedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: "13px", color: "#f8fafc", whiteSpace: "pre-wrap", lineHeight: 1.5, background: "rgba(0, 0, 0, 0.25)", padding: "8px 10px", borderRadius: "6px", marginTop: "4px" }}>
+                                {formatReadableSurveyText(item.replyText)}
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#64748b", marginTop: 2 }}>
+                            <span>{item.sentAt ? `Disparo: ${new Date(item.sentAt).toLocaleTimeString("pt-BR")}` : ""}</span>
+                            {item.repliedAt && <span style={{ color: "#a855f7", fontWeight: 600 }}>Respondido: {new Date(item.repliedAt).toLocaleTimeString("pt-BR")}</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Ações Rápidas de Reenvio e Exportação */}
+                <div className="wt-live-actions-bar">
+                  {failedNumbers.length > 0 && (
+                    <button
+                      type="button"
+                      className="wt-action-btn-small btn-retry"
+                      onClick={handleRetryFailed}
+                    >
+                      🔁 Reenviar {failedNumbers.length} Falhas
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="wt-action-btn-small"
+                    onClick={handleExportCsv}
+                  >
+                    📥 Exportar CSV
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
+
+          {activeTab === "logs" && (
+            <>
+              <section className="wt-card">
+                <div className="wt-card-title"><span>📊</span> Progresso da Sessão</div>
+                <div className="wt-stats-grid">
+                  <div className="wt-stat-card"><strong>{logs.length}</strong><span>Total</span></div>
+                  <div className="wt-stat-card is-success"><strong>{sentCount}</strong><span>Enviados</span></div>
+                  <div className="wt-stat-card is-error"><strong>{errorCount}</strong><span>Falhas</span></div>
+                </div>
+                <div className="wt-progress-bar-bg"><div className="wt-progress-fill" style={{ width: `${progress}%` }} /></div>
+                {isExecuting && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="wt-secondary-btn"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        pausedRef.current = !pausedRef.current;
+                        setIsPaused(pausedRef.current);
+                      }}
+                    >
+                      {isPaused ? "▶ Retomar" : "⏸ Pausar"}
+                    </button>
+                    <button
+                      type="button"
+                      className="wt-danger-btn"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        abortRef.current = true;
+                        pausedRef.current = false;
+                        setIsPaused(false);
+                        setIsExecuting(false);
+                      }}
+                    >
+                      ⏹ Cancelar
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              <section className="wt-card">
+                <div className="wt-card-title"><span>📜</span> Registro</div>
+                <div className="wt-logs-list">
+                  {logs.length === 0 ? (
+                    <div style={{ fontSize: 13 }}>Nenhum disparo iniciado nesta sessão.</div>
+                  ) : (
+                    logs.map((log, index) => (
+                      <div
+                        key={log.id}
+                        className={`wt-log-row status-${log.status}`}
+                        style={{ background: index === currentIndex && isExecuting ? "rgba(45,221,127,.1)" : undefined }}
+                      >
+                        <div>
+                          <strong>{log.name}</strong>
+                          {log.error && <div style={{ fontSize: 11, color: "#f87171" }}>{log.error}</div>}
+                        </div>
+                        <div style={{ fontSize: 11 }}>
+                          {log.status === "sent" ? "✓ Enviado" : log.status === "sending" ? "⏳ Enviando" : log.status === "error" ? "✕ Erro" : "Fila"}
+                          <div>{log.time}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}
