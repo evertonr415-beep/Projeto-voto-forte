@@ -1,0 +1,154 @@
+/* Ajustes finais exclusivos do desktop para Agenda e Histórico de Exportações. */
+@media (min-width: 1024px) {
+  /* Histórico de Exportações: um único eixo visual para título, ações, aviso e card. */
+  .vf-export-official-shell .workspace {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding: 24px clamp(28px, 3.2vw, 48px) 40px !important;
+  }
+
+  .vf-export-official-shell .vf-export-route-content,
+  .vf-export-official-shell .vf-export-page {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1120px !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-page {
+    padding: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head,
+  .vf-export-official-shell .vf-export-info,
+  .vf-export-official-shell .vf-export-error,
+  .vf-export-official-shell .vf-export-message,
+  .vf-export-official-shell .vf-export-history-card,
+  .vf-export-official-shell .vf-export-summary-grid,
+  .vf-export-official-shell .vf-backup-toast {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 1120px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head {
+    align-items: flex-start !important;
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    gap: 24px !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child > small,
+  .vf-export-official-shell .vf-export-page-head > div:first-child > p {
+    display: block !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: left !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-head > div:first-child > p {
+    max-width: 760px !important;
+    margin-top: 6px !important;
+  }
+
+  .vf-export-official-shell .vf-export-page-actions {
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+    justify-content: flex-end !important;
+    margin: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-info {
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .vf-export-official-shell .vf-export-history-card {
+    margin-top: 0 !important;
+  }
+
+  .vf-export-official-shell .vf-export-section-title,
+  .vf-export-official-shell .vf-export-history-list,
+  .vf-export-official-shell .vf-export-empty {
+    width: 100% !important;
+  }
+
+  /* Agenda: mantem o modal inteiro dentro da area util do notebook.
+     Cabecalho e acoes ficam fixos; apenas os campos rolam quando necessario. */
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-root {
+    position: relative !important;
+    overflow: visible !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: min(640px, calc(100% - 48px)) !important;
+    min-height: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card > .ae-card-head {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 3 !important;
+    padding: 14px 16px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-card > .ae-modal-body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 12px 14px 10px !important;
+    gap: 8px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-body > .ae-form-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    padding: 2px 4px 6px 0 !important;
+    gap: 8px 10px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-modal-body > div:last-child {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 4 !important;
+    margin-top: 0 !important;
+    padding: 10px 0 0 !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.16) !important;
+    background: var(--ae-card-solid) !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-form-grid label {
+    margin-bottom: 3px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-field,
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-select {
+    min-height: 38px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .vf-agenda-official-shell .vf-agenda-route-content .ae-textarea {
+    min-height: 62px !important;
+  }
+}
