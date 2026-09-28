@@ -1,7 +1,7 @@
 import surveyBackup from "../../../../backups/backup_votos_enquete.json";
 import { getAutonomousSupabase } from "../../../supabase-server";
 import { getWhatsappAdminClient } from "../admin";
-import { formatCandidateOrOption } from "../survey-formatter";
+import { formatCandidateOrOption, formatDisplayPhone } from "../survey-formatter";
 import { analyzeSurveyResponse, type SurveyAnalysisResult } from "./analyzer";
 
 const HISTORICAL_BACKUP_CUTOFF = "2026-09-13T00:52:33.000Z";
@@ -138,7 +138,7 @@ async function loadNewResponses(): Promise<ConsolidatedResponse[]> {
       .or("event_type.ilike.%poll%,event_type.eq.survey_response_manual,direction.eq.inbound,event_type.eq.message_received")
       .gte("created_at", HISTORICAL_BACKUP_CUTOFF)
       .order("created_at", { ascending: false })
-      .limit(5000);
+      .limit(500);
 
     if (error) {
       console.error("[whatsapp-survey] error loading events:", error);
