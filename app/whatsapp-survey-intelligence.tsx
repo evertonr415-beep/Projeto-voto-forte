@@ -87,7 +87,7 @@ export default function WhatsappSurveyIntelligence() {
 
     const interval = setInterval(() => {
       void loadSurveyData(true);
-    }, 4000);
+    }, 60000);
 
     const handleSync = () => void loadSurveyData(true);
     window.addEventListener("voto-forte:survey-updated", handleSync);
