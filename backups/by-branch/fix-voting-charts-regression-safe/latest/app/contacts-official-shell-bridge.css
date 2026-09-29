@@ -1,0 +1,209 @@
+/* Contatos usa o shell oficial do DashboardClient.
+   A geometria entra no próprio gesto de navegação para evitar qualquer reflow
+   perceptível entre a aba anterior e o painel otimizado. */
+.workspace.vf-contacts-entering > :not(.vf-contacts-optimized-portal),
+.workspace.vf-contacts-optimized-active > :not(.vf-contacts-optimized-portal) {
+  display: none !important;
+}
+
+.workspace.vf-contacts-entering,
+.workspace.vf-contacts-optimized-active {
+  min-width: 0 !important;
+}
+
+.vf-contacts-optimized-portal {
+  width: 100%;
+  min-width: 0;
+}
+
+.vf-contacts-optimized-portal > .optimized-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* O seletor oficial do topbar é a única fonte de escopo visível. */
+.vf-contacts-optimized-portal .optimized-hero-controls {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .workspace.vf-contacts-entering,
+  .workspace.vf-contacts-optimized-active {
+    padding-top: 12px !important;
+  }
+
+  .vf-contacts-optimized-portal > .optimized-shell {
+    padding-top: 0 !important;
+  }
+
+  /* No mobile, o cabeçalho oficial já identifica a aba Contatos.
+     Mantemos o hero no desktop, mas removemos a duplicação no celular. */
+  .vf-contacts-optimized-portal .optimized-topbar {
+    display: none !important;
+  }
+
+  /* A mesma geometria vale durante ENTERING e ACTIVE.
+     Não dependemos mais de :has(.portal), portanto o iPhone não recebe uma
+     largura de cabeçalho e depois outra quando o portal aparece. */
+  .app-shell.vf-contacts-entering .topbar,
+  .app-shell.vf-contacts-active .topbar {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: auto !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .mobile-menu,
+  .app-shell.vf-contacts-active .topbar .mobile-menu {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .page-id,
+  .app-shell.vf-contacts-active .topbar .page-id {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .page-id h1,
+  .app-shell.vf-contacts-entering .topbar .page-id small,
+  .app-shell.vf-contacts-active .topbar .page-id h1,
+  .app-shell.vf-contacts-active .topbar .page-id small {
+    display: none !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .vf-header-scope,
+  .app-shell.vf-contacts-active .topbar .vf-header-scope {
+    flex: 0 0 128px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .vf-header-scope-select-wrap,
+  .app-shell.vf-contacts-active .topbar .vf-header-scope-select-wrap {
+    box-sizing: border-box !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .vf-header-scope-select,
+  .app-shell.vf-contacts-active .topbar .vf-header-scope-select {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 32px !important;
+    padding: 0 24px 0 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .page-id > .vf-theme-toggle,
+  .app-shell.vf-contacts-active .topbar .page-id > .vf-theme-toggle {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .profile,
+  .app-shell.vf-contacts-active .topbar .profile {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    margin: 0 !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .profile > span,
+  .app-shell.vf-contacts-active .topbar .profile > span {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-shell.vf-contacts-entering .topbar,
+  .app-shell.vf-contacts-active .topbar {
+    padding-inline: 8px !important;
+    gap: 5px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .mobile-menu,
+  .app-shell.vf-contacts-active .topbar .mobile-menu {
+    flex-basis: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .page-id,
+  .app-shell.vf-contacts-active .topbar .page-id {
+    gap: 5px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .vf-header-scope,
+  .app-shell.vf-contacts-active .topbar .vf-header-scope {
+    flex: 0 0 120px !important;
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .vf-header-scope-select-wrap,
+  .app-shell.vf-contacts-active .topbar .vf-header-scope-select-wrap {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .page-id > .vf-theme-toggle,
+  .app-shell.vf-contacts-active .topbar .page-id > .vf-theme-toggle {
+    flex-basis: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+
+  .app-shell.vf-contacts-entering .topbar .profile,
+  .app-shell.vf-contacts-entering .topbar .profile > span,
+  .app-shell.vf-contacts-active .topbar .profile,
+  .app-shell.vf-contacts-active .topbar .profile > span {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+  }
+}

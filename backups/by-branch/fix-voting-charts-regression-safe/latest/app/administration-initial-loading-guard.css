@@ -1,0 +1,49 @@
+/* Administração: impede que estados iniciais provisórios sejam pintados antes dos dados reais. */
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .admin-kpis,
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .security-banner {
+  display: none !important;
+}
+
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .users-admin-grid > * {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .users-admin-grid {
+  position: relative !important;
+  min-height: 210px !important;
+}
+
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .users-admin-grid::before {
+  content: "Carregando Administração…";
+  display: grid !important;
+  grid-column: 1 / -1;
+  min-height: 180px;
+  place-items: center;
+  padding: 24px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(13, 39, 71, 0.96), rgba(7, 25, 44, 0.96));
+  color: #c7d8ea;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2);
+}
+
+body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message) .users-admin-grid::before {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .users-admin-grid {
+    min-height: 160px !important;
+  }
+
+  body:has(.management-filter[role="tablist"][aria-label="Seções administrativas"]):not(:has(.vf-hierarchy-panel .vf-access-tabs, .vf-hierarchy-panel .vf-hierarchy-message)) .users-admin-grid::before {
+    min-height: 140px;
+    padding: 18px;
+    border-radius: 15px;
+    font-size: 12px;
+  }
+}

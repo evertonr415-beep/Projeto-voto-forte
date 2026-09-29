@@ -1,0 +1,74 @@
+/* Agenda Inteligente — correção final de fluxo/rolagem mobile.
+   Mantém a página no fluxo normal e evita scroll interno preso a 100dvh. */
+
+@media (max-width: 768px) {
+  html:has(.ae-root),
+  body:has(.ae-root) {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  .app-shell:has(.ae-root) {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .main:has(.ae-root),
+  .workspace:has(.ae-root) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .workspace:has(.ae-root) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Maior especificidade que o CSS antigo: .ae-root { height:100dvh; overflow:hidden }. */
+  html body .ae-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    touch-action: pan-y !important;
+  }
+
+  html body .ae-root .ae-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
+
+  html body .ae-root .ae-layout,
+  html body .ae-root .ae-col-main,
+  html body .ae-root .ae-col-side,
+  html body .ae-root .ae-grid,
+  html body .ae-root .ae-card-body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+}

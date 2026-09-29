@@ -1,0 +1,677 @@
+/* PAINEL ELEITORAL TSE - ARAPONGAS / PR */
+.tse-panel-root {
+  min-height: 100vh;
+  background: #060d19;
+  color: #f1f5f9;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding-bottom: 60px;
+}
+
+.tse-panel-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* TOPBAR */
+.tse-panel-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: rgba(13, 25, 48, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 18px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tse-panel-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tse-panel-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #081326;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 3px;
+}
+
+.tse-panel-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.tse-panel-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tse-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.tse-panel-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.tse-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}
+
+.tse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.tse-btn-primary {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.tse-btn-primary:hover {
+  background: linear-gradient(135deg, #0369a1, #075985);
+  border-color: #7dd3fc;
+}
+
+/* FILTERS SECTION */
+.tse-filters-bar {
+  background: rgba(13, 25, 48, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tse-years-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tse-year-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 30, 58, 0.6);
+  color: #94a3b8;
+}
+
+.tse-year-btn:hover {
+  color: #ffffff;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.tse-year-btn.active {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+}
+
+.tse-offices-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+}
+
+.tse-office-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+}
+
+.tse-office-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.tse-office-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.tse-subfilters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+}
+
+.tse-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.tse-select-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.tse-select {
+  width: 100%;
+  max-width: 400px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: #0a162c;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.tse-search-input {
+  flex: 1;
+  min-width: 240px;
+  max-width: 380px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: #0a162c;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+.tse-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+/* STATS GRID */
+.tse-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tse-stat-card {
+  background: rgba(13, 25, 48, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.tse-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.tse-stat-number {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.tse-stat-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* LEADER CARDS */
+.tse-leaders-section {
+  margin-bottom: 24px;
+}
+
+.tse-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tse-leaders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.tse-leader-card {
+  background: linear-gradient(145deg, rgba(15, 30, 58, 0.9), rgba(9, 18, 38, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.tse-leader-card.elected {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(145deg, rgba(12, 38, 32, 0.8), rgba(9, 22, 28, 0.9));
+}
+
+.tse-leader-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tse-leader-pos {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.tse-leader-card.elected .tse-leader-pos {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.tse-leader-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.tse-leader-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tse-leader-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.tse-leader-meta {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.tse-leader-votes-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tse-bar-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.tse-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  transition: width 0.6s ease;
+}
+
+.tse-leader-card.elected .tse-bar-fill {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.tse-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* TABLE SECTION */
+.tse-table-container {
+  background: rgba(13, 25, 48, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  overflow-x: auto;
+}
+
+.tse-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 800px;
+}
+
+.tse-table th {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 30, 58, 0.5);
+}
+
+.tse-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  vertical-align: middle;
+}
+
+.tse-table tr:hover td {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.tse-table tr.elected-row td {
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.tse-cand-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tse-cand-name {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.tse-cand-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.tse-party-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.tse-badge-elected {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.tse-badge-alternate {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.tse-badge-not-elected {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 11px;
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* POLLING STATIONS ACCORDION */
+.tse-stations-section {
+  margin-top: 28px;
+}
+
+.tse-stations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.tse-station-card {
+  background: rgba(15, 30, 58, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tse-station-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.tse-station-meta {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.tse-station-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+@media print {
+  .tse-panel-topbar .tse-panel-actions,
+  .tse-filters-bar,
+  .sidebar {
+    display: none !important;
+  }
+  .tse-panel-root {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
+/* RESPONSIVIDADE MODERNA MOBILE - PAINEL ELEITORAL */
+@media (max-width: 860px) {
+  .tse-panel-shell {
+    padding: 12px 10px !important;
+  }
+  
+  .tse-panel-topbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+    gap: 14px !important;
+    border-radius: 14px !important;
+  }
+  
+  .tse-panel-brand {
+    gap: 12px !important;
+  }
+  
+  .tse-panel-title {
+    font-size: 1.15rem !important;
+    flex-wrap: wrap !important;
+  }
+  
+  .tse-panel-subtitle {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .tse-panel-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  .tse-panel-actions .vf-back-dashboard-btn {
+    grid-column: 1 / -1 !important;
+  }
+  
+  .tse-filters-bar {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+  
+  .tse-years-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  
+  .tse-years-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  .tse-year-btn {
+    flex-shrink: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 0.82rem !important;
+  }
+  
+  .tse-kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  
+  .tse-kpi-card {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+  
+  .tse-kpi-val {
+    font-size: 1.3rem !important;
+  }
+  
+  .tse-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+  }
+  
+  .tse-table {
+    min-width: 600px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .tse-stations-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}

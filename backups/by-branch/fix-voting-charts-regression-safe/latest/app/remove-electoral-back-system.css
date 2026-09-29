@@ -1,0 +1,5 @@
+/* Remove o botao legado "Voltar ao Sistema" do Painel Eleitoral.
+   O retorno oficial permanece sendo o botao "Voltar" no topo da tela. */
+.tse-panel-root .vf-back-dashboard-btn {
+  display: none !important;
+}

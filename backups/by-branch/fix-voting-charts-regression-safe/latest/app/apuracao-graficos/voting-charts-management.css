@@ -1,0 +1,191 @@
+.voting-kpi-name {
+  color: #f8fafc;
+  font-size: 1rem;
+  line-height: 1.1;
+  font-weight: 850;
+}
+
+.voting-kpi-mayor {
+  border-color: rgba(56, 189, 248, 0.24);
+  background:
+    radial-gradient(circle at 90% 15%, rgba(56, 189, 248, 0.10), transparent 36%),
+    linear-gradient(145deg, rgba(25, 39, 60, 0.86), rgba(12, 23, 40, 0.94));
+}
+
+.voting-mayor-avatar {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(56, 189, 248, 0.72);
+  border-radius: 50%;
+  color: #e0f2fe;
+  background: linear-gradient(145deg, #17405d, #0a263c);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.09), 0 5px 15px rgba(0, 0, 0, 0.24);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.voting-mayor-avatar.compact {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+.voting-mayor-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.voting-management-profile {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 14px 15px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 50%, rgba(14, 165, 233, 0.10), transparent 34%),
+    rgba(15, 23, 42, 0.46);
+}
+
+.voting-management-profile-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.voting-management-profile-copy > span {
+  color: #38bdf8;
+  font-size: 0.66rem;
+  font-weight: 820;
+  text-transform: uppercase;
+  letter-spacing: 0.075em;
+}
+
+.voting-management-profile-copy strong {
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.voting-management-profile-copy small {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 620;
+}
+
+.voting-management-profile-note {
+  max-width: 250px;
+  color: #91a1b6;
+  font-size: 0.69rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.voting-management-status {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(148, 163, 184, 0.30);
+  border-radius: 50%;
+  color: #f8fafc;
+  background: rgba(51, 65, 85, 0.48);
+  font-size: 1.08rem;
+  font-weight: 950;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.16);
+}
+
+.voting-management-status.compact {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  font-size: 0.92rem;
+}
+
+.voting-management-good {
+  color: #b8f7d9;
+  border-color: rgba(52, 211, 153, 0.58);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.voting-management-neutral {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.50);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.voting-management-bad {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.48);
+  background: rgba(239, 68, 68, 0.11);
+}
+
+.candidate-management.candidate-leader {
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+@media (max-width: 760px) {
+  .voting-management-profile {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 10px;
+    padding: 11px;
+    border-radius: 12px;
+  }
+
+  .voting-management-profile .voting-mayor-avatar {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+  }
+
+  .voting-management-profile-copy > span {
+    font-size: 0.56rem;
+  }
+
+  .voting-management-profile-copy strong {
+    font-size: 0.86rem;
+  }
+
+  .voting-management-profile-copy small {
+    font-size: 0.62rem;
+  }
+
+  .voting-management-profile-note {
+    grid-column: 1 / -1;
+    max-width: none;
+    margin-top: -2px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+    font-size: 0.61rem;
+    text-align: left;
+  }
+
+  .voting-management-status {
+    width: 47px;
+    height: 47px;
+    min-width: 47px;
+    font-size: 0.95rem;
+  }
+
+  .voting-management-status.compact {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 0.78rem;
+  }
+
+  .voting-kpi-name {
+    font-size: 0.79rem;
+  }
+}

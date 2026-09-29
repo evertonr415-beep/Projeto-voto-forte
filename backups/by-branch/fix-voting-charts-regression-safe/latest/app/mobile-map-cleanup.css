@@ -1,0 +1,108 @@
+.vf-map-layers-toggle {
+  display: none;
+}
+
+/* Os alfinetes legados podem existir por um frame antes da camada moderna assumir. */
+.full-map .contact-pin {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 760px) {
+  /*
+   * O mapa nasce com os controles desktop e só depois o enhancer mobile os
+   * reorganiza. Ocultamos apenas esse estado intermediário para impedir o
+   * flash visual durante refresh/hidratação. Se o enhancer não conseguir
+   * inicializar, ele adiciona .vf-mobile-map-fallback e libera o layout legado.
+   */
+  html:not(.vf-mobile-map-fallback)
+    .workspace:has(.full-map)
+    .page-head
+    > button:not(.vf-mobile-page-contacts-toggle) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html:not(.vf-mobile-map-fallback)
+    .full-map:not(.vf-mobile-map-ui)
+    .real-map-toolbar,
+  html:not(.vf-mobile-map-fallback)
+    .full-map:not(.vf-mobile-map-ui)
+    .leaflet-control-zoom {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html:not(.vf-mobile-map-fallback) .full-map .vf-map-contact-control,
+  html:not(.vf-mobile-map-fallback) .full-map .vf-district-map-control {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .vf-mobile-contacts-host .vf-map-contact-control,
+  .vf-mobile-district-host .vf-district-map-control {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .full-map .map-legend {
+    display: block !important;
+    position: absolute;
+    top: 166px !important;
+    left: 10px;
+    width: min(210px, calc(100vw - 32px));
+    max-height: calc(100% - 190px);
+    overflow: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px) scale(0.97);
+    transform-origin: top left;
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease,
+      visibility 180ms ease;
+    z-index: 1200 !important;
+  }
+
+  .full-map .map-legend.vf-map-legend-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .vf-map-layers-toggle {
+    display: inline-flex;
+    position: absolute;
+    top: 116px;
+    left: 10px;
+    z-index: 1201;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 9px;
+    background: rgba(7, 26, 51, 0.94);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(7, 26, 51, 0.32);
+    backdrop-filter: blur(8px);
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+  }
+
+  .vf-map-layers-toggle:active {
+    transform: scale(0.97);
+  }
+
+  .vf-map-layers-toggle[aria-expanded="true"] {
+    background: #c89943;
+    color: #102f59;
+  }
+}

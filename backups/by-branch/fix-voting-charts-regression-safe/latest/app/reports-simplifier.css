@@ -1,0 +1,150 @@
+.vf-report-heading small {
+  color: #b7832e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.vf-report-heading h3 {
+  margin: 6px 0 4px;
+  color: #12375f;
+  font-size: 21px;
+}
+
+.vf-report-heading p {
+  margin: 0;
+  color: #728297;
+  font-size: 13px;
+}
+
+.vf-report-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.vf-report-kpis article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid #e0e8f1;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fff, #f5f8fc);
+}
+
+.vf-report-kpis article > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #123f72;
+  color: #fff;
+  font-size: 17px;
+}
+
+.vf-report-kpis small,
+.vf-report-kpis b {
+  display: block;
+}
+
+.vf-report-kpis small {
+  color: #718197;
+  font-size: 11px;
+}
+
+.vf-report-kpis b {
+  margin-top: 3px;
+  color: #102f59;
+  font-size: 26px;
+}
+
+.vf-report-composition {
+  display: block;
+}
+
+.vf-composition-row {
+  margin-top: 20px;
+}
+
+.vf-composition-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #23435f;
+}
+
+.vf-composition-label b {
+  font-size: 18px;
+}
+
+.vf-progress {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9eef4;
+}
+
+.vf-progress i {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: #2865a3;
+}
+
+.vf-composition-row.leadership .vf-progress i {
+  background: #c9973f;
+}
+
+.vf-composition-row > small {
+  display: block;
+  margin-top: 7px;
+  color: #7a899a;
+}
+
+.vf-report-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eef5fd;
+  color: #355471;
+}
+
+.vf-report-note b {
+  color: #123f72;
+  font-size: 27px;
+}
+
+@media (max-width: 640px) {
+  .report-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vf-report-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .vf-report-kpis article {
+    display: block;
+    min-height: 118px;
+    padding: 14px;
+  }
+
+  .vf-report-kpis article > span {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 10px;
+  }
+
+  .vf-report-kpis b {
+    font-size: 23px;
+  }
+}
