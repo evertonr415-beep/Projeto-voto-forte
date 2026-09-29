@@ -333,7 +333,7 @@ export default function VotingChartsClient({
 
   useEffect(() => {
     void loadData();
-    const interval = window.setInterval(() => void loadData(), 5000);
+    const interval = window.setInterval(() => void loadData(), 60000);
     const handleSync = () => void loadData();
     window.addEventListener("voto-forte:survey-updated", handleSync);
     return () => {
@@ -467,6 +467,27 @@ export default function VotingChartsClient({
           : activeCategory === "senator"
             ? "Senador pelo Paraná"
             : activeCategory === "president"
+              ? "Presidente da República"
+              : "Avaliação da Gestão Municipal";
+
+  const exportCsv = () => {
+    const headers = "Posição,Candidato,Partido,Votos,Percentual\n";
+    const rows = orderedList
+      .map((item, index) => {
+        const party = item.party || candidatePartyMap[item.candidate] || "-";
+        const position = isSpecialCandidate(item.candidate) ? "-" : index + 1;
+        return `${position},"${item.candidate}","${party}","${item.votes}","${item.percentage}%"`;
+      })
+      .join("\n");
+
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `VotoForte-Apuracao-${activeCategory}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const printPdfReport = () => {
     const activeTabLabel =
       activeCategory === "state"
