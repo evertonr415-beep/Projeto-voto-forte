@@ -52,6 +52,7 @@ import WhatsappMonitorMobilePolish from "./whatsapp-monitor-mobile-polish";
 import WhaticketBroadcastMobilePolish from "./whaticket-broadcast-mobile-polish";
 import SurveyInitialLoadingPolish from "./survey-initial-loading-polish";
 import SurveyHeaderMobilePolish from "./survey-header-mobile-polish";
+import UserFeatureVisibilityGate from "./user-feature-visibility-gate";
 
 const APP_READY_SELECTOR = ".app-shell, .tse-panel-root, .ae-root, .vf-ic-shell";
 
@@ -80,6 +81,7 @@ export default function DashboardRuntimeEnhancers() {
   return (
     <>
       <NetworkScopeLabelNormalizer />
+      <UserFeatureVisibilityGate />
       {ready ? (
         <>
           <MunicipalityContextEnhancer />
