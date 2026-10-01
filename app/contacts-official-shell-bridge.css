@@ -33,7 +33,7 @@
 @media (max-width: 760px) {
   .workspace.vf-contacts-entering,
   .workspace.vf-contacts-optimized-active {
-    padding-top: 12px !important;
+    padding: 12px 14px 80px !important;
   }
 
   .vf-contacts-optimized-portal > .optimized-shell {
