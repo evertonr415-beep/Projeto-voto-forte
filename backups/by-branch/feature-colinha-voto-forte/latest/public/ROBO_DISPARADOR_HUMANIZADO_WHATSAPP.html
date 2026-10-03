@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZapHumanizer Pro — Robô de Disparo Humanizado WhatsApp</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #111827;
+      --card-border: rgba(148, 163, 184, 0.14);
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.35);
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --wpp-bubble: #005c4b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      padding: 20px 14px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    input, select, textarea {
+      background: #0b1120;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    /* QR Code Area */
+    .qr-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: #0b1120;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px dashed rgba(56, 189, 248, 0.35);
+    }
+
+    .qr-frame {
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-frame img {
+      width: 140px;
+      height: 140px;
+      display: block;
+    }
+
+    .qr-instructions {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .qr-instructions ol {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+
+    /* Tag buttons */
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag-btn {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--primary);
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tag-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+    }
+
+    /* Live WhatsApp Simulator */
+    .simulator-box {
+      background: #08111e;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .typing-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .typing-dots {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .typing-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulseDot 1.3s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulseDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .wpp-bubble {
+      background: var(--wpp-bubble);
+      color: #e9edef;
+      padding: 12px 14px;
+      border-radius: 8px 8px 0 8px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      max-width: 90%;
+      margin-left: auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      position: relative;
+    }
+
+    .wpp-bubble-tail {
+      position: absolute;
+      right: -6px;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-left: 6px solid var(--wpp-bubble);
+      border-top: 6px solid transparent;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      height: 8px;
+      background: rgba(148, 163, 184, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #38bdf8);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Buttons */
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 11px 18px;
+      border-radius: 9px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-start:hover:not(:disabled) {
+      background: linear-gradient(135deg, #047857, #059669);
+      transform: translateY(-1px);
+    }
+
+    .btn-pause {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #fff;
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #cbd5e1;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Logs */
+    .logs-list {
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .log-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #0b1120;
+      border-left: 3px solid #34d399;
+      border-radius: 6px;
+      font-size: 0.78rem;
+    }
+
+    .log-item.error {
+      border-left-color: #f87171;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div>
+        <div class="brand-title">
+          <span>🤖</span> ZapHumanizer Pro
+        </div>
+        <div class="brand-sub">Sistema Independente de Disparos Humanizados com Proteção Anti-Ban</div>
+      </div>
+      <div id="statusBadge" class="status-badge">
+        <span id="statusDot">🟢</span> <span id="statusText">Chip Conectado (+55 43 99614-7226)</span>
+      </div>
+    </header>
+
+    <!-- 1. Conexão QR Code -->
+    <div class="card">
+      <div class="card-title">
+        <span>📱 1. Conexão WhatsApp Direta (Sessão Web)</span>
+        <button class="tag-btn" onclick="toggleQR()">🔄 Alternar / Novo QR Code</button>
+      </div>
+
+      <div class="qr-container" id="qrContainer" style="display: none;">
+        <div class="qr-frame">
+          <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=WPP_HUMAN_BOT_SESSION_OK" alt="QR Code">
+        </div>
+        <div class="qr-instructions">
+          <strong>Como conectar seu aparelho:</strong>
+          <ol>
+            <li>Abra o WhatsApp no seu celular</li>
+            <li>Toque em <strong>Aparelhos Conectados</strong> &gt; <strong>Conectar Aparelho</strong></li>
+            <li>Aponte a câmera para o QR Code ao lado</li>
+          </ol>
+          <div style="margin-top: 10px;">
+            <button class="btn btn-start" style="padding: 6px 12px; font-size: 0.78rem;" onclick="connectSimulated()">✅ Confirmar Conexão</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="connectedNotice" style="font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+        <span>Sessão ativa e protegida. O robô simula digitação humana no teclado antes de cada envio.</span>
+        <button class="tag-btn" style="color: #f87171; border-color: rgba(248,113,113,0.4);" onclick="disconnect()">Desconectar</button>
+      </div>
+    </div>
+
+    <!-- 2. Configurações de Pacing Anti-Ban (150/dia) -->
+    <div class="card">
+      <div class="card-title">
+        <span>🛡️ 2. Regras Anti-Bloqueio (150 disparos por dia)</span>
+        <span style="font-size: 0.75rem; color: var(--accent); font-weight: 700;">Modo Seguro Ativado</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="form-group">
+          <label>Meta Diária de Envios</label>
+          <select id="dailyLimit">
+            <option value="50">50 contatos (Aquecimento)</option>
+            <option value="100">100 contatos (Moderado)</option>
+            <option value="150" selected>150 contatos (Recomendado)</option>
+            <option value="200">200 contatos (Máximo)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Intervalo Aleatório (segundos)</label>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="number" id="minDelay" value="40" min="20">
+            <span style="color: #64748b; font-size: 0.8rem;">a</span>
+            <input type="number" id="maxDelay" value="70" max="180">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Simulação de Digitação</label>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="number" id="minTyping" value="3" min="2">
+            <span style="color: #64748b; font-size: 0.8rem;">a</span>
+            <input type="number" id="maxTyping" value="6" max="12">
+            <span style="color: #94a3b8; font-size: 0.8rem;">seg</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px; font-size: 0.74rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>☕ Pausa preventiva de 10 min a cada lote de 25 mensagens.</span>
+        <span>Tempo total estimado do lote: ~2h30min</span>
+      </div>
+    </div>
+
+    <!-- 3. Lista de Contatos & Mensagem com Spintax -->
+    <div class="grid-2">
+      <!-- Lista de Contatos -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 3. Lista de Contatos</span>
+          <span id="contactCountBadge" style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">150 contatos</span>
+        </div>
+        <div class="form-group">
+          <label>Cole os números (um por linha com ou sem nome):</label>
+          <textarea id="contactsInput" style="height: 130px;" placeholder="43999990001, João da Silva, Centro&#10;43999990002, Maria Oliveira, Paraíso"></textarea>
+        </div>
+        <div style="margin-top: 8px; display: flex; gap: 6px;">
+          <button class="tag-btn" onclick="loadArapongasSample()">📥 Carregar 150 Contatos de Exemplo (Arapongas)</button>
+        </div>
+      </div>
+
+      <!-- Editor com Spintax -->
+      <div class="card">
+        <div class="card-title">
+          <span>✍️ 4. Mensagem com Variações (Spintax)</span>
+          <button class="tag-btn" onclick="testSpintaxVariation()">🎲 Testar Variação</button>
+        </div>
+        <div class="form-group">
+          <textarea id="messageTemplate" style="height: 130px;">{Olá|Oi|Tudo bem?}, {primeiro_nome}! 👋
+
+Será que o candidato que todo mundo pensa está na frente aqui em {bairro}? 👀
+
+Participe da nossa enquete e descubra quem está sendo mais lembrado na cidade:
+
+📊 *Resultado em tempo real*
+⏱️ *Menos de 1 minuto*
+
+👉 *Clique e participe:*
+{link_enquete}</textarea>
+        </div>
+        <div class="tags-row">
+          <span style="font-size: 0.7rem; color: #64748b; align-self: center;">Tags:</span>
+          <button class="tag-btn" onclick="insertTag('{primeiro_nome}')">+{primeiro_nome}</button>
+          <button class="tag-btn" onclick="insertTag('{bairro}')">+{bairro}</button>
+          <button class="tag-btn" onclick="insertTag('{link_enquete}')">+{link_enquete}</button>
+          <button class="tag-btn" onclick="insertTag('{Olá|Oi|Tudo bem?}')">+Spintax {A|B}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Simulador ao Vivo & Painel de Disparos -->
+    <div class="card">
+      <div class="card-title">
+        <span>⚡ 5. Painel de Execução em Tempo Real</span>
+        <span id="progressCounter" style="font-size: 0.8rem; color: var(--primary); font-weight: 800;">0 / 150 (0%)</span>
+      </div>
+
+      <div class="simulator-box">
+        <div class="typing-status">
+          <span id="currentStatusText">Pronto para iniciar.</span>
+          <div id="typingDots" class="typing-dots" style="display: none;">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+
+        <div class="wpp-bubble" id="wppBubblePreview">
+          <span id="bubbleText">A prévia da mensagem gerada aparecerá aqui...</span>
+          <div class="wpp-bubble-tail"></div>
+        </div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" id="progressBar" style="width: 0%;"></div>
+      </div>
+
+      <!-- Ações -->
+      <div class="actions-row">
+        <button id="btnStart" class="btn btn-start" onclick="startBroadcast()">▶️ Iniciar Disparo Humanizado</button>
+        <button id="btnPause" class="btn btn-pause" style="display: none;" onclick="togglePause()">⏸️ Pausar</button>
+        <button id="btnStop" class="btn btn-stop" style="display: none;" onclick="stopBroadcast()">⏹️ Interromper</button>
+      </div>
+    </div>
+
+    <!-- 5. Relatório / Logs -->
+    <div class="card" id="logsCard" style="display: none;">
+      <div class="card-title">
+        <span>📋 Relatório de Envios</span>
+        <span id="logsSummary" style="font-size: 0.75rem; color: var(--accent); font-weight: 700;">0 enviados</span>
+      </div>
+      <div class="logs-list" id="logsList"></div>
+    </div>
+  </div>
+
+  <script>
+    // Gerador de Contatos de Exemplo
+    const sampleDistricts = ["Centro", "Jardim Paraíso", "Jardim Imperial", "Jardim União", "Jardim São Paulo", "Jardim América", "Jardim Paulista", "Jardim Itamaraty", "Vila Nova", "Jardim Alvorada"];
+    const sampleNames = ["João", "Maria", "Pedro", "Ana", "Carlos", "Juliana", "Fernando", "Lucas", "Patrícia", "Marcos", "Aline", "Rodrigo", "Camila", "Eduardo", "Bruna", "Rafael", "Beatriz", "Gabriel", "Larissa", "Thiago"];
+    
+    function loadArapongasSample() {
+      let lines = [];
+      for (let i = 1; i <= 150; i++) {
+        const name = sampleNames[i % sampleNames.length] + " " + String.fromCharCode(65 + (i % 26)) + ".";
+        const district = sampleDistricts[i % sampleDistricts.length];
+        const num = "43999" + String(10000 + i);
+        lines.push(`${num}, ${name}, ${district}`);
+      }
+      document.getElementById("contactsInput").value = lines.join("\n");
+      updateContactCount();
+    }
+
+    function updateContactCount() {
+      const text = document.getElementById("contactsInput").value.trim();
+      const count = text ? text.split("\n").filter(Boolean).length : 0;
+      document.getElementById("contactCountBadge").innerText = `${count} contatos`;
+      document.getElementById("progressCounter").innerText = `0 / ${Math.min(count, 150)} (0%)`;
+    }
+
+    document.getElementById("contactsInput").addEventListener("input", updateContactCount);
+
+    // Spintax Parser
+    function parseSpintax(text) {
+      const spintaxRegex = /\{([^{}]+)\}/g;
+      let matches = text.match(spintaxRegex);
+      let resolved = text;
+      while (matches && matches.length > 0) {
+        for (const match of matches) {
+          const options = match.slice(1, -1).split("|");
+          const randomOption = options[Math.floor(Math.random() * options.length)] || "";
+          resolved = resolved.replace(match, randomOption);
+        }
+        matches = resolved.match(spintaxRegex);
+      }
+      return resolved;
+    }
+
+    function resolveTags(text, name, district) {
+      const firstName = (name || "Amigo(a)").trim().split(/\s+/)[0];
+      return text
+        .replace(/\{nome\}/gi, name || "Amigo(a)")
+        .replace(/\{primeiro_nome\}/gi, firstName)
+        .replace(/\{bairro\}/gi, district || "Arapongas")
+        .replace(/\{cidade\}/gi, "Arapongas")
+        .replace(/\{link_enquete\}/gi, "https://sistemavotoforte.com.br/enquete/arapongas");
+    }
+
+    function testSpintaxVariation() {
+      const tpl = document.getElementById("messageTemplate").value;
+      const parsed = resolveTags(parseSpintax(tpl), "Sérgio Onofre", "Centro");
+      document.getElementById("bubbleText").innerText = parsed;
+    }
+
+    function insertTag(tag) {
+      const el = document.getElementById("messageTemplate");
+      el.value += " " + tag;
+      testSpintaxVariation();
+    }
+
+    // QR Code Controls
+    function toggleQR() {
+      const box = document.getElementById("qrContainer");
+      const notice = document.getElementById("connectedNotice");
+      if (box.style.display === "none") {
+        box.style.display = "flex";
+        notice.style.display = "none";
+        document.getElementById("qrImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=WPP_SESSION_" + Date.now();
+      } else {
+        box.style.display = "none";
+        notice.style.display = "flex";
+      }
+    }
+
+    function connectSimulated() {
+      document.getElementById("qrContainer").style.display = "none";
+      document.getElementById("connectedNotice").style.display = "flex";
+      document.getElementById("statusBadge").innerHTML = `<span>🟢</span> <span>Chip Conectado (+55 43 99614-7226)</span>`;
+      alert("WhatsApp conectado com sucesso!");
+    }
+
+    function disconnect() {
+      document.getElementById("statusBadge").innerHTML = `<span>🔴</span> <span>Desconectado</span>`;
+      toggleQR();
+    }
+
+    // Broadcast Engine
+    let isRunning = false;
+    let isPaused = false;
+    let abortBroadcast = false;
+
+    async function startBroadcast() {
+      const rawContacts = document.getElementById("contactsInput").value.trim().split("\n").filter(Boolean);
+      if (rawContacts.length === 0) {
+        alert("Carregue ou digite os contatos antes de iniciar.");
+        return;
+      }
+
+      const limit = parseInt(document.getElementById("dailyLimit").value) || 150;
+      const minD = parseInt(document.getElementById("minDelay").value) || 40;
+      const maxD = parseInt(document.getElementById("maxDelay").value) || 70;
+      const minTyp = parseInt(document.getElementById("minTyping").value) || 3;
+      const maxTyp = parseInt(document.getElementById("maxTyping").value) || 6;
+      const tpl = document.getElementById("messageTemplate").value;
+
+      const contacts = rawContacts.slice(0, limit).map(line => {
+        const parts = line.split(",").map(p => p.trim());
+        return {
+          phone: parts[0] || "",
+          name: parts[1] || "Eleitor",
+          district: parts[2] || "Arapongas"
+        };
+      });
+
+      isRunning = true;
+      isPaused = false;
+      abortBroadcast = false;
+
+      document.getElementById("btnStart").style.display = "none";
+      document.getElementById("btnPause").style.display = "inline-flex";
+      document.getElementById("btnStop").style.display = "inline-flex";
+      document.getElementById("logsCard").style.display = "block";
+
+      const logsList = document.getElementById("logsList");
+      let sentCount = 0;
+
+      for (let i = 0; i < contacts.length; i++) {
+        if (abortBroadcast) break;
+
+        while (isPaused) {
+          document.getElementById("currentStatusText").innerText = "⏸️ Disparo pausado.";
+          document.getElementById("typingDots").style.display = "none";
+          await new Promise(r => setTimeout(r, 1000));
+          if (abortBroadcast) break;
+        }
+        if (abortBroadcast) break;
+
+        const c = contacts[i];
+        const pct = Math.round(((i + 1) / contacts.length) * 100);
+        document.getElementById("progressBar").style.width = `${pct}%`;
+        document.getElementById("progressCounter").innerText = `${i + 1} / ${contacts.length} (${pct}%)`;
+
+        // 1. Gerar mensagem com Spintax
+        const finalMsg = resolveTags(parseSpintax(tpl), c.name, c.district);
+
+        // 2. Simular Digitação
+        const typingSec = Math.floor(Math.random() * (maxTyp - minTyp + 1)) + minTyp;
+        document.getElementById("currentStatusText").innerText = `⌨️ Simulando digitação para ${c.name} (${c.district})...`;
+        document.getElementById("typingDots").style.display = "inline-flex";
+
+        // Efeito de digitação no balão
+        const chars = finalMsg.split("");
+        let currentText = "";
+        const charDelay = Math.max(15, Math.floor((typingSec * 1000) / chars.length));
+
+        for (let char of chars) {
+          if (abortBroadcast) break;
+          currentText += char;
+          document.getElementById("bubbleText").innerText = currentText;
+          await new Promise(r => setTimeout(r, charDelay));
+        }
+
+        if (abortBroadcast) break;
+
+        // 3. Enviar
+        document.getElementById("currentStatusText").innerText = `🚀 Enviando para ${c.phone}...`;
+        await new Promise(r => setTimeout(r, 800));
+
+        // Registrar Log
+        sentCount++;
+        const logItem = document.createElement("div");
+        logItem.className = "log-item";
+        logItem.innerHTML = `
+          <div><strong>${c.name}</strong> (${c.phone}) · <span style="color:#94a3b8">${c.district}</span></div>
+          <div style="color:#34d399; font-weight:700;">✅ Entregue às ${new Date().toLocaleTimeString("pt-BR")}</div>
+        `;
+        logsList.insertBefore(logItem, logsList.firstChild);
+        document.getElementById("logsSummary").innerText = `${sentCount} enviados com sucesso`;
+
+        // 4. Pausa de Lote ou Intervalo Aleatório
+        if ((i + 1) % 25 === 0 && i + 1 < contacts.length) {
+          let rest = 600; // 10 min
+          document.getElementById("typingDots").style.display = "none";
+          while (rest > 0 && !abortBroadcast && !isPaused) {
+            const m = Math.floor(rest / 60);
+            const s = rest % 60;
+            document.getElementById("currentStatusText").innerText = `☕ Pausa preventiva anti-bloqueio (Lote de 25): ${m}m ${s}s restantes...`;
+            await new Promise(r => setTimeout(r, 1000));
+            rest--;
+          }
+        } else if (i + 1 < contacts.length) {
+          let delay = Math.floor(Math.random() * (maxD - minD + 1)) + minD;
+          document.getElementById("typingDots").style.display = "none";
+          while (delay > 0 && !abortBroadcast && !isPaused) {
+            document.getElementById("currentStatusText").innerText = `⏳ Intervalo humanizado para próximo envio: ${delay}s...`;
+            await new Promise(r => setTimeout(r, 1000));
+            delay--;
+          }
+        }
+      }
+
+      isRunning = false;
+      document.getElementById("typingDots").style.display = "none";
+      document.getElementById("currentStatusText").innerText = abortBroadcast ? "⏹️ Disparo interrompido." : "✅ Lote de 150 disparos concluído!";
+      document.getElementById("btnStart").style.display = "inline-flex";
+      document.getElementById("btnPause").style.display = "none";
+      document.getElementById("btnStop").style.display = "none";
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      document.getElementById("btnPause").innerText = isPaused ? "▶️ Retomar" : "⏸️ Pausar";
+    }
+
+    function stopBroadcast() {
+      if (confirm("Deseja realmente parar o disparo?")) {
+        abortBroadcast = true;
+      }
+    }
+
+    // Inicialização
+    loadArapongasSample();
+    testSpintaxVariation();
+  </script>
+</body>
+</html>

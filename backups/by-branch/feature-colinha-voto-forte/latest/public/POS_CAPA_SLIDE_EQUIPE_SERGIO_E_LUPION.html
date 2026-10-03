@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório Executivo de Mobilização - Equipe Sergio & Lupion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070d19;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --border-card: rgba(56, 189, 248, 0.18);
+      --border-glow: rgba(56, 189, 248, 0.4);
+      --primary-cyan: #38bdf8;
+      --primary-blue: #2563eb;
+      --accent-gold: #fbbf24;
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.6) 0%, transparent 100%);
+    }
+
+    .slide-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 30, 0.98) 100%);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 48px;
+    }
+
+    /* Linhas e Detalhes Decorativos */
+    .slide-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2563eb, #38bdf8, #fbbf24, #a855f7, #10b981);
+    }
+
+    .watermark-glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+      top: -150px;
+      right: -150px;
+      pointer-events: none;
+    }
+
+    /* Cabeçalho */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 14px;
+      border-radius: 999px;
+      color: var(--primary-cyan);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    .tag-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--primary-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--primary-cyan);
+    }
+
+    .title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .campaign-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.6);
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      display: inline-block;
+    }
+
+    /* Conteúdo Principal em Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.9fr;
+      gap: 22px;
+      flex: 1;
+    }
+
+    /* Coluna Esquerda: Mobilização e Equipe */
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+    }
+
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #f1f5f9;
+    }
+
+    .group-highlight {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .group-name {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--primary-cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .group-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .info-value {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-top: 2px;
+    }
+
+    .members-badge {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--accent-gold);
+    }
+
+    /* Coluna Direita: Métricas de Distribuição e Locais */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* KPIs de Materiais (4 Boxes) */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .kpi-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--primary-cyan);
+    }
+
+    .kpi-box.gold::after { background: var(--accent-gold); }
+    .kpi-box.purple::after { background: var(--accent-purple); }
+    .kpi-box.emerald::after { background: var(--accent-emerald); }
+
+    .kpi-header {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-top: 5px;
+      letter-spacing: -0.5px;
+    }
+
+    .kpi-sub {
+      font-size: 10.5px;
+      color: var(--primary-cyan);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .kpi-sub.gold { color: var(--accent-gold); }
+    .kpi-sub.purple { color: var(--accent-purple); }
+    .kpi-sub.emerald { color: var(--accent-emerald); }
+
+    /* Grid de Locais de Atuação e Adesivaço */
+    .locations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+    }
+
+    .location-pill {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      transition: all 0.2s;
+    }
+
+    .location-pill:hover {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .loc-icon {
+      font-size: 13px;
+      color: var(--primary-cyan);
+      opacity: 0.9;
+    }
+
+    .loc-tag {
+      font-size: 9px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary-cyan);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+      font-weight: 700;
+    }
+
+    /* Rodapé do Slide */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      padding-top: 12px;
+      margin-top: 12px;
+      font-size: 11.5px;
+      color: var(--text-dim);
+    }
+
+    .footer-highlight {
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .btn-print {
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      transition: transform 0.15s;
+    }
+
+    .btn-print:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Estilos para Impressão / Salvar em PDF */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      body {
+        padding: 0;
+        background: #070d19 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .btn-print {
+        display: none !important;
+      }
+
+      .slide-wrapper {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 32px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slide-wrapper">
+    <div class="watermark-glow"></div>
+
+    <!-- CABEÇALHO DO SLIDE -->
+    <div class="header">
+      <div class="header-left">
+        <div class="tag-badge">
+          <span class="tag-dot"></span>
+          Pós-Capa Executiva · Prestação de Ações
+        </div>
+        <h1 class="title">Relatório de Mobilização & Atividades de Campo</h1>
+        <p class="subtitle">Visão consolidada de infraestrutura, adesivaços, panfletagem e balanço de materiais</p>
+      </div>
+
+      <div class="header-right">
+        <div class="campaign-name">Arapongas / PR · Eleições 2026</div>
+      </div>
+    </div>
+
+    <!-- CORPO PRINCIPAL -->
+    <div class="main-grid">
+
+      <!-- COLUNA DA ESQUERDA: INFRAESTRUTURA & GRUPO -->
+      <div class="left-column">
+        
+        <!-- CARD DE MOBILIZAÇÃO DO GRUPO -->
+        <div class="glass-card" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="card-title-row">
+              <div class="icon-box">💬</div>
+              <div class="card-title">Infraestrutura & Mobilização Digital</div>
+            </div>
+
+            <div class="group-highlight">
+              <div class="group-name">
+                <span>📱</span> Equipe Sergio e Lupion Arapongas
+              </div>
+              <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.4;">
+                Grupo oficial de alinhamento tático, comunicação e coordenação de lideranças de rua.
+              </p>
+
+              <div class="group-info-row">
+                <div class="info-item">
+                  <span class="info-label">Criação do Grupo</span>
+                  <span class="info-value">27/08 · 08:00h</span>
+                </div>
+                <div class="info-item" style="text-align: right;">
+                  <span class="info-label">Lideranças Integradas</span>
+                  <span class="members-badge">205 Membros</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESUMO ESTRATÉGICO -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 10px; padding: 12px; margin-top: 10px;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">
+              ⚡ Coordenação de Linha de Frente
+            </div>
+            <p style="font-size: 11px; color: #cbd5e1; line-height: 1.4;">
+              Engajamento orgânico diário com disparo de rotas, abastecimento de materiais e cobertura dos pontos comerciais e feiras livres.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUNA DA DIREITA: VOLUMES E LOCAIS -->
+      <div class="right-column">
+
+        <!-- MÉTRICAS DE MATERIAIS ENTREGUES (KPIS - 4 BOXES) -->
+        <div class="kpi-row">
+          
+          <div class="kpi-box">
+            <div class="kpi-header">
+              <span>📰</span> Jornais
+            </div>
+            <div class="kpi-value">30.000</div>
+            <div class="kpi-sub">Pedro & Sergio</div>
+          </div>
+
+          <div class="kpi-box gold">
+            <div class="kpi-header">
+              <span>📑</span> Colinhas
+            </div>
+            <div class="kpi-value">50.000</div>
+            <div class="kpi-sub gold">Distribuição Estratégica</div>
+          </div>
+
+          <div class="kpi-box purple">
+            <div class="kpi-header">
+              <span>🚩</span> Wind Banners
+            </div>
+            <div class="kpi-value">80</div>
+            <div class="kpi-sub purple">Pontos de Impacto</div>
+          </div>
+
+          <div class="kpi-box emerald">
+            <div class="kpi-header">
+              <span>🚗</span> Perfurados
+            </div>
+            <div class="kpi-value">800</div>
+            <div class="kpi-sub emerald">660 Aplicados · 140 Est.</div>
+          </div>
+
+        </div>
+
+        <!-- LOCAIS DE ADESIVAÇO E PANFLETAGEM -->
+        <div class="glass-card" style="flex: 1;">
+          <div class="card-title-row">
+            <div class="icon-box">📍</div>
+            <div class="card-title">Locais Atendidos · Adesivaço, Wind Banners & Panfletagem</div>
+          </div>
+
+          <div class="locations-grid">
+            <div class="location-pill">
+              <span class="loc-icon">🍺</span> Bar do Ceará
+              <span class="loc-tag">Adesivaço</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🍻</span> Bar do Kias
+              <span class="loc-tag">Adesivaço</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🏛️</span> Sabáudia
+              <span class="loc-tag">Integração</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🏘️</span> Conjunto Flamingos
+              <span class="loc-tag">Adesivaço</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🎪</span> Feira do Cemitério
+              <span class="loc-tag">Panfletagem</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🍎</span> Feira do Santo Antônio
+              <span class="loc-tag">Panfletagem</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">✈️</span> Feira do Aeroporto
+              <span class="loc-tag">Panfletagem</span>
+            </div>
+
+            <div class="location-pill">
+              <span class="loc-icon">🎯</span> Pontos Estratégicos & Vias
+              <span class="loc-tag">Wind Banners</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RODAPÉ EXECUTIVO -->
+    <div class="footer">
+      <div>
+        <span>Status do Estoque de Perfurados: </span>
+        <span class="footer-highlight">140 unidades disponíveis em estoque para reposição imediata.</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span>Documento Oficial de Prestação de Atividades</span>
+        <button class="btn-print" onclick="window.print()">🖨️ Salvar em PDF / Imprimir</button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

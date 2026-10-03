@@ -1,0 +1,19 @@
+body:not(.vf-map-position-adm) .vf-district-adjust,
+body:not(.vf-map-position-adm) .vf-district-save {
+  display: none !important;
+}
+
+.vf-neighborhood-contact-hint {
+  max-width: 280px;
+  color: #66778a;
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .vf-neighborhood-contact-hint {
+    max-width: none;
+    text-align: left;
+  }
+}
