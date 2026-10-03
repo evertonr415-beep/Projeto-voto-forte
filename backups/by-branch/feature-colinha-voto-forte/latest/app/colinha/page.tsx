@@ -51,13 +51,18 @@ const presidentes: Escolha[] = [
   { cargo:"Presidente", nome:"Zema", numero:"30", partido:"Novo" },
 ];
 
+const fotosFixas: Record<string,string> = {
+  "Deputado Federal:1000": "https://commons.wikimedia.org/wiki/Special:Redirect/file/2026%20PEDRO%20LUPION%20CANDIDATO%20DEPUTADO%20FEDERAL%20PR%20%28160002540769%29.jpg",
+  "Deputado Estadual:55633": "https://commons.wikimedia.org/wiki/Special:Redirect/file/2020%20SERGIO%20ONOFRE%20CANDIDATO%20PREFEITO%20PR%20ARAPONGAS%20TSE%20%28160000738086%29.jpg",
+  "Senador 1:100": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Alexandre%20Curi.jpg",
+};
 function fotoSrc(cargo: Cargo, numero: string) {
-  return `/api/colinha-foto?cargo=${encodeURIComponent(cargo)}&numero=${encodeURIComponent(numero)}`;
+  return fotosFixas[`${cargo}:${numero}`] || `/api/colinha-foto?cargo=${encodeURIComponent(cargo)}&numero=${encodeURIComponent(numero)}`;
 }
 function FotoCandidato({ candidato, pequena=false }: { candidato: Escolha; pequena?: boolean }) {
   const [erro,setErro]=useState(false);
   if (!candidato.numero || erro) return <span className={`vf-avatar ${pequena?"small":""}`}>{(candidato.nome||"?").slice(0,1)}</span>;
-  return <img className={`vf-candidate-photo ${pequena?"small":""}`} src={fotoSrc(candidato.cargo,candidato.numero)} alt={`Foto oficial de ${candidato.nome}`} onError={()=>setErro(true)} />;
+  return <img className={`vf-candidate-photo ${pequena?"small":""}`} src={fotoSrc(candidato.cargo,candidato.numero)} alt={`Foto de ${candidato.nome}`} referrerPolicy="no-referrer" onError={()=>setErro(true)} />;
 }
 
 export default function ColinhaPage(){
@@ -71,13 +76,13 @@ export default function ColinhaPage(){
   async function compartilhar(){const c=desenhar();if(!c)return;const blob=await new Promise<Blob|null>(r=>c.toBlob(r,"image/png"));if(!blob)return;const file=new File([blob],"colinha-voto-forte.png",{type:"image/png"});if(navigator.share&&navigator.canShare?.({files:[file]}))await navigator.share({title:"Minha Colinha - Voto Forte",files:[file]});else baixar()}
 
   return <main className="vf-colinha"><header className="vf-top"><div className="vf-brand"><span className="vf-mark">VF</span><div><strong>VOTO FORTE</strong><small>Gerador de Colinha</small></div></div><a href="/">Voltar ao Voto Forte</a></header>
-    <section className="vf-hero"><span className="vf-pill">ELEIÇÕES 2026</span><h1>Monte sua <em>colinha</em></h1><p>Escolha livremente nos campos disponíveis. As fotos são carregadas da base oficial do TSE e nenhuma opção é marcada automaticamente.</p></section>
+    <section className="vf-hero"><span className="vf-pill">ELEIÇÕES 2026</span><h1>Monte sua <em>colinha</em></h1><p>Escolha livremente nos campos disponíveis. Nenhuma opção é marcada automaticamente.</p></section>
     <section className="vf-workspace"><div className="vf-form"><div className="vf-progress"><strong>{preenchidos} de {cargos.length}</strong><span>cargos preenchidos</span></div>
       {(["Deputado Federal","Deputado Estadual","Senador 1"] as Cargo[]).map(c=><div className="vf-field vf-fixed" key={c}><label>{c}</label><div className="vf-fixed-card"><FotoCandidato candidato={escolhas[c]} /><div className="vf-person"><strong>{escolhas[c].nome}</strong><small>Pré-configurado</small></div><b>{escolhas[c].numero}</b></div></div>)}
       <Seletor cargo="Senador 2" atual={escolhas["Senador 2"]} opcoes={senadores} onSelect={c=>selecionar("Senador 2",c)} placeholder="Escolha o segundo candidato ao Senado" />
       <Seletor cargo="Governador" atual={escolhas.Governador} opcoes={governadores} onSelect={c=>selecionar("Governador",c)} placeholder="Escolha entre os candidatos a governador do Paraná" />
       <Seletor cargo="Presidente" atual={escolhas.Presidente} opcoes={presidentes} onSelect={c=>selecionar("Presidente",c)} placeholder="Escolha entre os candidatos a presidente" />
-      <p className="vf-source">Fotos e dados eleitorais: DivulgaCandContas/TSE. A situação dos registros pode ser atualizada pela Justiça Eleitoral.</p><div className="vf-actions"><button onClick={baixar} disabled={preenchidos<6}>Gerar minha colinha</button><button className="secondary" onClick={compartilhar} disabled={preenchidos<6}>Compartilhar</button></div></div>
+      <p className="vf-source">Dados eleitorais: conferir no DivulgaCandContas/TSE. Fotografias exibidas conforme fontes públicas identificadas.</p><div className="vf-actions"><button onClick={baixar} disabled={preenchidos<6}>Gerar minha colinha</button><button className="secondary" onClick={compartilhar} disabled={preenchidos<6}>Compartilhar</button></div></div>
       <div className="vf-preview-wrap"><div className="vf-preview"><div className="preview-head"><span>VOTO FORTE</span><b>MINHA COLINHA</b></div>{cargos.map(c=><div className="preview-row" key={c}>{escolhas[c].numero&&<FotoCandidato candidato={escolhas[c]} pequena/>}<div><small>{c}</small><strong>{escolhas[c].nome||"Escolha um candidato"}</strong></div><b>{escolhas[c].numero||"—"}</b></div>)}<footer>Confira os dados oficiais antes de votar.</footer></div></div>
     </section><canvas ref={canvasRef} className="vf-hidden-canvas" /></main>;
 }
