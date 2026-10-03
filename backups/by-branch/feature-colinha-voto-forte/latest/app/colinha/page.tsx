@@ -16,8 +16,19 @@ const iniciais: Record<Cargo, Escolha> = {
   Presidente: { cargo: "Presidente", nome: "", numero: "" },
 };
 
-// Lista oficial deve ser sincronizada/validada com o DivulgaCandContas/TSE.
-// As opções são exibidas sem ranking, recomendação ou candidato pré-selecionado.
+// Candidaturas do Paraná exibidas em ordem numérica, sem ranking, recomendação ou pré-seleção.
+// Conferir situação atual do registro no DivulgaCandContas/TSE.
+const senadores: Escolha[] = [
+  { cargo:"Senador 2", nome:"Gleisi", numero:"131", partido:"PT" },
+  { cargo:"Senador 2", nome:"Dr Rosinha", numero:"132", partido:"PT" },
+  { cargo:"Senador 2", nome:"Karen Guerreiro", numero:"144", partido:"MISSÃO" },
+  { cargo:"Senador 2", nome:"Filipe Barros", numero:"222", partido:"PL" },
+  { cargo:"Senador 2", nome:"Marcelo Marcelino", numero:"290", partido:"PCO" },
+  { cargo:"Senador 2", nome:"Deltan Dallagnol", numero:"300", partido:"NOVO" },
+  { cargo:"Senador 2", nome:"Cristina Graeml", numero:"555", partido:"PSD" },
+  { cargo:"Senador 2", nome:"Joaquim do MLB", numero:"800", partido:"UP" },
+];
+
 const governadores: Escolha[] = [
   { cargo:"Governador", nome:"Adriano Funileiro", numero:"29", partido:"PCO" },
   { cargo:"Governador", nome:"Doutor Alexandre Salomão", numero:"33", partido:"Mobiliza" },
@@ -63,7 +74,7 @@ export default function ColinhaPage() {
     <section className="vf-hero"><span className="vf-pill">ELEIÇÕES 2026</span><h1>Monte sua <em>colinha</em></h1><p>Três campos já estão configurados. Nos demais, escolha livremente entre as candidaturas disponíveis. Nenhuma opção é marcada automaticamente.</p></section>
     <section className="vf-workspace"><div className="vf-form"><div className="vf-progress"><strong>{preenchidos} de {cargos.length}</strong><span>cargos preenchidos</span></div>
       {(["Deputado Federal","Deputado Estadual","Senador 1"] as Cargo[]).map(c=><div className="vf-field vf-fixed" key={c}><label>{c}</label><div className="vf-fixed-card"><div><strong>{escolhas[c].nome}</strong><small>Pré-configurado</small></div><b>{escolhas[c].numero}</b></div></div>)}
-      <Seletor cargo="Senador 2" atual={escolhas["Senador 2"]} onSelect={c=>selecionar("Senador 2",c)} placeholder="Buscar candidato a senador por nome ou número" />
+      <Seletor cargo="Senador 2" atual={escolhas["Senador 2"]} opcoes={senadores} onSelect={c=>selecionar("Senador 2",c)} placeholder="Escolha o segundo candidato ao Senado" />
       <Seletor cargo="Governador" atual={escolhas.Governador} opcoes={governadores} onSelect={c=>selecionar("Governador",c)} placeholder="Escolha entre os candidatos a governador do Paraná" />
       <Seletor cargo="Presidente" atual={escolhas.Presidente} opcoes={presidentes} onSelect={c=>selecionar("Presidente",c)} placeholder="Escolha entre os candidatos a presidente" />
       <p className="vf-source">Dados eleitorais: conferir no DivulgaCandContas/TSE. A situação dos registros pode ser atualizada pela Justiça Eleitoral.</p><div className="vf-actions"><button onClick={baixar} disabled={preenchidos<6}>Gerar minha colinha</button><button className="secondary" onClick={compartilhar} disabled={preenchidos<6}>Compartilhar</button></div></div>
@@ -73,6 +84,6 @@ export default function ColinhaPage() {
 
 function Seletor({cargo,atual,opcoes=[],onSelect,placeholder}:{cargo:Cargo;atual:Escolha;opcoes?:Escolha[];onSelect:(c:Escolha)=>void;placeholder:string}){
  const [busca,setBusca]=useState(""); const filtradas=opcoes.filter(o=>(o.nome+" "+o.numero+" "+(o.partido||"")).toLowerCase().includes(busca.toLowerCase()));
- return <div className="vf-field"><label>{cargo}</label>{atual.numero&&<div className="vf-selected"><span><strong>{atual.nome}</strong><small>{atual.partido||""}</small></span><b>{atual.numero}</b></div>}<input className="vf-search" value={busca} onChange={e=>setBusca(e.target.value)} placeholder={placeholder}/>{opcoes.length>0?<div className="vf-options">{filtradas.map(o=><button key={o.nome} onClick={()=>{onSelect(o);setBusca("")}}><span><strong>{o.nome}</strong><small>{o.partido}</small></span><b>{o.numero}</b></button>)}</div>:<p className="vf-awaiting">A lista oficial de Senador 2 será conectada à base do TSE; nenhuma opção é sugerida ou priorizada.</p>}</div>
+ return <div className="vf-field"><label>{cargo}</label>{atual.numero&&<div className="vf-selected"><span><strong>{atual.nome}</strong><small>{atual.partido||""}</small></span><b>{atual.numero}</b></div>}<input className="vf-search" value={busca} onChange={e=>setBusca(e.target.value)} placeholder={placeholder}/><div className="vf-options">{filtradas.map(o=><button type="button" key={o.numero+o.nome} aria-pressed={atual.numero===o.numero} onClick={()=>{onSelect(o);setBusca("")}}><span><strong>{o.nome}</strong><small>{o.partido}</small></span><b>{o.numero}</b></button>)}</div></div>
 }
 function roundRect(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
